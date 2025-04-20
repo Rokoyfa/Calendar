@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
+    <link rel="stylesheet" media="all" href="styleKalender.css">
+    <link rel="stylesheet" media="(min-width:60em)" href="styleKalender.css">
+</head>
+
+<body>
+    <main>
+        <header class="header">
+            <div class="weekControls">
+                <i id="prevWeekBtn" class="fas fa-angle-double-left"></i>
+                <span id="weekDisplay">
+                    <span id="weekStartDisplay"></span>
+                    ‒
+                    <span id="weekEndDisplay"></span>
+                </span>
+                <i id="nextWeekBtn" class="fas fa-angle-double-right"></i>
+
+            </div>
+            <h1>Kalender</h1>
+            <ul >
+                <div class="generalControls">
+                    <li><i id="LogoutButton" class="fa-solid fa-arrow-right-from-bracket"></i></li>
+                    <li><i id="LoginButton" class="fa-solid fa-arrow-right-to-bracket"></i></li>
+                    <li><i id="teamButton" class="fa-solid fa-user-group"></i></li>
+                    <li><i id="trashButton" class="fa-solid fa-trash-can"></i></li>
+                    <li><i id="addButton" class="fa-solid fa-plus"></i></li>
+                </div>
+            </ul>
+        </header>
+
+        <section id="calendar">
+            <div class="dayTime">
+            </div>
+            <div data-name="Montag" data-dayIndex="0" class="day">
+            </div>
+            <div data-name="Dienstag" data-dayIndex="1" class="day">
+            </div>
+            <div data-name="Mittwoch" data-dayIndex="2" class="day">
+            </div>
+            <div data-name="Donnerstag" data-dayIndex="3" class="day">
+            </div>
+            <div data-name="Freitag" data-dayIndex="4" class="day">
+            </div>
+            <div data-name="Samstag" data-dayIndex="5" class="day">
+            </div>
+            <div data-name="Sonntag" data-dayIndex="6" class="day">
+            </div>
+        </section>
+
+        <form id="eventModal">
+            <h2 id="modalTitle">
+            </h2>
+            <label for="title" class="descriptor">Title</label>
+            <div>
+                <input type="text" required id="eventTitle" name="title" class="shortInput">
+            </div>
+            <label for="date" class="descriptor">Date</label>
+            <div>
+                <input type="date" required id="eventDate" name="date" class="shortInput">
+            </div>
+            <label for="time" class="descriptor">Time</label>
+            <div>
+                <input type="time" required id="eventStart" name="time" class="shortInput">
+                -
+                <input type="time" required id="eventEnd" name="time" class="shortInput">
+            </div>
+            <label for="description">Description</label>
+            <div>
+                <textarea name="description" id="eventDescription"></textarea>
+            </div>
+            <label for="color" class="desrciptor">Color</label>
+            <div id="colors">
+                <input type="button" name="color" class="color color-red" data-color="red">
+                <input type="button" name="color" class="color color-blue" data-color="blue">
+                <input type="button" name="color" class="color color-green" data-color="green">
+                <input type="button" name="color" class="color color-yellow" data-color="yellow">
+            </div>
+            <div id="eventControls">
+                <input type="submit" id="submitButton" value="Submit" class="button">
+                <input type="button" id="cancelButton" value="Cancel" class="button">
+                <input type="button" id="copyButton" value="Copy" class="button">
+                <input type="button" id="deleteButton" value="Delete" class="button">
+            </div>
+            <div id="errors">
+            </div>
+
+        </form>
+
+        <div id="LoginModal" class="modal">
+            <div class="Modal-content">
+                <div class="Loginheader">
+                    <a href="index.html" class="close">&times;</a>
+                    <h1>Login</h1>
+                    <form methode="post">
+                        <div class="txt_field">
+                            <input type="text" id="l_username" name="username" placeholder=" ">
+                            <label>Username</label>
+                            <span></span>
+                        </div>
+                        <div class="txt_field">
+                            <div id="Registrieren">
+                                <input type="password" id="l_pass" name="password" placeholder=" ">
+                                <label>Passwort</label>
+                                <span></span>
+                            </div>
+                        </div>
+    
+                        <div>
+                            <p id="login_err"></p>
+                        </div>
+    
+                        <div class="submitLogin">
+                            <button id="Loginbtn" type="submit">Login</button>
+                        </div>
+                        <div class="signup_link">
+                            Noch kein Mitglied? <button id="Registrierenbtn" href="#">Registrieren</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="TrashModal" class="trashmodal">
+            <div class="ModalContent">
+                <div id="modalTrashTitle">
+                    <h2>Möchtest du wirklich ALLE Termine löschen?</h2>
+                </div>
+                <div id="TrashButtons">
+                    <input type="submit" id="YesButton" value="Ja" class="button">
+                    <input type="button" id="NoButton" value="Nein" class="button">
+                </div>
+            </div>
+        </div>
+
+        <div id="RegistrierModal" class="modal">
+            <div class="Modal-content">
+                <div class="Loginheader">
+                    <span class="Rclose">&times;</span>
+                    <h1>Registrieren</h1>
+                    <form methode="post">
+                        <div class="txt_field">
+                            <input type="text" id="r_username" name="username" placeholder=" ">
+                            <label>Username</label>
+                            <span></span>                        
+                        </div>
+                        <div class="txt_field">
+                            <div id="Registrieren">
+                                <input type="password" id="r_pass" name="password" placeholder=" ">
+                                <label>Passwort</label>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="txt_field">
+                            <div id="Registrieren">
+                                <input type="password" id="r_pass_con" name="password_confirm" placeholder=" ">
+                                <label>Passwort Wiederholen</label>
+                                <span></span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p id="reg_err"></p>
+                        </div>
+
+                        <div class="submitLogin">
+                            <button id="Registerbtn" type="submit">Registrieren</button>
+                        </div>
+                        <div class="signup_link">
+                            Schon ein Mitglied? <button id="Anmeldebtn" href="#">Anmelden</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="LogoutModal" class="modal">
+            <div class="Modal-content">
+                <div class="Loginheader">
+                    <span class="Loclose">&times;</span>
+                    <h1>Logout</h1>
+                    <div class="Modal-Text">Willst du dich ausloggen?</div>
+                    <div class="submitLogin">
+                        <button id="Logoutbtn" type="submit">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="TeamModal" class="modal">
+            <div class="content">
+                <div>
+                    <i id="settings" class="fa-sharp fa-solid fa-gear"></i>
+                    <span class="tclose">&times;</span>
+                </div>
+                <div class="header">
+                    <h1>Team</h1>
+                </div>
+                <div class="own_calendar">
+
+                </div>
+                <div class="team_calendar">
+
+                </div>
+            </div>
+        </div>
+
+        
+    </main>    
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <script src="js/main.js" type="module"></script>
+
+</body>
+
+</html>

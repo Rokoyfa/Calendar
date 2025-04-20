@@ -1,0 +1,709 @@
+/* general stuff */
+
+:root {
+    --grid-color: #cecece;
+    --time-color: #777;
+    --slot-hover-color: #eee;
+    --shadow-color: rgba(87, 5, 5, 0.3);
+    --font-color: #222;
+    --color-red: rgb(190, 35, 15);
+    --color-blue: rgb(54, 92, 175);
+    --color-green: rgb(21, 129, 21);
+    --color-yellow: rgb(233, 229, 4);
+    --color-grey: rgb(94, 91, 91);
+    --slotHeight: 30px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--font-color);
+}
+
+input,
+textarea {
+    font-family: inherit;
+    font-size: inherit;
+    outline: none;
+    border: none;
+}
+
+/* header */
+
+.header {
+    text-align: center;
+    padding: 20px 10px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header h1 {
+    color: var(--color-grey);
+    font-weight: 550;
+    cursor: pointer;
+}
+
+.header i {
+    cursor: pointer;
+    margin: 0px 5px;
+    color: var(--time-color);
+    transition: all 80ms linear;
+}
+
+.header i:hover {
+    color: var(--font-color);
+    border-color: var(--font-color);
+}
+
+/* controls */
+
+.weekControls {
+    position: absolute;
+    left: 20px;
+    font-size: 22px;
+}
+
+.generalControls i {
+    line-height: 25px;
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--time-color);
+    border-radius: 50%;
+
+}
+
+.generalControls a {
+    line-height: 25px;
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--time-color);
+    border-radius: 50%;
+
+}
+
+.generalControls { 
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    position: absolute;
+    right: 20px;
+    bottom: 25px;
+}
+
+.generalControls .fa-arrow-right-to-bracket,
+.generalControls .fa-arrow-right-from-bracket,
+.generalControls .fa-user-group {
+    text-decoration: none;
+    display: none;
+    font-size: 18px;
+}
+
+.generalControls .fa-plus {
+    font-size: 18px;
+
+}
+
+.generalControls .fa-trash-can {
+    font-size: 18px;
+}
+
+/* calendar */
+
+#calendar {
+    display: flex;
+    width: 100%;
+    transition: opacity 200ms ease-in;
+    border-bottom: 1px solid var(--grid-color);
+}
+
+#calendar.opaque {
+    opacity: 0.4;
+}
+
+/* columns */
+
+.dayTime {
+    width: 100%;
+    min-width: 100px;
+    max-width: 100px;
+    text-align: center;
+    color: var(--time-color);
+}
+
+.day {
+    width: 100%;
+    min-width: 110px;
+    border-left: 1px solid var(--grid-color);
+}
+
+.columnHeader {
+    text-align: center;
+    font-size: 20px;
+    padding: 10px 0px;
+    height: 60px;
+    overflow: hidden;
+}
+
+.day .columnHeader {
+    border-top: 1px solid var(--grid-color);
+}
+
+.dayDisplay {
+    font-size: 15px;
+    color: var(--time-color);
+}
+
+.day.currentDay .columnHeader {
+    background-color: var(--slot-hover-color);
+}
+
+/* slots */
+
+.slots {
+    position: relative;
+}
+
+.slot,
+.time {
+    border-top: 1px solid var(--grid-color);
+    height: var(--slotHeight);
+}
+
+.time {
+    font-size: 14px;
+}
+
+.time.currentTime {
+    background-color: var(--slot-hover-color);
+    color: var(--font-color);
+}
+
+.slot:hover {
+    cursor: pointer;
+    background-color: var(--slot-hover-color);
+}
+
+/* event Modal */
+
+#eventModal {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0px 0px 20px var(--shadow-color);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    padding: 20px;
+    width: 450px;
+    min-width: 250px;
+}
+
+#errors {
+    color: var(--color-red);
+}
+
+#modalTitle {
+    margin-bottom: 20px;
+}
+
+.descriptor {
+    font-weight: bold;
+    display: inline-block;
+    margin: 20px 10px 5px 0px;
+}
+
+.shortInput {
+    border-bottom: 1px solid var(--grid-color);
+    padding: 2px 1px;
+}
+
+.shortInput:focus {
+    border-bottom: 1px solid var(--font-color);
+}
+
+.eventTitle {
+    width: 95%;
+}
+
+.eventStart {
+    margin-right: 10px;
+}
+
+.eventEnd {
+    margin-left: 10px;
+}
+
+#eventDescription {
+    border: 1px solid var(--grid-color);
+    width: 95%;
+    height: 170px;
+    resize: vertical;
+    min-height: 40px;
+    padding: 4px;
+}
+
+#eventDescription:focus {
+    border: 1px solid var(--font-color);
+}
+
+#eventControlls {
+    margin: 25px 0px 10px 0px;
+}
+
+.button {
+    border-radius: 25px;
+    padding: 10px 20px;
+    background-color: var(--color-blue);
+    color: white;
+    cursor: pointer;
+    margin-right: 12px;
+}
+
+.button:hover,
+.button:focus {
+    opacity: 0.8;
+}
+
+#deleteButton {
+    background-color: var(--color-red);
+}
+
+/* colors */
+
+#colors {
+    width: 150px;
+    height: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 5px solid white;
+    box-sizing: content-box;
+    cursor: pointer;
+}
+
+.color.activ,
+.color:focus,
+.color:hover {
+    border: 5px solid var(--grid-color);
+}
+
+.color-red {
+    background-color: var(--color-red);
+}
+
+.color-blue {
+    background-color: var(--color-blue);
+}
+
+.color-green {
+    background-color: var(--color-green);
+}
+
+.color-yellow {
+    background-color: var(--color-yellow);
+}
+
+/* Event */
+
+.event {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    border-radius: 4px;
+    padding: 2px 5px;
+    color: white;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.shortEvent {
+    padding: 0px 5px;
+    font-size: 12px;
+}
+
+.veryShortEvent {
+    margin-top: -1px;
+    padding: 0px 5px;
+    font-size: 10px;
+}
+
+/* event TrashModal */
+
+#TrashModal {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0px 0px 20px var(--shadow-color);
+    left: 50%;
+    top: 30%;
+    transform: translate(-50%, 50%);
+    z-index: 10;
+    padding: 20px;
+    width: 450px;
+    min-width: 250px;
+}
+
+#error {
+    color: var(--color-red);
+}
+
+#modalTrashTitle {
+    font-size: 25px;
+    margin-bottom: 30px;
+    color: var(--color-red);
+}
+
+#eventTrashBtn {
+    margin: 30px 25px 10px 25px;
+}
+
+#YesButton {
+    font-weight: bold;
+    padding: 15px 25px;
+    background-color: var(--color-red);
+    color: white;
+    cursor: pointer;
+    width: 20%;
+}
+
+#NoButton {
+    font-weight: bold;
+    margin-left: 52%;
+    padding: 15px 25px;
+    background-color: var(--color-green);
+    color: white;
+    cursor: pointer;
+    margin-right: 12px;
+}
+
+.butto:hover,
+.button:focus {
+    opacity: 0.8;
+}
+
+/* Login Modal */
+
+#LoginModal {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 10px 10px 15px var(--shadow-color);
+    left: 50%;
+    top: 0%;
+    transform: translate(-50%, 50%);
+    z-index: 10;
+    padding: 20px;
+    width: 450px;
+    min-width: 250px;
+}
+
+.modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 10px 10px 15px rgba(0, 0, 0, 0.05);
+}
+
+.close {
+    text-decoration: none;
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.Loginheader h1 {
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 1px solid black;
+}
+
+.Loginheader form {
+    padding: 0 40px;
+    box-sizing: border-box;
+}
+
+form .txt_field {
+    position: relative;
+    border-bottom: 2px solid black;
+    margin: 30px 0;
+    transition: 1.5s;
+}
+
+.txt_field input {
+    width: 100%;
+    padding: 0 5px;
+    height: 40px;
+    font-size: 16px;
+    border: none;
+    background: none;
+    outline: none;
+}
+
+.txt_field label {
+    position: absolute;
+    top: 50%;
+    left: 5px;
+    color: black;
+    transform: translateY(-50%);
+    font-size: 16px;
+    pointer-events: none;
+    transition: .5s;
+}
+
+.txt_field span::before {
+    content: '';
+    position: absolute;
+    top: 40px;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background: black;
+    transition: .5s;
+}
+
+.txt_field input:focus~label,
+.txt_field :not(input:placeholder-shown)~label {
+    font-size: 15px;
+    top: -5px;
+    color: gray;
+}
+
+.txt_field input:focus~span::before,
+.txt_field input:valid~span::before {
+    width: 100%;
+}
+
+button[id="Loginbtn"] {
+    text-align: center;
+    width: 100%;
+    height: 50px;
+    border: 1px solid;
+    border-color: #2691d9;
+    background: #2691d9;
+    border-radius: 25px;
+    font-size: 18px;
+    color: #e9f4fb;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+}
+
+button[id="Loginbtn"]:hover {
+    border-color: white;
+    transition: .5s
+}
+
+.signup_link {
+    margin: 30px 0;
+    text-align: center;
+    font-size: 16px;
+    color: black;
+}
+
+.signup_link button {
+    font-size: 16px;
+    border: none;
+    background-color: white;
+    color: #2691d9;
+    text-decoration: none;
+}
+
+.signup_link button:hover {
+    text-decoration: underline;
+}
+
+/* Registrier Modal */
+
+#RegistrierModal {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 10px 10px 15px var(--shadow-color);
+    left: 50%;
+    top: 0%;
+    transform: translate(-50%, 50%);
+    z-index: 10;
+    padding: 20px;
+    width: 450px;
+    min-width: 250px;
+}
+
+.Rclose {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.Rclose:hover,
+.Rclose:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+button[id="Registerbtn"] {
+    text-align: center;
+    width: 100%;
+    height: 50px;
+    border: 1px solid;
+    border-color: #2691d9;
+    background: #2691d9;
+    border-radius: 25px;
+    font-size: 18px;
+    color: #e9f4fb;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+}
+
+button[id="Registerbtn"]:hover {
+    border-color: white;
+    transition: .5s
+}
+
+/* Logout Modal */
+
+#LogoutModal {
+    display: none;
+    position: absolute;
+    background-color: white;
+    height: 250px;
+    border-radius: 10px;
+    box-shadow: 10px 10px 15px var(--shadow-color);
+    left: 50%;
+    top: 10%;
+    transform: translate(-50%, 50%);
+    z-index: 10;
+    padding: 20px;
+    width: 450px;
+    min-width: 250px;
+}
+
+.Loclose {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.Loclose:hover,
+.Loclose:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.Modal-Text {
+
+    text-align: center;
+    font-size: 30px;
+}
+
+button[id="Logoutbtn"] {
+    margin: 40px 0px;
+    text-align: center;
+    width: 100%;
+    height: 50px;
+    border: 1px solid;
+    border-color: #2691d9;
+    background: #2691d9;
+    border-radius: 25px;
+    font-size: 18px;
+    color: #e9f4fb;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+}
+
+button[id="Logoutbtn"]:hover {
+    border-color: white;
+    transition: .5s
+}
+
+/* Team Moadal */
+
+#TeamModal {
+    display: none;
+    position: absolute;
+    background-color: white;
+    height: 550px;
+    border-radius: 10px;
+    box-shadow: 10px 10px 15px var(--shadow-color);
+    left: 50%;
+    top: -10%;
+    transform: translate(-50%, 50%);
+    z-index: 10;
+    padding: 20px;
+    width: 450px;
+    min-width: 250px;
+}
+
+#TeamModal .tclose {
+    font-weight: bold;
+    font-size: 28px;
+    color: #aaa;
+    position: relative;
+    left: 92%;
+}
+
+#TeamModal #settings {
+    margin-top: 2%;
+    font-weight: bold;
+    font-size: 17px;
+    color: #aaa;
+}
+
+#TeamModal .tclose:hover,
+#TeamModal #settings:hover {
+    color: black;
+    cursor: pointer;
+}
+
+/* Errors */
+
+#reg_err,
+#login_err {
+    color: var(--color-red);
+}
+
+/* Media */
+
+@media (max-widht: 600px) {
+    #weekDisplay {
+        display: none;
+    }
+    .header {
+        display: none;
+    }
+}
