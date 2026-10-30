@@ -1,0 +1,66 @@
+.modal {
+  width: min(450px, calc(100vw - 2 * var(--space-4)));
+  min-width: 250px;
+  max-height: calc(100dvh - 2 * var(--space-4));
+  margin: auto;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow);
+  overflow: auto;
+}
+
+.modal[open] {
+  animation: modalIn 150ms ease-out;
+}
+
+.modal::backdrop {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.modalContent {
+  padding: var(--space-4);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.modalTitle {
+  font-size: 1.5rem;
+}
+
+.modal--danger .modalTitle {
+  font-size: 25px;
+  color: var(--color-red);
+}
+
+.modalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: var(--space-5) 0 var(--space-3);
+}
+
+.modalActions--split {
+  justify-content: space-between;
+}
+
+.modalActions--split .button {
+  min-width: 90px;
+  padding: 15px 25px;
+  font-weight: bold;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}

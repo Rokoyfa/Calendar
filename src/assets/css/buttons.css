@@ -1,0 +1,72 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-blue);
+  color: var(--color-on-accent);
+  font-weight: 600;
+  transition: opacity var(--transition-fast);
+}
+
+.button:hover,
+.button:focus-visible {
+  opacity: 0.8;
+}
+
+.button--danger {
+  background-color: var(--color-red);
+}
+
+.button--success {
+  background-color: var(--color-green);
+}
+
+.button--secondary {
+  background-color: var(--color-grey);
+}
+
+.button--block {
+  width: 100%;
+}
+
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin: 0 var(--space-2);
+  border: 3px solid var(--color-muted);
+  border-radius: var(--radius-round);
+  color: var(--color-muted);
+  font-size: 16px;
+  line-height: 1;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.iconButton:hover,
+.iconButton:focus-visible {
+  color: var(--color-text);
+  border-color: var(--color-text);
+}
+
+.iconButton--plain {
+  border: none;
+  width: auto;
+  height: auto;
+  font-size: inherit;
+}
+
+.closeButton {
+  color: var(--color-muted);
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.closeButton:hover,
+.closeButton:focus-visible {
+  color: var(--color-text);
+}

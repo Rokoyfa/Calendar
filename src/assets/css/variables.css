@@ -1,0 +1,96 @@
+:root {
+  color-scheme: light;
+
+  --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  --font-size-xs: 10px;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-base: 15px;
+  --font-size-lg: 20px;
+  --font-size-xl: 22px;
+
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #eeeeee;
+  --color-grid: #cecece;
+  --color-muted: #777777;
+  --color-text: #222222;
+  --color-heading: rgb(94, 91, 91);
+  --color-on-accent: #ffffff;
+  --color-on-yellow: #222222;
+
+  --color-red: rgb(190, 35, 15);
+  --color-blue: rgb(54, 92, 175);
+  --color-green: rgb(21, 129, 21);
+  --color-yellow: rgb(233, 229, 4);
+  --color-grey: rgb(94, 91, 91);
+
+  --shadow-color: rgba(87, 5, 5, 0.3);
+  --shadow: 0 0 20px var(--shadow-color);
+  --focus-ring: 0 0 0 2px var(--color-blue);
+
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-pill: 25px;
+  --radius-round: 50%;
+
+  --space-1: 2px;
+  --space-2: 5px;
+  --space-3: 10px;
+  --space-4: 20px;
+  --space-5: 25px;
+
+  --slot-height: 30px;
+  --time-column-width: 100px;
+  --day-column-min-width: 110px;
+  --column-header-height: 60px;
+
+  --transition-fast: 80ms linear;
+  --transition-base: 200ms ease-in;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #16171a;
+  --color-surface: #1e1f23;
+  --color-surface-hover: #2a2b30;
+  --color-grid: #3a3b40;
+  --color-muted: #9a9a9f;
+  --color-text: #e6e6e6;
+  --color-heading: #b9b6b6;
+  --color-on-accent: #ffffff;
+  --color-on-yellow: #1a1a1a;
+
+  --color-red: rgb(226, 80, 60);
+  --color-blue: rgb(98, 140, 230);
+  --color-green: rgb(52, 170, 82);
+  --color-yellow: rgb(230, 210, 40);
+  --color-grey: rgb(150, 147, 147);
+
+  --shadow-color: rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-bg: #16171a;
+    --color-surface: #1e1f23;
+    --color-surface-hover: #2a2b30;
+    --color-grid: #3a3b40;
+    --color-muted: #9a9a9f;
+    --color-text: #e6e6e6;
+    --color-heading: #b9b6b6;
+    --color-on-accent: #ffffff;
+    --color-on-yellow: #1a1a1a;
+
+    --color-red: rgb(226, 80, 60);
+    --color-blue: rgb(98, 140, 230);
+    --color-green: rgb(52, 170, 82);
+    --color-yellow: rgb(230, 210, 40);
+    --color-grey: rgb(150, 147, 147);
+
+    --shadow-color: rgba(0, 0, 0, 0.6);
+  }
+}

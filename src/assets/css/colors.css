@@ -1,0 +1,46 @@
+.color-red {
+  --event-color: var(--color-red);
+  --event-text: var(--color-on-accent);
+  background-color: var(--color-red);
+}
+
+.color-blue {
+  --event-color: var(--color-blue);
+  --event-text: var(--color-on-accent);
+  background-color: var(--color-blue);
+}
+
+.color-green {
+  --event-color: var(--color-green);
+  --event-text: var(--color-on-accent);
+  background-color: var(--color-green);
+}
+
+.color-yellow {
+  --event-color: var(--color-yellow);
+  --event-text: var(--color-on-yellow);
+  background-color: var(--color-yellow);
+  color: var(--color-on-yellow);
+}
+
+.color-grey {
+  --event-color: var(--color-grey);
+  --event-text: var(--color-on-accent);
+  background-color: var(--color-grey);
+}
+
+.text-red {
+  color: var(--color-red);
+}
+
+.text-blue {
+  color: var(--color-blue);
+}
+
+.text-green {
+  color: var(--color-green);
+}
+
+.text-muted {
+  color: var(--color-muted);
+}

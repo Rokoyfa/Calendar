@@ -1,0 +1,85 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.scrollArea {
+  overflow: auto;
+  scrollbar-color: var(--color-grid) transparent;
+}
+
+.header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4) var(--space-3);
+  text-align: center;
+}
+
+.header h1 {
+  cursor: pointer;
+}
+
+.headerTitle {
+  font-weight: inherit;
+  line-height: inherit;
+  border-radius: var(--radius-sm);
+}
+
+.weekControls {
+  position: absolute;
+  left: var(--space-4);
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-xl);
+}
+
+.generalControls {
+  position: absolute;
+  right: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+@media (max-width: 600px) {
+  .header {
+    padding: var(--space-3);
+  }
+
+  .header h1 {
+    font-size: var(--font-size-lg);
+  }
+
+  .weekControls {
+    position: static;
+    font-size: var(--font-size-lg);
+  }
+
+  .generalControls {
+    position: static;
+    margin-left: auto;
+  }
+
+  .weekDisplay {
+    display: none;
+  }
+}
