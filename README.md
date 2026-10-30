@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Kalender
 
 Online-Kalender als Website, gebaut mit React, TypeScript und Vite.
@@ -192,3 +193,7 @@ src/
 - [ ] Team-Modus mit Einladung per E-Mail (`features/teams`)
 - [ ] Eigene Farben entfernen
 - [ ] Schalter für Hell- und Dunkelmodus in der Oberfläche
+=======
+# Calendar
+ Calendar
+>>>>>>> dd5120cb0dcc96d39a7255a5c5adaa8dc655fe57
