@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Kalender
 
 Online-Kalender als Website, gebaut mit React, TypeScript und Vite.
