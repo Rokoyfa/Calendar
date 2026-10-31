@@ -74,6 +74,57 @@ Der Browser ruft dann `/api/...` auf derselben Adresse wie die App auf, Vite lei
 
 ---
 
+## API-Client
+
+Alle Aufrufe an das Backend laufen über einen gemeinsamen Client aus `src/utils/api.ts`. Direktes `fetch` wird im übrigen Code nicht verwendet.
+
+### Verwendung
+
+Für neue Features gibt es eine fertig konfigurierte Instanz mit Adresse und Timeout aus der `.env`:
+
+```ts
+import { apiClient } from '../../../config/api.ts'
+import { encodePathSegment } from '../../../utils/api.ts'
+
+const teams = await apiClient.get<Team[]>('/teams', { query: { page: 1, tags: ['a', 'b'] } })
+const team = await apiClient.post<Team>('/teams', { name: 'Familie' })
+await apiClient.put<Team>(`/teams/${encodePathSegment(id)}`, changes)
+await apiClient.patch<Team>(`/teams/${encodePathSegment(id)}`, { name: 'Neu' })
+await apiClient.delete(`/teams/${encodePathSegment(id)}`)
+```
+
+Eigene Instanzen entstehen mit `createApiClient({ baseUrl, timeoutMs, getAccessToken, onUnauthorized, headers, credentials })`, so macht es auch `RemoteEventRepository`.
+
+### Was der Client übernimmt
+
+- **JSON:** Objekte werden als JSON gesendet, Antworten mit JSON-Content-Type automatisch gelesen. `FormData`, `Blob`, `URLSearchParams` und Strings gehen unverändert raus, zum Beispiel für Datei-Uploads.
+- **Query-Parameter:** `query: { a: 1, b: ['x', 'y'] }` wird zu `?a=1&b=x&b=y`, `null` und `undefined` werden weggelassen.
+- **Leere Antworten:** `204 No Content` und leere Antworten ergeben `undefined`.
+- **Token:** Liefert `getAccessToken` einen Wert, wird `Authorization: Bearer …` gesetzt. Vorbereitet für die Anmeldung.
+- **Timeout:** Standard aus `VITE_API_TIMEOUT_MS`, pro Anfrage über `timeoutMs` änderbar.
+- **Abbruch:** Ein eigenes `signal` (z. B. `AbortController`) wird zusammen mit dem Timeout berücksichtigt.
+- **401:** Ruft `onUnauthorized` auf, gedacht zum Abmelden, wenn der Token abgelaufen ist.
+
+### Fehler
+
+Jeder Fehler ist ein `ApiError` (aus `src/utils/apiError.ts`) mit einer deutschen, anzeigbaren Meldung. Er funktioniert mit `getErrorMessage` und `ErrorMessage` wie jeder andere Fehler.
+
+| `kind`    | `status` | Meldung |
+| --------- | -------- | ------- |
+| `http`    | 4xx/5xx  | `message` aus der Server-Antwort, sonst eine Standardmeldung je Status, z. B. 401 „Bitte melde dich an.“, 404 „Der Eintrag wurde nicht gefunden.“, 5xx „Auf dem Server ist ein Fehler aufgetreten.“ |
+| `timeout` | `null`   | Der Server hat nicht rechtzeitig geantwortet. |
+| `network` | `null`   | Der Server ist nicht erreichbar. |
+| `aborted` | `null`   | Die Anfrage wurde abgebrochen. |
+| `parse`   | `null`   | Die Antwort des Servers konnte nicht gelesen werden. |
+
+Zusätzlich gibt es `error.isUnauthorized`, `error.isNotFound`, `error.isServerError` und `error.body` mit der vollständigen Server-Antwort. Prüfen mit `isApiError(error)`.
+
+Fehlermeldungen vom Backend sollten als JSON in der Form `{ "message": "…" }` kommen, dann werden sie direkt angezeigt.
+
+> Der Typ in `get<T>()` ist eine Zusicherung, keine Prüfung zur Laufzeit. Antwortet das Backend mit einer anderen Struktur, fällt das erst bei der Verwendung auf.
+
+---
+
 ## Funktionen
 
 ### Ansichten
@@ -237,6 +288,7 @@ src/
 ├─ config/
 │  ├─ parseEnv.ts              Umgebungsvariablen lesen und prüfen (auch in vite.config.ts)
 │  ├─ env.ts                   Geprüfte Konfiguration für die App
+│  ├─ api.ts                   Fertig konfigurierter API-Client
 │  └─ storage.ts               StorageConfig aus der Konfiguration
 ├─ assets/
 │  ├─ css/                     Styles, gebündelt über index.css
@@ -256,6 +308,8 @@ src/
 │  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand und Fehlermeldung
 │  └─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel
 ├─ utils/
+│  ├─ api.ts                   API-Client (fetch mit JSON, Query, Token, Timeout, Abbruch)
+│  ├─ apiError.ts              ApiError mit deutschen Fehlermeldungen
 │  ├─ classNames.ts            CSS-Klassen zusammensetzen
 │  ├─ color.ts                 Hex-Farben, lesbare Schriftfarbe
 │  ├─ date.ts                  Datums- und Zeitfunktionen, Prüfung und Formatierung
@@ -296,7 +350,7 @@ src/
 - Von außen wird ein Feature nur über seine `index.ts` importiert.
 - `calendar` zeigt nur an und kennt die Speicherung nicht. `events` enthält die Termin-Logik, `storage` die Persistenz.
 - Typen, die zwischen Features geteilt werden, liegen in `utils/`. Props-Typen bleiben bei ihrer Komponente.
-- Keine Doppelungen: Was an mehr als einer Stelle gebraucht wird, liegt einmal in `components/`, `hooks/` oder `utils/` (featureübergreifend) bzw. im `utils/`-Ordner des Features. Formularfelder werden aus `FormField` und den darauf aufbauenden Feldern zusammengesetzt, Datumswerte nur über `utils/date.ts` geprüft und berechnet.
+- Keine Doppelungen: Was an mehr als einer Stelle gebraucht wird, liegt einmal in `components/`, `hooks/` oder `utils/` (featureübergreifend) bzw. im `utils/`-Ordner des Features. Formularfelder werden aus `FormField` und den darauf aufbauenden Feldern zusammengesetzt, Datumswerte nur über `utils/date.ts` geprüft und berechnet, Backend-Aufrufe nur über den API-Client aus `utils/api.ts`.
 - Farben für Hell- und Dunkelmodus stehen nur einmal in `variables.css` und nutzen `light-dark()`. Terminfarben werden ausschließlich über `--event-color` und `--event-text` gesetzt, egal ob Standard- oder eigene Farbe.
 
 ---
