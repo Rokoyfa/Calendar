@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { getErrorMessage } from '../../../utils/error.ts'
-import { compareEvents, groupEventsByDate, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
+import { compareEvents, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
 import { useEventRepository, type DateRange } from '../../storage/index.ts'
 
 type EventsState = {
@@ -62,11 +62,8 @@ export function useEvents({ from, to }: DateRange) {
     [repository, reload],
   )
 
-  const eventsByDate = useMemo(() => groupEventsByDate(state.events), [state.events])
-
   return {
     events: state.events,
-    eventsByDate,
     error: state.error,
     isLoading: state.key !== key,
     reload,

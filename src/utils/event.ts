@@ -1,4 +1,7 @@
 import {
+  addDaysToISODate,
+  daysBetween,
+  formatShortDay,
   ISO_DATE_PATTERN,
   MINUTES_PER_DAY,
   MINUTES_PER_HOUR,
@@ -28,8 +31,9 @@ export type CalendarEvent = {
   id: string
   calendarId: string
   title: string
-  date: string
+  startDate: string
   start: string
+  endDate: string
   end: string
   description: string
   color: EventColor
@@ -37,7 +41,12 @@ export type CalendarEvent = {
   updatedAt: string
 }
 
-export type EventInput = Pick<CalendarEvent, 'title' | 'date' | 'start' | 'end' | 'description' | 'color'>
+export type EventInput = Pick<
+  CalendarEvent,
+  'title' | 'startDate' | 'start' | 'endDate' | 'end' | 'description' | 'color'
+>
+
+export type EventPeriod = Pick<CalendarEvent, 'startDate' | 'start' | 'endDate' | 'end'>
 
 export type EventValidationErrors = Partial<Record<keyof EventInput, string>>
 
@@ -49,40 +58,72 @@ export const isEventColor = (value: unknown): value is EventColor => isPresetEve
 export const getEventColorLabel = (color: EventColor) =>
   isPresetEventColor(color) ? PRESET_EVENT_COLOR_LABELS[color] : color.toUpperCase()
 
-export const isCalendarEvent = (value: unknown): value is CalendarEvent => {
-  if (typeof value !== 'object' || value === null) return false
-  const event = value as Record<string, unknown>
-  return (
-    typeof event.id === 'string' &&
-    typeof event.calendarId === 'string' &&
-    typeof event.title === 'string' &&
-    typeof event.date === 'string' &&
-    ISO_DATE_PATTERN.test(event.date) &&
-    typeof event.start === 'string' &&
-    TIME_PATTERN.test(event.start) &&
-    typeof event.end === 'string' &&
-    TIME_PATTERN.test(event.end) &&
-    typeof event.description === 'string' &&
-    isEventColor(event.color)
+const isISODate = (value: unknown): value is string => typeof value === 'string' && ISO_DATE_PATTERN.test(value)
+
+const isTime = (value: unknown): value is string => typeof value === 'string' && TIME_PATTERN.test(value)
+
+export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
+  if (typeof value !== 'object' || value === null) return null
+  const { date, ...rest } = value as Record<string, unknown>
+  const startDate = rest.startDate ?? date
+  const endDate = rest.endDate ?? startDate
+
+  if (
+    typeof rest.id !== 'string' ||
+    typeof rest.calendarId !== 'string' ||
+    typeof rest.title !== 'string' ||
+    !isISODate(startDate) ||
+    !isTime(rest.start) ||
+    !isISODate(endDate) ||
+    !isTime(rest.end) ||
+    typeof rest.description !== 'string' ||
+    !isEventColor(rest.color)
   )
+    return null
+
+  return {
+    id: rest.id,
+    calendarId: rest.calendarId,
+    title: rest.title,
+    startDate,
+    start: rest.start,
+    endDate,
+    end: rest.end,
+    description: rest.description,
+    color: rest.color,
+    createdAt: typeof rest.createdAt === 'string' ? rest.createdAt : '',
+    updatedAt: typeof rest.updatedAt === 'string' ? rest.updatedAt : '',
+  }
 }
 
 export const createEventInput = (date: string, hour: number): EventInput => {
   const start = hour * MINUTES_PER_HOUR
+  const end = start + MINUTES_PER_HOUR
+  const endsNextDay = end >= MINUTES_PER_DAY
   return {
     title: '',
-    date,
+    startDate: date,
     start: minutesToTime(start),
-    end: minutesToTime(Math.min(start + MINUTES_PER_HOUR, MINUTES_PER_DAY - 1)),
+    endDate: endsNextDay ? addDaysToISODate(date, 1) : date,
+    end: minutesToTime(end % MINUTES_PER_DAY),
     description: '',
     color: 'blue',
   }
 }
 
-export const toEventInput = ({ title, date, start, end, description, color }: CalendarEvent): EventInput => ({
+export const toEventInput = ({
   title,
-  date,
+  startDate,
   start,
+  endDate,
+  end,
+  description,
+  color,
+}: CalendarEvent): EventInput => ({
+  title,
+  startDate,
+  start,
+  endDate,
   end,
   description,
   color,
@@ -94,21 +135,24 @@ export const normalizeEventInput = (input: EventInput): EventInput => ({
   description: input.description.trim(),
 })
 
-export const getEventDuration = ({ start, end }: Pick<CalendarEvent, 'start' | 'end'>) =>
-  timeToMinutes(end) - timeToMinutes(start)
+export const getEventDuration = ({ startDate, start, endDate, end }: EventPeriod) =>
+  daysBetween(startDate, endDate) * MINUTES_PER_DAY + timeToMinutes(end) - timeToMinutes(start)
+
+export const isMultiDayEvent = ({ startDate, endDate }: EventPeriod) => startDate !== endDate
+
+export const eventOverlapsRange = ({ startDate, endDate }: EventPeriod, from: string, to: string) =>
+  startDate <= to && endDate >= from
 
 export const compareEvents = (a: CalendarEvent, b: CalendarEvent) =>
-  a.date.localeCompare(b.date) || a.start.localeCompare(b.start) || a.title.localeCompare(b.title)
+  a.startDate.localeCompare(b.startDate) ||
+  a.start.localeCompare(b.start) ||
+  getEventDuration(b) - getEventDuration(a) ||
+  a.title.localeCompare(b.title)
 
-export const groupEventsByDate = (events: readonly CalendarEvent[]) => {
-  const groups = new Map<string, CalendarEvent[]>()
-  for (const event of events) {
-    const group = groups.get(event.date)
-    if (group) group.push(event)
-    else groups.set(event.date, [event])
-  }
-  return groups
-}
+export const formatEventPeriod = (event: EventPeriod) =>
+  isMultiDayEvent(event)
+    ? `${formatShortDay(event.startDate)} ${event.start} – ${formatShortDay(event.endDate)} ${event.end}`
+    : `${event.start} – ${event.end}`
 
 export const validateEventInput = (input: EventInput): EventValidationErrors => {
   const errors: EventValidationErrors = {}
@@ -117,12 +161,14 @@ export const validateEventInput = (input: EventInput): EventValidationErrors => 
   else if (input.title.length > EVENT_TITLE_MAX_LENGTH)
     errors.title = `Der Titel darf höchstens ${EVENT_TITLE_MAX_LENGTH} Zeichen lang sein.`
 
-  if (!ISO_DATE_PATTERN.test(input.date)) errors.date = 'Bitte ein gültiges Datum wählen.'
-
+  if (!ISO_DATE_PATTERN.test(input.startDate)) errors.startDate = 'Bitte ein gültiges Startdatum wählen.'
   if (!TIME_PATTERN.test(input.start)) errors.start = 'Bitte eine gültige Startzeit wählen.'
-
+  if (!ISO_DATE_PATTERN.test(input.endDate)) errors.endDate = 'Bitte ein gültiges Enddatum wählen.'
   if (!TIME_PATTERN.test(input.end)) errors.end = 'Bitte eine gültige Endzeit wählen.'
-  else if (!errors.start && timeToMinutes(input.end) <= timeToMinutes(input.start))
+
+  if (!errors.startDate && !errors.endDate && input.endDate < input.startDate)
+    errors.endDate = 'Das Enddatum darf nicht vor dem Startdatum liegen.'
+  else if (!errors.startDate && !errors.start && !errors.endDate && !errors.end && getEventDuration(input) <= 0)
     errors.end = 'Das Ende muss nach dem Beginn liegen.'
 
   if (input.description.length > EVENT_DESCRIPTION_MAX_LENGTH)

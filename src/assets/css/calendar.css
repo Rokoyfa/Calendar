@@ -92,6 +92,16 @@
   transition: filter var(--transition-fast);
 }
 
+.eventContinuesBefore {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.eventContinuesAfter {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 .event:hover {
   filter: brightness(1.08);
 }

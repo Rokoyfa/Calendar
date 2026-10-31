@@ -45,8 +45,10 @@ npm run dev
 - Anlegen per Klick auf eine Stunde im Raster oder über den **+**-Button im Header
 - Bearbeiten per Klick auf einen Termin
 - Löschen mit Sicherheitsabfrage (Ja / Nein)
-- Felder: Titel, Datum, Beginn, Ende, Beschreibung, Farbe
-- Eingaben werden geprüft, zum Beispiel Pflichttitel und Ende nach Beginn
+- Felder: Titel, Startdatum, Beginn, Enddatum, Ende, Beschreibung, Farbe
+- **Mehrtägige Termine:** Ein Termin kann über Mitternacht oder mehrere Tage gehen. Wird das Startdatum geändert, verschiebt sich das Enddatum um dieselbe Anzahl Tage.
+- Eingaben werden geprüft, zum Beispiel Pflichttitel, Enddatum nicht vor Startdatum und Ende nach Beginn
+- Ein Klick auf 23:00 legt einen Termin bis 00:00 des Folgetags an
 - Wird ein Termin in eine andere Woche verschoben, springt der Kalender nach dem Speichern dorthin
 
 ### Darstellung von Terminen
@@ -54,6 +56,7 @@ npm run dev
 - Position und Höhe entsprechen exakt Uhrzeit und Dauer
 - **Überlappende Termine** stehen nebeneinander und teilen sich die Spaltenbreite, zum Beispiel 2 Termine je 50 % und 3 Termine je 33 %. Die Tagesspalten behalten ihre Breite.
 - Kurze Termine werden kompakter dargestellt, ab 90 Minuten wird zusätzlich die Uhrzeit angezeigt
+- **Mehrtägige Termine** werden pro Tag als eigener Abschnitt im Raster gezeigt: am ersten Tag ab Beginn bis 24:00, dazwischen ganztägig, am letzten Tag ab 00:00 bis zum Ende. An den Übergängen sind die Ecken eckig, damit der Zusammenhang sichtbar bleibt. Die Zeitangabe enthält dann auch die Daten, zum Beispiel `30.10. 10:00 – 03.11. 16:00`.
 
 ### Farben
 
@@ -98,8 +101,9 @@ type CalendarEvent = {
   id: string
   calendarId: string
   title: string
-  date: string
+  startDate: string
   start: string
+  endDate: string
   end: string
   description: string
   color: 'blue' | 'red' | 'green' | 'yellow' | `#${string}`
@@ -108,7 +112,9 @@ type CalendarEvent = {
 }
 ```
 
-- `date` im Format `JJJJ-MM-TT`, `start` und `end` im Format `HH:MM`
+- `startDate` und `endDate` im Format `JJJJ-MM-TT`, `start` und `end` im Format `HH:MM`
+- Das Ende ist exklusiv: `endDate` = Folgetag mit `end` = `00:00` bedeutet „bis Mitternacht“
+- Ältere Termine mit dem früheren Feld `date` werden beim Lesen automatisch übernommen (`endDate` = `startDate`) und beim nächsten Speichern im neuen Format geschrieben
 - `calendarId` ist lokal immer `'local'` und für Team-Kalender vorgesehen
 - `createdAt` und `updatedAt` sind ISO-Zeitstempel, gedacht für spätere Synchronisierung
 
@@ -126,7 +132,7 @@ Standard ist `{ mode: 'local' }`. Für die Version mit Anmeldung ist der Umstieg
 <StorageProvider config={{ mode: 'remote', baseUrl: '/api', getAccessToken }}>
 ```
 
-`RemoteEventRepository` ist dafür bereits angelegt und erwartet eine REST-API mit `GET /events?from=&to=`, `POST /events`, `PUT /events/:id` und `DELETE /events/:id`. **Es wird derzeit nicht verwendet und ist nicht gegen einen echten Server getestet.** Eigene Farben werden auch im Remote-Modus vorerst lokal gespeichert.
+`RemoteEventRepository` ist dafür bereits angelegt und erwartet eine REST-API mit `GET /events?from=&to=` (liefert alle Termine, die den Zeitraum überschneiden, also `startDate <= to` und `endDate >= from`), `POST /events`, `PUT /events/:id` und `DELETE /events/:id`. **Es wird derzeit nicht verwendet und ist nicht gegen einen echten Server getestet.** Eigene Farben werden auch im Remote-Modus vorerst lokal gespeichert.
 
 ---
 
@@ -152,7 +158,7 @@ src/
    │  ├─ constants/
    │  ├─ hooks/
    │  ├─ types/
-   │  └─ utils/                Berechnung überlappender Termine
+   │  └─ utils/                Aufteilung mehrtägiger Termine, Berechnung überlappender Termine
    ├─ events/                  Termine anlegen, bearbeiten, löschen
    │  ├─ components/           EventModal, DeleteEventModal, ColorPicker
    │  ├─ constants/
@@ -179,8 +185,7 @@ src/
 ## Bekannte Einschränkungen
 
 - Nur localStorage, keine Synchronisierung zwischen Geräten oder Browsern
-- Termine müssen am selben Tag enden, an dem sie beginnen. Termine über Mitternacht und mehrtägige Termine gehen noch nicht.
-- Keine Ganztagstermine und keine wiederkehrenden Termine
+- Keine Ganztagstermine, keine wiederkehrenden Termine und keine eigene Leiste für mehrtägige Termine oberhalb des Rasters
 - Eigene Farben lassen sich noch nicht wieder entfernen
 - Nur Wochenansicht, keine Monats- oder Tagesansicht
 - Datums- und Zeitfelder zeigen das Format der Browser- bzw. Systemsprache
@@ -192,7 +197,3 @@ src/
 - [ ] Team-Modus mit Einladung per E-Mail (`features/teams`)
 - [ ] Eigene Farben entfernen
 - [ ] Schalter für Hell- und Dunkelmodus in der Oberfläche
-=======
-# Calendar
- Calendar
->>>>>>> dd5120cb0dcc96d39a7255a5c5adaa8dc655fe57

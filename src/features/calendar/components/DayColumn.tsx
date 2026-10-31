@@ -2,20 +2,21 @@ import { useMemo } from 'react'
 import { formatDay, formatHour, formatWeekday, toISODate } from '../../../utils/date.ts'
 import type { CalendarEvent } from '../../../utils/event.ts'
 import { HOURS, MIN_VISIBLE_DURATION } from '../constants/grid.ts'
+import type { EventSegment } from '../types/eventLayout.ts'
 import { layoutEvents } from '../utils/layoutEvents.ts'
 import { EventBlock } from './EventBlock.tsx'
 
 type DayColumnProps = {
   date: Date
   isToday: boolean
-  events: readonly CalendarEvent[]
+  segments: readonly EventSegment[]
   onSlotSelect: (date: string, hour: number) => void
   onEventSelect: (event: CalendarEvent) => void
 }
 
-export function DayColumn({ date, isToday, events, onSlotSelect, onEventSelect }: DayColumnProps) {
+export function DayColumn({ date, isToday, segments, onSlotSelect, onEventSelect }: DayColumnProps) {
   const isoDate = toISODate(date)
-  const positionedEvents = useMemo(() => layoutEvents(events, MIN_VISIBLE_DURATION), [events])
+  const positionedSegments = useMemo(() => layoutEvents(segments, MIN_VISIBLE_DURATION), [segments])
 
   return (
     <div className={isToday ? 'day currentDay' : 'day'} data-date={isoDate}>
@@ -33,8 +34,14 @@ export function DayColumn({ date, isToday, events, onSlotSelect, onEventSelect }
             onClick={() => onSlotSelect(isoDate, hour)}
           />
         ))}
-        {positionedEvents.map(({ event, column, columns }) => (
-          <EventBlock key={event.id} event={event} column={column} columns={columns} onSelect={onEventSelect} />
+        {positionedSegments.map(({ segment, column, columns }) => (
+          <EventBlock
+            key={segment.event.id}
+            segment={segment}
+            column={column}
+            columns={columns}
+            onSelect={onEventSelect}
+          />
         ))}
       </div>
     </div>

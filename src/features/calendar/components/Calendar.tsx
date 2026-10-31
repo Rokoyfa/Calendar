@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { fromISODate, isSameDay, toISODate } from '../../../utils/date.ts'
 import { createEventInput, toEventInput, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
 import { DeleteEventModal, EventModal, useEvents } from '../../events/index.ts'
@@ -6,16 +6,19 @@ import { useNow } from '../hooks/useNow.ts'
 import { useWeek } from '../hooks/useWeek.ts'
 import { useWeekKeyboardNavigation } from '../hooks/useWeekKeyboardNavigation.ts'
 import type { EditorState } from '../types/editor.ts'
+import type { EventSegment } from '../types/eventLayout.ts'
+import { groupSegmentsByDate } from '../utils/segmentEvents.ts'
 import { CalendarHeader } from './CalendarHeader.tsx'
 import { DayColumn } from './DayColumn.tsx'
 import { TimeColumn } from './TimeColumn.tsx'
 
-const NO_EVENTS: readonly CalendarEvent[] = []
+const NO_SEGMENTS: readonly EventSegment[] = []
 
 export function Calendar() {
   const now = useNow()
   const { weekStart, days, weekNumber, range, nextWeek, previousWeek, currentWeek, goToDate } = useWeek()
-  const { eventsByDate, error, createEvent, updateEvent, deleteEvent } = useEvents(range)
+  const { events, error, createEvent, updateEvent, deleteEvent } = useEvents(range)
+  const segmentsByDate = useMemo(() => groupSegmentsByDate(events, range), [events, range])
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null)
 
@@ -38,7 +41,7 @@ export function Calendar() {
     if (editor?.mode === 'edit') await updateEvent(editor.event.id, input)
     else await createEvent(input)
     setEditor(null)
-    goToDate(fromISODate(input.date))
+    goToDate(fromISODate(input.startDate))
   }
 
   const handleDelete = async () => {
@@ -73,7 +76,7 @@ export function Calendar() {
               key={day.getTime()}
               date={day}
               isToday={isSameDay(day, now)}
-              events={eventsByDate.get(toISODate(day)) ?? NO_EVENTS}
+              segments={segmentsByDate.get(toISODate(day)) ?? NO_SEGMENTS}
               onSlotSelect={openCreate}
               onEventSelect={openEdit}
             />

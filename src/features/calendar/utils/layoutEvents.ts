@@ -1,21 +1,11 @@
-import { timeToMinutes } from '../../../utils/date.ts'
-import { compareEvents, type CalendarEvent } from '../../../utils/event.ts'
-import type { PositionedEvent } from '../types/eventLayout.ts'
+import type { EventSegment, PositionedSegment } from '../types/eventLayout.ts'
 
-type TimedEvent = {
-  event: CalendarEvent
-  start: number
-  end: number
-}
+const compareSegments = (a: EventSegment, b: EventSegment) =>
+  a.start - b.start || b.end - b.start - (a.end - a.start) || a.event.title.localeCompare(b.event.title)
 
-export function layoutEvents(events: readonly CalendarEvent[], minDuration = 0): PositionedEvent[] {
-  const timed: TimedEvent[] = events.toSorted(compareEvents).map((event) => {
-    const start = timeToMinutes(event.start)
-    return { event, start, end: Math.max(timeToMinutes(event.end), start + minDuration) }
-  })
-
-  const positioned: PositionedEvent[] = []
-  let cluster: { event: CalendarEvent; column: number }[] = []
+export function layoutEvents(segments: readonly EventSegment[], minDuration = 0): PositionedSegment[] {
+  const positioned: PositionedSegment[] = []
+  let cluster: { segment: EventSegment; column: number }[] = []
   let columnEnds: number[] = []
   let clusterEnd = -1
 
@@ -25,13 +15,15 @@ export function layoutEvents(events: readonly CalendarEvent[], minDuration = 0):
     columnEnds = []
   }
 
-  for (const { event, start, end } of timed) {
+  for (const segment of segments.toSorted(compareSegments)) {
+    const { start } = segment
+    const end = Math.max(segment.end, start + minDuration)
     if (start >= clusterEnd) flushCluster()
 
     const freeColumn = columnEnds.findIndex((columnEnd) => columnEnd <= start)
     const column = freeColumn === -1 ? columnEnds.length : freeColumn
     columnEnds[column] = end
-    cluster.push({ event, column })
+    cluster.push({ segment, column })
     clusterEnd = Math.max(clusterEnd, end)
   }
 

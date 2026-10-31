@@ -27,6 +27,16 @@ export const minutesToTime = (totalMinutes: number) =>
 export const addDays = (date: Date, amount: number) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount)
 
+export const addDaysToISODate = (isoDate: string, amount: number) => toISODate(addDays(fromISODate(isoDate), amount))
+
+const toUTCParts = (isoDate: string): [number, number, number] => {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  return [year, month - 1, day]
+}
+
+export const daysBetween = (fromIsoDate: string, toIsoDate: string) =>
+  Math.round((Date.UTC(...toUTCParts(toIsoDate)) - Date.UTC(...toUTCParts(fromIsoDate))) / 86_400_000)
+
 export const startOfWeek = (date: Date) =>
   addDays(date, -((date.getDay() + 6) % DAYS_PER_WEEK))
 
@@ -53,6 +63,10 @@ const monthFormat = new Intl.DateTimeFormat(locale, { month: 'long' })
 export const formatWeekday = (date: Date) => weekdayFormat.format(date)
 
 export const formatDay = (date: Date) => dayFormat.format(date)
+
+const shortDayFormat = new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit' })
+
+export const formatShortDay = (isoDate: string) => shortDayFormat.format(fromISODate(isoDate))
 
 export const formatWeekTitle = (weekStart: Date) => {
   const weekEnd = addDays(weekStart, DAYS_PER_WEEK - 1)
