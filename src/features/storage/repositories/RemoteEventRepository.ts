@@ -1,12 +1,24 @@
 import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
 import type { DateRange, EventRepository } from '../types/storage.ts'
 
+const DEFAULT_TIMEOUT_MS = 10_000
+
+type RemoteEventRepositoryOptions = {
+  timeoutMs?: number
+  getAccessToken?: () => string | null
+}
+
 export class RemoteEventRepository implements EventRepository {
   readonly #baseUrl: string
+  readonly #timeoutMs: number
   readonly #getAccessToken: () => string | null
 
-  constructor(baseUrl: string, getAccessToken: () => string | null = () => null) {
+  constructor(
+    baseUrl: string,
+    { timeoutMs = DEFAULT_TIMEOUT_MS, getAccessToken = () => null }: RemoteEventRepositoryOptions = {},
+  ) {
     this.#baseUrl = baseUrl.replace(/\/+$/, '')
+    this.#timeoutMs = timeoutMs
     this.#getAccessToken = getAccessToken
   }
 
@@ -40,14 +52,23 @@ export class RemoteEventRepository implements EventRepository {
 
   async #request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const token = this.#getAccessToken()
-    const response = await fetch(`${this.#baseUrl}${path}`, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...init.headers,
-      },
-    })
+    let response: Response
+
+    try {
+      response = await fetch(`${this.#baseUrl}${path}`, {
+        ...init,
+        signal: AbortSignal.timeout(this.#timeoutMs),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...init.headers,
+        },
+      })
+    } catch (error) {
+      const isTimeout = error instanceof DOMException && error.name === 'TimeoutError'
+      const message = isTimeout ? 'Der Server hat nicht rechtzeitig geantwortet.' : 'Der Server ist nicht erreichbar.'
+      throw new Error(message, { cause: error })
+    }
 
     if (!response.ok) throw new Error(`Die Anfrage an den Server ist fehlgeschlagen (${response.status}).`)
     if (response.status === 204) return undefined as T

@@ -7,6 +7,9 @@ export function createEventRepository(config: StorageConfig): EventRepository {
     case 'local':
       return new LocalEventRepository()
     case 'remote':
-      return new RemoteEventRepository(config.baseUrl, config.getAccessToken)
+      return new RemoteEventRepository(config.baseUrl, {
+        timeoutMs: config.timeoutMs,
+        getAccessToken: config.getAccessToken,
+      })
   }
 }

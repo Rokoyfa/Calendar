@@ -17,8 +17,11 @@ Später folgt ein **Team-Modus**, in dem mehrere Mitglieder per E-Mail-Einladung
 
 ```bash
 npm install
+cp .example.env .env
 npm run dev
 ```
+
+Unter Windows (PowerShell) statt `cp`: `Copy-Item .example.env .env`. Ohne `.env` startet die App mit den Standardwerten im localStorage-Modus.
 
 | Befehl            | Beschreibung                                |
 | ----------------- | ------------------------------------------- |
@@ -28,6 +31,46 @@ npm run dev
 | `npm run lint`    | ESLint ausführen                            |
 
 **Technik:** React 19, TypeScript 6, Vite 8, ESLint. Keine weiteren Laufzeit-Abhängigkeiten.
+
+---
+
+## Konfiguration (.env)
+
+Die App wird über Umgebungsvariablen eingestellt. Vite liest sie aus diesen Dateien:
+
+| Datei                | Im Git | Zweck                                                         |
+| -------------------- | ------ | ------------------------------------------------------------- |
+| `.example.env`       | ja     | Vorlage mit allen Variablen und Standardwerten                |
+| `.env`               | nein   | Eigene lokale Werte, Kopie der Vorlage                        |
+| `.env.[mode]`        | ja     | Optional: Werte für einen Modus, z. B. `.env.production`     |
+| `.env.local`, `.env.[mode].local` | nein | Optional: persönliche Überschreibungen, haben Vorrang |
+
+### Variablen
+
+| Variable              | Standard                | Beschreibung |
+| --------------------- | ----------------------- | ------------ |
+| `VITE_STORAGE_MODE`   | `local`                 | `local` speichert im localStorage, `remote` über die API |
+| `VITE_API_BASE_URL`   | `/api`                  | Adresse der API. Relativ (`/api`) oder absolut (`https://api.example.com`). Wird nur im Modus `remote` genutzt. |
+| `VITE_API_TIMEOUT_MS` | `10000`                 | Maximale Wartezeit pro API-Anfrage in Millisekunden |
+| `VITE_FEATURE_AUTH`   | `false`                 | Schalter für Anmeldung und Registrierung. Vorbereitet, noch ohne Wirkung. |
+| `VITE_FEATURE_TEAMS`  | `false`                 | Schalter für den Team-Modus. Vorbereitet, noch ohne Wirkung. |
+| `API_PROXY_TARGET`    | `http://localhost:3000` | Nur Entwicklung: Backend, an das `npm run dev` und `npm run preview` alle Aufrufe unter `VITE_API_BASE_URL` weiterleiten. Greift nur bei relativer API-Adresse. |
+
+### Wichtig
+
+- **Alles mit `VITE_` landet im ausgelieferten JavaScript und ist für jeden lesbar.** Dort niemals Geheimnisse wie API-Schlüssel, Passwörter oder Tokens eintragen. Geheimnisse gehören ausschließlich ins Backend.
+- `API_PROXY_TARGET` hat kein `VITE_` und wird nur vom Vite-Server gelesen, nicht vom Browser.
+- Werte werden beim Start von `npm run dev` bzw. `npm run build` geprüft. Ein ungültiger Wert, zum Beispiel `VITE_STORAGE_MODE=cloud`, bricht mit einer genauen Fehlermeldung ab. Nach einer Änderung an einer `.env`-Datei den Dev-Server neu starten.
+- Variablen werden beim Build fest eingebaut. Für eine andere Umgebung muss neu gebaut werden.
+- Alle Variablen werden zentral in `src/config/parseEnv.ts` gelesen und geprüft. Der Rest der App nutzt nur `env` aus `src/config/env.ts`, nie `import.meta.env` direkt. Neue Variablen dort und in `src/env.d.ts` ergänzen und in `.example.env` aufnehmen.
+
+### API lokal anbinden
+
+1. Backend lokal starten, zum Beispiel auf Port 3000
+2. In `.env` setzen: `VITE_STORAGE_MODE=remote` und `API_PROXY_TARGET=http://localhost:3000`
+3. `npm run dev` neu starten
+
+Der Browser ruft dann `/api/...` auf derselben Adresse wie die App auf, Vite leitet an das Backend weiter. Dadurch sind in der Entwicklung keine CORS-Einstellungen nötig.
 
 ---
 
@@ -120,7 +163,7 @@ Die Pfeiltasten sind deaktiviert, solange ein Eingabefeld oder ein Fenster aktiv
 
 ## Datenspeicherung
 
-Momentan wird **nur der localStorage** des Browsers verwendet. Die Daten sind daher an Browser und Gerät gebunden und gehen beim Löschen der Browserdaten verloren.
+Standardmäßig wird **nur der localStorage** des Browsers verwendet. Die Daten sind daher an Browser und Gerät gebunden und gehen beim Löschen der Browserdaten verloren. Über `VITE_STORAGE_MODE=remote` lässt sich auf die API umstellen (siehe [Konfiguration](#konfiguration-env)), ein passendes Backend gibt es aber noch nicht.
 
 | Schlüssel            | Inhalt                         |
 | -------------------- | ------------------------------ |
@@ -173,19 +216,14 @@ type Recurrence = {
 
 ### Vorbereitung für Server-Speicherung
 
-Der Zugriff auf Daten läuft ausschließlich über die Schnittstellen `EventRepository` und `ColorRepository` im Feature `storage`. Welche Umsetzung genutzt wird, entscheidet der `StorageProvider` in `App.tsx`:
+Der Zugriff auf Daten läuft ausschließlich über die Schnittstellen `EventRepository` und `ColorRepository` im Feature `storage`. Welche Umsetzung genutzt wird, entscheidet der `StorageProvider` in `App.tsx` anhand von `storageConfig` aus `src/config/storage.ts`, das aus den Umgebungsvariablen erzeugt wird:
 
-```tsx
-<StorageProvider>
-```
+- `VITE_STORAGE_MODE=local` → `{ mode: 'local' }`
+- `VITE_STORAGE_MODE=remote` → `{ mode: 'remote', baseUrl: VITE_API_BASE_URL, timeoutMs: VITE_API_TIMEOUT_MS }`
 
-Standard ist `{ mode: 'local' }`. Für die Version mit Anmeldung ist der Umstieg so vorgesehen:
+Für die Version mit Anmeldung kommt später noch `getAccessToken` dazu, das den Token als `Authorization: Bearer …` mitsendet. Antwortet der Server nicht rechtzeitig oder ist er nicht erreichbar, zeigt der Kalender eine verständliche Fehlermeldung.
 
-```tsx
-<StorageProvider config={{ mode: 'remote', baseUrl: '/api', getAccessToken }}>
-```
-
-`RemoteEventRepository` ist dafür bereits angelegt und erwartet eine REST-API mit `GET /events?from=&to=` (liefert alle Termine, die den Zeitraum überschneiden, also `startDate <= to` und `endDate >= from`, sowie alle Serien, die im Zeitraum mindestens ein Vorkommen haben; die Serien werden unverändert geliefert und im Browser aufgefächert), `GET /events?seriesId=` (Serie und alle mit ihr verknüpften Einzeltermine), `POST /events`, `PUT /events/:id` und `DELETE /events/:id`. **Es wird derzeit nicht verwendet und ist nicht gegen einen echten Server getestet.** Eigene Farben werden auch im Remote-Modus vorerst lokal gespeichert.
+`RemoteEventRepository` ist dafür bereits angelegt und erwartet eine REST-API mit `GET /events?from=&to=` (liefert alle Termine, die den Zeitraum überschneiden, also `startDate <= to` und `endDate >= from`, sowie alle Serien, die im Zeitraum mindestens ein Vorkommen haben; die Serien werden unverändert geliefert und im Browser aufgefächert), `GET /events?seriesId=` (Serie und alle mit ihr verknüpften Einzeltermine), `POST /events`, `PUT /events/:id` und `DELETE /events/:id`. **Es ist bisher nur gegen einen einfachen Test-Server geprüft (Laden, Anlegen, Timeout), noch nicht gegen ein echtes Backend.** Eigene Farben werden auch im Remote-Modus vorerst lokal gespeichert.
 
 ---
 
@@ -195,6 +233,11 @@ Standard ist `{ mode: 'local' }`. Für die Version mit Anmeldung ist der Umstieg
 src/
 ├─ App.tsx                     StorageProvider + Kalender
 ├─ main.tsx                    Einstiegspunkt
+├─ env.d.ts                    Typen der Umgebungsvariablen
+├─ config/
+│  ├─ parseEnv.ts              Umgebungsvariablen lesen und prüfen (auch in vite.config.ts)
+│  ├─ env.ts                   Geprüfte Konfiguration für die App
+│  └─ storage.ts               StorageConfig aus der Konfiguration
 ├─ assets/
 │  ├─ css/                     Styles, gebündelt über index.css
 │  └─ imgs/
@@ -269,7 +312,10 @@ src/
 ## Nächste Schritte
 
 - [ ] Anmeldung und Registrierung (`features/authorization`)
+- [x] `.env`-Konfiguration für API-Anbindung, Dev-Proxy und Feature-Schalter
+- [ ] Backend mit der oben beschriebenen REST-API
 - [ ] Server-Speicherung über `RemoteEventRepository` aktivieren
+- [ ] `RemoteColorRepository`, damit eigene Farben im Remote-Modus mitwandern
 - [ ] Team-Modus mit Einladung per E-Mail (`features/teams`)
 - [ ] Eigene Farben entfernen
 - [ ] Schalter für Hell- und Dunkelmodus in der Oberfläche

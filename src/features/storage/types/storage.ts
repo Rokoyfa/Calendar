@@ -20,7 +20,7 @@ export interface ColorRepository {
 
 export type StorageConfig =
   | { mode: 'local' }
-  | { mode: 'remote'; baseUrl: string; getAccessToken?: () => string | null }
+  | { mode: 'remote'; baseUrl: string; timeoutMs?: number; getAccessToken?: () => string | null }
 
 export type StorageMode = StorageConfig['mode']
 
