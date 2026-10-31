@@ -20,7 +20,7 @@ export type CalendarViewProps = {
   anchor: string
   dates: readonly string[]
   today: string
-  currentHour: number
+  currentMinutes: number
   segmentsByDate: ReadonlyMap<string, readonly EventSegment[]>
   onCreate: (date: string, hour: number) => void
   onEventSelect: (event: EventOccurrence) => void

@@ -82,11 +82,6 @@ button.columnHeader:hover {
   font-size: var(--font-size-md);
 }
 
-.time.currentTime {
-  background-color: var(--color-surface-hover);
-  color: var(--color-text);
-}
-
 .slot {
   cursor: pointer;
   transition: background-color var(--transition-fast);
@@ -134,6 +129,33 @@ button.columnHeader:hover {
 .eventContinuesAfter {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
+}
+
+.nowIndicator {
+  position: absolute;
+  top: calc(var(--now-minutes, 0) * var(--slot-height) / 60);
+  left: 0;
+  right: 0;
+  z-index: 3;
+  height: 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-red) 45%, transparent);
+  pointer-events: none;
+}
+
+.nowIndicator--today {
+  border-top: 2px solid var(--color-red);
+  translate: 0 -1px;
+}
+
+.nowIndicator--today::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-round);
+  background-color: var(--color-red);
 }
 
 .event:focus-visible {

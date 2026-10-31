@@ -13,17 +13,27 @@ import { HOURS } from '../constants/grid.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import { layoutEvents } from '../utils/layoutEvents.ts'
 import { EventBlock } from './EventBlock.tsx'
+import { NowIndicator } from './NowIndicator.tsx'
 
 type DayColumnProps = {
   date: string
   isToday: boolean
+  nowMinutes: number | null
   segments: readonly EventSegment[]
   onSlotSelect: (date: string, hour: number) => void
   onEventSelect: (event: EventOccurrence) => void
   onHeaderSelect?: (date: string) => void
 }
 
-export function DayColumn({ date, isToday, segments, onSlotSelect, onEventSelect, onHeaderSelect }: DayColumnProps) {
+export function DayColumn({
+  date,
+  isToday,
+  nowMinutes,
+  segments,
+  onSlotSelect,
+  onEventSelect,
+  onHeaderSelect,
+}: DayColumnProps) {
   const day = fromISODate(date)
   const dayLabel = `${formatWeekday(day)}, ${formatDay(day)}`
   const positionedSegments = useMemo(() => layoutEvents(segments), [segments])
@@ -68,6 +78,7 @@ export function DayColumn({ date, isToday, segments, onSlotSelect, onEventSelect
             onSelect={onEventSelect}
           />
         ))}
+        {nowMinutes !== null && <NowIndicator minutes={nowMinutes} isToday={isToday} />}
       </div>
     </div>
   )

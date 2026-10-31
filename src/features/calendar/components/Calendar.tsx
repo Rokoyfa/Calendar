@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type ComponentType } from 'react'
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
 import { useArrowKeyNavigation } from '../../../hooks/useArrowKeyNavigation.ts'
-import { toISODate } from '../../../utils/date.ts'
+import { MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
 import {
   createEventInput,
   expandEvents,
@@ -87,7 +87,7 @@ export function Calendar() {
           anchor={anchor}
           dates={dates}
           today={today}
-          currentHour={now.getHours()}
+          currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
           segmentsByDate={segmentsByDate}
           onCreate={openCreate}
           onEventSelect={openEdit}
