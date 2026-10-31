@@ -10,6 +10,14 @@ import {
   timeToMinutes,
 } from './date.ts'
 import { isHexColor, type HexColor } from './color.ts'
+import {
+  getOccurrenceDates,
+  isSameRecurrence,
+  parseRecurrence,
+  shiftWeekdays,
+  validateRecurrence,
+  type Recurrence,
+} from './recurrence.ts'
 
 export const PRESET_EVENT_COLORS = ['blue', 'red', 'green', 'yellow'] as const
 
@@ -37,18 +45,28 @@ export type CalendarEvent = {
   end: string
   description: string
   color: EventColor
+  recurrence: Recurrence | null
+  excludedDates: string[]
   createdAt: string
   updatedAt: string
 }
 
 export type EventInput = Pick<
   CalendarEvent,
-  'title' | 'startDate' | 'start' | 'endDate' | 'end' | 'description' | 'color'
+  'title' | 'startDate' | 'start' | 'endDate' | 'end' | 'description' | 'color' | 'recurrence' | 'excludedDates'
 >
+
+export type EventOccurrence = CalendarEvent & {
+  occurrenceKey: string
+}
+
+export type EditScope = 'single' | 'all'
 
 export type EventPeriod = Pick<CalendarEvent, 'startDate' | 'start' | 'endDate' | 'end'>
 
-export type EventValidationErrors = Partial<Record<keyof EventInput, string>>
+export type EventValidationErrors = Partial<
+  Record<keyof EventInput | 'recurrenceInterval' | 'recurrenceWeekdays' | 'recurrenceUntil', string>
+>
 
 export const isPresetEventColor = (value: unknown): value is PresetEventColor =>
   PRESET_EVENT_COLORS.includes(value as PresetEventColor)
@@ -67,6 +85,8 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
   const { date, ...rest } = value as Record<string, unknown>
   const startDate = rest.startDate ?? date
   const endDate = rest.endDate ?? startDate
+  const recurrence = rest.recurrence == null ? null : parseRecurrence(rest.recurrence)
+  const excludedDates = Array.isArray(rest.excludedDates) ? rest.excludedDates.filter(isISODate) : []
 
   if (
     typeof rest.id !== 'string' ||
@@ -77,7 +97,8 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
     !isISODate(endDate) ||
     !isTime(rest.end) ||
     typeof rest.description !== 'string' ||
-    !isEventColor(rest.color)
+    !isEventColor(rest.color) ||
+    (rest.recurrence != null && recurrence === null)
   )
     return null
 
@@ -91,6 +112,8 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
     end: rest.end,
     description: rest.description,
     color: rest.color,
+    recurrence,
+    excludedDates,
     createdAt: typeof rest.createdAt === 'string' ? rest.createdAt : '',
     updatedAt: typeof rest.updatedAt === 'string' ? rest.updatedAt : '',
   }
@@ -108,6 +131,8 @@ export const createEventInput = (date: string, hour: number): EventInput => {
     end: minutesToTime(end % MINUTES_PER_DAY),
     description: '',
     color: 'blue',
+    recurrence: null,
+    excludedDates: [],
   }
 }
 
@@ -119,6 +144,8 @@ export const toEventInput = ({
   end,
   description,
   color,
+  recurrence,
+  excludedDates,
 }: CalendarEvent): EventInput => ({
   title,
   startDate,
@@ -127,6 +154,8 @@ export const toEventInput = ({
   end,
   description,
   color,
+  recurrence,
+  excludedDates,
 })
 
 export const normalizeEventInput = (input: EventInput): EventInput => ({
@@ -140,8 +169,56 @@ export const getEventDuration = ({ startDate, start, endDate, end }: EventPeriod
 
 export const isMultiDayEvent = ({ startDate, endDate }: EventPeriod) => startDate !== endDate
 
-export const eventOverlapsRange = ({ startDate, endDate }: EventPeriod, from: string, to: string) =>
-  startDate <= to && endDate >= from
+const getOccurrenceStartDates = (event: CalendarEvent, from: string, to: string) => {
+  const span = daysBetween(event.startDate, event.endDate)
+  const windowStart = addDaysToISODate(from, -span)
+  if (!event.recurrence) return event.startDate >= windowStart && event.startDate <= to ? [event.startDate] : []
+  const excluded = new Set(event.excludedDates)
+  return getOccurrenceDates(event.startDate, event.recurrence, windowStart, to).filter((date) => !excluded.has(date))
+}
+
+export const eventOccursInRange = (event: CalendarEvent, from: string, to: string) =>
+  getOccurrenceStartDates(event, from, to).length > 0
+
+export const expandEvents = (events: readonly CalendarEvent[], from: string, to: string): EventOccurrence[] =>
+  events.flatMap((event) => {
+    const span = daysBetween(event.startDate, event.endDate)
+    return getOccurrenceStartDates(event, from, to).map((startDate) => ({
+      ...event,
+      startDate,
+      endDate: addDaysToISODate(startDate, span),
+      occurrenceKey: `${event.id}:${startDate}`,
+    }))
+  })
+
+export const excludeOccurrence = (series: CalendarEvent, occurrenceDate: string): EventInput => ({
+  ...toEventInput(series),
+  excludedDates: [...new Set([...series.excludedDates, occurrenceDate])].toSorted(),
+})
+
+export const detachOccurrence = (input: EventInput): EventInput => ({
+  ...input,
+  recurrence: null,
+  excludedDates: [],
+})
+
+export const applyToSeries = (series: CalendarEvent, occurrenceDate: string, input: EventInput): EventInput => {
+  const shift = daysBetween(occurrenceDate, input.startDate)
+  const startDate = addDaysToISODate(series.startDate, shift)
+  const keepsRecurrence = isSameRecurrence(series.recurrence, input.recurrence)
+  const recurrence =
+    keepsRecurrence && input.recurrence?.frequency === 'weekly' && shift !== 0
+      ? { ...input.recurrence, weekdays: shiftWeekdays(input.recurrence.weekdays, shift) }
+      : input.recurrence
+
+  return {
+    ...input,
+    startDate,
+    endDate: addDaysToISODate(startDate, daysBetween(input.startDate, input.endDate)),
+    recurrence,
+    excludedDates: series.excludedDates.map((date) => addDaysToISODate(date, shift)),
+  }
+}
 
 export const compareEvents = (a: CalendarEvent, b: CalendarEvent) =>
   a.startDate.localeCompare(b.startDate) ||
@@ -170,6 +247,13 @@ export const validateEventInput = (input: EventInput): EventValidationErrors => 
     errors.endDate = 'Das Enddatum darf nicht vor dem Startdatum liegen.'
   else if (!errors.startDate && !errors.start && !errors.endDate && !errors.end && getEventDuration(input) <= 0)
     errors.end = 'Das Ende muss nach dem Beginn liegen.'
+
+  if (input.recurrence) {
+    const recurrenceErrors = validateRecurrence(input.recurrence, input.startDate)
+    if (recurrenceErrors.interval) errors.recurrenceInterval = recurrenceErrors.interval
+    if (recurrenceErrors.weekdays) errors.recurrenceWeekdays = recurrenceErrors.weekdays
+    if (recurrenceErrors.until) errors.recurrenceUntil = recurrenceErrors.until
+  }
 
   if (input.description.length > EVENT_DESCRIPTION_MAX_LENGTH)
     errors.description = `Die Beschreibung darf höchstens ${EVENT_DESCRIPTION_MAX_LENGTH} Zeichen lang sein.`

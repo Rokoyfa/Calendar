@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getErrorMessage } from '../../../utils/error.ts'
-import { compareEvents, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
+import {
+  applyToSeries,
+  compareEvents,
+  detachOccurrence,
+  excludeOccurrence,
+  type CalendarEvent,
+  type EditScope,
+  type EventInput,
+  type EventOccurrence,
+} from '../../../utils/event.ts'
 import { useEventRepository, type DateRange } from '../../storage/index.ts'
 
 type EventsState = {
@@ -45,21 +54,40 @@ export function useEvents({ from, to }: DateRange) {
     [repository, reload],
   )
 
-  const updateEvent = useCallback(
-    async (id: string, input: EventInput) => {
-      const event = await repository.update(id, input)
-      reload()
-      return event
+  const findSeries = useCallback(
+    (occurrence: EventOccurrence) => {
+      const series = state.events.find((event) => event.id === occurrence.id)
+      if (!series) throw new Error('Der Termin wurde nicht gefunden.')
+      return series
     },
-    [repository, reload],
+    [state.events],
+  )
+
+  const updateEvent = useCallback(
+    async (occurrence: EventOccurrence, input: EventInput, scope: EditScope) => {
+      const series = findSeries(occurrence)
+      if (series.recurrence && scope === 'single') {
+        await repository.update(series.id, excludeOccurrence(series, occurrence.startDate))
+        await repository.create(detachOccurrence(input))
+      } else if (series.recurrence) {
+        await repository.update(series.id, applyToSeries(series, occurrence.startDate, input))
+      } else {
+        await repository.update(series.id, input)
+      }
+      reload()
+    },
+    [repository, reload, findSeries],
   )
 
   const deleteEvent = useCallback(
-    async (id: string) => {
-      await repository.remove(id)
+    async (occurrence: EventOccurrence, scope: EditScope) => {
+      const series = findSeries(occurrence)
+      if (series.recurrence && scope === 'single')
+        await repository.update(series.id, excludeOccurrence(series, occurrence.startDate))
+      else await repository.remove(series.id)
       reload()
     },
-    [repository, reload],
+    [repository, reload, findSeries],
   )
 
   return {

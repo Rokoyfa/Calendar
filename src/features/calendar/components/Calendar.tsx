@@ -1,6 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
 import { fromISODate, isSameDay, toISODate } from '../../../utils/date.ts'
-import { createEventInput, toEventInput, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
+import {
+  createEventInput,
+  expandEvents,
+  toEventInput,
+  type EditScope,
+  type EventInput,
+  type EventOccurrence,
+} from '../../../utils/event.ts'
 import { DeleteEventModal, EventModal, useEvents } from '../../events/index.ts'
 import { useNow } from '../hooks/useNow.ts'
 import { useWeek } from '../hooks/useWeek.ts'
@@ -18,9 +25,12 @@ export function Calendar() {
   const now = useNow()
   const { weekStart, days, weekNumber, range, nextWeek, previousWeek, currentWeek, goToDate } = useWeek()
   const { events, error, createEvent, updateEvent, deleteEvent } = useEvents(range)
-  const segmentsByDate = useMemo(() => groupSegmentsByDate(events, range), [events, range])
+  const segmentsByDate = useMemo(
+    () => groupSegmentsByDate(expandEvents(events, range.from, range.to), range),
+    [events, range],
+  )
   const [editor, setEditor] = useState<EditorState | null>(null)
-  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null)
+  const [eventToDelete, setEventToDelete] = useState<EventOccurrence | null>(null)
 
   useWeekKeyboardNavigation({ onPreviousWeek: previousWeek, onNextWeek: nextWeek })
 
@@ -28,8 +38,8 @@ export function Calendar() {
     setEditor({ mode: 'create', initialValue: createEventInput(date, hour) })
   }, [])
 
-  const openEdit = useCallback((event: CalendarEvent) => {
-    setEditor({ mode: 'edit', event })
+  const openEdit = useCallback((occurrence: EventOccurrence) => {
+    setEditor({ mode: 'edit', occurrence })
   }, [])
 
   const handleCreateNow = () => {
@@ -37,16 +47,16 @@ export function Calendar() {
     openCreate(toISODate(current), current.getHours())
   }
 
-  const handleSave = async (input: EventInput) => {
-    if (editor?.mode === 'edit') await updateEvent(editor.event.id, input)
+  const handleSave = async (input: EventInput, scope: EditScope) => {
+    if (editor?.mode === 'edit') await updateEvent(editor.occurrence, input, scope)
     else await createEvent(input)
     setEditor(null)
     goToDate(fromISODate(input.startDate))
   }
 
-  const handleDelete = async () => {
+  const handleDelete = async (scope: EditScope) => {
     if (!eventToDelete) return
-    await deleteEvent(eventToDelete.id)
+    await deleteEvent(eventToDelete, scope)
     setEventToDelete(null)
     setEditor(null)
   }
@@ -86,11 +96,11 @@ export function Calendar() {
 
       {editor && (
         <EventModal
-          key={editor.mode === 'edit' ? editor.event.id : 'new'}
+          key={editor.mode === 'edit' ? editor.occurrence.occurrenceKey : 'new'}
           mode={editor.mode}
-          initialValue={editor.mode === 'edit' ? toEventInput(editor.event) : editor.initialValue}
+          initialValue={editor.mode === 'edit' ? toEventInput(editor.occurrence) : editor.initialValue}
           onSave={handleSave}
-          onDelete={editor.mode === 'edit' ? () => setEventToDelete(editor.event) : undefined}
+          onDelete={editor.mode === 'edit' ? () => setEventToDelete(editor.occurrence) : undefined}
           onClose={() => setEditor(null)}
         />
       )}

@@ -1,4 +1,4 @@
-import { eventOverlapsRange, parseCalendarEvent, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
+import { eventOccursInRange, parseCalendarEvent, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
 import type { DateRange, EventRepository } from '../types/storage.ts'
 
 export const LOCAL_CALENDAR_ID = 'local'
@@ -12,7 +12,7 @@ export class LocalEventRepository implements EventRepository {
   }
 
   async list({ from, to }: DateRange) {
-    return this.#read().filter((event) => eventOverlapsRange(event, from, to))
+    return this.#read().filter((event) => eventOccursInRange(event, from, to))
   }
 
   async create(input: EventInput) {

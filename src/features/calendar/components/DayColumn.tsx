@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { formatDay, formatHour, formatWeekday, toISODate } from '../../../utils/date.ts'
-import type { CalendarEvent } from '../../../utils/event.ts'
+import type { EventOccurrence } from '../../../utils/event.ts'
 import { HOURS, MIN_VISIBLE_DURATION } from '../constants/grid.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import { layoutEvents } from '../utils/layoutEvents.ts'
@@ -11,7 +11,7 @@ type DayColumnProps = {
   isToday: boolean
   segments: readonly EventSegment[]
   onSlotSelect: (date: string, hour: number) => void
-  onEventSelect: (event: CalendarEvent) => void
+  onEventSelect: (event: EventOccurrence) => void
 }
 
 export function DayColumn({ date, isToday, segments, onSlotSelect, onEventSelect }: DayColumnProps) {
@@ -36,7 +36,7 @@ export function DayColumn({ date, isToday, segments, onSlotSelect, onEventSelect
         ))}
         {positionedSegments.map(({ segment, column, columns }) => (
           <EventBlock
-            key={segment.event.id}
+            key={segment.event.occurrenceKey}
             segment={segment}
             column={column}
             columns={columns}

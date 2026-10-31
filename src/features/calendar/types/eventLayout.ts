@@ -1,7 +1,7 @@
-import type { CalendarEvent } from '../../../utils/event.ts'
+import type { EventOccurrence } from '../../../utils/event.ts'
 
 export type EventSegment = {
-  event: CalendarEvent
+  event: EventOccurrence
   date: string
   start: number
   end: number

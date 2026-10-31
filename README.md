@@ -49,6 +49,20 @@ npm run dev
 - **Mehrtägige Termine:** Ein Termin kann über Mitternacht oder mehrere Tage gehen. Wird das Startdatum geändert, verschiebt sich das Enddatum um dieselbe Anzahl Tage.
 - Eingaben werden geprüft, zum Beispiel Pflichttitel, Enddatum nicht vor Startdatum und Ende nach Beginn
 - Ein Klick auf 23:00 legt einen Termin bis 00:00 des Folgetags an
+
+### Wiederkehrende Termine
+
+- Wiederholung **täglich, wöchentlich, monatlich oder jährlich**, jeweils mit Intervall, zum Beispiel alle 2 Wochen
+- Wöchentlich: beliebige Wochentage auswählbar, zum Beispiel Montag und Mittwoch. Wird das Startdatum geändert und ist nur dessen Wochentag gewählt, wandert der Wochentag mit.
+- Monatlich am selben Tag des Monats, Monate ohne diesen Tag werden übersprungen (31. → nur Monate mit 31 Tagen). Jährlich am selben Datum, der 29. Februar nur in Schaltjahren.
+- Ende der Serie: nie oder an einem bestimmten Datum (letzter möglicher Termin, inklusiv)
+- Unter den Feldern steht eine Zusammenfassung, zum Beispiel „Wöchentlich am Montag und Mittwoch bis 30.11.2026“
+- Wiederkehrende Termine tragen im Raster ein Wiederholungssymbol, der Tooltip zeigt die Regel
+- **Bearbeiten:** Bleibt die Wiederholungsregel gleich, wird gefragt, ob die Änderung für **nur diesen Termin** oder **alle Termine** gelten soll.
+  - *Nur dieser Termin:* Das Datum wird in der Serie ausgenommen und ein eigenständiger Einzeltermin mit den neuen Werten angelegt.
+  - *Alle Termine:* Die Änderung gilt für die ganze Serie. Wird der Termin dabei um Tage verschoben, verschiebt sich die ganze Serie mit.
+  - Wird die Wiederholungsregel selbst geändert, gilt die Änderung ohne Nachfrage für alle Termine.
+- **Löschen:** Bei Serien gibt es die Wahl zwischen „Nur dieser Termin“ und „Alle Termine“.
 - Wird ein Termin in eine andere Woche verschoben, springt der Kalender nach dem Speichern dorthin
 
 ### Darstellung von Terminen
@@ -107,13 +121,26 @@ type CalendarEvent = {
   end: string
   description: string
   color: 'blue' | 'red' | 'green' | 'yellow' | `#${string}`
+  recurrence: Recurrence | null
+  excludedDates: string[]
   createdAt: string
   updatedAt: string
+}
+
+type Recurrence = {
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
+  interval: number
+  weekdays: number[]
+  until: string | null
 }
 ```
 
 - `startDate` und `endDate` im Format `JJJJ-MM-TT`, `start` und `end` im Format `HH:MM`
 - Das Ende ist exklusiv: `endDate` = Folgetag mit `end` = `00:00` bedeutet „bis Mitternacht“
+- Ein wiederkehrender Termin wird **einmal** als Serie gespeichert. `startDate` bis `endDate` beschreibt das erste Vorkommen, die weiteren werden beim Anzeigen berechnet (`utils/recurrence.ts`).
+- `weekdays` zählt von `0` = Montag bis `6` = Sonntag und wird nur bei `weekly` ausgewertet. `until` ist das letzte mögliche Startdatum (inklusiv) oder `null`.
+- `excludedDates` enthält Startdaten einzelner Vorkommen, die gelöscht oder als Einzeltermin herausgelöst wurden
+- Ältere Termine ohne `recurrence` und `excludedDates` werden als einmalige Termine gelesen
 - Ältere Termine mit dem früheren Feld `date` werden beim Lesen automatisch übernommen (`endDate` = `startDate`) und beim nächsten Speichern im neuen Format geschrieben
 - `calendarId` ist lokal immer `'local'` und für Team-Kalender vorgesehen
 - `createdAt` und `updatedAt` sind ISO-Zeitstempel, gedacht für spätere Synchronisierung
@@ -132,7 +159,7 @@ Standard ist `{ mode: 'local' }`. Für die Version mit Anmeldung ist der Umstieg
 <StorageProvider config={{ mode: 'remote', baseUrl: '/api', getAccessToken }}>
 ```
 
-`RemoteEventRepository` ist dafür bereits angelegt und erwartet eine REST-API mit `GET /events?from=&to=` (liefert alle Termine, die den Zeitraum überschneiden, also `startDate <= to` und `endDate >= from`), `POST /events`, `PUT /events/:id` und `DELETE /events/:id`. **Es wird derzeit nicht verwendet und ist nicht gegen einen echten Server getestet.** Eigene Farben werden auch im Remote-Modus vorerst lokal gespeichert.
+`RemoteEventRepository` ist dafür bereits angelegt und erwartet eine REST-API mit `GET /events?from=&to=` (liefert alle Termine, die den Zeitraum überschneiden, also `startDate <= to` und `endDate >= from`, sowie alle Serien, die im Zeitraum mindestens ein Vorkommen haben; die Serien werden unverändert geliefert und im Browser aufgefächert), `POST /events`, `PUT /events/:id` und `DELETE /events/:id`. **Es wird derzeit nicht verwendet und ist nicht gegen einen echten Server getestet.** Eigene Farben werden auch im Remote-Modus vorerst lokal gespeichert.
 
 ---
 
@@ -151,7 +178,8 @@ src/
 │  ├─ color.ts                 Hex-Farben, lesbare Schriftfarbe
 │  ├─ date.ts                  Datums- und Zeitfunktionen
 │  ├─ error.ts                 Fehlermeldungen
-│  └─ event.ts                 Termin-Typen, Standardfarben, Validierung
+│  ├─ event.ts                 Termin-Typen, Standardfarben, Validierung, Serien-Aktionen
+│  └─ recurrence.ts            Wiederholungsregeln, Berechnung der Vorkommen
 └─ features/
    ├─ calendar/                Anzeige der Wochenansicht
    │  ├─ components/
@@ -160,7 +188,7 @@ src/
    │  ├─ types/
    │  └─ utils/                Aufteilung mehrtägiger Termine, Berechnung überlappender Termine
    ├─ events/                  Termine anlegen, bearbeiten, löschen
-   │  ├─ components/           EventModal, DeleteEventModal, ColorPicker
+   │  ├─ components/           EventModal, DeleteEventModal, ColorPicker, RecurrenceFields, RecurrenceScopeModal
    │  ├─ constants/
    │  ├─ hooks/                useEvents, useCustomColors
    │  └─ types/
@@ -185,7 +213,9 @@ src/
 ## Bekannte Einschränkungen
 
 - Nur localStorage, keine Synchronisierung zwischen Geräten oder Browsern
-- Keine Ganztagstermine, keine wiederkehrenden Termine und keine eigene Leiste für mehrtägige Termine oberhalb des Rasters
+- Keine Ganztagstermine und keine eigene Leiste für mehrtägige Termine oberhalb des Rasters
+- Bei Serien fehlt noch „Dieser und alle folgenden Termine“, ebenso Regeln wie „jeden 2. Dienstag im Monat“ oder „endet nach X Terminen“
+- Ein herausgelöster Einzeltermin ist danach unabhängig von der Serie. Wird die Serie gelöscht, bleibt er bestehen.
 - Eigene Farben lassen sich noch nicht wieder entfernen
 - Nur Wochenansicht, keine Monats- oder Tagesansicht
 - Datums- und Zeitfelder zeigen das Format der Browser- bzw. Systemsprache

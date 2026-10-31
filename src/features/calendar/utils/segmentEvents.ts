@@ -1,8 +1,8 @@
 import { addDaysToISODate, daysBetween, MINUTES_PER_DAY, timeToMinutes } from '../../../utils/date.ts'
-import { getEventDuration, type CalendarEvent } from '../../../utils/event.ts'
+import { getEventDuration, type EventOccurrence } from '../../../utils/event.ts'
 import type { EventSegment, VisibleRange } from '../types/eventLayout.ts'
 
-export function splitEventIntoSegments(event: CalendarEvent, { from, to }: VisibleRange): EventSegment[] {
+export function splitEventIntoSegments(event: EventOccurrence, { from, to }: VisibleRange): EventSegment[] {
   const eventStart = timeToMinutes(event.start)
   const eventEnd = eventStart + getEventDuration(event)
   const firstDate = event.startDate > from ? event.startDate : from
@@ -28,7 +28,7 @@ export function splitEventIntoSegments(event: CalendarEvent, { from, to }: Visib
   return segments
 }
 
-export function groupSegmentsByDate(events: readonly CalendarEvent[], range: VisibleRange) {
+export function groupSegmentsByDate(events: readonly EventOccurrence[], range: VisibleRange) {
   const groups = new Map<string, EventSegment[]>()
   for (const event of events) {
     for (const segment of splitEventIntoSegments(event, range)) {
