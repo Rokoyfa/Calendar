@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
 import { fromISODate, isSameDay, toISODate } from '../../../utils/date.ts'
 import {
   createEventInput,
@@ -8,8 +9,7 @@ import {
   type EventInput,
   type EventOccurrence,
 } from '../../../utils/event.ts'
-import { hasEarlierOccurrences } from '../../../utils/series.ts'
-import { DeleteEventModal, EventModal, getScopeOptions, useEvents } from '../../events/index.ts'
+import { DeleteEventModal, EventModal, useEvents } from '../../events/index.ts'
 import { useNow } from '../hooks/useNow.ts'
 import { useWeek } from '../hooks/useWeek.ts'
 import { useWeekKeyboardNavigation } from '../hooks/useWeekKeyboardNavigation.ts'
@@ -36,14 +36,12 @@ export function Calendar() {
   useWeekKeyboardNavigation({ onPreviousWeek: previousWeek, onNextWeek: nextWeek })
 
   const openCreate = useCallback((date: string, hour: number) => {
-    setEditor({ mode: 'create', initialValue: createEventInput(date, hour) })
+    setEditor({ initialValue: createEventInput(date, hour), occurrence: null })
   }, [])
 
   const openEdit = useCallback((occurrence: EventOccurrence) => {
-    setEditor({ mode: 'edit', occurrence })
+    setEditor({ initialValue: toEventInput(occurrence), occurrence })
   }, [])
-
-  const canSplit = (occurrence: EventOccurrence) => hasEarlierOccurrences(occurrence, occurrence.startDate)
 
   const handleCreateNow = () => {
     const current = new Date()
@@ -51,7 +49,7 @@ export function Calendar() {
   }
 
   const handleSave = async (input: EventInput, scope: EditScope) => {
-    if (editor?.mode === 'edit') await updateEvent(editor.occurrence, input, scope)
+    if (editor?.occurrence) await updateEvent(editor.occurrence, input, scope)
     else await createEvent(input)
     setEditor(null)
     goToDate(fromISODate(input.startDate))
@@ -75,11 +73,7 @@ export function Calendar() {
         onCreateEvent={handleCreateNow}
       />
 
-      {error && (
-        <p className="errorText textCenter" role="alert">
-          {error}
-        </p>
-      )}
+      <ErrorMessage message={error} className="textCenter" />
 
       <main className="main scrollArea">
         <div className="calendar">
@@ -99,27 +93,17 @@ export function Calendar() {
 
       {editor && (
         <EventModal
-          key={editor.mode === 'edit' ? editor.occurrence.occurrenceKey : 'new'}
-          mode={editor.mode}
-          initialValue={editor.mode === 'edit' ? toEventInput(editor.occurrence) : editor.initialValue}
+          key={editor.occurrence?.occurrenceKey ?? 'new'}
+          initialValue={editor.initialValue}
+          occurrence={editor.occurrence}
           onSave={handleSave}
-          canSplitSeries={editor.mode === 'edit' && canSplit(editor.occurrence)}
-          onDelete={editor.mode === 'edit' ? () => setEventToDelete(editor.occurrence) : undefined}
+          onDelete={editor.occurrence ? () => setEventToDelete(editor.occurrence) : undefined}
           onClose={() => setEditor(null)}
         />
       )}
 
       {eventToDelete && (
-        <DeleteEventModal
-          event={eventToDelete}
-          scopeOptions={getScopeOptions({
-            isSeries: eventToDelete.recurrence !== null,
-            keepsRule: true,
-            canSplit: canSplit(eventToDelete),
-          })}
-          onConfirm={handleDelete}
-          onClose={() => setEventToDelete(null)}
-        />
+        <DeleteEventModal occurrence={eventToDelete} onConfirm={handleDelete} onClose={() => setEventToDelete(null)} />
       )}
     </>
   )

@@ -100,6 +100,7 @@ Die Pfeiltasten sind deaktiviert, solange ein Eingabefeld oder ein Fenster aktiv
 - Farben und Layout basieren auf dem ursprünglichen Kalender-Design
 - **Hell- und Dunkelmodus**, standardmäßig nach Systemeinstellung
 - Manuell umschaltbar über `document.documentElement.dataset.theme = 'dark' | 'light'`. Einen Schalter in der Oberfläche gibt es noch nicht.
+- Die Farben beider Modi stehen nur einmal in `variables.css` (CSS-Funktion `light-dark()`, unterstützt von allen aktuellen Browsern)
 - Auf kleinen Bildschirmen lässt sich das Raster seitlich scrollen
 
 ---
@@ -184,13 +185,26 @@ src/
 ├─ assets/
 │  ├─ css/                     Styles, gebündelt über index.css
 │  └─ imgs/
-├─ components/
-│  └─ Modal.tsx                Allgemeines Fenster (<dialog>), featureübergreifend
+├─ components/                 Featureübergreifende Bausteine
+│  ├─ Modal.tsx                Fenster (<dialog>)
+│  ├─ FormField.tsx            Beschriftung + Feld + Fehlermeldung (label oder fieldset)
+│  ├─ SelectField.tsx          Auswahlfeld aus Optionsliste
+│  ├─ NumberField.tsx          Ganzzahl mit Einheit
+│  ├─ DateTimeField.tsx        Datum + Uhrzeit in einer Zeile
+│  ├─ ChoiceChip.tsx           Runder Auswahl-Chip (Radio oder Checkbox)
+│  ├─ IconButton.tsx           Symbol-Schaltfläche
+│  └─ ErrorMessage.tsx         Fehlerhinweis mit role="alert"
+├─ hooks/                      Featureübergreifende Hooks
+│  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand und Fehlermeldung
+│  └─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel
 ├─ utils/
+│  ├─ classNames.ts            CSS-Klassen zusammensetzen
 │  ├─ color.ts                 Hex-Farben, lesbare Schriftfarbe
-│  ├─ date.ts                  Datums- und Zeitfunktionen
+│  ├─ date.ts                  Datums- und Zeitfunktionen, Prüfung und Formatierung
 │  ├─ error.ts                 Fehlermeldungen
-│  ├─ event.ts                 Termin-Typen, Standardfarben, Validierung, Serien-Aktionen
+│  ├─ event.ts                 Termin-Typen, Farben, Validierung, Vorkommen eines Termins
+│  ├─ number.ts                Ganzzahl-Prüfung mit Bereich
+│  ├─ object.ts                Felder aus Objekten übernehmen
 │  ├─ recurrence.ts            Wiederholungsregeln, Berechnung der Vorkommen
 │  └─ series.ts                Serien ausnehmen, aufteilen, ändern
 └─ features/
@@ -199,9 +213,9 @@ src/
    │  ├─ constants/
    │  ├─ hooks/
    │  ├─ types/
-   │  └─ utils/                Aufteilung mehrtägiger Termine, Berechnung überlappender Termine
+   │  └─ utils/                Aufteilung mehrtägiger Termine, sichtbare Höhe, überlappende Termine
    ├─ events/                  Termine anlegen, bearbeiten, löschen
-   │  ├─ components/           EventModal, DeleteEventModal, ColorPicker, RecurrenceFields, RecurrenceScopeModal
+   │  ├─ components/           EventModal, DeleteEventModal, ColorPicker, RecurrenceFields, RecurrenceScopeModal, ScopeButtons
    │  ├─ constants/            Farben, Bezeichnungen der Bearbeitungsbereiche
    │  ├─ hooks/                useEvents, useCustomColors
    │  ├─ types/
@@ -210,7 +224,8 @@ src/
    │  ├─ context/              StorageContext, StorageProvider
    │  ├─ hooks/                useStorage, useEventRepository, useColorRepository
    │  ├─ repositories/         Local- und Remote-Umsetzungen
-   │  └─ types/
+   │  ├─ types/
+   │  └─ utils/                LocalStorageList: gemeinsames Lesen und Schreiben im localStorage
    ├─ authorization/           noch leer
    └─ teams/                   noch leer
 ```
@@ -221,6 +236,8 @@ src/
 - Von außen wird ein Feature nur über seine `index.ts` importiert.
 - `calendar` zeigt nur an und kennt die Speicherung nicht. `events` enthält die Termin-Logik, `storage` die Persistenz.
 - Typen, die zwischen Features geteilt werden, liegen in `utils/`. Props-Typen bleiben bei ihrer Komponente.
+- Keine Doppelungen: Was an mehr als einer Stelle gebraucht wird, liegt einmal in `components/`, `hooks/` oder `utils/` (featureübergreifend) bzw. im `utils/`-Ordner des Features. Formularfelder werden aus `FormField` und den darauf aufbauenden Feldern zusammengesetzt, Datumswerte nur über `utils/date.ts` geprüft und berechnet.
+- Farben für Hell- und Dunkelmodus stehen nur einmal in `variables.css` und nutzen `light-dark()`. Terminfarben werden ausschließlich über `--event-color` und `--event-text` gesetzt, egal ob Standard- oder eigene Farbe.
 
 ---
 

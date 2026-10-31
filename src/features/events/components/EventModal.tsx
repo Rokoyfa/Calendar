@@ -1,37 +1,33 @@
 import { useState, type FormEvent } from 'react'
+import { DateTimeField } from '../../../components/DateTimeField.tsx'
+import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
+import { FormField } from '../../../components/FormField.tsx'
 import { Modal } from '../../../components/Modal.tsx'
-import { addDaysToISODate, daysBetween, ISO_DATE_PATTERN } from '../../../utils/date.ts'
-import { getErrorMessage } from '../../../utils/error.ts'
-import { fitRecurrenceToStart, getWeekdayIndex, isSameRecurrence, type Recurrence } from '../../../utils/recurrence.ts'
+import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
+import { isISODate } from '../../../utils/date.ts'
 import {
   EVENT_DESCRIPTION_MAX_LENGTH,
   EVENT_TITLE_MAX_LENGTH,
   hasValidationErrors,
+  moveToStartDate,
   normalizeEventInput,
   validateEventInput,
   type EditScope,
   type EventInput,
+  type EventOccurrence,
   type EventValidationErrors,
 } from '../../../utils/event.ts'
+import { adaptRecurrenceToStart, type Recurrence } from '../../../utils/recurrence.ts'
 import type { EventModalMode } from '../types/eventModal.ts'
+import { getScopeOptions } from '../utils/scopeOptions.ts'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RecurrenceFields } from './RecurrenceFields.tsx'
 import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
-import { getScopeOptions } from '../utils/scopeOptions.ts'
-
-const followWeekday = (recurrence: Recurrence | null, previousDate: string, nextDate: string) => {
-  if (recurrence?.frequency !== 'weekly' || !ISO_DATE_PATTERN.test(previousDate) || !ISO_DATE_PATTERN.test(nextDate))
-    return recurrence
-  const previousWeekday = getWeekdayIndex(previousDate)
-  const isOnlyPreviousWeekday = recurrence.weekdays.length === 1 && recurrence.weekdays[0] === previousWeekday
-  return isOnlyPreviousWeekday ? { ...recurrence, weekdays: [getWeekdayIndex(nextDate)] } : recurrence
-}
 
 type EventModalProps = {
-  mode: EventModalMode
   initialValue: EventInput
+  occurrence?: EventOccurrence | null
   onSave: (input: EventInput, scope: EditScope) => Promise<void>
-  canSplitSeries?: boolean
   onDelete?: () => void
   onClose: () => void
 }
@@ -41,62 +37,38 @@ type PendingSave = {
   options: EditScope[]
 }
 
-export function EventModal({
-  mode,
-  initialValue,
-  onSave,
-  canSplitSeries = false,
-  onDelete,
-  onClose,
-}: EventModalProps) {
+const TITLES: Record<EventModalMode, string> = {
+  create: 'Neuer Termin',
+  edit: 'Termin bearbeiten',
+}
+
+export function EventModal({ initialValue, occurrence = null, onSave, onDelete, onClose }: EventModalProps) {
+  const mode: EventModalMode = occurrence ? 'edit' : 'create'
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
+  const { run: save, isPending, error: submitError } = useAsyncAction(onSave)
 
-  const setField = <K extends keyof EventInput>(field: K, value: EventInput[K]) => {
-    setValues((current) => ({ ...current, [field]: value }))
-    setErrors((current) => (current[field] ? { ...current, [field]: undefined } : current))
+  const update = (changes: Partial<EventInput>, clearedErrors: readonly (keyof EventValidationErrors)[]) => {
+    setValues((current) => ({ ...current, ...changes }))
+    setErrors((current) => ({ ...current, ...Object.fromEntries(clearedErrors.map((key) => [key, undefined])) }))
   }
 
-  const changeStartDate = (startDate: string) => {
-    setValues((current) => {
-      const canShift = ISO_DATE_PATTERN.test(current.startDate) && ISO_DATE_PATTERN.test(current.endDate)
-      const isValidStart = ISO_DATE_PATTERN.test(startDate)
-      const endDate =
-        canShift && isValidStart
-          ? addDaysToISODate(startDate, daysBetween(current.startDate, current.endDate))
-          : current.endDate
-      const recurrence = fitRecurrenceToStart(followWeekday(current.recurrence, current.startDate, startDate), startDate)
-      return { ...current, startDate, endDate, recurrence }
-    })
-    setErrors((current) =>
-      current.startDate || current.endDate ? { ...current, startDate: undefined, endDate: undefined } : current,
+  const setField = <K extends Exclude<keyof EventInput, 'recurrence'>>(field: K, value: EventInput[K]) =>
+    update({ [field]: value }, [field])
+
+  const changeStartDate = (startDate: string) =>
+    update(
+      {
+        ...(isISODate(values.startDate) && isISODate(values.endDate) && isISODate(startDate)
+          ? moveToStartDate(values, startDate)
+          : { startDate }),
+        recurrence: adaptRecurrenceToStart(values.recurrence, values.startDate, startDate),
+      },
+      ['startDate', 'endDate'],
     )
-  }
 
-  const setRecurrence = (recurrence: Recurrence | null) => {
-    setValues((current) => ({ ...current, recurrence }))
-    setErrors((current) => ({
-      ...current,
-      recurrenceInterval: undefined,
-      recurrenceWeekdays: undefined,
-      recurrenceUntil: undefined,
-      recurrenceCount: undefined,
-    }))
-  }
-
-  const save = async (input: EventInput, scope: EditScope) => {
-    setIsSaving(true)
-    setSubmitError(null)
-    try {
-      await onSave(input, scope)
-    } catch (error) {
-      setSubmitError(getErrorMessage(error))
-      setIsSaving(false)
-    }
-  }
+  const setRecurrence = (recurrence: Recurrence | null) => update({ recurrence }, ['recurrence'])
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -105,11 +77,7 @@ export function EventModal({
     setErrors(nextErrors)
     if (hasValidationErrors(nextErrors)) return
 
-    const options = getScopeOptions({
-      isSeries: mode === 'edit' && initialValue.recurrence !== null,
-      keepsRule: isSameRecurrence(initialValue.recurrence, input.recurrence),
-      canSplit: canSplitSeries,
-    })
+    const options = getScopeOptions(occurrence, input.recurrence)
     if (options.length > 1) setPendingSave({ input, options })
     else void save(input, options[0])
   }
@@ -122,10 +90,9 @@ export function EventModal({
 
   return (
     <>
-      <Modal title={mode === 'create' ? 'Neuer Termin' : 'Termin bearbeiten'} onClose={onClose}>
-        <form className="eventForm" noValidate onSubmit={handleSubmit}>
-          <label className="field">
-            <span className="descriptor">Titel</span>
+      <Modal title={TITLES[mode]} onClose={onClose}>
+        <form className="formSection eventForm" noValidate onSubmit={handleSubmit}>
+          <FormField label="Titel" error={errors.title}>
             <input
               className="input"
               name="title"
@@ -136,78 +103,41 @@ export function EventModal({
               onChange={(event) => setField('title', event.target.value)}
               data-autofocus
             />
-            {errors.title && <span className="errorText">{errors.title}</span>}
-          </label>
+          </FormField>
 
-          <div className="eventFormRow">
-            <label className="field">
-              <span className="descriptor">Startdatum</span>
-              <input
-                className="input"
-                type="date"
-                name="startDate"
-                value={values.startDate}
-                aria-invalid={Boolean(errors.startDate)}
-                onChange={(event) => changeStartDate(event.target.value)}
-              />
-              {errors.startDate && <span className="errorText">{errors.startDate}</span>}
-            </label>
-            <label className="field">
-              <span className="descriptor">Beginn</span>
-              <input
-                className="input"
-                type="time"
-                name="start"
-                value={values.start}
-                aria-invalid={Boolean(errors.start)}
-                onChange={(event) => setField('start', event.target.value)}
-              />
-              {errors.start && <span className="errorText">{errors.start}</span>}
-            </label>
-          </div>
+          <DateTimeField
+            name="start"
+            dateLabel="Startdatum"
+            timeLabel="Beginn"
+            date={values.startDate}
+            time={values.start}
+            dateError={errors.startDate}
+            timeError={errors.start}
+            onDateChange={changeStartDate}
+            onTimeChange={(start) => setField('start', start)}
+          />
 
-          <div className="eventFormRow">
-            <label className="field">
-              <span className="descriptor">Enddatum</span>
-              <input
-                className="input"
-                type="date"
-                name="endDate"
-                min={values.startDate}
-                value={values.endDate}
-                aria-invalid={Boolean(errors.endDate)}
-                onChange={(event) => setField('endDate', event.target.value)}
-              />
-              {errors.endDate && <span className="errorText">{errors.endDate}</span>}
-            </label>
-            <label className="field">
-              <span className="descriptor">Ende</span>
-              <input
-                className="input"
-                type="time"
-                name="end"
-                value={values.end}
-                aria-invalid={Boolean(errors.end)}
-                onChange={(event) => setField('end', event.target.value)}
-              />
-              {errors.end && <span className="errorText">{errors.end}</span>}
-            </label>
-          </div>
+          <DateTimeField
+            name="end"
+            dateLabel="Enddatum"
+            timeLabel="Ende"
+            date={values.endDate}
+            time={values.end}
+            minDate={values.startDate}
+            dateError={errors.endDate}
+            timeError={errors.end}
+            onDateChange={(endDate) => setField('endDate', endDate)}
+            onTimeChange={(end) => setField('end', end)}
+          />
 
           <RecurrenceFields
             value={values.recurrence}
             startDate={values.startDate}
-            errors={{
-              interval: errors.recurrenceInterval,
-              weekdays: errors.recurrenceWeekdays,
-              until: errors.recurrenceUntil,
-              count: errors.recurrenceCount,
-            }}
+            errors={errors.recurrence ?? {}}
             onChange={setRecurrence}
           />
 
-          <label className="field">
-            <span className="descriptor">Beschreibung</span>
+          <FormField label="Beschreibung" error={errors.description}>
             <textarea
               className="textarea eventDescription"
               name="description"
@@ -215,23 +145,18 @@ export function EventModal({
               value={values.description}
               onChange={(event) => setField('description', event.target.value)}
             />
-            {errors.description && <span className="errorText">{errors.description}</span>}
-          </label>
+          </FormField>
 
           <ColorPicker value={values.color} onChange={(color) => setField('color', color)} />
 
-          {submitError && (
-            <p className="errorText" role="alert">
-              {submitError}
-            </p>
-          )}
+          <ErrorMessage message={submitError} />
 
           <div className="modalActions">
-            <button type="submit" className="button" disabled={isSaving}>
-              {isSaving ? 'Speichert …' : 'Speichern'}
+            <button type="submit" className="button" disabled={isPending}>
+              {isPending ? 'Speichert …' : 'Speichern'}
             </button>
             {onDelete && (
-              <button type="button" className="button button--danger" disabled={isSaving} onClick={onDelete}>
+              <button type="button" className="button button--danger" disabled={isPending} onClick={onDelete}>
                 Löschen
               </button>
             )}

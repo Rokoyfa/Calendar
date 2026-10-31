@@ -1,11 +1,15 @@
-import { fromISODate, ISO_DATE_PATTERN, toISODate } from '../../../utils/date.ts'
+import { ChoiceChip } from '../../../components/ChoiceChip.tsx'
+import { FormField } from '../../../components/FormField.tsx'
+import { NumberField } from '../../../components/NumberField.tsx'
+import { SelectField, type SelectOption } from '../../../components/SelectField.tsx'
+import { addMonthsToISODate, isISODate } from '../../../utils/date.ts'
+import { isIntegerInRange } from '../../../utils/number.ts'
 import {
   createRecurrence,
   formatMonthlyMode,
   formatRecurrence,
   getMonthlyModeOptions,
-  isMonthlyMode,
-  isRecurrenceFrequency,
+  hasRecurrenceErrors,
   normalizeWeekdays,
   RECURRENCE_COUNT_MAX,
   RECURRENCE_FREQUENCIES,
@@ -14,46 +18,59 @@ import {
   RECURRENCE_UNIT_LABELS,
   WEEKDAY_SHORT_LABELS,
   type Recurrence,
+  type RecurrenceFrequency,
+  type RecurrenceValidationErrors,
 } from '../../../utils/recurrence.ts'
-
-type RecurrenceErrors = { interval?: string; weekdays?: string; until?: string; count?: string }
 
 type RecurrenceFieldsProps = {
   value: Recurrence | null
   startDate: string
-  errors: RecurrenceErrors
+  errors: RecurrenceValidationErrors
   onChange: (recurrence: Recurrence | null) => void
 }
 
-const NEVER = 'never'
-const ON_DATE = 'date'
-const AFTER_COUNT = 'count'
+type EndMode = 'never' | 'date' | 'count'
+
 const DEFAULT_COUNT = 10
+const DEFAULT_UNTIL_MONTHS = 3
 
-const defaultUntil = (startDate: string) => {
-  const start = fromISODate(startDate)
-  return toISODate(new Date(start.getFullYear(), start.getMonth() + 3, start.getDate()))
-}
+const FREQUENCY_OPTIONS: SelectOption<RecurrenceFrequency | 'never'>[] = [
+  { value: 'never', label: 'Nie' },
+  ...RECURRENCE_FREQUENCIES.map((frequency) => ({ value: frequency, label: RECURRENCE_FREQUENCY_LABELS[frequency] })),
+]
 
-const getEndMode = ({ until, count }: Recurrence) => (until !== null ? ON_DATE : count !== null ? AFTER_COUNT : NEVER)
+const END_OPTIONS: SelectOption<EndMode>[] = [
+  { value: 'never', label: 'Nie' },
+  { value: 'date', label: 'Am Datum' },
+  { value: 'count', label: 'Nach Anzahl' },
+]
 
-const numberValue = (value: number | null) => (value === null || Number.isNaN(value) ? '' : value)
+const getEndMode = ({ until, count }: Recurrence): EndMode =>
+  until !== null ? 'date' : count !== null ? 'count' : 'never'
+
+const pluralize = (count: number | null, one: string, many: string) => (count === 1 ? one : many)
+
+const canSummarize = (recurrence: Recurrence, startDate: string, errors: RecurrenceValidationErrors) =>
+  isISODate(startDate) &&
+  !hasRecurrenceErrors(errors) &&
+  isIntegerInRange(recurrence.interval, 1) &&
+  (recurrence.count === null || isIntegerInRange(recurrence.count, 1))
 
 export function RecurrenceFields({ value, startDate, errors, onChange }: RecurrenceFieldsProps) {
-  const hasValidStart = ISO_DATE_PATTERN.test(startDate)
+  const hasValidStart = isISODate(startDate)
 
-  const handleFrequencyChange = (frequency: string) => {
-    if (!isRecurrenceFrequency(frequency)) return onChange(null)
-    if (value) return onChange({ ...value, frequency })
-    if (hasValidStart) onChange(createRecurrence(frequency, startDate))
+  const changeFrequency = (frequency: RecurrenceFrequency | 'never') => {
+    if (frequency === 'never') onChange(null)
+    else if (value) onChange({ ...value, frequency })
+    else if (hasValidStart) onChange(createRecurrence(frequency, startDate))
   }
 
-  const handleEndModeChange = (mode: string) => {
+  const changeEndMode = (mode: EndMode) => {
     if (!value) return
     onChange({
       ...value,
-      until: mode === ON_DATE && hasValidStart ? defaultUntil(startDate) : null,
-      count: mode === AFTER_COUNT ? DEFAULT_COUNT : null,
+      until: mode === 'date' && hasValidStart ? addMonthsToISODate(startDate, DEFAULT_UNTIL_MONTHS) : null,
+      count: mode === 'count' ? DEFAULT_COUNT : null,
     })
   }
 
@@ -66,110 +83,76 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
   }
 
   const unit = value ? RECURRENCE_UNIT_LABELS[value.frequency] : null
-  const hasErrors = Object.values(errors).some(Boolean)
-  const endMode = value ? getEndMode(value) : NEVER
+  const endMode = value ? getEndMode(value) : 'never'
 
   return (
-    <div className="recurrence">
-      <div className="eventFormRow">
-        <label className="field">
-          <span className="descriptor">Wiederholen</span>
-          <select
-            className="input"
-            name="recurrenceFrequency"
-            value={value?.frequency ?? NEVER}
-            onChange={(event) => handleFrequencyChange(event.target.value)}
-          >
-            <option value={NEVER}>Nie</option>
-            {RECURRENCE_FREQUENCIES.map((frequency) => (
-              <option key={frequency} value={frequency}>
-                {RECURRENCE_FREQUENCY_LABELS[frequency]}
-              </option>
-            ))}
-          </select>
-        </label>
-
+    <div className="formSection">
+      <div className="formRow">
+        <SelectField
+          label="Wiederholen"
+          name="recurrenceFrequency"
+          value={value?.frequency ?? 'never'}
+          options={FREQUENCY_OPTIONS}
+          onChange={changeFrequency}
+        />
         {value && unit && (
-          <label className="field">
-            <span className="descriptor">Alle</span>
-            <span className="recurrenceInline">
-              <input
-                className="input recurrenceNumber"
-                type="number"
-                name="recurrenceInterval"
-                min={1}
-                max={RECURRENCE_INTERVAL_MAX}
-                step={1}
-                value={numberValue(value.interval)}
-                aria-invalid={Boolean(errors.interval)}
-                onChange={(event) => onChange({ ...value, interval: event.target.valueAsNumber })}
-              />
-              <span>{value.interval === 1 ? unit.one : unit.many}</span>
-            </span>
-            {errors.interval && <span className="errorText">{errors.interval}</span>}
-          </label>
+          <NumberField
+            label="Alle"
+            name="recurrenceInterval"
+            value={value.interval}
+            min={1}
+            max={RECURRENCE_INTERVAL_MAX}
+            unit={pluralize(value.interval, unit.one, unit.many)}
+            error={errors.interval}
+            onChange={(interval) => onChange({ ...value, interval })}
+          />
         )}
       </div>
 
       {value?.frequency === 'weekly' && (
-        <fieldset className="weekdayPicker">
-          <legend className="descriptor">An diesen Tagen</legend>
-          <div className="weekdays">
+        <FormField as="fieldset" label="An diesen Tagen" error={errors.weekdays}>
+          <div className="choiceList">
             {WEEKDAY_SHORT_LABELS.map((label, weekday) => (
-              <label key={label} className={value.weekdays.includes(weekday) ? 'weekday active' : 'weekday'}>
-                <input
-                  type="checkbox"
-                  className="visuallyHidden"
-                  checked={value.weekdays.includes(weekday)}
-                  onChange={() => toggleWeekday(weekday)}
-                />
+              <ChoiceChip
+                key={label}
+                type="checkbox"
+                label={label}
+                checked={value.weekdays.includes(weekday)}
+                onChange={() => toggleWeekday(weekday)}
+                className="weekday"
+              >
                 {label}
-              </label>
+              </ChoiceChip>
             ))}
           </div>
-          {errors.weekdays && <span className="errorText">{errors.weekdays}</span>}
-        </fieldset>
+        </FormField>
       )}
 
       {value?.frequency === 'monthly' && hasValidStart && (
-        <label className="field">
-          <span className="descriptor">Im Monat</span>
-          <select
-            className="input"
-            name="recurrenceMonthlyMode"
-            value={value.monthlyMode}
-            onChange={(event) => {
-              if (isMonthlyMode(event.target.value)) onChange({ ...value, monthlyMode: event.target.value })
-            }}
-          >
-            {getMonthlyModeOptions(startDate).map((mode) => (
-              <option key={mode} value={mode}>
-                {formatMonthlyMode(mode, startDate)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          label="Im Monat"
+          name="recurrenceMonthlyMode"
+          value={value.monthlyMode}
+          options={getMonthlyModeOptions(startDate).map((mode) => ({
+            value: mode,
+            label: formatMonthlyMode(mode, startDate),
+          }))}
+          onChange={(monthlyMode) => onChange({ ...value, monthlyMode })}
+        />
       )}
 
       {value && (
-        <div className="eventFormRow">
-          <label className="field">
-            <span className="descriptor">Endet</span>
-            <select
-              className="input"
-              name="recurrenceEnds"
-              value={endMode}
-              onChange={(event) => handleEndModeChange(event.target.value)}
-            >
-              <option value={NEVER}>Nie</option>
-              <option value={ON_DATE}>Am Datum</option>
-              <option value={AFTER_COUNT}>Nach Anzahl</option>
-            </select>
-          </label>
+        <div className="formRow">
+          <SelectField
+            label="Endet"
+            name="recurrenceEnds"
+            value={endMode}
+            options={END_OPTIONS}
+            onChange={changeEndMode}
+          />
 
-          {endMode === ON_DATE && (
-            <label className="field">
-              <span className="descriptor">Letzter Termin</span>
+          {endMode === 'date' && (
+            <FormField label="Letzter Termin" error={errors.until}>
               <input
                 className="input"
                 type="date"
@@ -179,37 +162,26 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
                 aria-invalid={Boolean(errors.until)}
                 onChange={(event) => onChange({ ...value, until: event.target.value })}
               />
-              {errors.until && <span className="errorText">{errors.until}</span>}
-            </label>
+            </FormField>
           )}
 
-          {endMode === AFTER_COUNT && (
-            <label className="field">
-              <span className="descriptor">Nach</span>
-              <span className="recurrenceInline">
-                <input
-                  className="input recurrenceNumber"
-                  type="number"
-                  name="recurrenceCount"
-                  min={1}
-                  max={RECURRENCE_COUNT_MAX}
-                  step={1}
-                  value={numberValue(value.count)}
-                  aria-invalid={Boolean(errors.count)}
-                  onChange={(event) => onChange({ ...value, count: event.target.valueAsNumber })}
-                />
-                <span>{value.count === 1 ? 'Termin' : 'Terminen'}</span>
-              </span>
-              {errors.count && <span className="errorText">{errors.count}</span>}
-            </label>
+          {endMode === 'count' && (
+            <NumberField
+              label="Nach"
+              name="recurrenceCount"
+              value={value.count}
+              min={1}
+              max={RECURRENCE_COUNT_MAX}
+              unit={pluralize(value.count, 'Termin', 'Terminen')}
+              error={errors.count}
+              onChange={(count) => onChange({ ...value, count })}
+            />
           )}
         </div>
       )}
 
-      {value && hasValidStart && !hasErrors &&
-        Number.isInteger(value.interval) &&
-        (value.count === null || Number.isInteger(value.count)) && (
-        <p className="recurrenceSummary">{formatRecurrence(value, startDate)}</p>
+      {value && canSummarize(value, startDate, errors) && (
+        <p className="formHint">{formatRecurrence(value, startDate)}</p>
       )}
     </div>
   )

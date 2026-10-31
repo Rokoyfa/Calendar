@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
 
   --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   --font-size-xs: 10px;
@@ -9,23 +9,23 @@
   --font-size-lg: 20px;
   --font-size-xl: 22px;
 
-  --color-bg: #ffffff;
-  --color-surface: #ffffff;
-  --color-surface-hover: #eeeeee;
-  --color-grid: #cecece;
-  --color-muted: #777777;
-  --color-text: #222222;
-  --color-heading: rgb(94, 91, 91);
+  --color-bg: light-dark(#ffffff, #16171a);
+  --color-surface: light-dark(#ffffff, #1e1f23);
+  --color-surface-hover: light-dark(#eeeeee, #2a2b30);
+  --color-grid: light-dark(#cecece, #3a3b40);
+  --color-muted: light-dark(#777777, #9a9a9f);
+  --color-text: light-dark(#222222, #e6e6e6);
+  --color-heading: light-dark(rgb(94, 91, 91), #b9b6b6);
   --color-on-accent: #ffffff;
-  --color-on-yellow: #222222;
+  --color-on-yellow: light-dark(#222222, #1a1a1a);
 
-  --color-red: rgb(190, 35, 15);
-  --color-blue: rgb(54, 92, 175);
-  --color-green: rgb(21, 129, 21);
-  --color-yellow: rgb(233, 229, 4);
-  --color-grey: rgb(94, 91, 91);
+  --color-red: light-dark(rgb(190, 35, 15), rgb(226, 80, 60));
+  --color-blue: light-dark(rgb(54, 92, 175), rgb(98, 140, 230));
+  --color-green: light-dark(rgb(21, 129, 21), rgb(52, 170, 82));
+  --color-yellow: light-dark(rgb(233, 229, 4), rgb(230, 210, 40));
+  --color-grey: light-dark(rgb(94, 91, 91), rgb(150, 147, 147));
 
-  --shadow-color: rgba(87, 5, 5, 0.3);
+  --shadow-color: light-dark(rgba(87, 5, 5, 0.3), rgba(0, 0, 0, 0.6));
   --shadow: 0 0 20px var(--shadow-color);
   --focus-ring: 0 0 0 2px var(--color-blue);
 
@@ -49,48 +49,10 @@
   --transition-base: 200ms ease-in;
 }
 
-:root[data-theme="dark"] {
-  color-scheme: dark;
-
-  --color-bg: #16171a;
-  --color-surface: #1e1f23;
-  --color-surface-hover: #2a2b30;
-  --color-grid: #3a3b40;
-  --color-muted: #9a9a9f;
-  --color-text: #e6e6e6;
-  --color-heading: #b9b6b6;
-  --color-on-accent: #ffffff;
-  --color-on-yellow: #1a1a1a;
-
-  --color-red: rgb(226, 80, 60);
-  --color-blue: rgb(98, 140, 230);
-  --color-green: rgb(52, 170, 82);
-  --color-yellow: rgb(230, 210, 40);
-  --color-grey: rgb(150, 147, 147);
-
-  --shadow-color: rgba(0, 0, 0, 0.6);
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-
-    --color-bg: #16171a;
-    --color-surface: #1e1f23;
-    --color-surface-hover: #2a2b30;
-    --color-grid: #3a3b40;
-    --color-muted: #9a9a9f;
-    --color-text: #e6e6e6;
-    --color-heading: #b9b6b6;
-    --color-on-accent: #ffffff;
-    --color-on-yellow: #1a1a1a;
-
-    --color-red: rgb(226, 80, 60);
-    --color-blue: rgb(98, 140, 230);
-    --color-green: rgb(52, 170, 82);
-    --color-yellow: rgb(230, 210, 40);
-    --color-grey: rgb(150, 147, 147);
-
-    --shadow-color: rgba(0, 0, 0, 0.6);
-  }
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }

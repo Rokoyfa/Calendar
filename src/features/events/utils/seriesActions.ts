@@ -7,17 +7,38 @@ import {
   excludeOccurrence,
   getShift,
   hasEarlierOccurrences,
+  isDetachedFrom,
   truncateSeries,
 } from '../../../utils/series.ts'
 import type { EventRepository } from '../../storage/index.ts'
 
-const resolveScope = (series: CalendarEvent, occurrenceDate: string, scope: EditScope): EditScope =>
-  scope === 'following' && !hasEarlierOccurrences({ ...series, seriesStartDate: series.startDate }, occurrenceDate)
-    ? 'all'
-    : scope
+type ScopeHandlers = {
+  plain: () => Promise<unknown>
+  single: () => Promise<unknown>
+  following: (detached: CalendarEvent[]) => Promise<unknown>
+  all: (detached: CalendarEvent[]) => Promise<unknown>
+}
 
-const listDetached = async (repository: EventRepository, series: CalendarEvent) =>
-  (await repository.listSeries(series.id)).filter((event) => event.seriesId === series.id)
+async function applyScope(
+  repository: EventRepository,
+  series: CalendarEvent,
+  occurrenceDate: string,
+  requestedScope: EditScope,
+  handlers: ScopeHandlers,
+) {
+  if (!series.recurrence) return handlers.plain()
+
+  const scope =
+    requestedScope === 'following' && !hasEarlierOccurrences(series, occurrenceDate) ? 'all' : requestedScope
+  if (scope === 'single') return handlers.single()
+
+  const detached = (await repository.listSeries(series.id)).filter((event) => event.seriesId === series.id)
+  return handlers[scope](detached)
+}
+
+async function forEachInOrder<T>(items: readonly T[], action: (item: T) => Promise<unknown>) {
+  for (const item of items) await action(item)
+}
 
 const relink = (event: CalendarEvent, seriesId: string | null, shift: number): EventInput => ({
   ...toEventInput(event),
@@ -25,75 +46,58 @@ const relink = (event: CalendarEvent, seriesId: string | null, shift: number): E
   originalDate: seriesId === null || event.originalDate === null ? null : addDaysToISODate(event.originalDate, shift),
 })
 
-export async function updateOccurrence(
+export const updateOccurrence = (
   repository: EventRepository,
   series: CalendarEvent,
   occurrenceDate: string,
   input: EventInput,
-  requestedScope: EditScope,
-) {
-  if (!series.recurrence) {
-    await repository.update(series.id, input)
-    return
-  }
-
-  const scope = resolveScope(series, occurrenceDate, requestedScope)
+  scope: EditScope,
+) => {
   const shift = getShift(occurrenceDate, input)
+  const relinkAll = (events: readonly CalendarEvent[], seriesId: string | null) =>
+    forEachInOrder(events, (event) => repository.update(event.id, relink(event, seriesId, shift)))
 
-  if (scope === 'single') {
-    await repository.update(series.id, excludeOccurrence(series, occurrenceDate))
-    await repository.create(detachOccurrence(series, occurrenceDate, input))
-    return
-  }
-
-  const detached = await listDetached(repository, series)
-
-  if (scope === 'all') {
-    await repository.update(series.id, changeWholeSeries(series, occurrenceDate, input))
-    const seriesId = input.recurrence ? series.id : null
-    for (const event of detached) {
-      if (seriesId === null || shift !== 0) await repository.update(event.id, relink(event, seriesId, shift))
-    }
-    return
-  }
-
-  await repository.update(series.id, truncateSeries(series, occurrenceDate))
-  const created = await repository.create(continueSeries(series, occurrenceDate, input))
-  const seriesId = created.recurrence ? created.id : null
-  for (const event of detached) {
-    if (event.originalDate !== null && event.originalDate >= occurrenceDate)
-      await repository.update(event.id, relink(event, seriesId, shift))
-  }
+  return applyScope(repository, series, occurrenceDate, scope, {
+    plain: () => repository.update(series.id, input),
+    single: async () => {
+      await repository.update(series.id, excludeOccurrence(series, occurrenceDate))
+      await repository.create(detachOccurrence(series, occurrenceDate, input))
+    },
+    following: async (detached) => {
+      await repository.update(series.id, truncateSeries(series, occurrenceDate))
+      const created = await repository.create(continueSeries(series, occurrenceDate, input))
+      await relinkAll(
+        detached.filter((event) => isDetachedFrom(event, occurrenceDate)),
+        created.recurrence ? created.id : null,
+      )
+    },
+    all: async (detached) => {
+      await repository.update(series.id, changeWholeSeries(series, occurrenceDate, input))
+      if (!input.recurrence) await relinkAll(detached, null)
+      else if (shift !== 0) await relinkAll(detached, series.id)
+    },
+  })
 }
 
-export async function deleteOccurrence(
+export const deleteOccurrence = (
   repository: EventRepository,
   series: CalendarEvent,
   occurrenceDate: string,
-  requestedScope: EditScope,
-) {
-  if (!series.recurrence) {
-    await repository.remove(series.id)
-    return
-  }
+  scope: EditScope,
+) => {
+  const removeAll = (events: readonly CalendarEvent[]) =>
+    forEachInOrder(events, (event) => repository.remove(event.id))
 
-  const scope = resolveScope(series, occurrenceDate, requestedScope)
-
-  if (scope === 'single') {
-    await repository.update(series.id, excludeOccurrence(series, occurrenceDate))
-    return
-  }
-
-  const detached = await listDetached(repository, series)
-
-  if (scope === 'all') {
-    for (const event of detached) await repository.remove(event.id)
-    await repository.remove(series.id)
-    return
-  }
-
-  await repository.update(series.id, truncateSeries(series, occurrenceDate))
-  for (const event of detached) {
-    if (event.originalDate !== null && event.originalDate >= occurrenceDate) await repository.remove(event.id)
-  }
+  return applyScope(repository, series, occurrenceDate, scope, {
+    plain: () => repository.remove(series.id),
+    single: () => repository.update(series.id, excludeOccurrence(series, occurrenceDate)),
+    following: async (detached) => {
+      await repository.update(series.id, truncateSeries(series, occurrenceDate))
+      await removeAll(detached.filter((event) => isDetachedFrom(event, occurrenceDate)))
+    },
+    all: async (detached) => {
+      await removeAll(detached)
+      await repository.remove(series.id)
+    },
+  })
 }

@@ -1,61 +1,18 @@
-.eventForm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.eventForm .input {
-  width: 100%;
-}
-
-.eventFormRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-}
-
-.eventFormRow .field {
-  flex: 1;
-  min-width: 120px;
-}
-
 .eventDescription {
   height: 120px;
 }
 
-.colorPicker {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  border: none;
-}
-
-.colors {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-}
-
 .color {
-  position: relative;
   width: 20px;
   height: 20px;
   border: 5px solid var(--color-surface);
-  border-radius: var(--radius-round);
   box-sizing: content-box;
-  cursor: pointer;
-  transition: border-color var(--transition-fast);
+  background-color: var(--event-color, var(--color-blue));
 }
 
-.color.activ,
-.color:hover,
-.color:has(:focus-visible) {
+.color.active,
+.color:hover {
   border-color: var(--color-grid);
-}
-
-.color--custom {
-  background-color: var(--swatch-color);
 }
 
 .colorAdd {
@@ -65,74 +22,19 @@
     var(--color-grey);
 }
 
-.deleteMessage {
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-
-.recurrence {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.recurrence select.input {
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  cursor: pointer;
-}
-
-.recurrenceInline {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.eventForm .recurrenceNumber {
-  width: 4.5em;
-}
-
-.weekdayPicker {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  border: none;
-}
-
-.weekdays {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
 .weekday {
-  display: grid;
-  place-items: center;
   width: 34px;
   height: 34px;
   border: 1px solid var(--color-grid);
-  border-radius: var(--radius-round);
   font-size: var(--font-size-md);
-  cursor: pointer;
-  user-select: none;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .weekday:hover {
   border-color: var(--color-text);
 }
 
-.weekday:has(:focus-visible) {
-  box-shadow: var(--focus-ring);
-}
-
 .weekday.active {
   border-color: var(--color-blue);
   background-color: var(--color-blue);
   color: var(--color-on-accent);
-}
-
-.recurrenceSummary {
-  font-size: var(--font-size-md);
-  color: var(--color-muted);
 }

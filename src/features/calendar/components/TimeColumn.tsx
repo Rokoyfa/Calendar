@@ -1,3 +1,4 @@
+import { classNames } from '../../../utils/classNames.ts'
 import { formatHour } from '../../../utils/date.ts'
 import { HOURS } from '../constants/grid.ts'
 
@@ -11,7 +12,7 @@ export function TimeColumn({ currentHour }: TimeColumnProps) {
       <div className="columnHeader" />
       <div className="slots">
         {HOURS.map((hour) => (
-          <div key={hour} className={hour === currentHour ? 'time currentTime' : 'time'}>
+          <div key={hour} className={classNames('time', hour === currentHour && 'currentTime')}>
             {formatHour(hour)}
           </div>
         ))}

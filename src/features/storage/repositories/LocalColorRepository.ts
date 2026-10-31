@@ -1,51 +1,31 @@
 import { isHexColor, normalizeHexColor, type HexColor } from '../../../utils/color.ts'
 import type { ColorRepository } from '../types/storage.ts'
+import { LocalStorageList } from '../utils/localStorageList.ts'
 
 const DEFAULT_STORAGE_KEY = 'calendar.colors.v1'
 
+const parseColor = (value: unknown) => (isHexColor(value) ? normalizeHexColor(value) : null)
+
 export class LocalColorRepository implements ColorRepository {
-  readonly #storageKey: string
+  readonly #colors: LocalStorageList<HexColor>
 
   constructor(storageKey = DEFAULT_STORAGE_KEY) {
-    this.#storageKey = storageKey
+    this.#colors = new LocalStorageList(storageKey, parseColor, 'Die Farbe konnte nicht lokal gespeichert werden.')
   }
 
   async list() {
-    return this.#read()
+    return [...new Set(this.#colors.read())]
   }
 
   async add(color: HexColor) {
     const normalized = normalizeHexColor(color)
-    const colors = this.#read()
+    const colors = await this.list()
     if (colors.includes(normalized)) return colors
-
-    const next = [...colors, normalized]
-    this.#write(next)
-    return next
+    return this.#colors.update(() => [...colors, normalized])
   }
 
   async remove(color: HexColor) {
     const normalized = normalizeHexColor(color)
-    const next = this.#read().filter((entry) => entry !== normalized)
-    this.#write(next)
-    return next
-  }
-
-  #read(): HexColor[] {
-    try {
-      const raw = localStorage.getItem(this.#storageKey)
-      const parsed: unknown = raw ? JSON.parse(raw) : []
-      return Array.isArray(parsed) ? [...new Set(parsed.filter(isHexColor).map(normalizeHexColor))] : []
-    } catch {
-      return []
-    }
-  }
-
-  #write(colors: HexColor[]) {
-    try {
-      localStorage.setItem(this.#storageKey, JSON.stringify(colors))
-    } catch {
-      throw new Error('Die Farbe konnte nicht lokal gespeichert werden.')
-    }
+    return this.#colors.update((colors) => colors.filter((entry) => entry !== normalized))
   }
 }

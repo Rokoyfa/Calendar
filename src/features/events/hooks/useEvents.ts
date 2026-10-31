@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
-import { getErrorMessage } from '../../../utils/error.ts'
+import { useCallback } from 'react'
+import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import {
-  compareEvents,
+  EVENT_NOT_FOUND_MESSAGE,
   type CalendarEvent,
   type EditScope,
   type EventInput,
@@ -10,86 +10,49 @@ import {
 import { useEventRepository, type DateRange } from '../../storage/index.ts'
 import { deleteOccurrence, updateOccurrence } from '../utils/seriesActions.ts'
 
-type EventsState = {
-  key: string
-  events: CalendarEvent[]
-  error: string | null
-}
-
-const INITIAL_STATE: EventsState = { key: '', events: [], error: null }
+const NO_EVENTS: CalendarEvent[] = []
 
 export function useEvents({ from, to }: DateRange) {
   const repository = useEventRepository()
-  const [version, setVersion] = useState(0)
-  const [state, setState] = useState(INITIAL_STATE)
-  const key = `${from}|${to}|${version}`
-
-  useEffect(() => {
-    let cancelled = false
-
-    repository
-      .list({ from, to })
-      .then((events) => {
-        if (!cancelled) setState({ key, events: events.toSorted(compareEvents), error: null })
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) setState((previous) => ({ ...previous, key, error: getErrorMessage(error) }))
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [repository, from, to, key])
-
-  const reload = useCallback(() => setVersion((current) => current + 1), [])
-
-  const createEvent = useCallback(
-    async (input: EventInput) => {
-      const event = await repository.create(input)
-      reload()
-      return event
-    },
-    [repository, reload],
-  )
+  const load = useCallback(() => repository.list({ from, to }), [repository, from, to])
+  const { data: events, error, isLoading, reload } = useAsyncResource(load, NO_EVENTS)
 
   const findSeries = useCallback(
     (occurrence: EventOccurrence) => {
-      const series = state.events.find((event) => event.id === occurrence.id)
-      if (!series) throw new Error('Der Termin wurde nicht gefunden.')
+      const series = events.find((event) => event.id === occurrence.id)
+      if (!series) throw new Error(EVENT_NOT_FOUND_MESSAGE)
       return series
     },
-    [state.events],
+    [events],
+  )
+
+  const withReload = useCallback(
+    async <T>(operation: () => Promise<T>) => {
+      try {
+        return await operation()
+      } finally {
+        reload()
+      }
+    },
+    [reload],
+  )
+
+  const createEvent = useCallback(
+    (input: EventInput) => withReload(() => repository.create(input)),
+    [repository, withReload],
   )
 
   const updateEvent = useCallback(
-    async (occurrence: EventOccurrence, input: EventInput, scope: EditScope) => {
-      try {
-        await updateOccurrence(repository, findSeries(occurrence), occurrence.startDate, input, scope)
-      } finally {
-        reload()
-      }
-    },
-    [repository, reload, findSeries],
+    (occurrence: EventOccurrence, input: EventInput, scope: EditScope) =>
+      withReload(() => updateOccurrence(repository, findSeries(occurrence), occurrence.startDate, input, scope)),
+    [repository, withReload, findSeries],
   )
 
   const deleteEvent = useCallback(
-    async (occurrence: EventOccurrence, scope: EditScope) => {
-      try {
-        await deleteOccurrence(repository, findSeries(occurrence), occurrence.startDate, scope)
-      } finally {
-        reload()
-      }
-    },
-    [repository, reload, findSeries],
+    (occurrence: EventOccurrence, scope: EditScope) =>
+      withReload(() => deleteOccurrence(repository, findSeries(occurrence), occurrence.startDate, scope)),
+    [repository, withReload, findSeries],
   )
 
-  return {
-    events: state.events,
-    error: state.error,
-    isLoading: state.key !== key,
-    reload,
-    createEvent,
-    updateEvent,
-    deleteEvent,
-  }
+  return { events, error, isLoading, reload, createEvent, updateEvent, deleteEvent }
 }

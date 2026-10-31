@@ -1,16 +1,25 @@
+import type { CSSProperties } from 'react'
 import {
   addDaysToISODate,
   daysBetween,
   formatShortDay,
-  ISO_DATE_PATTERN,
+  isISODate,
+  isTime,
   MINUTES_PER_DAY,
   MINUTES_PER_HOUR,
   minutesToTime,
-  TIME_PATTERN,
   timeToMinutes,
 } from './date.ts'
-import { isHexColor, type HexColor } from './color.ts'
-import { getOccurrenceDates, parseRecurrence, validateRecurrence, type Recurrence } from './recurrence.ts'
+import { getReadableTextColor, isHexColor, type HexColor } from './color.ts'
+import { pick } from './object.ts'
+import {
+  getOccurrenceDates,
+  hasRecurrenceErrors,
+  parseRecurrence,
+  validateRecurrence,
+  type Recurrence,
+  type RecurrenceValidationErrors,
+} from './recurrence.ts'
 
 export const PRESET_EVENT_COLORS = ['blue', 'red', 'green', 'yellow'] as const
 
@@ -46,20 +55,23 @@ export type CalendarEvent = {
   updatedAt: string
 }
 
-export type EventInput = Pick<
-  CalendarEvent,
-  | 'title'
-  | 'startDate'
-  | 'start'
-  | 'endDate'
-  | 'end'
-  | 'description'
-  | 'color'
-  | 'recurrence'
-  | 'excludedDates'
-  | 'seriesId'
-  | 'originalDate'
->
+const EVENT_INPUT_KEYS = [
+  'title',
+  'startDate',
+  'start',
+  'endDate',
+  'end',
+  'description',
+  'color',
+  'recurrence',
+  'excludedDates',
+  'seriesId',
+  'originalDate',
+] as const satisfies readonly (keyof CalendarEvent)[]
+
+export type EventInput = Pick<CalendarEvent, (typeof EVENT_INPUT_KEYS)[number]>
+
+export const NO_SERIES_LINK = { seriesId: null, originalDate: null } as const satisfies Partial<EventInput>
 
 export type EventOccurrence = CalendarEvent & {
   occurrenceKey: string
@@ -70,12 +82,13 @@ export type EditScope = 'single' | 'following' | 'all'
 
 export type EventPeriod = Pick<CalendarEvent, 'startDate' | 'start' | 'endDate' | 'end'>
 
-export type EventValidationErrors = Partial<
-  Record<
-    keyof EventInput | 'recurrenceInterval' | 'recurrenceWeekdays' | 'recurrenceUntil' | 'recurrenceCount',
-    string
-  >
->
+export type SeriesRule = Pick<CalendarEvent, 'startDate' | 'recurrence' | 'excludedDates'>
+
+export type EventValidationErrors = Partial<Record<Exclude<keyof EventInput, 'recurrence'>, string>> & {
+  recurrence?: RecurrenceValidationErrors
+}
+
+export const EVENT_NOT_FOUND_MESSAGE = 'Der Termin wurde nicht gefunden.'
 
 export const isPresetEventColor = (value: unknown): value is PresetEventColor =>
   PRESET_EVENT_COLORS.includes(value as PresetEventColor)
@@ -85,9 +98,10 @@ export const isEventColor = (value: unknown): value is EventColor => isPresetEve
 export const getEventColorLabel = (color: EventColor) =>
   isPresetEventColor(color) ? PRESET_EVENT_COLOR_LABELS[color] : color.toUpperCase()
 
-const isISODate = (value: unknown): value is string => typeof value === 'string' && ISO_DATE_PATTERN.test(value)
-
-const isTime = (value: unknown): value is string => typeof value === 'string' && TIME_PATTERN.test(value)
+export const getEventColorAttributes = (color: EventColor): { className?: string; style?: CSSProperties } =>
+  isPresetEventColor(color)
+    ? { className: `color-${color}` }
+    : { style: { '--event-color': color, '--event-text': getReadableTextColor(color) } as CSSProperties }
 
 export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
   if (typeof value !== 'object' || value === null) return null
@@ -146,79 +160,60 @@ export const createEventInput = (date: string, hour: number): EventInput => {
     color: 'blue',
     recurrence: null,
     excludedDates: [],
-    seriesId: null,
-    originalDate: null,
+    ...NO_SERIES_LINK,
   }
 }
 
-export const toEventInput = ({
-  title,
-  startDate,
-  start,
-  endDate,
-  end,
-  description,
-  color,
-  recurrence,
-  excludedDates,
-  seriesId,
-  originalDate,
-}: CalendarEvent): EventInput => ({
-  title,
-  startDate,
-  start,
-  endDate,
-  end,
-  description,
-  color,
-  recurrence,
-  excludedDates,
-  seriesId,
-  originalDate,
-})
+export const toEventInput = (event: CalendarEvent): EventInput => pick(event, EVENT_INPUT_KEYS)
 
 export const normalizeEventInput = (input: EventInput): EventInput => ({
   ...input,
   title: input.title.trim(),
   description: input.description.trim(),
-  excludedDates: input.recurrence ? input.excludedDates : [],
-  seriesId: input.recurrence ? null : input.seriesId,
-  originalDate: input.recurrence ? null : input.originalDate,
+  ...(input.recurrence ? NO_SERIES_LINK : { excludedDates: [] }),
 })
 
-export const getEventDuration = ({ startDate, start, endDate, end }: EventPeriod) =>
-  daysBetween(startDate, endDate) * MINUTES_PER_DAY + timeToMinutes(end) - timeToMinutes(start)
+export const getEventDuration = (period: EventPeriod) =>
+  getSpanDays(period) * MINUTES_PER_DAY + timeToMinutes(period.end) - timeToMinutes(period.start)
 
-export const isMultiDayEvent = ({ startDate, endDate }: EventPeriod) => startDate !== endDate
+export const isMultiDayEvent = ({ startDate, endDate }: Pick<EventPeriod, 'startDate' | 'endDate'>) =>
+  startDate !== endDate
 
-const getOccurrenceStartDates = (event: CalendarEvent, from: string, to: string) => {
-  const span = daysBetween(event.startDate, event.endDate)
-  const windowStart = addDaysToISODate(from, -span)
-  if (!event.recurrence) return event.startDate >= windowStart && event.startDate <= to ? [event.startDate] : []
-  const excluded = new Set(event.excludedDates)
-  return getOccurrenceDates(event.startDate, event.recurrence, windowStart, to).filter((date) => !excluded.has(date))
+export const getSpanDays = ({ startDate, endDate }: Pick<EventPeriod, 'startDate' | 'endDate'>) =>
+  daysBetween(startDate, endDate)
+
+export const moveToStartDate = (period: Pick<EventPeriod, 'startDate' | 'endDate'>, startDate: string) => ({
+  startDate,
+  endDate: addDaysToISODate(startDate, getSpanDays(period)),
+})
+
+export const getActiveOccurrenceDates = ({ startDate, recurrence, excludedDates }: SeriesRule, from: string, to: string) => {
+  if (!recurrence) return startDate >= from && startDate <= to ? [startDate] : []
+  const excluded = new Set(excludedDates)
+  return getOccurrenceDates(startDate, recurrence, from, to).filter((date) => !excluded.has(date))
 }
+
+const getOccurrenceStartDates = (event: CalendarEvent, from: string, to: string) =>
+  getActiveOccurrenceDates(event, addDaysToISODate(from, -getSpanDays(event)), to)
 
 export const eventOccursInRange = (event: CalendarEvent, from: string, to: string) =>
   getOccurrenceStartDates(event, from, to).length > 0
 
+export const toSeriesRule = (occurrence: EventOccurrence): SeriesRule => ({
+  startDate: occurrence.seriesStartDate,
+  recurrence: occurrence.recurrence,
+  excludedDates: occurrence.excludedDates,
+})
+
 export const expandEvents = (events: readonly CalendarEvent[], from: string, to: string): EventOccurrence[] =>
-  events.flatMap((event) => {
-    const span = daysBetween(event.startDate, event.endDate)
-    return getOccurrenceStartDates(event, from, to).map((startDate) => ({
+  events.flatMap((event) =>
+    getOccurrenceStartDates(event, from, to).map((startDate) => ({
       ...event,
-      startDate,
-      endDate: addDaysToISODate(startDate, span),
+      ...moveToStartDate(event, startDate),
       occurrenceKey: `${event.id}:${startDate}`,
       seriesStartDate: event.startDate,
-    }))
-  })
-
-export const compareEvents = (a: CalendarEvent, b: CalendarEvent) =>
-  a.startDate.localeCompare(b.startDate) ||
-  a.start.localeCompare(b.start) ||
-  getEventDuration(b) - getEventDuration(a) ||
-  a.title.localeCompare(b.title)
+    })),
+  )
 
 export const formatEventPeriod = (event: EventPeriod) =>
   isMultiDayEvent(event)
@@ -232,10 +227,10 @@ export const validateEventInput = (input: EventInput): EventValidationErrors => 
   else if (input.title.length > EVENT_TITLE_MAX_LENGTH)
     errors.title = `Der Titel darf höchstens ${EVENT_TITLE_MAX_LENGTH} Zeichen lang sein.`
 
-  if (!ISO_DATE_PATTERN.test(input.startDate)) errors.startDate = 'Bitte ein gültiges Startdatum wählen.'
-  if (!TIME_PATTERN.test(input.start)) errors.start = 'Bitte eine gültige Startzeit wählen.'
-  if (!ISO_DATE_PATTERN.test(input.endDate)) errors.endDate = 'Bitte ein gültiges Enddatum wählen.'
-  if (!TIME_PATTERN.test(input.end)) errors.end = 'Bitte eine gültige Endzeit wählen.'
+  if (!isISODate(input.startDate)) errors.startDate = 'Bitte ein gültiges Startdatum wählen.'
+  if (!isTime(input.start)) errors.start = 'Bitte eine gültige Startzeit wählen.'
+  if (!isISODate(input.endDate)) errors.endDate = 'Bitte ein gültiges Enddatum wählen.'
+  if (!isTime(input.end)) errors.end = 'Bitte eine gültige Endzeit wählen.'
 
   if (!errors.startDate && !errors.endDate && input.endDate < input.startDate)
     errors.endDate = 'Das Enddatum darf nicht vor dem Startdatum liegen.'
@@ -244,10 +239,7 @@ export const validateEventInput = (input: EventInput): EventValidationErrors => 
 
   if (input.recurrence) {
     const recurrenceErrors = validateRecurrence(input.recurrence, input.startDate)
-    if (recurrenceErrors.interval) errors.recurrenceInterval = recurrenceErrors.interval
-    if (recurrenceErrors.weekdays) errors.recurrenceWeekdays = recurrenceErrors.weekdays
-    if (recurrenceErrors.until) errors.recurrenceUntil = recurrenceErrors.until
-    if (recurrenceErrors.count) errors.recurrenceCount = recurrenceErrors.count
+    if (hasRecurrenceErrors(recurrenceErrors)) errors.recurrence = recurrenceErrors
   }
 
   if (input.description.length > EVENT_DESCRIPTION_MAX_LENGTH)
@@ -256,4 +248,5 @@ export const validateEventInput = (input: EventInput): EventValidationErrors => 
   return errors
 }
 
-export const hasValidationErrors = (errors: EventValidationErrors) => Object.values(errors).some(Boolean)
+export const hasValidationErrors = ({ recurrence, ...fields }: EventValidationErrors) =>
+  Object.values(fields).some(Boolean) || (recurrence !== undefined && hasRecurrenceErrors(recurrence))

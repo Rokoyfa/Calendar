@@ -1,11 +1,42 @@
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.formSection .formSection {
+  gap: var(--space-3);
+}
+
+.formRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.formRow .field {
+  flex: 1;
+  min-width: 120px;
+}
+
 .field {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
+fieldset.field {
+  min-width: 0;
+  border: none;
+}
+
 .label {
   font-weight: bold;
+}
+
+.formHint {
+  font-size: var(--font-size-md);
+  color: var(--color-muted);
 }
 
 .input {
@@ -16,6 +47,49 @@
 
 .input:focus {
   border-bottom-color: var(--color-text);
+}
+
+.formSection .input {
+  width: 100%;
+}
+
+.formSection .numberInput {
+  width: 4.5em;
+}
+
+select.input {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.inlineField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.choiceList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.chip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-round);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.chip:has(:focus-visible) {
+  box-shadow: var(--focus-ring);
 }
 
 .textarea {

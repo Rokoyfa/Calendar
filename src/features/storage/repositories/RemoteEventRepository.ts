@@ -11,11 +11,11 @@ export class RemoteEventRepository implements EventRepository {
   }
 
   list(range: DateRange) {
-    return this.#request<CalendarEvent[]>(`/events?${new URLSearchParams(range)}`)
+    return this.#query(range)
   }
 
   listSeries(seriesId: string) {
-    return this.#request<CalendarEvent[]>(`/events?${new URLSearchParams({ seriesId })}`)
+    return this.#query({ seriesId })
   }
 
   create(input: EventInput) {
@@ -23,14 +23,19 @@ export class RemoteEventRepository implements EventRepository {
   }
 
   update(id: string, input: EventInput) {
-    return this.#request<CalendarEvent>(`/events/${encodeURIComponent(id)}`, {
-      method: 'PUT',
-      body: JSON.stringify(input),
-    })
+    return this.#request<CalendarEvent>(this.#eventPath(id), { method: 'PUT', body: JSON.stringify(input) })
   }
 
   async remove(id: string) {
-    await this.#request<void>(`/events/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    await this.#request<void>(this.#eventPath(id), { method: 'DELETE' })
+  }
+
+  #query(params: Record<string, string>) {
+    return this.#request<CalendarEvent[]>(`/events?${new URLSearchParams(params)}`)
+  }
+
+  #eventPath(id: string) {
+    return `/events/${encodeURIComponent(id)}`
   }
 
   async #request<T>(path: string, init: RequestInit = {}): Promise<T> {

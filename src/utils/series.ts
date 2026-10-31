@@ -1,23 +1,33 @@
-import { addDaysToISODate, daysBetween } from './date.ts'
-import { toEventInput, type CalendarEvent, type EventInput } from './event.ts'
-import { countOccurrencesBefore, getOccurrenceDates, isSameRecurrence, shiftWeekdays, type Recurrence } from './recurrence.ts'
+import { addDaysToISODate, daysBetween, minISODate } from './date.ts'
+import {
+  getActiveOccurrenceDates,
+  moveToStartDate,
+  NO_SERIES_LINK,
+  toEventInput,
+  type CalendarEvent,
+  type EventInput,
+  type SeriesRule,
+} from './event.ts'
+import { countOccurrencesBefore, isSameRecurrence, shiftWeekdays, type Recurrence } from './recurrence.ts'
 
-type SeriesRule = Pick<CalendarEvent, 'recurrence' | 'excludedDates'> & { seriesStartDate: string }
+export const hasEarlierOccurrences = (series: SeriesRule, date: string) =>
+  series.recurrence !== null &&
+  date > series.startDate &&
+  getActiveOccurrenceDates(series, series.startDate, addDaysToISODate(date, -1)).length > 0
 
-export const hasEarlierOccurrences = ({ recurrence, excludedDates, seriesStartDate }: SeriesRule, date: string) => {
-  if (!recurrence || date <= seriesStartDate) return false
-  const excluded = new Set(excludedDates)
-  return getOccurrenceDates(seriesStartDate, recurrence, seriesStartDate, addDaysToISODate(date, -1)).some(
-    (occurrence) => !excluded.has(occurrence),
-  )
-}
+export const getShift = (occurrenceDate: string, input: EventInput) => daysBetween(occurrenceDate, input.startDate)
 
-const followShift = (previous: Recurrence | null, next: Recurrence | null, shift: number) =>
-  next !== null && shift !== 0 && next.frequency === 'weekly' && isSameRecurrence(previous, next)
+export const isDetachedFrom = (event: CalendarEvent, date: string) =>
+  event.originalDate !== null && event.originalDate >= date
+
+const shiftDates = (dates: readonly string[], shift: number) => dates.map((date) => addDaysToISODate(date, shift))
+
+const followShift = (previous: Recurrence | null, next: Recurrence, shift: number) =>
+  shift !== 0 && next.frequency === 'weekly' && isSameRecurrence(previous, next)
     ? { ...next, weekdays: shiftWeekdays(next.weekdays, shift) }
     : next
 
-const shiftDates = (dates: readonly string[], shift: number) => dates.map((date) => addDaysToISODate(date, shift))
+const asSingleEvent = (input: EventInput): EventInput => ({ ...input, excludedDates: [], ...NO_SERIES_LINK })
 
 export const excludeOccurrence = (series: CalendarEvent, occurrenceDate: string): EventInput => ({
   ...toEventInput(series),
@@ -32,32 +42,27 @@ export const detachOccurrence = (series: CalendarEvent, occurrenceDate: string, 
   originalDate: occurrenceDate,
 })
 
-export const getShift = (occurrenceDate: string, input: EventInput) => daysBetween(occurrenceDate, input.startDate)
-
 export const changeWholeSeries = (series: CalendarEvent, occurrenceDate: string, input: EventInput): EventInput => {
-  if (input.recurrence === null) return { ...input, excludedDates: [], seriesId: null, originalDate: null }
+  if (input.recurrence === null) return asSingleEvent(input)
 
   const shift = getShift(occurrenceDate, input)
-  const startDate = addDaysToISODate(series.startDate, shift)
   return {
     ...input,
-    startDate,
-    endDate: addDaysToISODate(startDate, daysBetween(input.startDate, input.endDate)),
+    ...moveToStartDate(input, addDaysToISODate(series.startDate, shift)),
     recurrence: followShift(series.recurrence, input.recurrence, shift),
     excludedDates: shiftDates(series.excludedDates, shift),
-    seriesId: null,
-    originalDate: null,
+    ...NO_SERIES_LINK,
   }
 }
 
 export const truncateSeries = (series: CalendarEvent, occurrenceDate: string): EventInput => {
   const lastDate = addDaysToISODate(occurrenceDate, -1)
-  const recurrence = series.recurrence
+  const { recurrence } = series
   return {
     ...toEventInput(series),
     recurrence: recurrence && {
       ...recurrence,
-      until: recurrence.until !== null && recurrence.until < lastDate ? recurrence.until : lastDate,
+      until: recurrence.until === null ? lastDate : minISODate(recurrence.until, lastDate),
       count: null,
     },
     excludedDates: series.excludedDates.filter((date) => date < occurrenceDate),
@@ -65,26 +70,25 @@ export const truncateSeries = (series: CalendarEvent, occurrenceDate: string): E
 }
 
 export const continueSeries = (series: CalendarEvent, occurrenceDate: string, input: EventInput): EventInput => {
-  if (input.recurrence === null) return { ...input, excludedDates: [], seriesId: null, originalDate: null }
+  if (input.recurrence === null) return asSingleEvent(input)
 
   const shift = getShift(occurrenceDate, input)
   const keepsRule = isSameRecurrence(series.recurrence, input.recurrence)
+  const { count } = input.recurrence
   const remaining =
-    keepsRule && series.recurrence && input.recurrence.count !== null
-      ? input.recurrence.count - countOccurrencesBefore(series.startDate, series.recurrence, occurrenceDate)
-      : input.recurrence.count
-  const recurrence = followShift(series.recurrence, input.recurrence, shift)
+    keepsRule && series.recurrence && count !== null
+      ? Math.max(count - countOccurrencesBefore(series.startDate, series.recurrence, occurrenceDate), 1)
+      : count
 
   return {
     ...input,
-    recurrence: recurrence && { ...recurrence, count: remaining === null ? null : Math.max(remaining, 1) },
+    recurrence: { ...followShift(series.recurrence, input.recurrence, shift), count: remaining },
     excludedDates: keepsRule
       ? shiftDates(
           series.excludedDates.filter((date) => date >= occurrenceDate),
           shift,
         )
       : [],
-    seriesId: null,
-    originalDate: null,
+    ...NO_SERIES_LINK,
   }
 }

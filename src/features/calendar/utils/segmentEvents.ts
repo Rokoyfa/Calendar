@@ -1,12 +1,19 @@
-import { addDaysToISODate, daysBetween, MINUTES_PER_DAY, timeToMinutes } from '../../../utils/date.ts'
+import {
+  addDaysToISODate,
+  daysBetween,
+  maxISODate,
+  minISODate,
+  MINUTES_PER_DAY,
+  timeToMinutes,
+} from '../../../utils/date.ts'
 import { getEventDuration, type EventOccurrence } from '../../../utils/event.ts'
 import type { EventSegment, VisibleRange } from '../types/eventLayout.ts'
 
 export function splitEventIntoSegments(event: EventOccurrence, { from, to }: VisibleRange): EventSegment[] {
   const eventStart = timeToMinutes(event.start)
   const eventEnd = eventStart + getEventDuration(event)
-  const firstDate = event.startDate > from ? event.startDate : from
-  const lastDate = event.endDate < to ? event.endDate : to
+  const firstDate = maxISODate(event.startDate, from)
+  const lastDate = minISODate(event.endDate, to)
   const segments: EventSegment[] = []
 
   for (let date = firstDate; date <= lastDate; date = addDaysToISODate(date, 1)) {

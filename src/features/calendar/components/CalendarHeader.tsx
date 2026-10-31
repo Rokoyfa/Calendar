@@ -1,3 +1,4 @@
+import { IconButton } from '../../../components/IconButton.tsx'
 import { formatWeekTitle } from '../../../utils/date.ts'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from './Icons.tsx'
 
@@ -21,24 +22,12 @@ export function CalendarHeader({
   return (
     <header className="header">
       <div className="weekControls">
-        <button
-          type="button"
-          className="iconButton iconButton--plain"
-          aria-label="Vorherige Woche"
-          title="Vorherige Woche (←)"
-          onClick={onPreviousWeek}
-        >
+        <IconButton label="Vorherige Woche" title="Vorherige Woche (←)" plain onClick={onPreviousWeek}>
           <ChevronLeftIcon />
-        </button>
-        <button
-          type="button"
-          className="iconButton iconButton--plain"
-          aria-label="Nächste Woche"
-          title="Nächste Woche (→)"
-          onClick={onNextWeek}
-        >
+        </IconButton>
+        <IconButton label="Nächste Woche" title="Nächste Woche (→)" plain onClick={onNextWeek}>
           <ChevronRightIcon />
-        </button>
+        </IconButton>
         <span className="weekDisplay text-muted">KW {weekNumber}</span>
       </div>
 
@@ -49,15 +38,9 @@ export function CalendarHeader({
       </h1>
 
       <div className="generalControls">
-        <button
-          type="button"
-          className="iconButton"
-          aria-label="Neuer Termin"
-          title="Neuer Termin"
-          onClick={onCreateEvent}
-        >
+        <IconButton label="Neuer Termin" onClick={onCreateEvent}>
           <PlusIcon size={16} />
-        </button>
+        </IconButton>
       </div>
     </header>
   )

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { classNames } from '../utils/classNames.ts'
 
 type ModalProps = {
   title: string
@@ -22,7 +23,7 @@ export function Modal({ title, onClose, children, variant = 'default' }: ModalPr
   return (
     <dialog
       ref={dialogRef}
-      className={variant === 'danger' ? 'modal modal--danger' : 'modal'}
+      className={classNames('modal', variant === 'danger' && 'modal--danger')}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault()

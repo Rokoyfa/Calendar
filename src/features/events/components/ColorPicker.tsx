@@ -1,6 +1,14 @@
-import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
-import { isHexColor, normalizeHexColor, type HexColor } from '../../../utils/color.ts'
-import { getEventColorLabel, PRESET_EVENT_COLORS, type EventColor } from '../../../utils/event.ts'
+import { useEffect, useMemo, useRef } from 'react'
+import { ChoiceChip } from '../../../components/ChoiceChip.tsx'
+import { FormField } from '../../../components/FormField.tsx'
+import { classNames } from '../../../utils/classNames.ts'
+import { isHexColor, normalizeHexColor } from '../../../utils/color.ts'
+import {
+  getEventColorAttributes,
+  getEventColorLabel,
+  PRESET_EVENT_COLORS,
+  type EventColor,
+} from '../../../utils/event.ts'
 import { DEFAULT_CUSTOM_COLOR } from '../constants/colors.ts'
 import { useCustomColors } from '../hooks/useCustomColors.ts'
 
@@ -8,18 +16,6 @@ type ColorPickerProps = {
   value: EventColor
   onChange: (color: EventColor) => void
 }
-
-const swatchClassName = (color: EventColor, selected: boolean) =>
-  [
-    'color',
-    isHexColor(color) ? 'color--custom' : `color-${color}`,
-    selected ? 'activ' : null,
-  ]
-    .filter(Boolean)
-    .join(' ')
-
-const swatchStyle = (color: EventColor) =>
-  isHexColor(color) ? ({ '--swatch-color': color } as CSSProperties) : undefined
 
 export function ColorPicker({ value, onChange }: ColorPickerProps) {
   const { colors: customColors, addColor, canAddMore } = useCustomColors()
@@ -37,7 +33,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
 
     const handleChange = () => {
       if (!isHexColor(input.value)) return
-      const color: HexColor = normalizeHexColor(input.value)
+      const color = normalizeHexColor(input.value)
       onChange(color)
       void addColor(color)
     }
@@ -47,30 +43,26 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
   }, [addColor, onChange, canAddMore])
 
   return (
-    <fieldset className="colorPicker">
-      <legend className="descriptor">Farbe</legend>
-      <div className="colors">
-        {options.map((color) => (
-          <label
-            key={color}
-            className={swatchClassName(color, value === color)}
-            style={swatchStyle(color)}
-            title={getEventColorLabel(color)}
-          >
-            <input
+    <FormField as="fieldset" label="Farbe">
+      <div className="choiceList">
+        {options.map((color) => {
+          const { className, style } = getEventColorAttributes(color)
+          return (
+            <ChoiceChip
+              key={color}
               type="radio"
               name="eventColor"
-              value={color}
-              className="visuallyHidden"
-              aria-label={getEventColorLabel(color)}
+              label={getEventColorLabel(color)}
               checked={value === color}
               onChange={() => onChange(color)}
+              className={classNames('color', className)}
+              style={style}
             />
-          </label>
-        ))}
+          )
+        })}
 
         {canAddMore && (
-          <label className="color colorAdd" title="Eigene Farbe hinzufügen">
+          <label className="chip color colorAdd" title="Eigene Farbe hinzufügen">
             <input
               ref={addInputRef}
               type="color"
@@ -81,6 +73,6 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
           </label>
         )}
       </div>
-    </fieldset>
+    </FormField>
   )
 }

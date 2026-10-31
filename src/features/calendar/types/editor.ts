@@ -1,6 +1,6 @@
 import type { EventInput, EventOccurrence } from '../../../utils/event.ts'
-import type { EventModalMode } from '../../events/index.ts'
 
-export type EditorState =
-  | { mode: Extract<EventModalMode, 'create'>; initialValue: EventInput }
-  | { mode: Extract<EventModalMode, 'edit'>; occurrence: EventOccurrence }
+export type EditorState = {
+  initialValue: EventInput
+  occurrence: EventOccurrence | null
+}

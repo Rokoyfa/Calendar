@@ -1,72 +1,44 @@
-import { useState } from 'react'
+import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
 import { Modal } from '../../../components/Modal.tsx'
-import { getErrorMessage } from '../../../utils/error.ts'
-import type { CalendarEvent, EditScope } from '../../../utils/event.ts'
-import { EDIT_SCOPE_LABELS } from '../constants/scopes.ts'
+import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
+import type { EditScope, EventOccurrence } from '../../../utils/event.ts'
+import { getScopeOptions } from '../utils/scopeOptions.ts'
+import { ScopeButtons } from './ScopeButtons.tsx'
 
 type DeleteEventModalProps = {
-  event: CalendarEvent
-  scopeOptions: readonly EditScope[]
+  occurrence: EventOccurrence
   onConfirm: (scope: EditScope) => Promise<void>
   onClose: () => void
 }
 
-export function DeleteEventModal({ event, scopeOptions, onConfirm, onClose }: DeleteEventModalProps) {
-  const [error, setError] = useState<string | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+const IRREVERSIBLE = 'Das kann nicht rückgängig gemacht werden.'
 
-  const isRecurring = scopeOptions.length > 1
-
-  const handleConfirm = async (scope: EditScope) => {
-    setIsDeleting(true)
-    setError(null)
-    try {
-      await onConfirm(scope)
-    } catch (reason) {
-      setError(getErrorMessage(reason))
-      setIsDeleting(false)
-    }
-  }
+export function DeleteEventModal({ occurrence, onConfirm, onClose }: DeleteEventModalProps) {
+  const { run, isPending, error } = useAsyncAction(onConfirm)
+  const options = getScopeOptions(occurrence)
+  const isSeries = options.length > 1
 
   return (
     <Modal title="Termin löschen?" variant="danger" onClose={onClose}>
-      <p className="deleteMessage">
-        {isRecurring
-          ? `„${event.title}“ ist ein wiederkehrender Termin. Was soll gelöscht werden? Das kann nicht rückgängig gemacht werden.`
-          : `Soll „${event.title}“ wirklich gelöscht werden? Das kann nicht rückgängig gemacht werden.`}
+      <p className="modalMessage">
+        {isSeries
+          ? `„${occurrence.title}“ ist ein wiederkehrender Termin. Was soll gelöscht werden? ${IRREVERSIBLE}`
+          : `Soll „${occurrence.title}“ wirklich gelöscht werden? ${IRREVERSIBLE}`}
       </p>
 
-      {error && (
-        <p className="errorText" role="alert">
-          {error}
-        </p>
-      )}
+      <ErrorMessage message={error} />
 
-      {isRecurring ? (
-        <div className="scopeActions">
-          {scopeOptions.map((scope) => (
-            <button
-              key={scope}
-              type="button"
-              className="button button--danger button--block"
-              disabled={isDeleting}
-              onClick={() => void handleConfirm(scope)}
-            >
-              {EDIT_SCOPE_LABELS[scope]}
-            </button>
-          ))}
-          <button type="button" className="button button--secondary button--block" onClick={onClose} data-autofocus>
-            Abbrechen
-          </button>
-        </div>
+      {isSeries ? (
+        <ScopeButtons
+          options={options}
+          variant="danger"
+          disabled={isPending}
+          onSelect={(scope) => void run(scope)}
+          onCancel={onClose}
+        />
       ) : (
         <div className="modalActions modalActions--split">
-          <button
-            type="button"
-            className="button button--danger"
-            disabled={isDeleting}
-            onClick={() => void handleConfirm('all')}
-          >
+          <button type="button" className="button button--danger" disabled={isPending} onClick={() => void run('all')}>
             Ja
           </button>
           <button type="button" className="button button--success" onClick={onClose} data-autofocus>
