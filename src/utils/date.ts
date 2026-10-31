@@ -4,6 +4,11 @@ export const MINUTES_PER_HOUR = 60
 export const MINUTES_PER_DAY = HOURS_PER_DAY * MINUTES_PER_HOUR
 const MS_PER_DAY = 86_400_000
 
+export type DateRange = {
+  from: string
+  to: string
+}
+
 export const ISO_DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
 export const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
 
@@ -45,8 +50,24 @@ export const addDaysToISODate = (isoDate: string, amount: number) => toISODate(a
 
 export const addMonthsToISODate = (isoDate: string, amount: number) => {
   const { year, monthIndex, day } = parseISODate(isoDate)
-  return toISODate(new Date(year, monthIndex + amount, day))
+  const target = new Date(year, monthIndex + amount, 1)
+  return toISODate(
+    new Date(target.getFullYear(), target.getMonth(), Math.min(day, daysInMonth(target.getFullYear(), target.getMonth()))),
+  )
 }
+
+export const startOfMonthISO = (isoDate: string) => `${isoDate.slice(0, 7)}-01`
+
+export const endOfMonthISO = (isoDate: string) => addDaysToISODate(addMonthsToISODate(startOfMonthISO(isoDate), 1), -1)
+
+export const startOfYearISO = (isoDate: string) => `${isoDate.slice(0, 4)}-01-01`
+
+export const endOfYearISO = (isoDate: string) => `${isoDate.slice(0, 4)}-12-31`
+
+export const isSameMonthISO = (a: string, b: string) => a.slice(0, 7) === b.slice(0, 7)
+
+export const listISODates = (from: string, to: string) =>
+  Array.from({ length: daysBetween(from, to) + 1 }, (_, index) => addDaysToISODate(from, index))
 
 const toUTCTime = (isoDate: string) => {
   const { year, monthIndex, day } = parseISODate(isoDate)
@@ -61,6 +82,19 @@ export const daysInMonth = (year: number, monthIndex: number) => new Date(year, 
 export const getWeekdayIndex = (date: Date) => (date.getDay() + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK
 
 export const startOfWeek = (date: Date) => addDays(date, -getWeekdayIndex(date))
+
+export const startOfWeekISO = (isoDate: string) => toISODate(startOfWeek(fromISODate(isoDate)))
+
+export const endOfWeekISO = (isoDate: string) => addDaysToISODate(startOfWeekISO(isoDate), DAYS_PER_WEEK - 1)
+
+export const getMonthWeeks = (isoDate: string) => {
+  const dates = listISODates(startOfWeekISO(startOfMonthISO(isoDate)), endOfWeekISO(endOfMonthISO(isoDate)))
+  return Array.from({ length: dates.length / DAYS_PER_WEEK }, (_, week) =>
+    dates.slice(week * DAYS_PER_WEEK, (week + 1) * DAYS_PER_WEEK),
+  )
+}
+
+export const WEEKDAY_SHORT_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const
 
 export const isSameDay = (a: Date, b: Date) => toISODate(a) === toISODate(b)
 
@@ -77,18 +111,31 @@ export const formatHour = (hour: number) => `${pad(hour)}:00`
 
 const locale = 'de-DE'
 const weekdayFormat = new Intl.DateTimeFormat(locale, { weekday: 'long' })
+const shortWeekdayFormat = new Intl.DateTimeFormat(locale, { weekday: 'short' })
 const dayFormat = new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: '2-digit' })
 const shortDayFormat = new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit' })
 const fullDayFormat = new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
 const monthFormat = new Intl.DateTimeFormat(locale, { month: 'long' })
+const monthYearFormat = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
+const longDateFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
 export const formatWeekday = (date: Date) => weekdayFormat.format(date)
+
+export const formatShortWeekday = (date: Date) => shortWeekdayFormat.format(date)
 
 export const formatDay = (date: Date) => dayFormat.format(date)
 
 export const formatShortDay = (isoDate: string) => shortDayFormat.format(fromISODate(isoDate))
 
 export const formatFullDay = (isoDate: string) => fullDayFormat.format(fromISODate(isoDate))
+
+export const formatLongDate = (isoDate: string) => longDateFormat.format(fromISODate(isoDate))
+
+export const formatMonthName = (isoDate: string) => monthFormat.format(fromISODate(isoDate))
+
+export const formatMonthYear = (isoDate: string) => monthYearFormat.format(fromISODate(isoDate))
+
+export const getDayOfMonth = (isoDate: string) => Number(isoDate.slice(8, 10))
 
 export const formatWeekTitle = (weekStart: Date) => {
   const weekEnd = addDays(weekStart, DAYS_PER_WEEK - 1)

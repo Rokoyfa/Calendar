@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, type ComponentType } from 'react'
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
-import { fromISODate, isSameDay, toISODate } from '../../../utils/date.ts'
+import { useArrowKeyNavigation } from '../../../hooks/useArrowKeyNavigation.ts'
+import { toISODate } from '../../../utils/date.ts'
 import {
   createEventInput,
   expandEvents,
@@ -10,21 +11,28 @@ import {
   type EventOccurrence,
 } from '../../../utils/event.ts'
 import { DeleteEventModal, EventModal, useEvents } from '../../events/index.ts'
+import { useCalendarView } from '../hooks/useCalendarView.ts'
 import { useNow } from '../hooks/useNow.ts'
-import { useWeek } from '../hooks/useWeek.ts'
-import { useWeekKeyboardNavigation } from '../hooks/useWeekKeyboardNavigation.ts'
 import type { EditorState } from '../types/editor.ts'
-import type { EventSegment } from '../types/eventLayout.ts'
+import type { CalendarView, CalendarViewProps } from '../types/view.ts'
 import { groupSegmentsByDate } from '../utils/segmentEvents.ts'
 import { CalendarHeader } from './CalendarHeader.tsx'
-import { DayColumn } from './DayColumn.tsx'
-import { TimeColumn } from './TimeColumn.tsx'
+import { MonthView } from './MonthView.tsx'
+import { TimeGridView } from './TimeGridView.tsx'
+import { YearView } from './YearView.tsx'
 
-const NO_SEGMENTS: readonly EventSegment[] = []
+const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = {
+  day: TimeGridView,
+  week: TimeGridView,
+  month: MonthView,
+  year: YearView,
+}
 
 export function Calendar() {
   const now = useNow()
-  const { weekStart, days, weekNumber, range, nextWeek, previousWeek, currentWeek, goToDate } = useWeek()
+  const today = toISODate(now)
+  const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
+    useCalendarView()
   const { events, error, createEvent, updateEvent, deleteEvent } = useEvents(range)
   const segmentsByDate = useMemo(
     () => groupSegmentsByDate(expandEvents(events, range.from, range.to), range),
@@ -33,7 +41,7 @@ export function Calendar() {
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [eventToDelete, setEventToDelete] = useState<EventOccurrence | null>(null)
 
-  useWeekKeyboardNavigation({ onPreviousWeek: previousWeek, onNextWeek: nextWeek })
+  useArrowKeyNavigation({ onPrevious: previous, onNext: next })
 
   const openCreate = useCallback((date: string, hour: number) => {
     setEditor({ initialValue: createEventInput(date, hour), occurrence: null })
@@ -43,16 +51,11 @@ export function Calendar() {
     setEditor({ initialValue: toEventInput(occurrence), occurrence })
   }, [])
 
-  const handleCreateNow = () => {
-    const current = new Date()
-    openCreate(toISODate(current), current.getHours())
-  }
-
   const handleSave = async (input: EventInput, scope: EditScope) => {
     if (editor?.occurrence) await updateEvent(editor.occurrence, input, scope)
     else await createEvent(input)
     setEditor(null)
-    goToDate(fromISODate(input.startDate))
+    goToDate(input.startDate)
   }
 
   const handleDelete = async (scope: EditScope) => {
@@ -62,33 +65,35 @@ export function Calendar() {
     setEditor(null)
   }
 
+  const ViewComponent = VIEW_COMPONENTS[view]
+
   return (
     <>
       <CalendarHeader
-        weekStart={weekStart}
-        weekNumber={weekNumber}
-        onPreviousWeek={previousWeek}
-        onNextWeek={nextWeek}
-        onCurrentWeek={currentWeek}
-        onCreateEvent={handleCreateNow}
+        view={view}
+        title={title}
+        subtitle={subtitle}
+        onViewChange={setView}
+        onPrevious={previous}
+        onNext={next}
+        onToday={goToToday}
+        onCreateEvent={() => openCreate(view === 'day' ? anchor : today, now.getHours())}
       />
 
       <ErrorMessage message={error} className="textCenter" />
 
-      <main className="main scrollArea">
-        <div className="calendar">
-          <TimeColumn currentHour={now.getHours()} />
-          {days.map((day) => (
-            <DayColumn
-              key={day.getTime()}
-              date={day}
-              isToday={isSameDay(day, now)}
-              segments={segmentsByDate.get(toISODate(day)) ?? NO_SEGMENTS}
-              onSlotSelect={openCreate}
-              onEventSelect={openEdit}
-            />
-          ))}
-        </div>
+      <main className="main scrollArea" data-view={view}>
+        <ViewComponent
+          anchor={anchor}
+          dates={dates}
+          today={today}
+          currentHour={now.getHours()}
+          segmentsByDate={segmentsByDate}
+          onCreate={openCreate}
+          onEventSelect={openEdit}
+          onShowDay={(date) => show('day', date)}
+          onShowMonth={(date) => show('month', date)}
+        />
       </main>
 
       {editor && (

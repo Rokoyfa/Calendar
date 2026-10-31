@@ -1,10 +1,8 @@
 import type { HexColor } from '../../../utils/color.ts'
+import type { DateRange } from '../../../utils/date.ts'
 import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
 
-export type DateRange = {
-  from: string
-  to: string
-}
+export type { DateRange }
 
 export interface EventRepository {
   list(range: DateRange): Promise<CalendarEvent[]>

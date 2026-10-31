@@ -24,62 +24,73 @@
 }
 
 .header {
-  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-areas: "nav title actions";
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.headerNav {
+  grid-area: nav;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: var(--space-4) var(--space-3);
-  text-align: center;
-}
-
-.header h1 {
-  cursor: pointer;
-}
-
-.headerTitle {
-  font-weight: inherit;
-  line-height: inherit;
-  border-radius: var(--radius-sm);
-}
-
-.weekControls {
-  position: absolute;
-  left: var(--space-4);
-  display: flex;
-  align-items: center;
+  gap: var(--space-2);
   font-size: var(--font-size-xl);
 }
 
-.generalControls {
-  position: absolute;
-  right: var(--space-4);
+.headerTitle {
+  grid-area: title;
   display: flex;
+  align-items: baseline;
+  justify-content: center;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  list-style: none;
+  gap: 0 var(--space-3);
+  text-align: center;
 }
 
-@media (max-width: 600px) {
+.headerSubtitle {
+  font-size: var(--font-size-base);
+  font-weight: normal;
+  color: var(--color-muted);
+}
+
+.headerActions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+@media (max-width: 700px) {
   .header {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "nav create"
+      "title title"
+      "views views";
     padding: var(--space-3);
   }
 
-  .header h1 {
+  .headerActions {
+    display: contents;
+  }
+
+  .headerActions .segmentedControl {
+    grid-area: views;
+  }
+
+  .headerCreate {
+    grid-area: create;
+  }
+
+  .headerTitle {
     font-size: var(--font-size-lg);
   }
 
-  .weekControls {
-    position: static;
+  .headerNav {
     font-size: var(--font-size-lg);
-  }
-
-  .generalControls {
-    position: static;
-    margin-left: auto;
-  }
-
-  .weekDisplay {
-    display: none;
   }
 }

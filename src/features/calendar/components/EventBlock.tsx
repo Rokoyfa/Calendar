@@ -1,10 +1,10 @@
 import type { CSSProperties } from 'react'
 import { classNames } from '../../../utils/classNames.ts'
 import { formatEventPeriod, getEventColorAttributes, type EventOccurrence } from '../../../utils/event.ts'
-import { formatRecurrence } from '../../../utils/recurrence.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import { getVisibleDuration } from '../utils/eventGeometry.ts'
-import { RepeatIcon } from './Icons.tsx'
+import { getEventTooltip } from '../utils/eventLabels.ts'
+import { EventTitle } from './EventTitle.tsx'
 
 type EventBlockProps = {
   segment: EventSegment
@@ -18,8 +18,6 @@ const getSizeClass = (duration: number) => (duration <= 30 ? 'veryShortEvent' : 
 export function EventBlock({ segment, column, columns, onSelect }: EventBlockProps) {
   const { event, start, continuesBefore, continuesAfter } = segment
   const duration = getVisibleDuration(segment)
-  const period = formatEventPeriod(event)
-  const recurrenceText = event.recurrence ? formatRecurrence(event.recurrence, event.startDate) : null
   const color = getEventColorAttributes(event.color)
   const style = {
     '--event-start': start,
@@ -40,14 +38,11 @@ export function EventBlock({ segment, column, columns, onSelect }: EventBlockPro
         continuesAfter && 'eventContinuesAfter',
       )}
       style={style}
-      title={[`${period}: ${event.title}`, recurrenceText].filter(Boolean).join('\n')}
+      title={getEventTooltip(event)}
       onClick={() => onSelect(event)}
     >
-      <span className="eventName">
-        {recurrenceText && <RepeatIcon size={11} />}
-        {event.title}
-      </span>
-      {duration >= 90 && <span className="eventTime">{period}</span>}
+      <EventTitle event={event} />
+      {duration >= 90 && <span className="eventTime">{formatEventPeriod(event)}</span>}
     </button>
   )
 }

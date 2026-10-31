@@ -36,8 +36,6 @@ export const RECURRENCE_COUNT_MAX = 999
 
 const MAX_EMPTY_PERIODS = 1000
 
-export const WEEKDAY_SHORT_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const
-
 const WEEKDAY_LABELS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] as const
 
 const ORDINAL_LABELS = ['ersten', 'zweiten', 'dritten', 'vierten', 'fünften'] as const

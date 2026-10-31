@@ -4,6 +4,8 @@ import { getVisibleEnd } from './eventGeometry.ts'
 const compareSegments = (a: EventSegment, b: EventSegment) =>
   a.start - b.start || b.end - b.start - (a.end - a.start) || a.event.title.localeCompare(b.event.title)
 
+export const sortSegments = (segments: readonly EventSegment[]) => segments.toSorted(compareSegments)
+
 export function layoutEvents(segments: readonly EventSegment[]): PositionedSegment[] {
   const positioned: PositionedSegment[] = []
   let cluster: { segment: EventSegment; column: number }[] = []
@@ -16,7 +18,7 @@ export function layoutEvents(segments: readonly EventSegment[]): PositionedSegme
     columnEnds = []
   }
 
-  for (const segment of segments.toSorted(compareSegments)) {
+  for (const segment of sortSegments(segments)) {
     const { start } = segment
     const end = getVisibleEnd(segment)
     if (start >= clusterEnd) flushCluster()

@@ -5,11 +5,12 @@ import {
   minISODate,
   MINUTES_PER_DAY,
   timeToMinutes,
+  type DateRange,
 } from '../../../utils/date.ts'
 import { getEventDuration, type EventOccurrence } from '../../../utils/event.ts'
-import type { EventSegment, VisibleRange } from '../types/eventLayout.ts'
+import type { EventSegment } from '../types/eventLayout.ts'
 
-export function splitEventIntoSegments(event: EventOccurrence, { from, to }: VisibleRange): EventSegment[] {
+export function splitEventIntoSegments(event: EventOccurrence, { from, to }: DateRange): EventSegment[] {
   const eventStart = timeToMinutes(event.start)
   const eventEnd = eventStart + getEventDuration(event)
   const firstDate = maxISODate(event.startDate, from)
@@ -35,7 +36,7 @@ export function splitEventIntoSegments(event: EventOccurrence, { from, to }: Vis
   return segments
 }
 
-export function groupSegmentsByDate(events: readonly EventOccurrence[], range: VisibleRange) {
+export function groupSegmentsByDate(events: readonly EventOccurrence[], range: DateRange) {
   const groups = new Map<string, EventSegment[]>()
   for (const event of events) {
     for (const segment of splitEventIntoSegments(event, range)) {

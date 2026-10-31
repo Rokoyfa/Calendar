@@ -2,7 +2,7 @@ import { ChoiceChip } from '../../../components/ChoiceChip.tsx'
 import { FormField } from '../../../components/FormField.tsx'
 import { NumberField } from '../../../components/NumberField.tsx'
 import { SelectField, type SelectOption } from '../../../components/SelectField.tsx'
-import { addMonthsToISODate, isISODate } from '../../../utils/date.ts'
+import { addMonthsToISODate, isISODate, WEEKDAY_SHORT_LABELS } from '../../../utils/date.ts'
 import { isIntegerInRange } from '../../../utils/number.ts'
 import {
   createRecurrence,
@@ -16,7 +16,6 @@ import {
   RECURRENCE_FREQUENCY_LABELS,
   RECURRENCE_INTERVAL_MAX,
   RECURRENCE_UNIT_LABELS,
-  WEEKDAY_SHORT_LABELS,
   type Recurrence,
   type RecurrenceFrequency,
   type RecurrenceValidationErrors,

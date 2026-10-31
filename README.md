@@ -33,12 +33,24 @@ npm run dev
 
 ## Funktionen
 
-### Wochenansicht
+### Ansichten
 
-- Montag bis Sonntag mit Zeitraster von 00:00 bis 23:00 Uhr
+Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **Heute** springen immer um die Einheit der aktuellen Ansicht.
+
+- **Tag:** ein Tag im Zeitraster von 00:00 bis 23:00 Uhr, Titel z. B. „Samstag, 31. Oktober 2026“
+- **Woche:** Montag bis Sonntag im Zeitraster, Titel mit Monat(en) und Kalenderwoche. Ein Klick auf einen Tageskopf öffnet diesen Tag.
+- **Monat:** Monatsraster mit bis zu drei Terminen pro Tag, darüber hinaus „+N weitere“. Ein Klick auf die Tageszahl oder „weitere“ öffnet den Tag, ein Klick auf eine freie Stelle legt dort einen Termin um 09:00 an.
+- **Jahr:** alle zwölf Monate als kleine Raster, Tage mit Terminen haben einen Punkt. Ein Klick auf einen Tag öffnet die Tagesansicht, ein Klick auf den Monatsnamen die Monatsansicht.
 - Heutiger Tag und aktuelle Stunde sind hervorgehoben, die Uhrzeit aktualisiert sich jede Minute
-- Titel zeigt Monat und Jahr, bei Monatswechsel innerhalb der Woche beide Monate
-- Kalenderwoche wird neben den Pfeilen angezeigt
+- Mehrtägige und wiederkehrende Termine erscheinen in allen Ansichten
+
+### Handy
+
+- Kopfzeile zweizeilig: Navigation und **+** oben, darunter Titel und Ansichtsumschalter über die volle Breite
+- Woche: alle sieben Tage passen ohne seitliches Scrollen auf den Bildschirm. Dafür kompakte Tagesköpfe („Mo 26“), nur Stundenzahlen in der Zeitspalte und kleinere Termine mit Silbentrennung. Ein Tipp auf den Tageskopf öffnet den Tag.
+- Monat: statt Terminleisten eine Zahl mit der Anzahl der Termine je Tag
+- Jahr: Monate zweispaltig
+- Standardansicht ist noch „Woche“. Die Tagesansicht als Standard auf dem Handy folgt im nächsten Schritt (`useCalendarView(initialView)` ist dafür vorbereitet).
 
 ### Termine
 
@@ -88,10 +100,11 @@ npm run dev
 
 | Aktion                | Tastatur / Maus                    |
 | --------------------- | ---------------------------------- |
-| Vorherige Woche       | `←` oder linker Pfeil im Header    |
-| Nächste Woche         | `→` oder rechter Pfeil im Header   |
-| Zur aktuellen Woche   | Klick auf den Titel                |
-| Fenster schließen     | `Esc` oder Klick neben das Fenster |
+| Zurück (Tag, Woche, Monat, Jahr) | `←` oder linker Pfeil im Header    |
+| Vor (Tag, Woche, Monat, Jahr)    | `→` oder rechter Pfeil im Header   |
+| Zu heute                         | **Heute** im Header                |
+| Ansicht wechseln                 | Tag / Woche / Monat / Jahr         |
+| Fenster schließen                | `Esc` oder Klick neben das Fenster |
 
 Die Pfeiltasten sind deaktiviert, solange ein Eingabefeld oder ein Fenster aktiv ist.
 
@@ -193,8 +206,10 @@ src/
 │  ├─ DateTimeField.tsx        Datum + Uhrzeit in einer Zeile
 │  ├─ ChoiceChip.tsx           Runder Auswahl-Chip (Radio oder Checkbox)
 │  ├─ IconButton.tsx           Symbol-Schaltfläche
+│  ├─ SegmentedControl.tsx     Umschalter mit mehreren Optionen
 │  └─ ErrorMessage.tsx         Fehlerhinweis mit role="alert"
 ├─ hooks/                      Featureübergreifende Hooks
+│  ├─ useArrowKeyNavigation.ts Pfeiltasten links/rechts
 │  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand und Fehlermeldung
 │  └─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel
 ├─ utils/
@@ -208,7 +223,9 @@ src/
 │  ├─ recurrence.ts            Wiederholungsregeln, Berechnung der Vorkommen
 │  └─ series.ts                Serien ausnehmen, aufteilen, ändern
 └─ features/
-   ├─ calendar/                Anzeige der Wochenansicht
+   ├─ calendar/                Anzeige: Tag, Woche, Monat, Jahr
+   │  │                        constants/views.ts beschreibt jede Ansicht einmal (Zeitraum, Schritt, Titel),
+   │  │                        hooks/useCalendarView.ts steuert Ansicht und Datum
    │  ├─ components/
    │  ├─ constants/
    │  ├─ hooks/
@@ -247,7 +264,6 @@ src/
 - Keine Ganztagstermine und keine eigene Leiste für mehrtägige Termine oberhalb des Rasters
 - Serien-Aktionen bestehen aus mehreren einzelnen Speichervorgängen. Bricht einer davon ab, kann eine Serie teilweise geändert sein.
 - Eigene Farben lassen sich noch nicht wieder entfernen
-- Nur Wochenansicht, keine Monats- oder Tagesansicht
 - Datums- und Zeitfelder zeigen das Format der Browser- bzw. Systemsprache
 
 ## Nächste Schritte

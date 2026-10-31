@@ -13,7 +13,8 @@ export function TimeColumn({ currentHour }: TimeColumnProps) {
       <div className="slots">
         {HOURS.map((hour) => (
           <div key={hour} className={classNames('time', hour === currentHour && 'currentTime')}>
-            {formatHour(hour)}
+            <span className="compactHidden">{formatHour(hour)}</span>
+            <span className="compactOnly">{hour}</span>
           </div>
         ))}
       </div>

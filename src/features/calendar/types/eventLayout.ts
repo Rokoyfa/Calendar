@@ -14,8 +14,3 @@ export type PositionedSegment = {
   column: number
   columns: number
 }
-
-export type VisibleRange = {
-  from: string
-  to: string
-}
