@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Modal } from '../../../components/Modal.tsx'
 import { addDaysToISODate, daysBetween, ISO_DATE_PATTERN } from '../../../utils/date.ts'
 import { getErrorMessage } from '../../../utils/error.ts'
-import { getWeekdayIndex, isSameRecurrence, type Recurrence } from '../../../utils/recurrence.ts'
+import { fitRecurrenceToStart, getWeekdayIndex, isSameRecurrence, type Recurrence } from '../../../utils/recurrence.ts'
 import {
   EVENT_DESCRIPTION_MAX_LENGTH,
   EVENT_TITLE_MAX_LENGTH,
@@ -17,6 +17,7 @@ import type { EventModalMode } from '../types/eventModal.ts'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RecurrenceFields } from './RecurrenceFields.tsx'
 import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
+import { getScopeOptions } from '../utils/scopeOptions.ts'
 
 const followWeekday = (recurrence: Recurrence | null, previousDate: string, nextDate: string) => {
   if (recurrence?.frequency !== 'weekly' || !ISO_DATE_PATTERN.test(previousDate) || !ISO_DATE_PATTERN.test(nextDate))
@@ -30,16 +31,29 @@ type EventModalProps = {
   mode: EventModalMode
   initialValue: EventInput
   onSave: (input: EventInput, scope: EditScope) => Promise<void>
+  canSplitSeries?: boolean
   onDelete?: () => void
   onClose: () => void
 }
 
-export function EventModal({ mode, initialValue, onSave, onDelete, onClose }: EventModalProps) {
+type PendingSave = {
+  input: EventInput
+  options: EditScope[]
+}
+
+export function EventModal({
+  mode,
+  initialValue,
+  onSave,
+  canSplitSeries = false,
+  onDelete,
+  onClose,
+}: EventModalProps) {
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const [pendingInput, setPendingInput] = useState<EventInput | null>(null)
+  const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
 
   const setField = <K extends keyof EventInput>(field: K, value: EventInput[K]) => {
     setValues((current) => ({ ...current, [field]: value }))
@@ -54,7 +68,7 @@ export function EventModal({ mode, initialValue, onSave, onDelete, onClose }: Ev
         canShift && isValidStart
           ? addDaysToISODate(startDate, daysBetween(current.startDate, current.endDate))
           : current.endDate
-      const recurrence = followWeekday(current.recurrence, current.startDate, startDate)
+      const recurrence = fitRecurrenceToStart(followWeekday(current.recurrence, current.startDate, startDate), startDate)
       return { ...current, startDate, endDate, recurrence }
     })
     setErrors((current) =>
@@ -69,6 +83,7 @@ export function EventModal({ mode, initialValue, onSave, onDelete, onClose }: Ev
       recurrenceInterval: undefined,
       recurrenceWeekdays: undefined,
       recurrenceUntil: undefined,
+      recurrenceCount: undefined,
     }))
   }
 
@@ -90,16 +105,19 @@ export function EventModal({ mode, initialValue, onSave, onDelete, onClose }: Ev
     setErrors(nextErrors)
     if (hasValidationErrors(nextErrors)) return
 
-    const isSeriesEdit =
-      mode === 'edit' && initialValue.recurrence !== null && isSameRecurrence(initialValue.recurrence, input.recurrence)
-    if (isSeriesEdit) setPendingInput(input)
-    else void save(input, 'all')
+    const options = getScopeOptions({
+      isSeries: mode === 'edit' && initialValue.recurrence !== null,
+      keepsRule: isSameRecurrence(initialValue.recurrence, input.recurrence),
+      canSplit: canSplitSeries,
+    })
+    if (options.length > 1) setPendingSave({ input, options })
+    else void save(input, options[0])
   }
 
   const handleScopeSelect = (scope: EditScope) => {
-    if (!pendingInput) return
-    setPendingInput(null)
-    void save(pendingInput, scope)
+    if (!pendingSave) return
+    setPendingSave(null)
+    void save(pendingSave.input, scope)
   }
 
   return (
@@ -183,6 +201,7 @@ export function EventModal({ mode, initialValue, onSave, onDelete, onClose }: Ev
               interval: errors.recurrenceInterval,
               weekdays: errors.recurrenceWeekdays,
               until: errors.recurrenceUntil,
+              count: errors.recurrenceCount,
             }}
             onChange={setRecurrence}
           />
@@ -223,7 +242,13 @@ export function EventModal({ mode, initialValue, onSave, onDelete, onClose }: Ev
         </form>
       </Modal>
 
-      {pendingInput && <RecurrenceScopeModal onSelect={handleScopeSelect} onClose={() => setPendingInput(null)} />}
+      {pendingSave && (
+        <RecurrenceScopeModal
+          options={pendingSave.options}
+          onSelect={handleScopeSelect}
+          onClose={() => setPendingSave(null)}
+        />
+      )}
     </>
   )
 }

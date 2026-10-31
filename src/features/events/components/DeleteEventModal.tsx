@@ -2,18 +2,20 @@ import { useState } from 'react'
 import { Modal } from '../../../components/Modal.tsx'
 import { getErrorMessage } from '../../../utils/error.ts'
 import type { CalendarEvent, EditScope } from '../../../utils/event.ts'
+import { EDIT_SCOPE_LABELS } from '../constants/scopes.ts'
 
 type DeleteEventModalProps = {
   event: CalendarEvent
+  scopeOptions: readonly EditScope[]
   onConfirm: (scope: EditScope) => Promise<void>
   onClose: () => void
 }
 
-export function DeleteEventModal({ event, onConfirm, onClose }: DeleteEventModalProps) {
+export function DeleteEventModal({ event, scopeOptions, onConfirm, onClose }: DeleteEventModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const isRecurring = event.recurrence !== null
+  const isRecurring = scopeOptions.length > 1
 
   const handleConfirm = async (scope: EditScope) => {
     setIsDeleting(true)
@@ -41,24 +43,19 @@ export function DeleteEventModal({ event, onConfirm, onClose }: DeleteEventModal
       )}
 
       {isRecurring ? (
-        <div className="modalActions">
-          <button
-            type="button"
-            className="button button--danger"
-            disabled={isDeleting}
-            onClick={() => void handleConfirm('single')}
-          >
-            Nur dieser Termin
-          </button>
-          <button
-            type="button"
-            className="button button--danger"
-            disabled={isDeleting}
-            onClick={() => void handleConfirm('all')}
-          >
-            Alle Termine
-          </button>
-          <button type="button" className="button button--secondary" onClick={onClose} data-autofocus>
+        <div className="scopeActions">
+          {scopeOptions.map((scope) => (
+            <button
+              key={scope}
+              type="button"
+              className="button button--danger button--block"
+              disabled={isDeleting}
+              onClick={() => void handleConfirm(scope)}
+            >
+              {EDIT_SCOPE_LABELS[scope]}
+            </button>
+          ))}
+          <button type="button" className="button button--secondary button--block" onClick={onClose} data-autofocus>
             Abbrechen
           </button>
         </div>

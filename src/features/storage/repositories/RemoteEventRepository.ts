@@ -14,6 +14,10 @@ export class RemoteEventRepository implements EventRepository {
     return this.#request<CalendarEvent[]>(`/events?${new URLSearchParams(range)}`)
   }
 
+  listSeries(seriesId: string) {
+    return this.#request<CalendarEvent[]>(`/events?${new URLSearchParams({ seriesId })}`)
+  }
+
   create(input: EventInput) {
     return this.#request<CalendarEvent>('/events', { method: 'POST', body: JSON.stringify(input) })
   }

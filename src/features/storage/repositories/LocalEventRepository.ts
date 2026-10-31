@@ -15,6 +15,10 @@ export class LocalEventRepository implements EventRepository {
     return this.#read().filter((event) => eventOccursInRange(event, from, to))
   }
 
+  async listSeries(seriesId: string) {
+    return this.#read().filter((event) => event.id === seriesId || event.seriesId === seriesId)
+  }
+
   async create(input: EventInput) {
     const now = new Date().toISOString()
     const event: CalendarEvent = {

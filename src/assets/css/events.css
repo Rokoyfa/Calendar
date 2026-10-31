@@ -82,14 +82,14 @@
   cursor: pointer;
 }
 
-.recurrenceInterval {
+.recurrenceInline {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.eventForm .recurrenceInterval .input {
-  width: 4em;
+.eventForm .recurrenceNumber {
+  width: 4.5em;
 }
 
 .weekdayPicker {

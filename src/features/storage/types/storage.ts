@@ -8,6 +8,7 @@ export type DateRange = {
 
 export interface EventRepository {
   list(range: DateRange): Promise<CalendarEvent[]>
+  listSeries(seriesId: string): Promise<CalendarEvent[]>
   create(input: EventInput): Promise<CalendarEvent>
   update(id: string, input: EventInput): Promise<CalendarEvent>
   remove(id: string): Promise<void>

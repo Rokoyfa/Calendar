@@ -1,16 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getErrorMessage } from '../../../utils/error.ts'
 import {
-  applyToSeries,
   compareEvents,
-  detachOccurrence,
-  excludeOccurrence,
   type CalendarEvent,
   type EditScope,
   type EventInput,
   type EventOccurrence,
 } from '../../../utils/event.ts'
 import { useEventRepository, type DateRange } from '../../storage/index.ts'
+import { deleteOccurrence, updateOccurrence } from '../utils/seriesActions.ts'
 
 type EventsState = {
   key: string
@@ -65,27 +63,22 @@ export function useEvents({ from, to }: DateRange) {
 
   const updateEvent = useCallback(
     async (occurrence: EventOccurrence, input: EventInput, scope: EditScope) => {
-      const series = findSeries(occurrence)
-      if (series.recurrence && scope === 'single') {
-        await repository.update(series.id, excludeOccurrence(series, occurrence.startDate))
-        await repository.create(detachOccurrence(input))
-      } else if (series.recurrence) {
-        await repository.update(series.id, applyToSeries(series, occurrence.startDate, input))
-      } else {
-        await repository.update(series.id, input)
+      try {
+        await updateOccurrence(repository, findSeries(occurrence), occurrence.startDate, input, scope)
+      } finally {
+        reload()
       }
-      reload()
     },
     [repository, reload, findSeries],
   )
 
   const deleteEvent = useCallback(
     async (occurrence: EventOccurrence, scope: EditScope) => {
-      const series = findSeries(occurrence)
-      if (series.recurrence && scope === 'single')
-        await repository.update(series.id, excludeOccurrence(series, occurrence.startDate))
-      else await repository.remove(series.id)
-      reload()
+      try {
+        await deleteOccurrence(repository, findSeries(occurrence), occurrence.startDate, scope)
+      } finally {
+        reload()
+      }
     },
     [repository, reload, findSeries],
   )

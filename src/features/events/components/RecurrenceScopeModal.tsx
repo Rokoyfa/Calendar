@@ -1,23 +1,30 @@
 import { Modal } from '../../../components/Modal.tsx'
 import type { EditScope } from '../../../utils/event.ts'
+import { EDIT_SCOPE_LABELS } from '../constants/scopes.ts'
 
 type RecurrenceScopeModalProps = {
+  options: readonly EditScope[]
   onSelect: (scope: EditScope) => void
   onClose: () => void
 }
 
-export function RecurrenceScopeModal({ onSelect, onClose }: RecurrenceScopeModalProps) {
+export function RecurrenceScopeModal({ options, onSelect, onClose }: RecurrenceScopeModalProps) {
   return (
     <Modal title="Wiederkehrenden Termin ändern" onClose={onClose}>
-      <p className="deleteMessage">Sollen die Änderungen nur für diesen Termin oder für alle Termine der Serie gelten?</p>
-      <div className="modalActions">
-        <button type="button" className="button" onClick={() => onSelect('single')} data-autofocus>
-          Nur dieser Termin
-        </button>
-        <button type="button" className="button" onClick={() => onSelect('all')}>
-          Alle Termine
-        </button>
-        <button type="button" className="button button--secondary" onClick={onClose}>
+      <p className="deleteMessage">Für welche Termine der Serie sollen die Änderungen gelten?</p>
+      <div className="scopeActions">
+        {options.map((scope, index) => (
+          <button
+            key={scope}
+            type="button"
+            className="button button--block"
+            onClick={() => onSelect(scope)}
+            data-autofocus={index === 0 ? true : undefined}
+          >
+            {EDIT_SCOPE_LABELS[scope]}
+          </button>
+        ))}
+        <button type="button" className="button button--secondary button--block" onClick={onClose}>
           Abbrechen
         </button>
       </div>

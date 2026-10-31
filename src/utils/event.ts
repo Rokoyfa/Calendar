@@ -10,14 +10,7 @@ import {
   timeToMinutes,
 } from './date.ts'
 import { isHexColor, type HexColor } from './color.ts'
-import {
-  getOccurrenceDates,
-  isSameRecurrence,
-  parseRecurrence,
-  shiftWeekdays,
-  validateRecurrence,
-  type Recurrence,
-} from './recurrence.ts'
+import { getOccurrenceDates, parseRecurrence, validateRecurrence, type Recurrence } from './recurrence.ts'
 
 export const PRESET_EVENT_COLORS = ['blue', 'red', 'green', 'yellow'] as const
 
@@ -47,25 +40,41 @@ export type CalendarEvent = {
   color: EventColor
   recurrence: Recurrence | null
   excludedDates: string[]
+  seriesId: string | null
+  originalDate: string | null
   createdAt: string
   updatedAt: string
 }
 
 export type EventInput = Pick<
   CalendarEvent,
-  'title' | 'startDate' | 'start' | 'endDate' | 'end' | 'description' | 'color' | 'recurrence' | 'excludedDates'
+  | 'title'
+  | 'startDate'
+  | 'start'
+  | 'endDate'
+  | 'end'
+  | 'description'
+  | 'color'
+  | 'recurrence'
+  | 'excludedDates'
+  | 'seriesId'
+  | 'originalDate'
 >
 
 export type EventOccurrence = CalendarEvent & {
   occurrenceKey: string
+  seriesStartDate: string
 }
 
-export type EditScope = 'single' | 'all'
+export type EditScope = 'single' | 'following' | 'all'
 
 export type EventPeriod = Pick<CalendarEvent, 'startDate' | 'start' | 'endDate' | 'end'>
 
 export type EventValidationErrors = Partial<
-  Record<keyof EventInput | 'recurrenceInterval' | 'recurrenceWeekdays' | 'recurrenceUntil', string>
+  Record<
+    keyof EventInput | 'recurrenceInterval' | 'recurrenceWeekdays' | 'recurrenceUntil' | 'recurrenceCount',
+    string
+  >
 >
 
 export const isPresetEventColor = (value: unknown): value is PresetEventColor =>
@@ -87,6 +96,8 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
   const endDate = rest.endDate ?? startDate
   const recurrence = rest.recurrence == null ? null : parseRecurrence(rest.recurrence)
   const excludedDates = Array.isArray(rest.excludedDates) ? rest.excludedDates.filter(isISODate) : []
+  const seriesId = typeof rest.seriesId === 'string' ? rest.seriesId : null
+  const originalDate = seriesId !== null && isISODate(rest.originalDate) ? rest.originalDate : null
 
   if (
     typeof rest.id !== 'string' ||
@@ -114,6 +125,8 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
     color: rest.color,
     recurrence,
     excludedDates,
+    seriesId: originalDate === null ? null : seriesId,
+    originalDate,
     createdAt: typeof rest.createdAt === 'string' ? rest.createdAt : '',
     updatedAt: typeof rest.updatedAt === 'string' ? rest.updatedAt : '',
   }
@@ -133,6 +146,8 @@ export const createEventInput = (date: string, hour: number): EventInput => {
     color: 'blue',
     recurrence: null,
     excludedDates: [],
+    seriesId: null,
+    originalDate: null,
   }
 }
 
@@ -146,6 +161,8 @@ export const toEventInput = ({
   color,
   recurrence,
   excludedDates,
+  seriesId,
+  originalDate,
 }: CalendarEvent): EventInput => ({
   title,
   startDate,
@@ -156,12 +173,17 @@ export const toEventInput = ({
   color,
   recurrence,
   excludedDates,
+  seriesId,
+  originalDate,
 })
 
 export const normalizeEventInput = (input: EventInput): EventInput => ({
   ...input,
   title: input.title.trim(),
   description: input.description.trim(),
+  excludedDates: input.recurrence ? input.excludedDates : [],
+  seriesId: input.recurrence ? null : input.seriesId,
+  originalDate: input.recurrence ? null : input.originalDate,
 })
 
 export const getEventDuration = ({ startDate, start, endDate, end }: EventPeriod) =>
@@ -188,37 +210,9 @@ export const expandEvents = (events: readonly CalendarEvent[], from: string, to:
       startDate,
       endDate: addDaysToISODate(startDate, span),
       occurrenceKey: `${event.id}:${startDate}`,
+      seriesStartDate: event.startDate,
     }))
   })
-
-export const excludeOccurrence = (series: CalendarEvent, occurrenceDate: string): EventInput => ({
-  ...toEventInput(series),
-  excludedDates: [...new Set([...series.excludedDates, occurrenceDate])].toSorted(),
-})
-
-export const detachOccurrence = (input: EventInput): EventInput => ({
-  ...input,
-  recurrence: null,
-  excludedDates: [],
-})
-
-export const applyToSeries = (series: CalendarEvent, occurrenceDate: string, input: EventInput): EventInput => {
-  const shift = daysBetween(occurrenceDate, input.startDate)
-  const startDate = addDaysToISODate(series.startDate, shift)
-  const keepsRecurrence = isSameRecurrence(series.recurrence, input.recurrence)
-  const recurrence =
-    keepsRecurrence && input.recurrence?.frequency === 'weekly' && shift !== 0
-      ? { ...input.recurrence, weekdays: shiftWeekdays(input.recurrence.weekdays, shift) }
-      : input.recurrence
-
-  return {
-    ...input,
-    startDate,
-    endDate: addDaysToISODate(startDate, daysBetween(input.startDate, input.endDate)),
-    recurrence,
-    excludedDates: series.excludedDates.map((date) => addDaysToISODate(date, shift)),
-  }
-}
 
 export const compareEvents = (a: CalendarEvent, b: CalendarEvent) =>
   a.startDate.localeCompare(b.startDate) ||
@@ -253,6 +247,7 @@ export const validateEventInput = (input: EventInput): EventValidationErrors => 
     if (recurrenceErrors.interval) errors.recurrenceInterval = recurrenceErrors.interval
     if (recurrenceErrors.weekdays) errors.recurrenceWeekdays = recurrenceErrors.weekdays
     if (recurrenceErrors.until) errors.recurrenceUntil = recurrenceErrors.until
+    if (recurrenceErrors.count) errors.recurrenceCount = recurrenceErrors.count
   }
 
   if (input.description.length > EVENT_DESCRIPTION_MAX_LENGTH)
