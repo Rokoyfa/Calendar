@@ -20,7 +20,13 @@ export interface ColorRepository {
 
 export type StorageConfig =
   | { mode: 'local' }
-  | { mode: 'remote'; baseUrl: string; timeoutMs?: number; getAccessToken?: () => string | null }
+  | {
+      mode: 'remote'
+      baseUrl: string
+      timeoutMs?: number
+      getAccessToken?: () => string | null
+      onUnauthorized?: () => void
+    }
 
 export type StorageMode = StorageConfig['mode']
 
@@ -28,4 +34,6 @@ export type StorageContextValue = {
   mode: StorageMode
   events: EventRepository
   colors: ColorRepository
+  version: number
+  invalidate: () => void
 }

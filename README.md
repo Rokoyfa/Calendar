@@ -9,7 +9,7 @@ Ziel ist ein Kalender, der auf zwei Arten nutzbar ist:
 
 Später folgt ein **Team-Modus**, in dem mehrere Mitglieder per E-Mail-Einladung einen gemeinsamen Kalender sehen und Termine anlegen können.
 
-> **Aktueller Stand:** Es gibt nur die Variante **ohne Anmeldung**. Alle Daten liegen ausschließlich im **localStorage** des Browsers. Anmeldung, Server-Speicherung und Team-Modus sind noch nicht umgesetzt.
+> **Aktueller Stand:** Ohne Anmeldung liegen alle Daten im **localStorage** des Browsers. **Anmeldung, Registrierung und Abmeldung** sind im Frontend fertig und hinter dem Schalter `VITE_FEATURE_AUTH` (siehe [Anmeldung](#anmeldung)). Ein passendes Backend gibt es noch nicht. Der Team-Modus ist noch nicht umgesetzt.
 
 ---
 
@@ -30,7 +30,7 @@ Unter Windows (PowerShell) statt `cp`: `Copy-Item .example.env .env`. Ohne `.env
 | `npm run preview` | Produktions-Build lokal ansehen             |
 | `npm run lint`    | ESLint ausführen                            |
 
-**Technik:** React 19, TypeScript 6, Vite 8, ESLint. Keine weiteren Laufzeit-Abhängigkeiten.
+**Technik:** React 19, React Router 8, TypeScript 6, Vite 8, ESLint. Voraussetzung ist **Node.js 22.22 oder neuer** (verlangt von React Router 8).
 
 ---
 
@@ -49,10 +49,10 @@ Die App wird über Umgebungsvariablen eingestellt. Vite liest sie aus diesen Dat
 
 | Variable              | Standard                | Beschreibung |
 | --------------------- | ----------------------- | ------------ |
-| `VITE_STORAGE_MODE`   | `local`                 | `local` speichert im localStorage, `remote` über die API |
+| `VITE_STORAGE_MODE`   | `local`                 | `local` speichert im localStorage, `remote` über die API. Wird ignoriert, wenn `VITE_FEATURE_AUTH=true` ist, dann entscheidet die Anmeldung. |
 | `VITE_API_BASE_URL`   | `/api`                  | Adresse der API. Relativ (`/api`) oder absolut (`https://api.example.com`). Wird nur im Modus `remote` genutzt. |
 | `VITE_API_TIMEOUT_MS` | `10000`                 | Maximale Wartezeit pro API-Anfrage in Millisekunden |
-| `VITE_FEATURE_AUTH`   | `false`                 | Schalter für Anmeldung und Registrierung. Vorbereitet, noch ohne Wirkung. |
+| `VITE_FEATURE_AUTH`   | `false`                 | Schaltet Anmeldung, Registrierung und Abmeldung ein (siehe [Anmeldung](#anmeldung)). Braucht das Backend mit den `/auth`-Endpunkten. |
 | `VITE_FEATURE_TEAMS`  | `false`                 | Schalter für den Team-Modus. Vorbereitet, noch ohne Wirkung. |
 | `API_PROXY_TARGET`    | `http://localhost:3000` | Nur Entwicklung: Backend, an das `npm run dev` und `npm run preview` alle Aufrufe unter `VITE_API_BASE_URL` weiterleiten. Greift nur bei relativer API-Adresse. |
 
@@ -122,6 +122,57 @@ Zusätzlich gibt es `error.isUnauthorized`, `error.isNotFound`, `error.isServerE
 Fehlermeldungen vom Backend sollten als JSON in der Form `{ "message": "…" }` kommen, dann werden sie direkt angezeigt.
 
 > Der Typ in `get<T>()` ist eine Zusicherung, keine Prüfung zur Laufzeit. Antwortet das Backend mit einer anderen Struktur, fällt das erst bei der Verwendung auf.
+
+---
+
+## Anmeldung
+
+Eingeschaltet über `VITE_FEATURE_AUTH=true`. Ist der Schalter aus, gibt es keine Konto-Elemente, und `/login` sowie `/register` leiten auf den Kalender um.
+
+### Ablauf
+
+- Der Kalender ist **ohne Anmeldung voll nutzbar**, Termine liegen dann im localStorage. Oben rechts steht **Anmelden**.
+- **Seiten:** `/login` und `/register` sind eigene Seiten (React Router). Nach dem Absenden geht es zurück zur vorherigen Seite des Kalenders. Erlaubt sind dabei nur interne Pfade, Weiterleitungen auf fremde Seiten werden ignoriert. Angemeldet führen beide Seiten direkt zum Kalender.
+- **Angemeldet** zeigt die Kopfzeile einen runden Button mit dem Anfangsbuchstaben. Er öffnet ein kleines Menü mit Name, E-Mail und **Abmelden**.
+- **Speicher je nach Sitzung:** Angemeldet werden Termine über die API geladen und gespeichert, abgemeldet wieder lokal. Der Wechsel passiert automatisch.
+- **Sitzung beim Start:** Die App fragt beim Laden `GET /auth/me` ab und zeigt bis zur Antwort kurz „Lädt …“, damit nicht erst lokale und dann Konto-Termine erscheinen.
+- **Abgelaufene Sitzung:** Antwortet die API bei einem Termin-Aufruf mit 401, gilt man als abgemeldet und sieht wieder die lokalen Termine.
+- **Lokale Termine übernehmen:** Liegen nach der Anmeldung Termine im localStorage, fragt die App einmal:
+  - *In mein Konto übernehmen:* Alle Termine werden über die API angelegt, Serien und herausgelöste Einzeltermine bleiben verknüpft. Danach wird der localStorage geleert.
+  - *Nur in diesem Browser behalten:* Die Termine bleiben lokal. Für dieses Konto wird nicht mehr gefragt (gemerkt unter `calendar.localImportDeclined.v1`).
+- **Formulare:** Prüfung im Browser:
+  - E-Mail-Format
+  - Passwort 8 bis 128 Zeichen
+  - Wiederholung des Passworts muss übereinstimmen
+  - Name höchstens 80 Zeichen
+
+  Die E-Mail wird klein geschrieben und ohne Leerzeichen gesendet. Passwörter lassen sich mit **Anzeigen** sichtbar machen. Die Felder tragen die passenden `autocomplete`-Werte, damit Passwort-Manager sie erkennen.
+
+### Backend-Vertrag
+
+Die Anmeldung läuft über ein **HttpOnly-Cookie**, das ausschließlich das Backend setzt und liest. Die App speichert keine Tokens. Alle Pfade liegen unter `VITE_API_BASE_URL`.
+
+| Aufruf | Body | Antwort |
+| ------ | ---- | ------- |
+| `GET /auth/me` | – | `200` mit `User` oder `401`, wenn nicht angemeldet |
+| `POST /auth/register` | `{ name, email, password }` | `201` mit `User` und Sitzungs-Cookie, `409` wenn die E-Mail schon existiert |
+| `POST /auth/login` | `{ email, password }` | `200` mit `User` und Sitzungs-Cookie, `401` bei falschen Daten |
+| `POST /auth/logout` | – | `204`, Cookie löschen |
+
+`User` ist `{ id: string, email: string, name: string }`. Alle `/events`-Aufrufe gelten für den angemeldeten Nutzer und antworten ohne gültige Sitzung mit `401`.
+
+Ohne eigene `message` vom Server zeigt die App bei `401` am Login „E-Mail-Adresse oder Passwort ist falsch.“ und bei `409` an der Registrierung „Für diese E-Mail-Adresse gibt es bereits ein Konto.“. Liefert der Server `{ "message": "…" }`, wird diese Meldung angezeigt.
+
+**Anforderungen an das Backend:**
+
+- **Cookie:** `HttpOnly`, `Secure` (in Produktion), `SameSite=Lax` oder `Strict`, `Path=/`
+- **CSRF:** Ändernde Aufrufe nur mit `Content-Type: application/json` annehmen. Bei Cookie-Anmeldung zusätzlich `SameSite` oder einen CSRF-Token nutzen.
+- **Passwörter:** nur gehasht speichern (z. B. Argon2id oder bcrypt). Login-Versuche begrenzen.
+- **Andere Domain:** Läuft die API unter einer anderen Domain als die App, braucht sie `Access-Control-Allow-Credentials: true` und eine konkrete `Access-Control-Allow-Origin` (kein `*`). Der API-Client sendet Cookies dafür immer mit (`credentials: 'include'`).
+
+### Hosting
+
+Weil `/login` und `/register` echte Pfade sind, muss der Webserver für unbekannte Pfade die `index.html` ausliefern (SPA-Fallback). `npm run dev` und `npm run preview` machen das bereits.
 
 ---
 
@@ -267,12 +318,12 @@ type Recurrence = {
 
 ### Vorbereitung für Server-Speicherung
 
-Der Zugriff auf Daten läuft ausschließlich über die Schnittstellen `EventRepository` und `ColorRepository` im Feature `storage`. Welche Umsetzung genutzt wird, entscheidet der `StorageProvider` in `App.tsx` anhand von `storageConfig` aus `src/config/storage.ts`, das aus den Umgebungsvariablen erzeugt wird:
+Der Zugriff auf Daten läuft ausschließlich über die Schnittstellen `EventRepository` und `ColorRepository` im Feature `storage`. Welche Umsetzung genutzt wird, entscheidet der `StorageProvider` in `App.tsx` anhand von `createStorageConfig` aus `src/config/storage.ts`:
 
 - `VITE_STORAGE_MODE=local` → `{ mode: 'local' }`
 - `VITE_STORAGE_MODE=remote` → `{ mode: 'remote', baseUrl: VITE_API_BASE_URL, timeoutMs: VITE_API_TIMEOUT_MS }`
 
-Für die Version mit Anmeldung kommt später noch `getAccessToken` dazu, das den Token als `Authorization: Bearer …` mitsendet. Antwortet der Server nicht rechtzeitig oder ist er nicht erreichbar, zeigt der Kalender eine verständliche Fehlermeldung.
+Ist die Anmeldung eingeschaltet, entscheidet stattdessen die Sitzung: angemeldet `remote`, abgemeldet `local` (siehe [Anmeldung](#anmeldung)). Antwortet der Server nicht rechtzeitig oder ist er nicht erreichbar, zeigt der Kalender eine verständliche Fehlermeldung.
 
 `RemoteEventRepository` ist dafür bereits angelegt und erwartet eine REST-API mit `GET /events?from=&to=` (liefert alle Termine, die den Zeitraum überschneiden, also `startDate <= to` und `endDate >= from`, sowie alle Serien, die im Zeitraum mindestens ein Vorkommen haben; die Serien werden unverändert geliefert und im Browser aufgefächert), `GET /events?seriesId=` (Serie und alle mit ihr verknüpften Einzeltermine), `POST /events`, `PUT /events/:id` und `DELETE /events/:id`. **Es ist bisher nur gegen einen einfachen Test-Server geprüft (Laden, Anlegen, Timeout), noch nicht gegen ein echtes Backend.** Eigene Farben werden auch im Remote-Modus vorerst lokal gespeichert.
 
@@ -282,14 +333,19 @@ Für die Version mit Anmeldung kommt später noch `getAccessToken` dazu, das den
 
 ```
 src/
-├─ App.tsx                     StorageProvider + Kalender
+├─ App.tsx                     AuthProvider + StorageProvider (je nach Sitzung) + Router
+├─ router.tsx                  Routen: /, /login, /register
+├─ pages/
+│  └─ CalendarPage.tsx         Kalender mit Kontomenü und Übernahme-Abfrage
 ├─ main.tsx                    Einstiegspunkt
 ├─ env.d.ts                    Typen der Umgebungsvariablen
 ├─ config/
 │  ├─ parseEnv.ts              Umgebungsvariablen lesen und prüfen (auch in vite.config.ts)
 │  ├─ env.ts                   Geprüfte Konfiguration für die App
 │  ├─ api.ts                   Fertig konfigurierter API-Client
-│  └─ storage.ts               StorageConfig aus der Konfiguration
+│  ├─ auth.ts                  AuthRepository für die App
+│  ├─ routes.ts                Pfade und sichere Weiterleitung nach dem Login
+│  └─ storage.ts               StorageConfig je nach Konfiguration und Anmeldung
 ├─ assets/
 │  ├─ css/                     Styles, gebündelt über index.css
 │  └─ imgs/
@@ -302,11 +358,14 @@ src/
 │  ├─ ChoiceChip.tsx           Runder Auswahl-Chip (Radio oder Checkbox)
 │  ├─ IconButton.tsx           Symbol-Schaltfläche
 │  ├─ SegmentedControl.tsx     Umschalter mit mehreren Optionen
+│  ├─ TextField.tsx            Textfeld mit Beschriftung und Fehler
+│  ├─ PasswordField.tsx        Passwortfeld mit „Anzeigen“
 │  └─ ErrorMessage.tsx         Fehlerhinweis mit role="alert"
 ├─ hooks/                      Featureübergreifende Hooks
 │  ├─ useArrowKeyNavigation.ts Pfeiltasten links/rechts
 │  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand und Fehlermeldung
-│  └─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel
+│  ├─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel
+│  └─ useFormState.ts          Formularwerte, Fehler je Feld, Prüfung beim Absenden
 ├─ utils/
 │  ├─ api.ts                   API-Client (fetch mit JSON, Query, Token, Timeout, Abbruch)
 │  ├─ apiError.ts              ApiError mit deutschen Fehlermeldungen
@@ -318,7 +377,8 @@ src/
 │  ├─ number.ts                Ganzzahl-Prüfung mit Bereich
 │  ├─ object.ts                Felder aus Objekten übernehmen
 │  ├─ recurrence.ts            Wiederholungsregeln, Berechnung der Vorkommen
-│  └─ series.ts                Serien ausnehmen, aufteilen, ändern
+│  ├─ series.ts                Serien ausnehmen, aufteilen, ändern
+│  └─ validation.ts            Fehler je Feld, gemeinsame Prüfung „gibt es Fehler?“
 └─ features/
    ├─ calendar/                Anzeige: Tag, Woche, Monat, Jahr
    │  │                        constants/views.ts beschreibt jede Ansicht einmal (Zeitraum, Schritt, Titel),
@@ -335,12 +395,19 @@ src/
    │  ├─ types/
    │  └─ utils/                Serien-Aktionen gegen das Repository, Auswahl der Bereiche
    ├─ storage/                 Datenspeicherung
-   │  ├─ context/              StorageContext, StorageProvider
+   │  ├─ components/           LocalImportPrompt: lokale Termine ins Konto übernehmen
+   │  ├─ context/              StorageContext, StorageProvider (inkl. version/invalidate zum Neuladen)
    │  ├─ hooks/                useStorage, useEventRepository, useColorRepository
    │  ├─ repositories/         Local- und Remote-Umsetzungen
    │  ├─ types/
-   │  └─ utils/                LocalStorageList: gemeinsames Lesen und Schreiben im localStorage
-   ├─ authorization/           noch leer
+   │  └─ utils/                LocalStorageList (localStorage lesen/schreiben), copyEvents (Termine samt Serien-Verknüpfung kopieren)
+   ├─ authorization/           Anmeldung, Registrierung, Abmeldung
+   │  ├─ components/           LoginPage, RegisterPage, AuthLayout, AccountMenu, GuestOnly
+   │  ├─ context/              AuthContext, AuthProvider (Sitzung, login, register, logout)
+   │  ├─ hooks/                useAuth
+   │  ├─ repositories/         RemoteAuthRepository (/auth-Endpunkte)
+   │  ├─ types/
+   │  └─ utils/                Prüfung der Formulare
    └─ teams/                   noch leer
 ```
 
@@ -365,9 +432,10 @@ src/
 
 ## Nächste Schritte
 
-- [ ] Anmeldung und Registrierung (`features/authorization`)
+- [x] Anmeldung, Registrierung und Abmeldung im Frontend (`features/authorization`)
+- [ ] Passwort vergessen / zurücksetzen, E-Mail-Bestätigung
 - [x] `.env`-Konfiguration für API-Anbindung, Dev-Proxy und Feature-Schalter
-- [ ] Backend mit der oben beschriebenen REST-API
+- [ ] Backend mit der oben beschriebenen REST-API inkl. `/auth`
 - [ ] Server-Speicherung über `RemoteEventRepository` aktivieren
 - [ ] `RemoteColorRepository`, damit eigene Farben im Remote-Modus mitwandern
 - [ ] Team-Modus mit Einladung per E-Mail (`features/teams`)

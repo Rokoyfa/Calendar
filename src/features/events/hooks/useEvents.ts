@@ -7,15 +7,15 @@ import {
   type EventInput,
   type EventOccurrence,
 } from '../../../utils/event.ts'
-import { useEventRepository, type DateRange } from '../../storage/index.ts'
+import { useStorage, type DateRange } from '../../storage/index.ts'
 import { deleteOccurrence, updateOccurrence } from '../utils/seriesActions.ts'
 
 const NO_EVENTS: CalendarEvent[] = []
 
 export function useEvents({ from, to }: DateRange) {
-  const repository = useEventRepository()
+  const { events: repository, version } = useStorage()
   const load = useCallback(() => repository.list({ from, to }), [repository, from, to])
-  const { data: events, error, isLoading, reload } = useAsyncResource(load, NO_EVENTS)
+  const { data: events, error, isLoading, reload } = useAsyncResource(load, NO_EVENTS, version)
 
   const findSeries = useCallback(
     (occurrence: EventOccurrence) => {

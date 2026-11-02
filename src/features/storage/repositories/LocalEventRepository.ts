@@ -26,6 +26,14 @@ export class LocalEventRepository implements EventRepository {
     return this.#events.read().filter((event) => eventOccursInRange(event, from, to))
   }
 
+  async listAll() {
+    return this.#events.read()
+  }
+
+  async clear() {
+    this.#events.write([])
+  }
+
   async listSeries(seriesId: string) {
     return this.#events.read().filter((event) => event.id === seriesId || event.seriesId === seriesId)
   }

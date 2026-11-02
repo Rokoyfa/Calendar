@@ -12,6 +12,7 @@ import {
 } from './date.ts'
 import { getReadableTextColor, isHexColor, type HexColor } from './color.ts'
 import { pick } from './object.ts'
+import { hasFieldErrors } from './validation.ts'
 import {
   getOccurrenceDates,
   hasRecurrenceErrors,
@@ -249,4 +250,4 @@ export const validateEventInput = (input: EventInput): EventValidationErrors => 
 }
 
 export const hasValidationErrors = ({ recurrence, ...fields }: EventValidationErrors) =>
-  Object.values(fields).some(Boolean) || (recurrence !== undefined && hasRecurrenceErrors(recurrence))
+  hasFieldErrors(fields) || (recurrence !== undefined && hasRecurrenceErrors(recurrence))

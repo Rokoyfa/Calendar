@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { IconButton } from '../../../components/IconButton.tsx'
 import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
 import { VIEW_DEFINITIONS } from '../constants/views.ts'
@@ -15,6 +16,7 @@ type CalendarHeaderProps = {
   onNext: () => void
   onToday: () => void
   onCreateEvent: () => void
+  accessory?: ReactNode
 }
 
 export function CalendarHeader({
@@ -26,6 +28,7 @@ export function CalendarHeader({
   onNext,
   onToday,
   onCreateEvent,
+  accessory,
 }: CalendarHeaderProps) {
   const { previousLabel, nextLabel } = VIEW_DEFINITIONS[view]
   return (
@@ -53,6 +56,7 @@ export function CalendarHeader({
           <IconButton label="Neuer Termin" onClick={onCreateEvent}>
             <PlusIcon size={16} />
           </IconButton>
+          {accessory}
         </span>
       </div>
     </header>

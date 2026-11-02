@@ -5,6 +5,7 @@ import type { DateRange, EventRepository } from '../types/storage.ts'
 type RemoteEventRepositoryOptions = {
   timeoutMs?: number
   getAccessToken?: () => string | null
+  onUnauthorized?: () => void
 }
 
 const EVENTS_PATH = '/events'
@@ -12,8 +13,8 @@ const EVENTS_PATH = '/events'
 export class RemoteEventRepository implements EventRepository {
   readonly #api: ApiClient
 
-  constructor(baseUrl: string, { timeoutMs, getAccessToken }: RemoteEventRepositoryOptions = {}) {
-    this.#api = createApiClient({ baseUrl, timeoutMs, getAccessToken })
+  constructor(baseUrl: string, { timeoutMs, getAccessToken, onUnauthorized }: RemoteEventRepositoryOptions = {}) {
+    this.#api = createApiClient({ baseUrl, timeoutMs, getAccessToken, onUnauthorized })
   }
 
   list(range: DateRange) {

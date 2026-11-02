@@ -1,15 +1,32 @@
+import { useMemo, type ReactNode } from 'react'
+import { RouterProvider } from 'react-router'
 import './assets/css/App.css'
-import { storageConfig } from './config/storage.ts'
-import { Calendar } from './features/calendar/index.ts'
+import { authRepository } from './config/auth.ts'
+import { env } from './config/env.ts'
+import { createStorageConfig } from './config/storage.ts'
+import { AuthProvider, useAuth } from './features/authorization/index.ts'
 import { StorageProvider } from './features/storage/index.ts'
+import { router } from './router.tsx'
+
+function SessionStorageProvider({ children }: { children: ReactNode }) {
+  const { status, expireSession } = useAuth()
+  const isAuthenticated = status === 'authenticated'
+  const config = useMemo(
+    () => createStorageConfig(env, { isAuthenticated, onUnauthorized: expireSession }),
+    [isAuthenticated, expireSession],
+  )
+
+  if (status === 'loading') return <p className="appLoading">Lädt …</p>
+  return <StorageProvider config={config}>{children}</StorageProvider>
+}
 
 function App() {
   return (
-    <StorageProvider config={storageConfig}>
-      <div className="app">
-        <Calendar />
-      </div>
-    </StorageProvider>
+    <AuthProvider repository={authRepository} enabled={env.features.auth}>
+      <SessionStorageProvider>
+        <RouterProvider router={router} />
+      </SessionStorageProvider>
+    </AuthProvider>
   )
 }
 

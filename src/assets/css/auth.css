@@ -1,0 +1,99 @@
+.appLoading {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  color: var(--color-muted);
+}
+
+.authPage {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--space-4);
+}
+
+.authCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(420px, 100%);
+  padding: var(--space-5);
+}
+
+.authBack {
+  align-self: flex-start;
+  font-size: var(--font-size-md);
+}
+
+.authTitle {
+  font-size: 1.75rem;
+}
+
+.authFooter {
+  font-size: var(--font-size-md);
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.fieldToggle {
+  flex: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-blue);
+}
+
+.accountLogin {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-md);
+  white-space: nowrap;
+}
+
+.accountButton {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-round);
+  background-color: var(--color-blue);
+  color: var(--color-on-accent);
+  font-weight: 700;
+}
+
+.accountPopover {
+  position: fixed;
+  inset: 64px var(--space-4) auto auto;
+  width: min(280px, calc(100vw - 2 * var(--space-4)));
+  margin: 0;
+  padding: var(--space-4);
+  border: none;
+  color: var(--color-text);
+}
+
+.accountPopover:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.accountName {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.accountEmail {
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-md);
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .authPage {
+    place-items: start center;
+    padding: var(--space-3);
+  }
+
+  .authCard.surface {
+    padding: var(--space-4);
+    box-shadow: none;
+  }
+}

@@ -68,7 +68,7 @@ const readBody = async (response: Response): Promise<unknown> => {
 export function createApiClient({
   baseUrl,
   timeoutMs: defaultTimeoutMs = DEFAULT_TIMEOUT_MS,
-  credentials = 'same-origin',
+  credentials = 'include',
   headers: defaultHeaders,
   getAccessToken = () => null,
   onUnauthorized,

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ComponentType } from 'react'
+import { useCallback, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
 import { useArrowKeyNavigation } from '../../../hooks/useArrowKeyNavigation.ts'
 import { MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
@@ -28,7 +28,11 @@ const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = 
   year: YearView,
 }
 
-export function Calendar() {
+type CalendarProps = {
+  headerAccessory?: ReactNode
+}
+
+export function Calendar({ headerAccessory }: CalendarProps) {
   const now = useNow()
   const today = toISODate(now)
   const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
@@ -78,6 +82,7 @@ export function Calendar() {
         onNext={next}
         onToday={goToToday}
         onCreateEvent={() => openCreate(view === 'day' ? anchor : today, now.getHours())}
+        accessory={headerAccessory}
       />
 
       <ErrorMessage message={error} className="textCenter" />

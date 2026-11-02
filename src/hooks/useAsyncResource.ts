@@ -7,10 +7,10 @@ type ResourceState<T> = {
   error: string | null
 }
 
-export function useAsyncResource<T>(load: () => Promise<T>, initialData: T) {
+export function useAsyncResource<T>(load: () => Promise<T>, initialData: T, refreshKey: unknown = null) {
   const [version, setVersion] = useState(0)
   const [state, setState] = useState<ResourceState<T>>({ source: null, data: initialData, error: null })
-  const source = useMemo(() => ({ load, version }), [load, version])
+  const source = useMemo(() => ({ load, version, refreshKey }), [load, version, refreshKey])
 
   useEffect(() => {
     let cancelled = false

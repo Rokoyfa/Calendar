@@ -8,26 +8,26 @@ type ApiErrorOptions = {
 }
 
 const STATUS_MESSAGES: Record<number, string> = {
-  400: 'The request was invalid.',
-  401: 'Please log in.',
-  403: 'You are not authorized to perform this action.',
-  404: 'The item was not found.',
-  409: 'The item has been modified. Please reload.',
-  413: 'The data is too large.',
-  422: 'The inputs are invalid.',
-  429: 'Too many requests. Please wait a moment.',
+  400: 'Die Anfrage war ungültig.',
+  401: 'Bitte melde dich an.',
+  403: 'Dafür fehlt dir die Berechtigung.',
+  404: 'Der Eintrag wurde nicht gefunden.',
+  409: 'Der Eintrag wurde inzwischen geändert. Bitte neu laden.',
+  413: 'Die Daten sind zu groß.',
+  422: 'Die Eingaben sind ungültig.',
+  429: 'Zu viele Anfragen. Bitte kurz warten.',
 }
 
 const KIND_MESSAGES: Record<Exclude<ApiErrorKind, 'http'>, string> = {
-  timeout: 'The server did not respond in time.',
-  network: 'The server is not reachable.',
-  aborted: 'The request was aborted.',
-  parse: 'The server response could not be parsed.',
+  timeout: 'Der Server hat nicht rechtzeitig geantwortet.',
+  network: 'Der Server ist nicht erreichbar.',
+  aborted: 'Die Anfrage wurde abgebrochen.',
+  parse: 'Die Antwort des Servers konnte nicht gelesen werden.',
 }
 
 const getStatusMessage = (status: number) =>
   STATUS_MESSAGES[status] ??
-  (status >= 500 ? 'An error occurred on the server.' : `The request failed (${status}).`)
+  (status >= 500 ? 'Auf dem Server ist ein Fehler aufgetreten.' : `Die Anfrage ist fehlgeschlagen (${status}).`)
 
 const getServerMessage = (body: unknown) => {
   if (typeof body !== 'object' || body === null) return null

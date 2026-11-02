@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEventHandler } from 'react'
 import { DateTimeField } from '../../../components/DateTimeField.tsx'
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
 import { FormField } from '../../../components/FormField.tsx'
 import { Modal } from '../../../components/Modal.tsx'
+import { TextField } from '../../../components/TextField.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { isISODate } from '../../../utils/date.ts'
 import {
@@ -70,7 +71,7 @@ export function EventModal({ initialValue, occurrence = null, onSave, onDelete, 
 
   const setRecurrence = (recurrence: Recurrence | null) => update({ recurrence }, ['recurrence'])
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
     const input = normalizeEventInput(values)
     const nextErrors = validateEventInput(input)
@@ -92,18 +93,16 @@ export function EventModal({ initialValue, occurrence = null, onSave, onDelete, 
     <>
       <Modal title={TITLES[mode]} onClose={onClose}>
         <form className="formSection eventForm" noValidate onSubmit={handleSubmit}>
-          <FormField label="Titel" error={errors.title}>
-            <input
-              className="input"
-              name="title"
-              autoComplete="off"
-              maxLength={EVENT_TITLE_MAX_LENGTH}
-              value={values.title}
-              aria-invalid={Boolean(errors.title)}
-              onChange={(event) => setField('title', event.target.value)}
-              data-autofocus
-            />
-          </FormField>
+          <TextField
+            label="Titel"
+            name="title"
+            autoComplete="off"
+            maxLength={EVENT_TITLE_MAX_LENGTH}
+            value={values.title}
+            error={errors.title}
+            onChange={(title) => setField('title', title)}
+            data-autofocus
+          />
 
           <DateTimeField
             name="start"

@@ -1,9 +1,18 @@
 import type { StorageConfig } from '../features/storage/index.ts'
-import { env, type AppEnv } from './env.ts'
+import type { AppEnv } from './env.ts'
 
-export function createStorageConfig({ storageMode, apiBaseUrl, apiTimeoutMs }: AppEnv): StorageConfig {
-  if (storageMode === 'remote') return { mode: 'remote', baseUrl: apiBaseUrl, timeoutMs: apiTimeoutMs }
-  return { mode: 'local' }
+type SessionState = {
+  isAuthenticated: boolean
+  onUnauthorized: () => void
 }
 
-export const storageConfig = createStorageConfig(env)
+const LOCAL_CONFIG: StorageConfig = { mode: 'local' }
+
+export function createStorageConfig(
+  { storageMode, apiBaseUrl, apiTimeoutMs, features }: AppEnv,
+  session?: SessionState,
+): StorageConfig {
+  const useRemote = features.auth ? Boolean(session?.isAuthenticated) : storageMode === 'remote'
+  if (!useRemote) return LOCAL_CONFIG
+  return { mode: 'remote', baseUrl: apiBaseUrl, timeoutMs: apiTimeoutMs, onUnauthorized: session?.onUnauthorized }
+}

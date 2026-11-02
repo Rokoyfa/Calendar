@@ -10,6 +10,7 @@ export function createEventRepository(config: StorageConfig): EventRepository {
       return new RemoteEventRepository(config.baseUrl, {
         timeoutMs: config.timeoutMs,
         getAccessToken: config.getAccessToken,
+        onUnauthorized: config.onUnauthorized,
       })
   }
 }

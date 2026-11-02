@@ -13,6 +13,7 @@ import {
   toISODate,
 } from './date.ts'
 import { integerRangeMessage, isIntegerInRange } from './number.ts'
+import { hasFieldErrors } from './validation.ts'
 
 export const RECURRENCE_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly'] as const
 
@@ -128,7 +129,7 @@ export const adaptRecurrenceToStart = (recurrence: Recurrence | null, previousSt
   return recurrence
 }
 
-export const hasRecurrenceErrors = (errors: RecurrenceValidationErrors) => Object.values(errors).some(Boolean)
+export const hasRecurrenceErrors = (errors: RecurrenceValidationErrors) => hasFieldErrors(errors)
 
 export type RecurrenceValidationErrors = Partial<Record<'interval' | 'weekdays' | 'until' | 'count', string>>
 
