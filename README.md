@@ -435,6 +435,7 @@ src/
 - [x] Anmeldung, Registrierung und Abmeldung im Frontend (`features/authorization`)
 - [ ] Passwort vergessen / zurücksetzen, E-Mail-Bestätigung
 - [x] `.env`-Konfiguration für API-Anbindung, Dev-Proxy und Feature-Schalter
+- [x] Datenbankschema für das Backend (`database/`)
 - [ ] Backend mit der oben beschriebenen REST-API inkl. `/auth`
 - [ ] Server-Speicherung über `RemoteEventRepository` aktivieren
 - [ ] `RemoteColorRepository`, damit eigene Farben im Remote-Modus mitwandern
