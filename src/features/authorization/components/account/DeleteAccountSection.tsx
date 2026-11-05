@@ -1,59 +1,49 @@
-import { useState, type SubmitEventHandler } from 'react'
-import { useNavigate } from 'react-router'
+import { useState } from 'react'
+import { Button } from '../../../../components/Button.tsx'
+import { Form } from '../../../../components/Form.tsx'
 import { Modal } from '../../../../components/Modal.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
-import { PasswordField } from '../../../../components/PasswordField.tsx'
-import { ErrorMessage } from '../../../../components/StatusMessage.tsx'
-import { ROUTES } from '../../../../config/routes.ts'
-import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
-import { useFormState } from '../../../../hooks/useFormState.ts'
+import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
+import { useForm } from '../../../../hooks/useForm.ts'
 import { useAuth } from '../../hooks/useAuth.ts'
 import type { AccountDeletionInput } from '../../types/auth.ts'
-import { PASSWORD_MAX_LENGTH, validateAccountDeletion } from '../../utils/validation.ts'
+import { validateAccountDeletion } from '../../utils/validation.ts'
+import { CurrentPasswordField } from '../AuthFields.tsx'
 
 const EMPTY_DELETION: AccountDeletionInput = { password: '' }
 
 function DeleteAccountModal({ onClose }: { onClose: () => void }) {
   const { deleteAccount } = useAuth()
-  const navigate = useNavigate()
-  const { values, errors, setField, validateAll } = useFormState(EMPTY_DELETION, validateAccountDeletion)
-  const { run, isPending, error } = useAsyncAction(async (input: AccountDeletionInput) => {
-    await deleteAccount(input)
-    await navigate(ROUTES.calendar, { replace: true })
+  const { values, errors, setField, handleSubmit, isPending, error } = useForm({
+    initialValues: EMPTY_DELETION,
+    validate: validateAccountDeletion,
+    onSubmit: deleteAccount,
   })
-
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
-    event.preventDefault()
-    if (validateAll()) void run(values)
-  }
 
   return (
     <Modal title="Konto löschen" variant="danger" onClose={onClose}>
-      <form className="formSection" noValidate onSubmit={handleSubmit}>
+      <Form onSubmit={handleSubmit}>
         <p>
-          Dein Konto, dein persönlicher Kalender und alle Termine darin werden <strong>endgültig gelöscht</strong>.
-          Das lässt sich nicht rückgängig machen.
+          Dein Konto, dein persönlicher Kalender und alle Termine darin werden <strong>endgültig gelöscht</strong>. Das
+          lässt sich nicht rückgängig machen.
         </p>
-        <PasswordField
+        <CurrentPasswordField
           label="Passwort zur Bestätigung"
-          name="password"
-          autoComplete="current-password"
-          maxLength={PASSWORD_MAX_LENGTH}
           value={values.password}
           error={errors.password}
           onChange={(password) => setField('password', password)}
           data-autofocus
         />
-        <ErrorMessage message={error} />
+        <ActionFeedback error={error} />
         <div className="formActions">
-          <button type="button" className="button button--secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Abbrechen
-          </button>
-          <button type="submit" className="button button--danger" disabled={isPending}>
-            {isPending ? 'Wird gelöscht …' : 'Endgültig löschen'}
-          </button>
+          </Button>
+          <Button type="submit" variant="danger" isPending={isPending} pendingLabel="Wird gelöscht …">
+            Endgültig löschen
+          </Button>
         </div>
-      </form>
+      </Form>
     </Modal>
   )
 }
@@ -64,9 +54,9 @@ export function DeleteAccountSection() {
   return (
     <PageSection title="Konto löschen" tone="danger" description="Löscht dein Konto mit allen persönlichen Terminen.">
       <div className="formActions">
-        <button type="button" className="button button--danger" onClick={() => setIsConfirming(true)}>
+        <Button variant="danger" onClick={() => setIsConfirming(true)}>
           Konto löschen …
-        </button>
+        </Button>
       </div>
       {isConfirming && <DeleteAccountModal onClose={() => setIsConfirming(false)} />}
     </PageSection>

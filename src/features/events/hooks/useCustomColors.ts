@@ -9,22 +9,15 @@ const NO_COLORS: HexColor[] = []
 export function useCustomColors() {
   const repository = useColorRepository()
   const load = useCallback(() => repository.list(), [repository])
-  const { data: colors, error, setData } = useAsyncResource(load, NO_COLORS)
+  const { data: colors, error, apply } = useAsyncResource(load, NO_COLORS)
 
-  const addColor = useCallback(
-    async (color: HexColor) => {
-      const next = await repository.add(color)
-      setData(next)
-      return next
-    },
-    [repository, setData],
-  )
+  const addColor = useCallback((color: HexColor) => apply(repository.add(color)), [repository, apply])
 
   const removeColor = useCallback(
     async (color: HexColor) => {
-      setData(await repository.remove(color))
+      await apply(repository.remove(color))
     },
-    [repository, setData],
+    [repository, apply],
   )
 
   return { colors, error, addColor, removeColor, canAddMore: colors.length < MAX_CUSTOM_COLORS }

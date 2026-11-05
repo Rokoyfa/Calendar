@@ -1,6 +1,5 @@
 import { useMemo, type ReactNode } from 'react'
 import { RouterProvider } from 'react-router'
-import './assets/css/App.css'
 import { authRepository } from './config/auth.ts'
 import { env } from './config/env.ts'
 import { createStorageConfig } from './config/storage.ts'

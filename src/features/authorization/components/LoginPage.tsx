@@ -1,15 +1,14 @@
-import type { SubmitEventHandler } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Button } from '../../../components/Button.tsx'
+import { Form } from '../../../components/Form.tsx'
 import { PageLayout } from '../../../components/PageLayout.tsx'
-import { PasswordField } from '../../../components/PasswordField.tsx'
-import { ErrorMessage } from '../../../components/StatusMessage.tsx'
-import { TextField } from '../../../components/TextField.tsx'
+import { ActionFeedback } from '../../../components/StatusMessage.tsx'
 import { getRedirectTarget, ROUTES, withRedirect } from '../../../config/routes.ts'
-import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
-import { useFormState } from '../../../hooks/useFormState.ts'
+import { useForm } from '../../../hooks/useForm.ts'
 import { useAuth } from '../hooks/useAuth.ts'
 import type { LoginInput } from '../types/auth.ts'
-import { EMAIL_MAX_LENGTH, normalizeEmail, PASSWORD_MAX_LENGTH, validateLogin } from '../utils/validation.ts'
+import { normalizeEmail, validateLogin } from '../utils/validation.ts'
+import { CurrentPasswordField, EmailField } from './AuthFields.tsx'
 
 const EMPTY_LOGIN: LoginInput = { email: '', password: '' }
 
@@ -18,17 +17,15 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const redirectTo = getRedirectTarget(searchParams)
-  const { values, errors, setField, validateAll } = useFormState(EMPTY_LOGIN, validateLogin)
-  const { run, isPending, error } = useAsyncAction(async (input: LoginInput) => {
-    await login(input)
-    await navigate(redirectTo, { replace: true })
+  const { values, errors, setField, handleSubmit, isPending, error } = useForm({
+    initialValues: EMPTY_LOGIN,
+    validate: validateLogin,
+    prepare: (input) => ({ ...input, email: normalizeEmail(input.email) }),
+    onSubmit: async (input) => {
+      await login(input)
+      await navigate(redirectTo, { replace: true })
+    },
   })
-
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
-    event.preventDefault()
-    const input = { ...values, email: normalizeEmail(values.email) }
-    if (validateAll(input)) void run(input)
-  }
 
   return (
     <PageLayout
@@ -39,24 +36,14 @@ export function LoginPage() {
         </>
       }
     >
-      <form className="formSection" method="post" noValidate onSubmit={handleSubmit}>
-        <TextField
-          label="E-Mail-Adresse"
-          name="email"
-          type="email"
-          inputMode="email"
-          autoComplete="username"
-          maxLength={EMAIL_MAX_LENGTH}
+      <Form onSubmit={handleSubmit}>
+        <EmailField
           value={values.email}
           error={errors.email}
           onChange={(email) => setField('email', email)}
           autoFocus
         />
-        <PasswordField
-          label="Passwort"
-          name="password"
-          autoComplete="current-password"
-          maxLength={PASSWORD_MAX_LENGTH}
+        <CurrentPasswordField
           value={values.password}
           error={errors.password}
           onChange={(password) => setField('password', password)}
@@ -64,11 +51,11 @@ export function LoginPage() {
         <Link to={ROUTES.forgotPassword} className="formLink">
           Passwort vergessen?
         </Link>
-        <ErrorMessage message={error} />
-        <button type="submit" className="button button--block" disabled={isPending}>
-          {isPending ? 'Wird angemeldet …' : 'Anmelden'}
-        </button>
-      </form>
+        <ActionFeedback error={error} />
+        <Button type="submit" block isPending={isPending} pendingLabel="Wird angemeldet …">
+          Anmelden
+        </Button>
+      </Form>
     </PageLayout>
   )
 }

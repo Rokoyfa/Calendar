@@ -1,7 +1,7 @@
 import { classNames } from '../utils/classNames.ts'
 
 type StatusMessageProps = {
-  message: string | null | undefined
+  message: string | false | null | undefined
   tone?: 'error' | 'success'
   className?: string
 }
@@ -20,4 +20,18 @@ export function StatusMessage({ message, tone = 'error', className }: StatusMess
 
 export function ErrorMessage(props: Omit<StatusMessageProps, 'tone'>) {
   return <StatusMessage {...props} tone="error" />
+}
+
+type ActionFeedbackProps = {
+  error: string | null | undefined
+  success?: string | false | null
+}
+
+export function ActionFeedback({ error, success }: ActionFeedbackProps) {
+  return (
+    <>
+      <ErrorMessage message={error} />
+      <StatusMessage tone="success" message={success} />
+    </>
+  )
 }

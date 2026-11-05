@@ -13,13 +13,15 @@ const applyTheme = (theme: Theme) => {
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const repository = usePreferencesRepository()
   const load = useCallback(() => repository.get(), [repository])
-  const { data: preferences, isLoading, setData } = useAsyncResource(load, DEFAULT_PREFERENCES)
+  const { data: preferences, isLoading, apply } = useAsyncResource(load, DEFAULT_PREFERENCES)
 
   useEffect(() => applyTheme(preferences.theme), [preferences.theme])
 
   const updatePreferences = useCallback(
-    async (changes: Partial<Preferences>) => setData(await repository.update(changes)),
-    [repository, setData],
+    async (changes: Partial<Preferences>) => {
+      await apply(repository.update(changes))
+    },
+    [repository, apply],
   )
 
   const value = useMemo<PreferencesContextValue>(

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { ChoiceChip } from '../../../components/ChoiceChip.tsx'
 import { FormField } from '../../../components/FormField.tsx'
-import { classNames } from '../../../utils/classNames.ts'
 import { isHexColor, normalizeHexColor } from '../../../utils/color.ts'
 import {
   getEventColorAttributes,
@@ -46,7 +45,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
     <FormField as="fieldset" label="Farbe">
       <div className="choiceList">
         {options.map((color) => {
-          const { className, style } = getEventColorAttributes(color)
+          const { className, style } = getEventColorAttributes(color, 'color')
           return (
             <ChoiceChip
               key={color}
@@ -55,7 +54,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
               label={getEventColorLabel(color)}
               checked={value === color}
               onChange={() => onChange(color)}
-              className={classNames('color', className)}
+              className={className}
               style={style}
             />
           )

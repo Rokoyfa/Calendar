@@ -1,6 +1,5 @@
-import { FormField } from '../../../components/FormField.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
-import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
+import { SegmentedField } from '../../../components/SegmentedField.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { THEME_LABELS, THEMES } from '../../../utils/preferences.ts'
@@ -16,33 +15,27 @@ export function PreferencesSettings() {
   return (
     <>
       <PageSection title="Darstellung">
-        <FormField as="fieldset" label="Farbschema">
-          <SegmentedControl
-            label="Farbschema"
-            value={preferences.theme}
-            options={THEME_OPTIONS}
-            onChange={(theme) => void run({ theme })}
-          />
-        </FormField>
+        <SegmentedField
+          label="Farbschema"
+          value={preferences.theme}
+          options={THEME_OPTIONS}
+          onChange={(theme) => void run({ theme })}
+        />
       </PageSection>
 
       <PageSection title="Startansicht" description="Mit dieser Ansicht öffnet sich der Kalender.">
-        <FormField as="fieldset" label="Computer und Tablet">
-          <SegmentedControl
-            label="Startansicht auf Computer und Tablet"
-            value={preferences.defaultView}
-            options={VIEW_OPTIONS}
-            onChange={(defaultView) => void run({ defaultView })}
-          />
-        </FormField>
-        <FormField as="fieldset" label="Handy">
-          <SegmentedControl
-            label="Startansicht auf dem Handy"
-            value={preferences.mobileDefaultView}
-            options={VIEW_OPTIONS}
-            onChange={(mobileDefaultView) => void run({ mobileDefaultView })}
-          />
-        </FormField>
+        <SegmentedField
+          label="Computer und Tablet"
+          value={preferences.defaultView}
+          options={VIEW_OPTIONS}
+          onChange={(defaultView) => void run({ defaultView })}
+        />
+        <SegmentedField
+          label="Handy"
+          value={preferences.mobileDefaultView}
+          options={VIEW_OPTIONS}
+          onChange={(mobileDefaultView) => void run({ mobileDefaultView })}
+        />
       </PageSection>
 
       <ErrorMessage message={error} />

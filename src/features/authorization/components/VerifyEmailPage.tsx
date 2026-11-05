@@ -1,10 +1,11 @@
 import { useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { PageLayout } from '../../../components/PageLayout.tsx'
-import { ErrorMessage, StatusMessage } from '../../../components/StatusMessage.tsx'
+import { ActionFeedback } from '../../../components/StatusMessage.tsx'
 import { ROUTES, TOKEN_PARAM } from '../../../config/routes.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { useAuth } from '../hooks/useAuth.ts'
+import { ContinueLink } from './ContinueLink.tsx'
 
 const verifications = new Map<string, Promise<boolean>>()
 
@@ -24,23 +25,21 @@ export function VerifyEmailPage() {
   const load = useCallback(async () => (token ? verifyOnce(token, verifyEmail) : false), [token, verifyEmail])
   const { data: isVerified, error, isLoading } = useAsyncResource(load, false)
 
-  const renderStatus = () => {
-    if (!token) return <ErrorMessage message="Dieser Link ist unvollständig." />
-    if (isLoading) return <p className="formHint">E-Mail-Adresse wird bestätigt …</p>
-    if (error) return <ErrorMessage message={error} />
-    if (isVerified) return <StatusMessage tone="success" message="Deine E-Mail-Adresse ist bestätigt." />
-    return null
-  }
+  if (token && isLoading)
+    return (
+      <PageLayout title="E-Mail bestätigen">
+        <p className="formHint">E-Mail-Adresse wird bestätigt …</p>
+      </PageLayout>
+    )
 
   return (
     <PageLayout title="E-Mail bestätigen">
-      {renderStatus()}
-      {!isLoading && (
-        <Link to={user ? ROUTES.calendar : ROUTES.login} className="button button--block">
-          {user ? 'Zum Kalender' : 'Anmelden'}
-        </Link>
-      )}
-      {!isLoading && error && user && (
+      <ActionFeedback
+        error={token ? error : 'Dieser Link ist unvollständig.'}
+        success={isVerified && 'Deine E-Mail-Adresse ist bestätigt.'}
+      />
+      <ContinueLink />
+      {error && user && (
         <p className="formHint">
           Einen neuen Link kannst du in den <Link to={ROUTES.settings}>Einstellungen</Link> anfordern.
         </p>

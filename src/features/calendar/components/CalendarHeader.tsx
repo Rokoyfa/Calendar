@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Button } from '../../../components/Button.tsx'
 import { IconButton } from '../../../components/IconButton.tsx'
 import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
 import { VIEW_DEFINITIONS, VIEW_OPTIONS } from '../constants/views.ts'
@@ -38,9 +39,9 @@ export function CalendarHeader({
         <IconButton label={nextLabel} title={`${nextLabel} (→)`} plain onClick={onNext}>
           <ChevronRightIcon />
         </IconButton>
-        <button type="button" className="button button--outline todayButton" onClick={onToday}>
+        <Button variant="outline" className="todayButton" onClick={onToday}>
           Heute
-        </button>
+        </Button>
       </div>
 
       <h1 className="headerTitle">

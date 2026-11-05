@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { Button } from '../../../components/Button.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
@@ -28,7 +29,11 @@ export function LocalImportPrompt({ userId }: LocalImportPromptProps) {
   const { data: pending, isLoading } = useAsyncResource(load, NO_EVENTS)
   const [isDismissed, setIsDismissed] = useState(() => declinedUsers.read().includes(userId))
 
-  const { run: importEvents, isPending, error } = useAsyncAction(async () => {
+  const {
+    run: importEvents,
+    isPending,
+    error,
+  } = useAsyncAction(async () => {
     await copyEvents(pending, target)
     await localEvents.clear()
     invalidate()
@@ -47,23 +52,23 @@ export function LocalImportPrompt({ userId }: LocalImportPromptProps) {
   return (
     <Modal title="Lokale Termine übernehmen?" onClose={keepLocal}>
       <p className="modalMessage">
-        In diesem Browser sind {count} ohne Konto gespeichert. Sollen sie in dein Konto übernommen werden? Danach
-        sind sie auf allen Geräten verfügbar und werden hier lokal entfernt.
+        In diesem Browser sind {count} ohne Konto gespeichert. Sollen sie in dein Konto übernommen werden? Danach sind
+        sie auf allen Geräten verfügbar und werden hier lokal entfernt.
       </p>
       <ErrorMessage message={error} />
       <div className="modalActions modalActions--stacked">
-        <button
-          type="button"
-          className="button button--block"
-          disabled={isPending}
+        <Button
+          block
+          isPending={isPending}
+          pendingLabel="Wird übernommen …"
           onClick={() => void importEvents()}
           data-autofocus
         >
-          {isPending ? 'Wird übernommen …' : 'In mein Konto übernehmen'}
-        </button>
-        <button type="button" className="button button--secondary button--block" disabled={isPending} onClick={keepLocal}>
+          In mein Konto übernehmen
+        </Button>
+        <Button variant="secondary" block disabled={isPending} onClick={keepLocal}>
           Nur in diesem Browser behalten
-        </button>
+        </Button>
       </div>
     </Modal>
   )

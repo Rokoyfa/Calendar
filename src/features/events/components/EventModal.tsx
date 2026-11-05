@@ -1,5 +1,7 @@
 import { useState, type SubmitEventHandler } from 'react'
+import { Button } from '../../../components/Button.tsx'
 import { DateTimeField } from '../../../components/DateTimeField.tsx'
+import { Form } from '../../../components/Form.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { FormField } from '../../../components/FormField.tsx'
 import { Modal } from '../../../components/Modal.tsx'
@@ -92,7 +94,7 @@ export function EventModal({ initialValue, occurrence = null, onSave, onDelete, 
   return (
     <>
       <Modal title={TITLES[mode]} onClose={onClose}>
-        <form className="formSection eventForm" noValidate onSubmit={handleSubmit}>
+        <Form className="eventForm" onSubmit={handleSubmit}>
           <TextField
             label="Titel"
             name="title"
@@ -151,19 +153,19 @@ export function EventModal({ initialValue, occurrence = null, onSave, onDelete, 
           <ErrorMessage message={submitError} />
 
           <div className="modalActions">
-            <button type="submit" className="button" disabled={isPending}>
-              {isPending ? 'Speichert …' : 'Speichern'}
-            </button>
+            <Button type="submit" isPending={isPending} pendingLabel="Speichert …">
+              Speichern
+            </Button>
             {onDelete && (
-              <button type="button" className="button button--danger" disabled={isPending} onClick={onDelete}>
+              <Button variant="danger" disabled={isPending} onClick={onDelete}>
                 Löschen
-              </button>
+              </Button>
             )}
-            <button type="button" className="button button--secondary" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose}>
               Abbrechen
-            </button>
+            </Button>
           </div>
-        </form>
+        </Form>
       </Modal>
 
       {pendingSave && (

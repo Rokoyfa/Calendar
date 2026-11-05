@@ -10,6 +10,7 @@ import {
   minutesToTime,
   timeToMinutes,
 } from './date.ts'
+import { classNames, type ClassNameValue } from './classNames.ts'
 import { getReadableTextColor, isHexColor, type HexColor } from './color.ts'
 import { isOneOf, pick } from './object.ts'
 import { hasFieldErrors } from './validation.ts'
@@ -98,10 +99,16 @@ export const isEventColor = (value: unknown): value is EventColor => isPresetEve
 export const getEventColorLabel = (color: EventColor) =>
   isPresetEventColor(color) ? PRESET_EVENT_COLOR_LABELS[color] : color.toUpperCase()
 
-export const getEventColorAttributes = (color: EventColor): { className?: string; style?: CSSProperties } =>
+export const getEventColorAttributes = (
+  color: EventColor,
+  ...classNamesToMerge: ClassNameValue[]
+): { className?: string; style?: CSSProperties } =>
   isPresetEventColor(color)
-    ? { className: `color-${color}` }
-    : { style: { '--event-color': color, '--event-text': getReadableTextColor(color) } as CSSProperties }
+    ? { className: classNames(...classNamesToMerge, `color-${color}`) }
+    : {
+        className: classNames(...classNamesToMerge) || undefined,
+        style: { '--event-color': color, '--event-text': getReadableTextColor(color) } as CSSProperties,
+      }
 
 export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
   if (typeof value !== 'object' || value === null) return null
@@ -187,7 +194,11 @@ export const moveToStartDate = (period: Pick<EventPeriod, 'startDate' | 'endDate
   endDate: addDaysToISODate(startDate, getSpanDays(period)),
 })
 
-export const getActiveOccurrenceDates = ({ startDate, recurrence, excludedDates }: SeriesRule, from: string, to: string) => {
+export const getActiveOccurrenceDates = (
+  { startDate, recurrence, excludedDates }: SeriesRule,
+  from: string,
+  to: string,
+) => {
   if (!recurrence) return startDate >= from && startDate <= to ? [startDate] : []
   const excluded = new Set(excludedDates)
   return getOccurrenceDates(startDate, recurrence, from, to).filter((date) => !excluded.has(date))

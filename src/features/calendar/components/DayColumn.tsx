@@ -53,7 +53,12 @@ export function DayColumn({
   return (
     <div className={classNames('day', isToday && 'currentDay')} data-date={date}>
       {onHeaderSelect ? (
-        <button type="button" className="columnHeader" title={`${dayLabel} öffnen`} onClick={() => onHeaderSelect(date)}>
+        <button
+          type="button"
+          className="columnHeader"
+          title={`${dayLabel} öffnen`}
+          onClick={() => onHeaderSelect(date)}
+        >
           {header}
         </button>
       ) : (

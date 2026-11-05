@@ -1,4 +1,5 @@
 import { classNames } from '../../../utils/classNames.ts'
+import { withoutPropagation } from '../../../utils/dom.ts'
 import { formatLongDate, getDayOfMonth } from '../../../utils/date.ts'
 import { DEFAULT_EVENT_HOUR, MAX_EVENTS_PER_MONTH_CELL } from '../constants/grid.ts'
 import type { CalendarViewProps } from '../types/view.ts'
@@ -16,6 +17,7 @@ export function MonthView({ anchor, today, segmentsByDate, onCreate, onEventSele
         const visibleCount =
           segments.length > MAX_EVENTS_PER_MONTH_CELL ? MAX_EVENTS_PER_MONTH_CELL - 1 : segments.length
         const moreCount = segments.length - visibleCount
+        const showDay = withoutPropagation(() => onShowDay(date))
         return (
           <div
             key={date}
@@ -23,15 +25,7 @@ export function MonthView({ anchor, today, segmentsByDate, onCreate, onEventSele
             data-date={date}
             onClick={() => onCreate(date, DEFAULT_EVENT_HOUR)}
           >
-            <button
-              type="button"
-              className="dayNumber"
-              title={`${formatLongDate(date)} öffnen`}
-              onClick={(event) => {
-                event.stopPropagation()
-                onShowDay(date)
-              }}
-            >
+            <button type="button" className="dayNumber" title={`${formatLongDate(date)} öffnen`} onClick={showDay}>
               {getDayOfMonth(date)}
             </button>
             <div className="monthCellEvents">
@@ -39,14 +33,7 @@ export function MonthView({ anchor, today, segmentsByDate, onCreate, onEventSele
                 <EventChip key={segment.event.occurrenceKey} segment={segment} onSelect={onEventSelect} />
               ))}
               {moreCount > 0 && (
-                <button
-                  type="button"
-                  className="moreEvents"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onShowDay(date)
-                  }}
-                >
+                <button type="button" className="moreEvents" onClick={showDay}>
                   +{moreCount} weitere
                 </button>
               )}

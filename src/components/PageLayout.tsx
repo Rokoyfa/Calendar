@@ -9,34 +9,35 @@ type PageLayoutProps = {
   children: ReactNode
 }
 
-const BackLink = () => (
-  <Link to={ROUTES.calendar} className="pageBack">
-    ← Zum Kalender
-  </Link>
-)
-
 export function PageLayout({ title, variant = 'card', footer, children }: PageLayoutProps) {
+  const heading = (
+    <>
+      <Link to={ROUTES.calendar} className="pageBack">
+        ← Zum Kalender
+      </Link>
+      <h1 className="pageTitle">{title}</h1>
+    </>
+  )
+  const body = (
+    <>
+      {children}
+      {footer && <p className="pageFooter">{footer}</p>}
+    </>
+  )
+
   if (variant === 'full')
     return (
       <div className="pageFull">
-        <header className="pageHeader">
-          <BackLink />
-          <h1 className="pageTitle">{title}</h1>
-        </header>
-        <main className="pageContent">
-          {children}
-          {footer && <p className="pageFooter">{footer}</p>}
-        </main>
+        <header className="pageHeader">{heading}</header>
+        <main className="pageContent">{body}</main>
       </div>
     )
 
   return (
     <main className="page">
       <div className="pageCard surface">
-        <BackLink />
-        <h1 className="pageTitle">{title}</h1>
-        {children}
-        {footer && <p className="pageFooter">{footer}</p>}
+        {heading}
+        {body}
       </div>
     </main>
   )

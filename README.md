@@ -149,7 +149,7 @@ Eingeschaltet über `VITE_FEATURE_AUTH=true`. Ist der Schalter aus, gibt es kein
   - Wiederholung des Passworts muss übereinstimmen
   - Name höchstens 80 Zeichen
 
-  Die E-Mail wird klein geschrieben und ohne Leerzeichen gesendet. Die Felder für ein neues Passwort (Registrieren, Zurücksetzen, Ändern) sind ein gemeinsamer Baustein `NewPasswordFields`. Passwörter lassen sich mit **Anzeigen** sichtbar machen. Die Felder tragen die passenden `autocomplete`-Werte, damit Passwort-Manager sie erkennen.
+  Die E-Mail wird klein geschrieben und ohne Leerzeichen gesendet. Die Felder für ein neues Passwort (Registrieren, Zurücksetzen, Ändern) kommen wie Name, E-Mail und aktuelles Passwort aus `AuthFields.tsx` (`NameField`, `EmailField`, `CurrentPasswordField`, `NewPasswordFields`). Passwörter lassen sich mit **Anzeigen** sichtbar machen. Die Felder tragen die passenden `autocomplete`-Werte, damit Passwort-Manager sie erkennen.
 
 ### Passwort vergessen und E-Mail bestätigen
 
@@ -266,7 +266,7 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 
 ### Einstellungen
 
-Seite `/settings`, erreichbar über **Einstellungen** im Kontomenü (runder Button mit dem Anfangsbuchstaben). Mit `VITE_FEATURE_AUTH=true` nur für Angemeldete: `/settings` leitet sonst zur Anmeldung und danach zurück. Ohne Anmeldefunktion gibt es kein Kontomenü, dann führt ein Zahnrad in der Kopfzeile zu den Einstellungen.
+Seite `/settings`, erreichbar über **Einstellungen** im Kontomenü (runder Button mit dem Anfangsbuchstaben). Mit `VITE_FEATURE_AUTH=true` nur für Angemeldete: `/settings` leitet sonst zum Kalender um, auch direkt nach dem Löschen des Kontos. Ohne Anmeldefunktion gibt es kein Kontomenü, dann führt ein Zahnrad in der Kopfzeile zu den Einstellungen.
 
 Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, rechts die Einstellungen. Auf dem Handy untereinander.
 
@@ -398,9 +398,12 @@ src/
 │  ├─ routes.ts                Pfade, Token-Parameter und sichere Weiterleitung nach dem Login
 │  └─ storage.ts               StorageConfig je nach Konfiguration und Anmeldung
 ├─ assets/
-│  ├─ css/                     Styles, gebündelt über index.css
+│  ├─ css/                     Styles, gebündelt über index.css (je Bereich eine Datei, z. B. calendars.css)
 │  └─ imgs/
 ├─ components/                 Featureübergreifende Bausteine
+│  ├─ Button.tsx               Button und ButtonLink mit Varianten (primary, secondary, outline, danger, success),
+│  │                           volle Breite und Ladezustand (pendingLabel)
+│  ├─ Form.tsx                 Formular mit einheitlichem Aufbau (noValidate, formSection)
 │  ├─ Modal.tsx                Fenster (<dialog>), per Portal direkt in <body>
 │  ├─ FormField.tsx            Beschriftung + Feld + Fehlermeldung (label oder fieldset)
 │  ├─ SelectField.tsx          Auswahlfeld aus Optionsliste
@@ -409,26 +412,30 @@ src/
 │  ├─ ChoiceChip.tsx           Runder Auswahl-Chip (Radio oder Checkbox)
 │  ├─ IconButton.tsx           Symbol-Schaltfläche
 │  ├─ SegmentedControl.tsx     Umschalter mit mehreren Optionen
+│  ├─ SegmentedField.tsx       Umschalter mit Beschriftung als Formularfeld
 │  ├─ TextField.tsx            Textfeld mit Beschriftung und Fehler
 │  ├─ PasswordField.tsx        Passwortfeld mit „Anzeigen“
-│  ├─ StatusMessage.tsx        Fehler- (role="alert") und Erfolgsmeldung (role="status")
+│  ├─ StatusMessage.tsx        Fehler- (role="alert") und Erfolgsmeldung (role="status"), ActionFeedback für beides
 │  ├─ PageLayout.tsx           Eigene Seite mit „Zum Kalender“ und Titel, als Karte (Anmeldung) oder volle Breite (Einstellungen)
 │  ├─ PageSection.tsx          Abschnitt mit Überschrift und Erklärung links, Inhalt rechts, optional als Gefahrenbereich
 │  └─ Icons.tsx                SVG-Symbole
 ├─ hooks/                      Featureübergreifende Hooks
 │  ├─ useArrowKeyNavigation.ts Pfeiltasten links/rechts
 │  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand, Erfolg und Fehlermeldung
-│  ├─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel
-│  └─ useFormState.ts          Formularwerte, Fehler je Feld, Prüfung beim Absenden, Zurücksetzen
+│  ├─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel, apply() übernimmt das Ergebnis einer Änderung
+│  ├─ useForm.ts               Ganzes Formular: Werte, Prüfung, Vorbereiten, Absenden mit Lade-, Erfolgs- und Fehlerzustand
+│  ├─ useFormState.ts          Formularwerte, Fehler je Feld, Prüfung beim Absenden, Zurücksetzen
+│  └─ useRequiredContext.ts    Context lesen und Fehler werfen, wenn der Provider fehlt
 ├─ utils/
 │  ├─ api.ts                   API-Client (fetch mit JSON, Query, Token, Timeout, Abbruch)
 │  ├─ apiError.ts              ApiError mit deutschen Fehlermeldungen
 │  ├─ calendarView.ts          Ansichten Tag, Woche, Monat, Jahr
 │  ├─ classNames.ts            CSS-Klassen zusammensetzen
+│  ├─ dom.ts                   Klick-Handler ohne Weitergabe an Elternelemente
 │  ├─ color.ts                 Hex-Farben, lesbare Schriftfarbe
 │  ├─ date.ts                  Datums- und Zeitfunktionen, Prüfung und Formatierung
 │  ├─ error.ts                 Fehlermeldungen
-│  ├─ event.ts                 Termin-Typen, Farben, Validierung, Vorkommen eines Termins
+│  ├─ event.ts                 Termin-Typen, Farben (Klasse/Style samt weiterer Klassen), Validierung, Vorkommen eines Termins
 │  ├─ number.ts                Ganzzahl-Prüfung mit Bereich
 │  ├─ object.ts                Felder übernehmen, Wert aus fester Liste prüfen (isOneOf)
 │  ├─ preferences.ts           Einstellungen: Typen, Standardwerte, Prüfung, Startansicht
@@ -443,7 +450,9 @@ src/
    │  ├─ constants/
    │  ├─ hooks/
    │  ├─ types/
-   │  └─ utils/                Aufteilung mehrtägiger Termine, sichtbare Höhe, überlappende Termine
+   │  └─ utils/                Aufteilung mehrtägiger Termine, sichtbare Höhe, überlappende Termine,
+   │                           gemeinsame Attribute von Terminblock und Termin-Chip
+   │                           (components/MiniMonth: kleiner Monat für Jahresansicht und Kalender-Vorschau)
    ├─ events/                  Termine anlegen, bearbeiten, löschen
    │  ├─ components/           EventModal, DeleteEventModal, ColorPicker, RecurrenceFields, RecurrenceScopeModal, ScopeButtons, CustomColorSettings
    │  ├─ constants/            Farben, Bezeichnungen der Bearbeitungsbereiche
@@ -469,7 +478,8 @@ src/
    │  └─ hooks/                usePreferences
    ├─ authorization/           Anmeldung, Registrierung, Abmeldung, Konto, Passwort, E-Mail
    │  ├─ components/           LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage,
-   │  │                        AccountMenu, AuthGate, NewPasswordFields, EmailVerificationBanner
+   │  │                        AccountMenu, AuthGate, AuthFields, ContinueLink, ResendVerificationButton,
+   │  │                        EmailVerificationBanner
    │  │  └─ account/           AccountSettings mit Profil, E-Mail, Passwort, Konto löschen
    │  ├─ context/              AuthContext, AuthProvider (Sitzung und alle Konto-Aktionen)
    │  ├─ hooks/                useAuth
@@ -485,6 +495,8 @@ src/
 - Von außen wird ein Feature nur über seine `index.ts` importiert.
 - `calendar` zeigt nur an und kennt die Speicherung nicht. `events` enthält die Termin-Logik, `storage` die Persistenz.
 - Typen, die zwischen Features geteilt werden, liegen in `utils/`. Props-Typen bleiben bei ihrer Komponente.
+- Schaltflächen immer über `Button`/`ButtonLink`, Formulare über `useForm` + `Form`, Meldungen über `ActionFeedback`. Keine eigenen `button`-Klassen oder Lade-Texte von Hand.
+- Context-Hooks nutzen `useRequiredContext`.
 - Keine Doppelungen: Was an mehr als einer Stelle gebraucht wird, liegt einmal in `components/`, `hooks/` oder `utils/` (featureübergreifend) bzw. im `utils/`-Ordner des Features. Formularfelder werden aus `FormField` und den darauf aufbauenden Feldern zusammengesetzt, Datumswerte nur über `utils/date.ts` geprüft und berechnet, Backend-Aufrufe nur über den API-Client aus `utils/api.ts`.
 - Farben für Hell- und Dunkelmodus stehen nur einmal in `variables.css` und nutzen `light-dark()`. Terminfarben werden ausschließlich über `--event-color` und `--event-text` gesetzt, egal ob Standard- oder eigene Farbe.
 

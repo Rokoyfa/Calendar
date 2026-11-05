@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '../../../components/Button.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { classNames } from '../../../utils/classNames.ts'
 import { ROLE_LABELS } from '../constants/calendars.ts'
@@ -86,9 +87,9 @@ export function CalendarSwitcher() {
   const [isOpen, setIsOpen] = useState(false)
   return (
     <>
-      <button type="button" className="button button--outline button--block" onClick={() => setIsOpen(true)}>
+      <Button variant="outline" block onClick={() => setIsOpen(true)}>
         Kalender wechseln
-      </button>
+      </Button>
       {isOpen && <CalendarSwitcherModal onClose={() => setIsOpen(false)} />}
     </>
   )

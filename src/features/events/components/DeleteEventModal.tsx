@@ -1,3 +1,4 @@
+import { Button } from '../../../components/Button.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
@@ -38,12 +39,12 @@ export function DeleteEventModal({ occurrence, onConfirm, onClose }: DeleteEvent
         />
       ) : (
         <div className="modalActions modalActions--split">
-          <button type="button" className="button button--danger" disabled={isPending} onClick={() => void run('all')}>
+          <Button variant="danger" disabled={isPending} onClick={() => void run('all')}>
             Ja
-          </button>
-          <button type="button" className="button button--success" onClick={onClose} data-autofocus>
+          </Button>
+          <Button variant="success" onClick={onClose} data-autofocus>
             Nein
-          </button>
+          </Button>
         </div>
       )}
     </Modal>

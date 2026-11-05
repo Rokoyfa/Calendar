@@ -1,20 +1,10 @@
-import { useContext } from 'react'
+import { useRequiredContext } from '../../../hooks/useRequiredContext.ts'
 import { StorageContext } from '../context/StorageContext.ts'
 
-export function useStorage() {
-  const storage = useContext(StorageContext)
-  if (!storage) throw new Error('useStorage muss innerhalb von <StorageProvider> verwendet werden.')
-  return storage
-}
+export const useStorage = () => useRequiredContext(StorageContext, 'StorageProvider')
 
-export function useEventRepository() {
-  return useStorage().events
-}
+export const useEventRepository = () => useStorage().events
 
-export function useColorRepository() {
-  return useStorage().colors
-}
+export const useColorRepository = () => useStorage().colors
 
-export function usePreferencesRepository() {
-  return useStorage().preferences
-}
+export const usePreferencesRepository = () => useStorage().preferences

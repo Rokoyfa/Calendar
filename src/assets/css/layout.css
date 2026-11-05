@@ -11,13 +11,6 @@
   min-width: 0;
 }
 
-.container {
-  width: 100%;
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 0 var(--space-4);
-}
-
 .scrollArea {
   overflow: auto;
   scrollbar-color: var(--color-grid) transparent;

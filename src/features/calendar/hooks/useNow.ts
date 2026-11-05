@@ -8,10 +8,13 @@ export function useNow() {
   useEffect(() => {
     let interval: number | undefined
     const tick = () => setNow(new Date())
-    const timeout = window.setTimeout(() => {
-      tick()
-      interval = window.setInterval(tick, MINUTE)
-    }, MINUTE - (Date.now() % MINUTE))
+    const timeout = window.setTimeout(
+      () => {
+        tick()
+        interval = window.setInterval(tick, MINUTE)
+      },
+      MINUTE - (Date.now() % MINUTE),
+    )
 
     return () => {
       window.clearTimeout(timeout)

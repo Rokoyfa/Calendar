@@ -1,5 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react'
-import { Link, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
+import { Button, ButtonLink } from '../../../components/Button.tsx'
 import { ROUTES, withRedirect } from '../../../config/routes.ts'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useAuth } from '../hooks/useAuth.ts'
@@ -28,12 +29,13 @@ export function AccountMenu({ menuItems }: AccountMenuProps) {
 
   if (!user)
     return (
-      <Link
+      <ButtonLink
         to={withRedirect(ROUTES.login, location.pathname + location.search)}
-        className="button button--outline accountLogin"
+        variant="outline"
+        className="accountLogin"
       >
         Anmelden
-      </Link>
+      </ButtonLink>
     )
 
   return (
@@ -52,17 +54,18 @@ export function AccountMenu({ menuItems }: AccountMenuProps) {
         <p className="accountEmail">{user.email}</p>
         <ErrorMessage message={error} />
         {menuItems}
-        <Link to={ROUTES.settings} className="button button--outline button--block">
+        <ButtonLink to={ROUTES.settings} variant="outline" block>
           Einstellungen
-        </Link>
-        <button
-          type="button"
-          className="button button--secondary button--block"
-          disabled={isPending}
+        </ButtonLink>
+        <Button
+          variant="secondary"
+          block
+          isPending={isPending}
+          pendingLabel="Wird abgemeldet …"
           onClick={() => void run()}
         >
-          {isPending ? 'Wird abgemeldet …' : 'Abmelden'}
-        </button>
+          Abmelden
+        </Button>
       </div>
     </>
   )

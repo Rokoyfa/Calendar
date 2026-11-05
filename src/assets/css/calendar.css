@@ -2,11 +2,6 @@
   display: flex;
   width: 100%;
   border-bottom: 1px solid var(--color-grid);
-  transition: opacity var(--transition-base);
-}
-
-.calendar.opaque {
-  opacity: 0.4;
 }
 
 .dayTime {
@@ -252,8 +247,8 @@ button.columnHeader:hover {
 
 .today .dayNumber,
 .miniDay.today {
-  background-color: var(--color-blue);
-  color: var(--color-on-accent);
+  background-color: var(--event-color, var(--color-blue));
+  color: var(--event-text, var(--color-on-accent));
 }
 
 .monthCellEvents {
@@ -336,12 +331,14 @@ button.columnHeader:hover {
 
 .miniDay {
   position: relative;
+  display: grid;
+  place-items: center;
   aspect-ratio: 1;
   border-radius: var(--radius-round);
   font-size: var(--font-size-sm);
 }
 
-.miniDay:not(.outsideMonth):hover {
+button.miniDay:hover {
   background-color: var(--color-surface-hover);
 }
 

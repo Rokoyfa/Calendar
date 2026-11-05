@@ -1,27 +1,25 @@
-import type { SubmitEventHandler } from 'react'
 import { Link } from 'react-router'
+import { Button } from '../../../components/Button.tsx'
+import { Form } from '../../../components/Form.tsx'
 import { PageLayout } from '../../../components/PageLayout.tsx'
-import { ErrorMessage, StatusMessage } from '../../../components/StatusMessage.tsx'
-import { TextField } from '../../../components/TextField.tsx'
+import { ActionFeedback } from '../../../components/StatusMessage.tsx'
 import { ROUTES } from '../../../config/routes.ts'
-import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
-import { useFormState } from '../../../hooks/useFormState.ts'
+import { useForm } from '../../../hooks/useForm.ts'
 import { useAuth } from '../hooks/useAuth.ts'
 import type { PasswordResetRequestInput } from '../types/auth.ts'
-import { EMAIL_MAX_LENGTH, normalizeEmail, validatePasswordResetRequest } from '../utils/validation.ts'
+import { normalizeEmail, validatePasswordResetRequest } from '../utils/validation.ts'
+import { EmailField } from './AuthFields.tsx'
 
 const EMPTY_REQUEST: PasswordResetRequestInput = { email: '' }
 
 export function ForgotPasswordPage() {
   const { requestPasswordReset } = useAuth()
-  const { values, errors, setField, validateAll } = useFormState(EMPTY_REQUEST, validatePasswordResetRequest)
-  const { run, isPending, isSuccess, error } = useAsyncAction(requestPasswordReset)
-
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
-    event.preventDefault()
-    const input = { email: normalizeEmail(values.email) }
-    if (validateAll(input)) void run(input)
-  }
+  const { values, errors, setField, handleSubmit, isPending, isSuccess, error } = useForm({
+    initialValues: EMPTY_REQUEST,
+    validate: validatePasswordResetRequest,
+    prepare: ({ email }) => ({ email: normalizeEmail(email) }),
+    onSubmit: requestPasswordReset,
+  })
 
   return (
     <PageLayout
@@ -33,30 +31,26 @@ export function ForgotPasswordPage() {
       }
     >
       {isSuccess ? (
-        <StatusMessage
-          tone="success"
-          message={`Falls es ein Konto für ${normalizeEmail(values.email)} gibt, haben wir dir einen Link zum Zurücksetzen geschickt. Er ist eine Stunde gültig.`}
+        <ActionFeedback
+          error={null}
+          success={`Falls es ein Konto für ${normalizeEmail(values.email)} gibt, haben wir dir einen Link zum Zurücksetzen geschickt. Er ist eine Stunde gültig.`}
         />
       ) : (
-        <form className="formSection" method="post" noValidate onSubmit={handleSubmit}>
-          <p className="formHint">Gib die E-Mail-Adresse deines Kontos ein. Wir schicken dir einen Link für ein neues Passwort.</p>
-          <TextField
-            label="E-Mail-Adresse"
-            name="email"
-            type="email"
-            inputMode="email"
-            autoComplete="username"
-            maxLength={EMAIL_MAX_LENGTH}
+        <Form onSubmit={handleSubmit}>
+          <p className="formHint">
+            Gib die E-Mail-Adresse deines Kontos ein. Wir schicken dir einen Link für ein neues Passwort.
+          </p>
+          <EmailField
             value={values.email}
             error={errors.email}
             onChange={(email) => setField('email', email)}
             autoFocus
           />
-          <ErrorMessage message={error} />
-          <button type="submit" className="button button--block" disabled={isPending}>
-            {isPending ? 'Wird gesendet …' : 'Link senden'}
-          </button>
-        </form>
+          <ActionFeedback error={error} />
+          <Button type="submit" block isPending={isPending} pendingLabel="Wird gesendet …">
+            Link senden
+          </Button>
+        </Form>
       )}
     </PageLayout>
   )

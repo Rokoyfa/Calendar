@@ -27,7 +27,11 @@ export const ChevronRightIcon = (props: IconProps) => <IconBase {...props} path=
 export const PlusIcon = (props: IconProps) => <IconBase {...props} path="M12 5v14M5 12h14" />
 
 export const RepeatIcon = (props: IconProps) => (
-  <IconBase {...props} strokeWidth={2.5} path="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3" />
+  <IconBase
+    {...props}
+    strokeWidth={2.5}
+    path="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3"
+  />
 )
 
 export const SettingsIcon = (props: IconProps) => (

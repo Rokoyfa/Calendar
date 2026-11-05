@@ -1,8 +1,4 @@
-import { useContext } from 'react'
+import { useRequiredContext } from '../../../hooks/useRequiredContext.ts'
 import { PreferencesContext } from '../context/PreferencesContext.ts'
 
-export function usePreferences() {
-  const preferences = useContext(PreferencesContext)
-  if (!preferences) throw new Error('usePreferences muss innerhalb von <PreferencesProvider> verwendet werden.')
-  return preferences
-}
+export const usePreferences = () => useRequiredContext(PreferencesContext, 'PreferencesProvider')
