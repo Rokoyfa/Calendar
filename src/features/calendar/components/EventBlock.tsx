@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { formatEventPeriod, type EventOccurrence } from '../../../utils/event.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
+import { useEventSource } from '../hooks/useEventSource.ts'
 import { getVisibleDuration } from '../utils/eventGeometry.ts'
 import { getSegmentAttributes } from '../utils/eventLabels.ts'
 import { EventTitle } from './EventTitle.tsx'
@@ -16,8 +17,9 @@ const getSizeClass = (duration: number) => (duration <= 30 ? 'veryShortEvent' : 
 
 export function EventBlock({ segment, column, columns, onSelect }: EventBlockProps) {
   const { event, start } = segment
+  const source = useEventSource(event)
   const duration = getVisibleDuration(segment)
-  const { style: colorStyle, ...attributes } = getSegmentAttributes(segment, 'event', getSizeClass(duration))
+  const { style: colorStyle, ...attributes } = getSegmentAttributes(segment, source, 'event', getSizeClass(duration))
   const style = {
     '--event-start': start,
     '--event-duration': duration,
@@ -28,7 +30,8 @@ export function EventBlock({ segment, column, columns, onSelect }: EventBlockPro
 
   return (
     <button type="button" {...attributes} style={style} onClick={() => onSelect(event)}>
-      <EventTitle event={event} />
+      <EventTitle event={event} source={source} />
+      {source && duration >= 120 && <span className="eventSource">{source.name}</span>}
       {duration >= 90 && <span className="eventTime">{formatEventPeriod(event)}</span>}
     </button>
   )

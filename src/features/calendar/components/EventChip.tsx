@@ -2,6 +2,7 @@ import { minutesToTime } from '../../../utils/date.ts'
 import { withoutPropagation } from '../../../utils/dom.ts'
 import type { EventOccurrence } from '../../../utils/event.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
+import { useEventSource } from '../hooks/useEventSource.ts'
 import { getSegmentAttributes } from '../utils/eventLabels.ts'
 import { EventTitle } from './EventTitle.tsx'
 
@@ -12,15 +13,16 @@ type EventChipProps = {
 
 export function EventChip({ segment, onSelect }: EventChipProps) {
   const { event, start, continuesBefore } = segment
+  const source = useEventSource(event)
 
   return (
     <button
       type="button"
-      {...getSegmentAttributes(segment, 'eventChip')}
+      {...getSegmentAttributes(segment, source, 'eventChip')}
       onClick={withoutPropagation(() => onSelect(event))}
     >
       {!continuesBefore && <span className="eventChipTime">{minutesToTime(start)}</span>}
-      <EventTitle event={event} />
+      <EventTitle event={event} source={source} />
     </button>
   )
 }

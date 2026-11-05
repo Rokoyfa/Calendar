@@ -11,9 +11,12 @@ import {
   type EventOccurrence,
 } from '../../../utils/event.ts'
 import { DeleteEventModal, EventModal, useEvents } from '../../events/index.ts'
+import { EventSourcesContext, NO_EVENT_SOURCES } from '../context/EventSourcesContext.ts'
 import { useCalendarView } from '../hooks/useCalendarView.ts'
 import { useNow } from '../hooks/useNow.ts'
 import type { EditorState } from '../types/editor.ts'
+import type { EventSources } from '../types/eventSource.ts'
+import { getSourceText } from '../utils/eventLabels.ts'
 import type { CalendarView, CalendarViewProps } from '../types/view.ts'
 import { groupSegmentsByDate } from '../utils/segmentEvents.ts'
 import { CalendarHeader } from './CalendarHeader.tsx'
@@ -32,6 +35,7 @@ type CalendarProps = {
   calendarIds: readonly string[]
   targetCalendarId: string
   canCreate?: boolean
+  eventSources?: EventSources
   initialView?: CalendarView
   headerContext?: ReactNode
   headerAccessory?: ReactNode
@@ -41,6 +45,7 @@ export function Calendar({
   calendarIds,
   targetCalendarId,
   canCreate = true,
+  eventSources = NO_EVENT_SOURCES,
   initialView,
   headerContext,
   headerAccessory,
@@ -89,9 +94,10 @@ export function Calendar({
   }
 
   const ViewComponent = VIEW_COMPONENTS[view]
+  const editorSource = editor?.occurrence ? eventSources.get(editor.occurrence.calendarId) : undefined
 
   return (
-    <>
+    <EventSourcesContext value={eventSources}>
       <CalendarHeader
         view={view}
         title={title}
@@ -126,6 +132,7 @@ export function Calendar({
           key={editor.occurrence?.occurrenceKey ?? 'new'}
           initialValue={editor.initialValue}
           occurrence={editor.occurrence}
+          notice={editorSource && `${getSourceText(editorSource)}. Änderungen sehen alle Mitglieder.`}
           onSave={handleSave}
           onDelete={editor.occurrence ? () => setEventToDelete(editor.occurrence) : undefined}
           onClose={() => setEditor(null)}
@@ -135,6 +142,6 @@ export function Calendar({
       {eventToDelete && (
         <DeleteEventModal occurrence={eventToDelete} onConfirm={handleDelete} onClose={() => setEventToDelete(null)} />
       )}
-    </>
+    </EventSourcesContext>
   )
 }

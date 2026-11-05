@@ -176,9 +176,17 @@ button.columnHeader:hover {
   vertical-align: -1px;
 }
 
-.eventTime {
+.eventTime,
+.eventSource {
   font-size: var(--font-size-sm);
   opacity: 0.9;
+}
+
+.eventSource {
+  flex: none;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .shortEvent {

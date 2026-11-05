@@ -30,6 +30,7 @@ import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
 type EventModalProps = {
   initialValue: EventInput
   occurrence?: EventOccurrence | null
+  notice?: string
   onSave: (input: EventInput, scope: EditScope) => Promise<void>
   onDelete?: () => void
   onClose: () => void
@@ -45,7 +46,7 @@ const TITLES: Record<EventModalMode, string> = {
   edit: 'Termin bearbeiten',
 }
 
-export function EventModal({ initialValue, occurrence = null, onSave, onDelete, onClose }: EventModalProps) {
+export function EventModal({ initialValue, occurrence = null, notice, onSave, onDelete, onClose }: EventModalProps) {
   const mode: EventModalMode = occurrence ? 'edit' : 'create'
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
@@ -95,6 +96,7 @@ export function EventModal({ initialValue, occurrence = null, onSave, onDelete, 
     <>
       <Modal title={TITLES[mode]} onClose={onClose}>
         <Form className="eventForm" onSubmit={handleSubmit}>
+          {notice && <p className="formHint eventNotice">{notice}</p>}
           <TextField
             label="Titel"
             name="title"

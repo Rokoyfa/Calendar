@@ -12,3 +12,8 @@ export const getVisibleCalendarIds = (calendars: readonly CalendarSummary[], act
 
 export const hasPermission = (calendar: CalendarSummary, permission: Permission) =>
   calendar.permissions.includes(permission)
+
+export const getSharedCalendars = (calendars: readonly CalendarSummary[], active: CalendarSummary) =>
+  isPersonalCalendar(active)
+    ? calendars.filter((calendar) => !isPersonalCalendar(calendar) && calendar.showInPersonal)
+    : []

@@ -54,3 +54,10 @@
 .itemRow .iconButton {
   font-size: var(--font-size-lg);
 }
+
+.eventNotice {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-hover);
+}

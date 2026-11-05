@@ -286,6 +286,8 @@ Jeder Termin gehört genau zu einem Kalender (`calendarId`). Geladen werden nur 
 - **Persönlicher Kalender offen:** die persönlichen Termine plus die Termine aller Team-Kalender, bei denen „Auch im persönlichen Kalender anzeigen“ an ist.
 - **Team-Kalender offen:** nur die Termine dieses Team-Kalenders. **Persönliche Termine erscheinen nie in einem Team-Kalender.**
 
+**Herkunft im persönlichen Kalender:** Termine aus Team-Kalendern tragen dort ein kleines Team-Symbol vor dem Titel (Woche, Tag und Monat). Ab zwei Stunden Länge steht der Name des Kalenders zusätzlich im Termin, darunter reicht der Platz nicht. Der Tooltip nennt immer „Aus dem Kalender „…““, und der Bearbeiten-Dialog zeigt oben: „Aus dem Kalender „…“. Änderungen sehen alle Mitglieder.“ Im Team-Kalender selbst entfällt das, dort zeigt die Plakette den Kalender. Umgesetzt über `eventSources`, eine Zuordnung Kalender-ID → Name und Farbe, die `CalendarPage` an `Calendar` gibt.
+
 **Rechte:** Jeder Kalender bringt die Berechtigungen der eigenen Rolle mit (`permissions`, siehe Rollen-Tabelle im Datenbank-README). Fehlt `create_entry` (Betrachter), verschwindet der Plus-Button und ein Klick ins Raster legt nichts an. Bearbeiten und Löschen prüft der Server; ohne Recht erscheint seine Meldung im Dialog, z. B. „Du darfst diesen Termin nicht bearbeiten.“
 
 Neue Termine landen immer im gerade offenen Kalender. Beim Bearbeiten bleibt ein Termin in seinem Kalender, auch herausgelöste Termine und fortgesetzte Serien. Beim Abmelden oder Kontowechsel wird die Kalenderauswahl zurückgesetzt, damit nichts versehentlich in einen fremden Kalender geschrieben wird.
