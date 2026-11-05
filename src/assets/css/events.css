@@ -39,31 +39,18 @@
   color: var(--color-on-accent);
 }
 
-.colorList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  list-style: none;
-}
-
-.colorListItem {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
 .colorSwatch {
+  flex: none;
   width: 22px;
   height: 22px;
   border-radius: var(--radius-round);
   background-color: var(--event-color, var(--color-blue));
 }
 
-.colorListLabel {
-  flex: 1;
+.colorCode {
   font-family: ui-monospace, monospace;
 }
 
-.colorListItem .iconButton {
+.itemRow .iconButton {
   font-size: var(--font-size-lg);
 }

@@ -7,6 +7,7 @@ export const PERSONAL_CALENDAR: CalendarSummary = {
   kind: 'personal',
   teamName: null,
   role: 'owner',
+  showInPersonal: true,
 }
 
 export const ROLE_LABELS: Record<TeamRole, string> = {

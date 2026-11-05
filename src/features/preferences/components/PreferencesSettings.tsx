@@ -14,9 +14,9 @@ export function PreferencesSettings() {
 
   return (
     <>
-      <PageSection title="Darstellung">
+      <PageSection title="Farbschema">
         <SegmentedField
-          label="Farbschema"
+          label="Hell oder dunkel"
           value={preferences.theme}
           options={THEME_OPTIONS}
           onChange={(theme) => void run({ theme })}

@@ -268,8 +268,11 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 
 Seite `/settings`, erreichbar über **Einstellungen** im Kontomenü (runder Button mit dem Anfangsbuchstaben). Mit `VITE_FEATURE_AUTH=true` nur für Angemeldete: `/settings` leitet sonst zum Kalender um, auch direkt nach dem Löschen des Kontos. Ohne Anmeldefunktion gibt es kein Kontomenü, dann führt ein Zahnrad in der Kopfzeile zu den Einstellungen.
 
+Oben wechseln Tabs zwischen **Kalender**, **Darstellung** (Farbschema, Startansicht, eigene Farben) und **Konto** (nur angemeldet). Der gewählte Tab steht in der Adresse (`/settings?tab=appearance`), bleibt also beim Neuladen erhalten und lässt sich verlinken. Pfeiltasten links/rechts wechseln den Tab.
+
 Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, rechts die Einstellungen. Auf dem Handy untereinander.
 
+- **Kalender:** alle Kalender, auf die man Zugriff hat (persönlich und Teams), mit Farbe, Team und eigener Rolle. Bei Team-Kalendern legt ein Schalter fest, ob ihre Termine **auch im persönlichen Kalender** erscheinen (`showInPersonal`, Standard an). Team-Kalender lassen sich mit Bestätigung **verlassen**, außer man ist Owner. Der persönliche Kalender lässt sich nicht entfernen. Bisher gibt es nur „Persönlich“, die Teams kommen später vom Backend.
 - **Farbschema:** Wie System, Hell oder Dunkel. Gesetzt über `data-theme` am `<html>`, die Farben kommen weiter aus `light-dark()`.
 - **Startansicht** getrennt für Computer/Tablet und Handy
 - **Eigene Farben** ansehen und entfernen. Termine mit dieser Farbe behalten sie.
@@ -383,11 +386,11 @@ database/
    ├─ 002_automation.sql       Trigger und Sichten user_calendars, user_team_permissions
    └─ 002_automation.down.sql
 src/
-├─ App.tsx                     AuthProvider + StorageProvider (je nach Sitzung) + PreferencesProvider + Router
+├─ App.tsx                     AuthProvider + StorageProvider (je nach Sitzung) + PreferencesProvider + CalendarsProvider + Router
 ├─ router.tsx                  Routen: /, /settings, /login, /register, /forgot-password, /reset-password, /verify-email
 ├─ pages/
 │  ├─ CalendarPage.tsx         Kalender mit Startansicht, Kontomenü (Zahnrad nur ohne Anmeldefunktion), Bestätigungsleiste und Übernahme-Abfrage
-│  └─ SettingsPage.tsx         Einstellungen aus preferences, events und authorization
+│  └─ SettingsPage.tsx         Einstellungen in Tabs: Kalender, Darstellung, Konto
 ├─ main.tsx                    Einstiegspunkt
 ├─ env.d.ts                    Typen der Umgebungsvariablen
 ├─ config/
@@ -413,6 +416,8 @@ src/
 │  ├─ IconButton.tsx           Symbol-Schaltfläche
 │  ├─ SegmentedControl.tsx     Umschalter mit mehreren Optionen
 │  ├─ SegmentedField.tsx       Umschalter mit Beschriftung als Formularfeld
+│  ├─ Tabs.tsx                 Tabs mit Inhalt (role=tablist/tabpanel, Pfeiltasten)
+│  ├─ Switch.tsx               Ein/Aus-Schalter (Checkbox mit role=switch)
 │  ├─ TextField.tsx            Textfeld mit Beschriftung und Fehler
 │  ├─ PasswordField.tsx        Passwortfeld mit „Anzeigen“
 │  ├─ StatusMessage.tsx        Fehler- (role="alert") und Erfolgsmeldung (role="status"), ActionFeedback für beides
@@ -467,11 +472,14 @@ src/
    │  ├─ types/
    │  └─ utils/                LocalStorageValue/LocalStorageList (localStorage lesen/schreiben), copyEvents (Termine samt Serien-Verknüpfung kopieren)
    ├─ calendars/               Kalenderauswahl (persönlich und Teams), vorbereitet für den Team-Modus
-   │  ├─ components/           CalendarSwitcher (Button und Fenster), CalendarPreview (Monatsvorschau)
+   │  ├─ components/           CalendarSwitcher (Button und Fenster), CalendarPreview (Monatsvorschau),
+   │  │                        CalendarSettings (Liste in den Einstellungen, Verlassen)
    │  ├─ constants/            Persönlicher Kalender, Bezeichnungen der Rollen
-   │  ├─ context/              CalendarsProvider (verfügbare Kalender, aktiver Kalender)
+   │  ├─ context/              CalendarsProvider (verfügbare Kalender, aktiver Kalender, verlassen), liegt in App.tsx
    │  ├─ hooks/                useCalendars
-   │  └─ types/
+   │  ├─ types/
+   │  └─ utils/                Regeln: persönlich oder Team (`kind`), wer verlassen darf, welche Kalender gerade sichtbar sind
+   │                           (`visibleCalendarIds`: im persönlichen Kalender dieser plus alle Teams mit showInPersonal)
    ├─ preferences/             Einstellungen (Farbschema, Startansicht)
    │  ├─ components/           PreferencesSettings
    │  ├─ context/              PreferencesProvider (lädt, speichert, setzt data-theme)

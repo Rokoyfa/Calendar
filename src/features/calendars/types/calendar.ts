@@ -13,10 +13,14 @@ export type CalendarSummary = {
   kind: CalendarKind
   teamName: string | null
   role: TeamRole
+  showInPersonal: boolean
 }
 
 export type CalendarsContextValue = {
   calendars: readonly CalendarSummary[]
   activeCalendar: CalendarSummary
+  visibleCalendarIds: readonly string[]
   selectCalendar: (id: string) => void
+  leaveCalendar: (id: string) => Promise<void>
+  setShowInPersonal: (id: string, showInPersonal: boolean) => Promise<void>
 }

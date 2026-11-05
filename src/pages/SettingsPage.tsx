@@ -1,14 +1,46 @@
+import { useSearchParams } from 'react-router'
 import { PageLayout } from '../components/PageLayout.tsx'
-import { AccountSettings } from '../features/authorization/index.ts'
+import { Tabs, type TabDefinition } from '../components/Tabs.tsx'
+import { AccountSettings, useAuth } from '../features/authorization/index.ts'
+import { CalendarSettings } from '../features/calendars/index.ts'
 import { CustomColorSettings } from '../features/events/index.ts'
 import { PreferencesSettings } from '../features/preferences/index.ts'
 
+type SettingsTab = 'calendars' | 'appearance' | 'account'
+
+const TAB_PARAM = 'tab'
+
+const BASE_TABS: readonly TabDefinition<SettingsTab>[] = [
+  { value: 'calendars', label: 'Kalender', content: <CalendarSettings /> },
+  {
+    value: 'appearance',
+    label: 'Darstellung',
+    content: (
+      <>
+        <PreferencesSettings />
+        <CustomColorSettings />
+      </>
+    ),
+  },
+]
+
+const ACCOUNT_TAB: TabDefinition<SettingsTab> = { value: 'account', label: 'Konto', content: <AccountSettings /> }
+
 export function SettingsPage() {
+  const { enabled, user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabs = enabled && user ? [...BASE_TABS, ACCOUNT_TAB] : BASE_TABS
+  const requested = searchParams.get(TAB_PARAM)
+  const active = tabs.find((tab) => tab.value === requested)?.value ?? tabs[0].value
+
   return (
     <PageLayout title="Einstellungen" variant="full">
-      <PreferencesSettings />
-      <CustomColorSettings />
-      <AccountSettings />
+      <Tabs
+        label="Bereiche der Einstellungen"
+        tabs={tabs}
+        value={active}
+        onChange={(tab) => setSearchParams({ [TAB_PARAM]: tab }, { replace: true })}
+      />
     </PageLayout>
   )
 }

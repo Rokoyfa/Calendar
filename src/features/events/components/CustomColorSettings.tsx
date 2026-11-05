@@ -18,13 +18,13 @@ export function CustomColorSettings() {
       {colors.length === 0 ? (
         <p className="emptyHint">Noch keine eigenen Farben.</p>
       ) : (
-        <ul className="colorList">
+        <ul className="itemList">
           {colors.map((color) => {
             const label = getEventColorLabel(color)
             return (
-              <li key={color} className="colorListItem">
+              <li key={color} className="itemRow">
                 <span {...getEventColorAttributes(color, 'colorSwatch')} aria-hidden="true" />
-                <span className="colorListLabel">{label}</span>
+                <span className="itemRowMain colorCode">{label}</span>
                 <IconButton
                   label={`Farbe ${label} entfernen`}
                   plain
