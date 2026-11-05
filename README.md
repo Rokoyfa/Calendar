@@ -294,7 +294,7 @@ Neue Termine landen immer im gerade offenen Kalender. Beim Bearbeiten bleibt ein
 
 ### Kalender-Einstellungen
 
-Eigene Seite `/calendars/:calendarId/settings` je Kalender (nur angemeldet), erreichbar über das Zahnrad in Einstellungen › Kalender. Oben führt „Zu den Einstellungen“ zurück. Jeder Bereich zeigt nur, was die eigene Rolle darf (`permissions` des Kalenders):
+Eigene Seite `/calendars/:calendarId/settings` je Kalender (nur angemeldet), erreichbar über das Zahnrad in Einstellungen › Kalender. Oben führt „Zu den Einstellungen“ zurück. Bei Team-Kalendern teilen Tabs die Seite in **Allgemein** (mit Anzeige), **Mitglieder**, **Einladungen** (nur mit `invite_members`) und **Gefahrenbereich**. Mitglieder und Einladungen zeigen die Anzahl im Tab. Der Tab steht wie in den Einstellungen in der Adresse (`?tab=members`), bleibt beim Neuladen erhalten und lässt sich verlinken; das übernimmt der gemeinsame Hook `useTabParam`. Jeder Bereich zeigt nur, was die eigene Rolle darf (`permissions` des Kalenders):
 
 | Bereich | Inhalt | Ändern dürfen |
 | ------- | ------ | ------------- |
@@ -304,7 +304,7 @@ Eigene Seite `/calendars/:calendarId/settings` je Kalender (nur angemeldet), err
 | **Einladungen** | einladen mit E-Mail und Rolle, offene Einladungen mit Ablaufdatum, zurückziehen | `invite_members`, nur Rollen unterhalb der eigenen. Mitglieder, doppelte Einladungen und die eigene Adresse werden abgefangen. |
 | **Gefahrenbereich** | Kalender verlassen, Team löschen (mit Bestätigung, danach zurück zu den Einstellungen) | Verlassen jeder außer dem letzten Owner, Löschen nur mit `delete_team` (Owner) |
 
-Der persönliche Kalender hat nur **Allgemein** (Name und Farbe) und einen Hinweis, dass er sich nicht teilen oder löschen lässt. Ohne Zugriff (z. B. nach dem Entfernen) zeigt die Seite „Diesen Kalender gibt es nicht, oder du hast keinen Zugriff mehr.“
+Der persönliche Kalender hat keine Tabs, nur **Allgemein** (Name und Farbe) und einen Hinweis, dass er sich nicht teilen oder löschen lässt. Ohne Zugriff (z. B. nach dem Entfernen) zeigt die Seite „Diesen Kalender gibt es nicht, oder du hast keinen Zugriff mehr.“
 
 Die Seite liegt in `features/calendars/components/settings/`, Mitglieder und Einladungen lädt `useTeam`. Bestätigungen laufen über den allgemeinen `ConfirmModal` aus `components/`, den jetzt auch „Kalender verlassen“ in der Liste nutzt.
 

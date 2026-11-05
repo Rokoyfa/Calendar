@@ -2,9 +2,11 @@ import { useParams } from 'react-router'
 import { PageLayout } from '../../../../components/PageLayout.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { Switch } from '../../../../components/Switch.tsx'
+import { Tabs, type TabDefinition } from '../../../../components/Tabs.tsx'
 import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
 import { SETTINGS_CALENDARS_PATH } from '../../../../config/routes.ts'
 import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
+import { useTabParam } from '../../../../hooks/useTabParam.ts'
 import { useAuth } from '../../../authorization/index.ts'
 import { useCalendars } from '../../hooks/useCalendars.ts'
 import { useTeam } from '../../hooks/useTeam.ts'
@@ -32,35 +34,68 @@ function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
   )
 }
 
+const withCount = (label: string, count: number) => (count > 0 ? `${label} (${count})` : label)
+
+type TeamTab = 'general' | 'members' | 'invitations' | 'danger'
+
+const TABS_LABEL = 'Bereiche der Kalender-Einstellungen'
+
 function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
   const { user } = useAuth()
   const team = useTeam(calendar)
-
-  return (
-    <>
-      <DisplaySection calendar={calendar} />
-      <MembersSection
-        calendar={calendar}
-        members={team.members}
-        error={team.membersError}
-        currentUserId={user?.id ?? null}
-        onChangeRole={team.changeRole}
-        onRemove={team.removeMember}
-      />
-      {hasPermission(calendar, 'invite_members') && (
-        <TeamInvitationsSection
+  const tabs: TabDefinition<TeamTab>[] = [
+    {
+      value: 'general',
+      label: 'Allgemein',
+      content: (
+        <>
+          <GeneralSection calendar={calendar} />
+          <DisplaySection calendar={calendar} />
+        </>
+      ),
+    },
+    {
+      value: 'members',
+      label: withCount('Mitglieder', team.members.length),
+      content: (
+        <MembersSection
           calendar={calendar}
-          invitations={team.invitations}
           members={team.members}
-          error={team.invitationsError}
-          ownEmail={user?.email ?? null}
-          onInvite={team.invite}
-          onRevoke={team.revokeInvitation}
+          error={team.membersError}
+          currentUserId={user?.id ?? null}
+          onChangeRole={team.changeRole}
+          onRemove={team.removeMember}
         />
-      )}
-      <DangerSection calendar={calendar} members={team.members} />
-    </>
-  )
+      ),
+    },
+    ...(hasPermission(calendar, 'invite_members')
+      ? [
+          {
+            value: 'invitations' as const,
+            label: withCount('Einladungen', team.invitations.length),
+            content: (
+              <TeamInvitationsSection
+                calendar={calendar}
+                invitations={team.invitations}
+                members={team.members}
+                error={team.invitationsError}
+                ownEmail={user?.email ?? null}
+                onInvite={team.invite}
+                onRevoke={team.revokeInvitation}
+              />
+            ),
+          },
+        ]
+      : []),
+    {
+      value: 'danger',
+      label: 'Gefahrenbereich',
+      content: <DangerSection calendar={calendar} members={team.members} />,
+    },
+  ]
+  const [active, select] = useTabParam(tabs)
+
+  return <Tabs label={TABS_LABEL} tabs={tabs} value={active} onChange={select} />
 }
 
 export function CalendarSettingsPage() {
@@ -79,14 +114,16 @@ export function CalendarSettingsPage() {
 
   return (
     <PageLayout title={`${calendar.name} · Einstellungen`} back={BACK} variant="full">
-      <GeneralSection calendar={calendar} />
       {isPersonalCalendar(calendar) ? (
-        <PageSection title="Persönlicher Kalender">
-          <p className="formHint">
-            Nur du siehst diesen Kalender. Er lässt sich nicht teilen, verlassen oder löschen. Termine aus
-            Team-Kalendern blendest du in deren Einstellungen ein oder aus.
-          </p>
-        </PageSection>
+        <>
+          <GeneralSection calendar={calendar} />
+          <PageSection title="Persönlicher Kalender">
+            <p className="formHint">
+              Nur du siehst diesen Kalender. Er lässt sich nicht teilen, verlassen oder löschen. Termine aus
+              Team-Kalendern blendest du in deren Einstellungen ein oder aus.
+            </p>
+          </PageSection>
+        </>
       ) : (
         <TeamSettings calendar={calendar} />
       )}

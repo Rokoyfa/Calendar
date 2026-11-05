@@ -417,6 +417,10 @@ button.stepContent:hover .stepLabel {
     align-items: stretch;
   }
 
+  .memberRow .itemRowMain {
+    flex-basis: 100%;
+  }
+
   .memberRole {
     flex: 1;
   }
