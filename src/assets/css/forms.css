@@ -118,3 +118,19 @@ select.input {
 .errorText {
   color: var(--color-red);
 }
+
+.successText {
+  color: var(--color-green);
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.emptyHint {
+  color: var(--color-muted);
+  font-style: italic;
+}

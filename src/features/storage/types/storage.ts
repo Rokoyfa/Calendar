@@ -1,6 +1,7 @@
 import type { HexColor } from '../../../utils/color.ts'
 import type { DateRange } from '../../../utils/date.ts'
 import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
+import type { Preferences } from '../../../utils/preferences.ts'
 
 export type { DateRange }
 
@@ -16,6 +17,11 @@ export interface ColorRepository {
   list(): Promise<HexColor[]>
   add(color: HexColor): Promise<HexColor[]>
   remove(color: HexColor): Promise<HexColor[]>
+}
+
+export interface PreferencesRepository {
+  get(): Promise<Preferences>
+  update(changes: Partial<Preferences>): Promise<Preferences>
 }
 
 export type StorageConfig =
@@ -34,6 +40,7 @@ export type StorageContextValue = {
   mode: StorageMode
   events: EventRepository
   colors: ColorRepository
+  preferences: PreferencesRepository
   version: number
   invalidate: () => void
 }

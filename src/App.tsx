@@ -5,6 +5,7 @@ import { authRepository } from './config/auth.ts'
 import { env } from './config/env.ts'
 import { createStorageConfig } from './config/storage.ts'
 import { AuthProvider, useAuth } from './features/authorization/index.ts'
+import { PreferencesProvider } from './features/preferences/index.ts'
 import { StorageProvider } from './features/storage/index.ts'
 import { router } from './router.tsx'
 
@@ -17,7 +18,11 @@ function SessionStorageProvider({ children }: { children: ReactNode }) {
   )
 
   if (status === 'loading') return <p className="appLoading">Lädt …</p>
-  return <StorageProvider config={config}>{children}</StorageProvider>
+  return (
+    <StorageProvider config={config}>
+      <PreferencesProvider>{children}</PreferencesProvider>
+    </StorageProvider>
+  )
 }
 
 function App() {

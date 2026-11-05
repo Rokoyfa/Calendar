@@ -38,3 +38,163 @@
   background-color: var(--color-blue);
   color: var(--color-on-accent);
 }
+
+.colorList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.colorListItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.colorSwatch {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-round);
+  background-color: var(--event-color, var(--color-blue));
+}
+
+.colorListLabel {
+  flex: 1;
+  font-family: ui-monospace, monospace;
+}
+
+.colorListItem .iconButton {
+  font-size: var(--font-size-lg);
+}
+
+.calendarGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.calendarGroupTitle {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.calendarCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--space-4);
+  list-style: none;
+}
+
+.calendarCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 2px solid var(--color-grid);
+  border-radius: var(--radius-md);
+  text-align: left;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.calendarCard:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.calendarCard.active {
+  border-color: var(--color-blue);
+}
+
+.calendarPreview {
+  overflow: hidden;
+  border: 1px solid var(--color-grid);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg);
+}
+
+.calendarPreviewHeader {
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--event-color, var(--color-blue));
+  color: var(--event-text, var(--color-on-accent));
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.calendarPreviewMonth {
+  padding: var(--space-2);
+  row-gap: 1px;
+}
+
+.calendarPreviewMonth .monthGridWeekday {
+  padding: 0;
+  font-size: 9px;
+}
+
+.calendarPreviewDay {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: var(--radius-round);
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+}
+
+.calendarPreviewDay.today {
+  background-color: var(--event-color, var(--color-blue));
+  color: var(--event-text, var(--color-on-accent));
+  font-weight: 700;
+}
+
+.calendarCardInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.calendarCardName {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.calendarCardMeta {
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+}
+
+.calendarCardBadge {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-round);
+  background-color: var(--color-blue);
+  color: var(--color-on-accent);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .calendarCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .calendarCard {
+    padding: var(--space-2);
+  }
+
+  .calendarPreviewMonth .monthGridWeekday {
+    font-size: 8px;
+  }
+
+  .calendarPreviewDay {
+    font-size: 9px;
+  }
+}

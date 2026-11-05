@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ComponentType, type ReactNode } from 'react'
-import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
+import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useArrowKeyNavigation } from '../../../hooks/useArrowKeyNavigation.ts'
 import { MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
 import {
@@ -29,14 +29,15 @@ const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = 
 }
 
 type CalendarProps = {
+  initialView?: CalendarView
   headerAccessory?: ReactNode
 }
 
-export function Calendar({ headerAccessory }: CalendarProps) {
+export function Calendar({ initialView, headerAccessory }: CalendarProps) {
   const now = useNow()
   const today = toISODate(now)
   const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
-    useCalendarView()
+    useCalendarView(initialView)
   const { events, error, createEvent, updateEvent, deleteEvent } = useEvents(range)
   const segmentsByDate = useMemo(
     () => groupSegmentsByDate(expandEvents(events, range.from, range.to), range),

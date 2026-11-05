@@ -1,6 +1,6 @@
 import { useState, type SubmitEventHandler } from 'react'
 import { DateTimeField } from '../../../components/DateTimeField.tsx'
-import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
+import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { FormField } from '../../../components/FormField.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { TextField } from '../../../components/TextField.tsx'

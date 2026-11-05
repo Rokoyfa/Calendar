@@ -1,4 +1,4 @@
-import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
+import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import type { EditScope, EventOccurrence } from '../../../utils/event.ts'

@@ -1,5 +1,5 @@
 import type { EventOccurrence } from '../../../utils/event.ts'
-import { RepeatIcon } from './Icons.tsx'
+import { RepeatIcon } from '../../../components/Icons.tsx'
 
 type EventTitleProps = {
   event: EventOccurrence

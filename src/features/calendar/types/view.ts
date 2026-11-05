@@ -2,9 +2,8 @@ import type { DateRange } from '../../../utils/date.ts'
 import type { EventOccurrence } from '../../../utils/event.ts'
 import type { EventSegment } from './eventLayout.ts'
 
-export const CALENDAR_VIEWS = ['day', 'week', 'month', 'year'] as const
 
-export type CalendarView = (typeof CALENDAR_VIEWS)[number]
+export { CALENDAR_VIEWS, type CalendarView } from '../../../utils/calendarView.ts'
 
 export type ViewDefinition = {
   label: string

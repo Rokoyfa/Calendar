@@ -72,6 +72,8 @@ Die App wird über Umgebungsvariablen eingestellt. Vite liest sie aus diesen Dat
 
 Der Browser ruft dann `/api/...` auf derselben Adresse wie die App auf, Vite leitet an das Backend weiter. Dadurch sind in der Entwicklung keine CORS-Einstellungen nötig.
 
+Zum Testen ohne echtes Backend gibt es im Nachbarordner `TestBE` ein Test-Backend mit allen `/auth`- und `/events`-Endpunkten (Start mit `npm install` und `npm run dev`, Port 3000). Dort auch `VITE_FEATURE_AUTH=true` setzen.
+
 ---
 
 ## API-Client
@@ -127,13 +129,14 @@ Fehlermeldungen vom Backend sollten als JSON in der Form `{ "message": "…" }` 
 
 ## Anmeldung
 
-Eingeschaltet über `VITE_FEATURE_AUTH=true`. Ist der Schalter aus, gibt es keine Konto-Elemente, und `/login` sowie `/register` leiten auf den Kalender um.
+Eingeschaltet über `VITE_FEATURE_AUTH=true`. Ist der Schalter aus, gibt es keine Konto-Elemente, und alle Konto-Seiten (`/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`) leiten auf den Kalender um.
 
 ### Ablauf
 
 - Der Kalender ist **ohne Anmeldung voll nutzbar**, Termine liegen dann im localStorage. Oben rechts steht **Anmelden**.
 - **Seiten:** `/login` und `/register` sind eigene Seiten (React Router). Nach dem Absenden geht es zurück zur vorherigen Seite des Kalenders. Erlaubt sind dabei nur interne Pfade, Weiterleitungen auf fremde Seiten werden ignoriert. Angemeldet führen beide Seiten direkt zum Kalender.
-- **Angemeldet** zeigt die Kopfzeile einen runden Button mit dem Anfangsbuchstaben. Er öffnet ein kleines Menü mit Name, E-Mail und **Abmelden**.
+- **Angemeldet** zeigt die Kopfzeile einen runden Button mit dem Anfangsbuchstaben. Er öffnet ein kleines Menü mit Name, E-Mail, **Kalender wechseln**, **Einstellungen** und **Abmelden**. Ein Klick auf einen Eintrag schließt das Menü.
+- **Kalender wechseln** öffnet ein großes Fenster mit dem persönlichen Kalender und den Team-Kalendern als Kacheln: oben eine Vorschau des aktuellen Monats in der Kalenderfarbe, darunter Name, Team und die eigene Rolle. Der aktive Kalender ist blau umrandet mit Haken. Auf dem Handy zwei Kacheln nebeneinander. Vorbereitet für den Team-Modus: Bisher gibt es nur „Persönlich“, unter „Teams“ steht ein Hinweis. Die Liste kommt aus `features/calendars` (`CalendarsProvider`, `useCalendars`) und soll später aus `GET /calendars` bzw. der Sicht `user_calendars` gefüllt werden.
 - **Speicher je nach Sitzung:** Angemeldet werden Termine über die API geladen und gespeichert, abgemeldet wieder lokal. Der Wechsel passiert automatisch.
 - **Sitzung beim Start:** Die App fragt beim Laden `GET /auth/me` ab und zeigt bis zur Antwort kurz „Lädt …“, damit nicht erst lokale und dann Konto-Termine erscheinen.
 - **Abgelaufene Sitzung:** Antwortet die API bei einem Termin-Aufruf mit 401, gilt man als abgemeldet und sieht wieder die lokalen Termine.
@@ -146,9 +149,27 @@ Eingeschaltet über `VITE_FEATURE_AUTH=true`. Ist der Schalter aus, gibt es kein
   - Wiederholung des Passworts muss übereinstimmen
   - Name höchstens 80 Zeichen
 
-  Die E-Mail wird klein geschrieben und ohne Leerzeichen gesendet. Passwörter lassen sich mit **Anzeigen** sichtbar machen. Die Felder tragen die passenden `autocomplete`-Werte, damit Passwort-Manager sie erkennen.
+  Die E-Mail wird klein geschrieben und ohne Leerzeichen gesendet. Die Felder für ein neues Passwort (Registrieren, Zurücksetzen, Ändern) sind ein gemeinsamer Baustein `NewPasswordFields`. Passwörter lassen sich mit **Anzeigen** sichtbar machen. Die Felder tragen die passenden `autocomplete`-Werte, damit Passwort-Manager sie erkennen.
+
+### Passwort vergessen und E-Mail bestätigen
+
+- **Passwort vergessen:** Link unter dem Passwortfeld der Anmeldung führt zu `/forgot-password`. Nach dem Absenden kommt immer dieselbe Meldung („Falls es ein Konto gibt …“), damit sich nicht herausfinden lässt, welche Adressen registriert sind.
+- **Neues Passwort:** Der Link aus der E-Mail führt zu `/reset-password?token=…`. Fehlt der Token oder ist er abgelaufen, bietet die Seite einen neuen Link an.
+- **E-Mail bestätigen:** Der Link aus der E-Mail führt zu `/verify-email?token=…`. Die Seite bestätigt automatisch beim Öffnen, auch im React-StrictMode nur einmal je Token.
+- **Hinweisleiste:** Solange die E-Mail-Adresse nicht bestätigt ist, zeigt der Kalender oben eine Leiste mit **Erneut senden**.
+
+### Konto in den Einstellungen
+
+Angemeldet zeigt `/settings` zusätzlich:
+
+- **Profil:** Name ändern
+- **E-Mail-Adresse:** Status „Bestätigt“ oder „Nicht bestätigt“, Bestätigungslink erneut senden
+- **Passwort ändern:** aktuelles Passwort und neues Passwort zweimal. Das neue muss sich vom aktuellen unterscheiden.
+- **Konto löschen:** Bestätigung im Fenster mit Passwort, danach zurück zum Kalender (abgemeldet)
 
 ### Backend-Vertrag
+
+Das Datenbankschema für das Backend (MySQL 8 / MariaDB) liegt in [`database/`](database/README.md).
 
 Die Anmeldung läuft über ein **HttpOnly-Cookie**, das ausschließlich das Backend setzt und liest. Die App speichert keine Tokens. Alle Pfade liegen unter `VITE_API_BASE_URL`.
 
@@ -158,10 +179,19 @@ Die Anmeldung läuft über ein **HttpOnly-Cookie**, das ausschließlich das Back
 | `POST /auth/register` | `{ name, email, password }` | `201` mit `User` und Sitzungs-Cookie, `409` wenn die E-Mail schon existiert |
 | `POST /auth/login` | `{ email, password }` | `200` mit `User` und Sitzungs-Cookie, `401` bei falschen Daten |
 | `POST /auth/logout` | – | `204`, Cookie löschen |
+| `PATCH /auth/me` | `{ name }` | `200` mit `User` |
+| `POST /auth/me/password` | `{ currentPassword, newPassword }` | `204`, `403` bei falschem aktuellem Passwort. Andere Sitzungen beenden. |
+| `DELETE /auth/me` | `{ password }` | `204` und Cookie löschen, `403` bei falschem Passwort, `409` wenn einziger Owner eines Teams mit Mitgliedern |
+| `POST /auth/password-reset` | `{ email }` | immer `204`, auch für unbekannte Adressen. Schickt einen Link mit Token (1 Stunde gültig). |
+| `POST /auth/password-reset/confirm` | `{ token, password }` | `204`, `410` bei ungültigem oder abgelaufenem Token. Alle Sitzungen des Nutzers beenden. |
+| `POST /auth/verify-email` | `{ token }` | `204`, `410` bei ungültigem oder abgelaufenem Token. Geht auch ohne Anmeldung. |
+| `POST /auth/verify-email/resend` | – | `204`, schickt einen neuen Bestätigungslink |
 
-`User` ist `{ id: string, email: string, name: string }`. Alle `/events`-Aufrufe gelten für den angemeldeten Nutzer und antworten ohne gültige Sitzung mit `401`.
+Die Links in den E-Mails zeigen auf `/reset-password?token=…` und `/verify-email?token=…` der App.
 
-Ohne eigene `message` vom Server zeigt die App bei `401` am Login „E-Mail-Adresse oder Passwort ist falsch.“ und bei `409` an der Registrierung „Für diese E-Mail-Adresse gibt es bereits ein Konto.“. Liefert der Server `{ "message": "…" }`, wird diese Meldung angezeigt.
+`User` ist `{ id: string, email: string, name: string, emailVerified: boolean }`. Alle `/events`-Aufrufe gelten für den angemeldeten Nutzer und antworten ohne gültige Sitzung mit `401`.
+
+Ohne eigene `message` vom Server zeigt die App passende Meldungen, z. B. bei `401` am Login „E-Mail-Adresse oder Passwort ist falsch.“, bei `409` an der Registrierung „Für diese E-Mail-Adresse gibt es bereits ein Konto.“ und bei `410` „Der Link ist ungültig oder abgelaufen.“. Liefert der Server `{ "message": "…" }`, wird diese Meldung angezeigt.
 
 **Anforderungen an das Backend:**
 
@@ -172,7 +202,7 @@ Ohne eigene `message` vom Server zeigt die App bei `401` am Login „E-Mail-Adre
 
 ### Hosting
 
-Weil `/login` und `/register` echte Pfade sind, muss der Webserver für unbekannte Pfade die `index.html` ausliefern (SPA-Fallback). `npm run dev` und `npm run preview` machen das bereits.
+Weil `/login`, `/settings` usw. echte Pfade sind, muss der Webserver für unbekannte Pfade die `index.html` ausliefern (SPA-Fallback). `npm run dev` und `npm run preview` machen das bereits.
 
 ---
 
@@ -195,7 +225,7 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 - Woche: alle sieben Tage passen ohne seitliches Scrollen auf den Bildschirm. Dafür kompakte Tagesköpfe („Mo 26“), nur Stundenzahlen in der Zeitspalte und kleinere Termine mit Silbentrennung. Ein Tipp auf den Tageskopf öffnet den Tag.
 - Monat: statt Terminleisten eine Zahl mit der Anzahl der Termine je Tag
 - Jahr: Monate zweispaltig
-- Standardansicht ist noch „Woche“. Die Tagesansicht als Standard auf dem Handy folgt im nächsten Schritt (`useCalendarView(initialView)` ist dafür vorbereitet).
+- Startansicht ist auf dem Handy standardmäßig **Tag**, auf größeren Bildschirmen **Woche**. Beides lässt sich in den Einstellungen ändern. Als Handy gilt eine Breite bis 700 px.
 
 ### Termine
 
@@ -234,11 +264,23 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 - Kurze Termine werden kompakter dargestellt, ab 90 Minuten wird zusätzlich die Uhrzeit angezeigt
 - **Mehrtägige Termine** werden pro Tag als eigener Abschnitt im Raster gezeigt: am ersten Tag ab Beginn bis 24:00, dazwischen ganztägig, am letzten Tag ab 00:00 bis zum Ende. An den Übergängen sind die Ecken eckig, damit der Zusammenhang sichtbar bleibt. Die Zeitangabe enthält dann auch die Daten, zum Beispiel `30.10. 10:00 – 03.11. 16:00`.
 
+### Einstellungen
+
+Seite `/settings`, erreichbar über **Einstellungen** im Kontomenü (runder Button mit dem Anfangsbuchstaben). Mit `VITE_FEATURE_AUTH=true` nur für Angemeldete: `/settings` leitet sonst zur Anmeldung und danach zurück. Ohne Anmeldefunktion gibt es kein Kontomenü, dann führt ein Zahnrad in der Kopfzeile zu den Einstellungen.
+
+Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, rechts die Einstellungen. Auf dem Handy untereinander.
+
+- **Farbschema:** Wie System, Hell oder Dunkel. Gesetzt über `data-theme` am `<html>`, die Farben kommen weiter aus `light-dark()`.
+- **Startansicht** getrennt für Computer/Tablet und Handy
+- **Eigene Farben** ansehen und entfernen. Termine mit dieser Farbe behalten sie.
+- Gespeichert in diesem Browser unter `calendar.preferences.v1` (Farben weiter unter `calendar.colors.v1`). Beim ersten Start legt die App beide Einträge mit Standardwerten an: Farbschema `system`, Startansicht Woche bzw. Tag auf dem Handy, keine eigenen Farben. Vorhandene Werte bleiben unverändert. Das Datenbankschema hat dafür schon `user_preferences` und `user_colors`.
+- Angemeldet kommen die Konto-Abschnitte dazu, siehe [Konto in den Einstellungen](#konto-in-den-einstellungen).
+
 ### Farben
 
 - Vier Standardfarben: Blau, Rot, Grün, Gelb
 - Über den grauen **+**-Kreis lassen sich **eigene Farben** hinzufügen, maximal 12
-- Eigene Farben werden gespeichert und stehen in jedem Termin wieder zur Auswahl
+- Eigene Farben werden gespeichert und stehen in jedem Termin wieder zur Auswahl. Entfernen lassen sie sich in den Einstellungen.
 - Die Schriftfarbe auf eigenen Farben wird automatisch hell oder dunkel gewählt
 
 ### Bedienung
@@ -332,11 +374,20 @@ Ist die Anmeldung eingeschaltet, entscheidet stattdessen die Sitzung: angemeldet
 ## Projektstruktur
 
 ```
+database/
+├─ README.md                   Datenbankschema: Tabellen, Automatik, Diagramm, Abfragen
+├─ create_database.sql         Datenbank `kalender` anlegen
+└─ migrations/
+   ├─ 001_initial_schema.sql   Alle Tabellen und der Rollenkatalog (MySQL 8 / MariaDB)
+   ├─ 001_initial_schema.down.sql
+   ├─ 002_automation.sql       Trigger und Sichten user_calendars, user_team_permissions
+   └─ 002_automation.down.sql
 src/
-├─ App.tsx                     AuthProvider + StorageProvider (je nach Sitzung) + Router
-├─ router.tsx                  Routen: /, /login, /register
+├─ App.tsx                     AuthProvider + StorageProvider (je nach Sitzung) + PreferencesProvider + Router
+├─ router.tsx                  Routen: /, /settings, /login, /register, /forgot-password, /reset-password, /verify-email
 ├─ pages/
-│  └─ CalendarPage.tsx         Kalender mit Kontomenü und Übernahme-Abfrage
+│  ├─ CalendarPage.tsx         Kalender mit Startansicht, Kontomenü (Zahnrad nur ohne Anmeldefunktion), Bestätigungsleiste und Übernahme-Abfrage
+│  └─ SettingsPage.tsx         Einstellungen aus preferences, events und authorization
 ├─ main.tsx                    Einstiegspunkt
 ├─ env.d.ts                    Typen der Umgebungsvariablen
 ├─ config/
@@ -344,13 +395,13 @@ src/
 │  ├─ env.ts                   Geprüfte Konfiguration für die App
 │  ├─ api.ts                   Fertig konfigurierter API-Client
 │  ├─ auth.ts                  AuthRepository für die App
-│  ├─ routes.ts                Pfade und sichere Weiterleitung nach dem Login
+│  ├─ routes.ts                Pfade, Token-Parameter und sichere Weiterleitung nach dem Login
 │  └─ storage.ts               StorageConfig je nach Konfiguration und Anmeldung
 ├─ assets/
 │  ├─ css/                     Styles, gebündelt über index.css
 │  └─ imgs/
 ├─ components/                 Featureübergreifende Bausteine
-│  ├─ Modal.tsx                Fenster (<dialog>)
+│  ├─ Modal.tsx                Fenster (<dialog>), per Portal direkt in <body>
 │  ├─ FormField.tsx            Beschriftung + Feld + Fehlermeldung (label oder fieldset)
 │  ├─ SelectField.tsx          Auswahlfeld aus Optionsliste
 │  ├─ NumberField.tsx          Ganzzahl mit Einheit
@@ -360,22 +411,27 @@ src/
 │  ├─ SegmentedControl.tsx     Umschalter mit mehreren Optionen
 │  ├─ TextField.tsx            Textfeld mit Beschriftung und Fehler
 │  ├─ PasswordField.tsx        Passwortfeld mit „Anzeigen“
-│  └─ ErrorMessage.tsx         Fehlerhinweis mit role="alert"
+│  ├─ StatusMessage.tsx        Fehler- (role="alert") und Erfolgsmeldung (role="status")
+│  ├─ PageLayout.tsx           Eigene Seite mit „Zum Kalender“ und Titel, als Karte (Anmeldung) oder volle Breite (Einstellungen)
+│  ├─ PageSection.tsx          Abschnitt mit Überschrift und Erklärung links, Inhalt rechts, optional als Gefahrenbereich
+│  └─ Icons.tsx                SVG-Symbole
 ├─ hooks/                      Featureübergreifende Hooks
 │  ├─ useArrowKeyNavigation.ts Pfeiltasten links/rechts
-│  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand und Fehlermeldung
+│  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand, Erfolg und Fehlermeldung
 │  ├─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel
-│  └─ useFormState.ts          Formularwerte, Fehler je Feld, Prüfung beim Absenden
+│  └─ useFormState.ts          Formularwerte, Fehler je Feld, Prüfung beim Absenden, Zurücksetzen
 ├─ utils/
 │  ├─ api.ts                   API-Client (fetch mit JSON, Query, Token, Timeout, Abbruch)
 │  ├─ apiError.ts              ApiError mit deutschen Fehlermeldungen
+│  ├─ calendarView.ts          Ansichten Tag, Woche, Monat, Jahr
 │  ├─ classNames.ts            CSS-Klassen zusammensetzen
 │  ├─ color.ts                 Hex-Farben, lesbare Schriftfarbe
 │  ├─ date.ts                  Datums- und Zeitfunktionen, Prüfung und Formatierung
 │  ├─ error.ts                 Fehlermeldungen
 │  ├─ event.ts                 Termin-Typen, Farben, Validierung, Vorkommen eines Termins
 │  ├─ number.ts                Ganzzahl-Prüfung mit Bereich
-│  ├─ object.ts                Felder aus Objekten übernehmen
+│  ├─ object.ts                Felder übernehmen, Wert aus fester Liste prüfen (isOneOf)
+│  ├─ preferences.ts           Einstellungen: Typen, Standardwerte, Prüfung, Startansicht
 │  ├─ recurrence.ts            Wiederholungsregeln, Berechnung der Vorkommen
 │  ├─ series.ts                Serien ausnehmen, aufteilen, ändern
 │  └─ validation.ts            Fehler je Feld, gemeinsame Prüfung „gibt es Fehler?“
@@ -389,7 +445,7 @@ src/
    │  ├─ types/
    │  └─ utils/                Aufteilung mehrtägiger Termine, sichtbare Höhe, überlappende Termine
    ├─ events/                  Termine anlegen, bearbeiten, löschen
-   │  ├─ components/           EventModal, DeleteEventModal, ColorPicker, RecurrenceFields, RecurrenceScopeModal, ScopeButtons
+   │  ├─ components/           EventModal, DeleteEventModal, ColorPicker, RecurrenceFields, RecurrenceScopeModal, ScopeButtons, CustomColorSettings
    │  ├─ constants/            Farben, Bezeichnungen der Bearbeitungsbereiche
    │  ├─ hooks/                useEvents, useCustomColors
    │  ├─ types/
@@ -397,13 +453,25 @@ src/
    ├─ storage/                 Datenspeicherung
    │  ├─ components/           LocalImportPrompt: lokale Termine ins Konto übernehmen
    │  ├─ context/              StorageContext, StorageProvider (inkl. version/invalidate zum Neuladen)
-   │  ├─ hooks/                useStorage, useEventRepository, useColorRepository
-   │  ├─ repositories/         Local- und Remote-Umsetzungen
+   │  ├─ hooks/                useStorage, useEventRepository, useColorRepository, usePreferencesRepository
+   │  ├─ repositories/         Local- und Remote-Umsetzungen, LocalPreferencesRepository
    │  ├─ types/
-   │  └─ utils/                LocalStorageList (localStorage lesen/schreiben), copyEvents (Termine samt Serien-Verknüpfung kopieren)
-   ├─ authorization/           Anmeldung, Registrierung, Abmeldung
-   │  ├─ components/           LoginPage, RegisterPage, AuthLayout, AccountMenu, GuestOnly
-   │  ├─ context/              AuthContext, AuthProvider (Sitzung, login, register, logout)
+   │  └─ utils/                LocalStorageValue/LocalStorageList (localStorage lesen/schreiben), copyEvents (Termine samt Serien-Verknüpfung kopieren)
+   ├─ calendars/               Kalenderauswahl (persönlich und Teams), vorbereitet für den Team-Modus
+   │  ├─ components/           CalendarSwitcher (Button und Fenster), CalendarPreview (Monatsvorschau)
+   │  ├─ constants/            Persönlicher Kalender, Bezeichnungen der Rollen
+   │  ├─ context/              CalendarsProvider (verfügbare Kalender, aktiver Kalender)
+   │  ├─ hooks/                useCalendars
+   │  └─ types/
+   ├─ preferences/             Einstellungen (Farbschema, Startansicht)
+   │  ├─ components/           PreferencesSettings
+   │  ├─ context/              PreferencesProvider (lädt, speichert, setzt data-theme)
+   │  └─ hooks/                usePreferences
+   ├─ authorization/           Anmeldung, Registrierung, Abmeldung, Konto, Passwort, E-Mail
+   │  ├─ components/           LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage,
+   │  │                        AccountMenu, AuthGate, NewPasswordFields, EmailVerificationBanner
+   │  │  └─ account/           AccountSettings mit Profil, E-Mail, Passwort, Konto löschen
+   │  ├─ context/              AuthContext, AuthProvider (Sitzung und alle Konto-Aktionen)
    │  ├─ hooks/                useAuth
    │  ├─ repositories/         RemoteAuthRepository (/auth-Endpunkte)
    │  ├─ types/
@@ -433,12 +501,15 @@ src/
 ## Nächste Schritte
 
 - [x] Anmeldung, Registrierung und Abmeldung im Frontend (`features/authorization`)
-- [ ] Passwort vergessen / zurücksetzen, E-Mail-Bestätigung
+- [x] Passwort vergessen / zurücksetzen, E-Mail-Bestätigung (Frontend)
+- [x] Einstellungsseite mit Konto: Name, Passwort ändern, Konto löschen (Frontend)
 - [x] `.env`-Konfiguration für API-Anbindung, Dev-Proxy und Feature-Schalter
 - [x] Datenbankschema für das Backend (`database/`)
 - [ ] Backend mit der oben beschriebenen REST-API inkl. `/auth`
 - [ ] Server-Speicherung über `RemoteEventRepository` aktivieren
 - [ ] `RemoteColorRepository`, damit eigene Farben im Remote-Modus mitwandern
 - [ ] Team-Modus mit Einladung per E-Mail (`features/teams`)
-- [ ] Eigene Farben entfernen
-- [ ] Schalter für Hell- und Dunkelmodus in der Oberfläche
+- [x] Eigene Farben entfernen
+- [x] Schalter für Hell- und Dunkelmodus in der Oberfläche
+- [x] Handy startet in der Tagesansicht, Startansicht einstellbar
+- [ ] Einstellungen und eigene Farben im Remote-Modus übers Backend speichern (`user_preferences`, `user_colors`)

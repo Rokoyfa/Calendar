@@ -1,5 +1,5 @@
 import type { FieldErrors } from '../../../utils/validation.ts'
-import type { LoginInput, RegisterInput } from '../types/auth.ts'
+import type { AccountDeletionInput, LoginInput, PasswordResetRequestInput, ProfileInput, RegisterInput } from '../types/auth.ts'
 
 export const NAME_MAX_LENGTH = 80
 export const EMAIL_MAX_LENGTH = 254
@@ -8,9 +8,24 @@ export const PASSWORD_MAX_LENGTH = 128
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export type RegisterFormValues = RegisterInput & { passwordConfirmation: string }
+export type NewPasswordValues = {
+  password: string
+  passwordConfirmation: string
+}
+
+export type RegisterFormValues = RegisterInput & NewPasswordValues
+
+export type PasswordChangeFormValues = NewPasswordValues & {
+  currentPassword: string
+}
 
 export const normalizeEmail = (email: string) => email.trim().toLowerCase()
+
+const validateName = (name: string) => {
+  if (!name) return 'Bitte einen Namen eingeben.'
+  if (name.length > NAME_MAX_LENGTH) return `Der Name darf höchstens ${NAME_MAX_LENGTH} Zeichen lang sein.`
+  return undefined
+}
 
 const validateEmail = (email: string) => {
   if (!email) return 'Bitte eine E-Mail-Adresse eingeben.'
@@ -18,23 +33,9 @@ const validateEmail = (email: string) => {
   return undefined
 }
 
-export const validateLogin = ({ email, password }: LoginInput): FieldErrors<LoginInput> => ({
-  email: validateEmail(email),
-  password: password ? undefined : 'Bitte das Passwort eingeben.',
-})
+const requirePassword = (password: string) => (password ? undefined : 'Bitte das Passwort eingeben.')
 
-export const validateRegister = ({
-  name,
-  email,
-  password,
-  passwordConfirmation,
-}: RegisterFormValues): FieldErrors<RegisterFormValues> => ({
-  name: !name
-    ? 'Bitte einen Namen eingeben.'
-    : name.length > NAME_MAX_LENGTH
-      ? `Der Name darf höchstens ${NAME_MAX_LENGTH} Zeichen lang sein.`
-      : undefined,
-  email: validateEmail(email),
+const validateNewPassword = ({ password, passwordConfirmation }: NewPasswordValues): FieldErrors<NewPasswordValues> => ({
   password:
     password.length < PASSWORD_MIN_LENGTH
       ? `Das Passwort muss mindestens ${PASSWORD_MIN_LENGTH} Zeichen lang sein.`
@@ -43,4 +44,34 @@ export const validateRegister = ({
         : undefined,
   passwordConfirmation:
     passwordConfirmation === password ? undefined : 'Die Passwörter stimmen nicht überein.',
+})
+
+export const validateLogin = ({ email, password }: LoginInput): FieldErrors<LoginInput> => ({
+  email: validateEmail(email),
+  password: requirePassword(password),
+})
+
+export const validateRegister = (values: RegisterFormValues): FieldErrors<RegisterFormValues> => ({
+  name: validateName(values.name),
+  email: validateEmail(values.email),
+  ...validateNewPassword(values),
+})
+
+export const validateProfile = ({ name }: ProfileInput): FieldErrors<ProfileInput> => ({ name: validateName(name) })
+
+export const validatePasswordResetRequest = ({
+  email,
+}: PasswordResetRequestInput): FieldErrors<PasswordResetRequestInput> => ({ email: validateEmail(email) })
+
+export const validatePasswordReset = validateNewPassword
+
+export const validatePasswordChange = (values: PasswordChangeFormValues): FieldErrors<PasswordChangeFormValues> => {
+  const errors = { currentPassword: requirePassword(values.currentPassword), ...validateNewPassword(values) }
+  if (!errors.password && values.password === values.currentPassword)
+    errors.password = 'Das neue Passwort muss sich vom aktuellen unterscheiden.'
+  return errors
+}
+
+export const validateAccountDeletion = ({ password }: AccountDeletionInput): FieldErrors<AccountDeletionInput> => ({
+  password: requirePassword(password),
 })

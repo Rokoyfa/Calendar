@@ -2,6 +2,7 @@ export type User = {
   id: string
   email: string
   name: string
+  emailVerified: boolean
 }
 
 export type LoginInput = {
@@ -13,6 +14,24 @@ export type RegisterInput = LoginInput & {
   name: string
 }
 
+export type ProfileInput = Pick<User, 'name'>
+
+export type PasswordChangeInput = {
+  currentPassword: string
+  newPassword: string
+}
+
+export type PasswordResetRequestInput = Pick<User, 'email'>
+
+export type PasswordResetInput = {
+  token: string
+  password: string
+}
+
+export type AccountDeletionInput = {
+  password: string
+}
+
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
 
 export interface AuthRepository {
@@ -20,14 +39,32 @@ export interface AuthRepository {
   login(input: LoginInput): Promise<User>
   register(input: RegisterInput): Promise<User>
   logout(): Promise<void>
+  updateProfile(input: ProfileInput): Promise<User>
+  changePassword(input: PasswordChangeInput): Promise<void>
+  deleteAccount(input: AccountDeletionInput): Promise<void>
+  requestPasswordReset(input: PasswordResetRequestInput): Promise<void>
+  resetPassword(input: PasswordResetInput): Promise<void>
+  verifyEmail(token: string): Promise<void>
+  resendVerificationEmail(): Promise<void>
 }
 
-export type AuthContextValue = {
+type AccountActions = Pick<
+  AuthRepository,
+  | 'login'
+  | 'register'
+  | 'logout'
+  | 'updateProfile'
+  | 'changePassword'
+  | 'deleteAccount'
+  | 'requestPasswordReset'
+  | 'resetPassword'
+  | 'verifyEmail'
+  | 'resendVerificationEmail'
+>
+
+export type AuthContextValue = AccountActions & {
   enabled: boolean
   status: AuthStatus
   user: User | null
-  login: (input: LoginInput) => Promise<User>
-  register: (input: RegisterInput) => Promise<User>
-  logout: () => Promise<void>
   expireSession: () => void
 }

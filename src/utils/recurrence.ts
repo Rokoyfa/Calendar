@@ -13,6 +13,7 @@ import {
   toISODate,
 } from './date.ts'
 import { integerRangeMessage, isIntegerInRange } from './number.ts'
+import { isOneOf } from './object.ts'
 import { hasFieldErrors } from './validation.ts'
 
 export const RECURRENCE_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly'] as const
@@ -65,9 +66,9 @@ export const isInLastWeekOfMonth = (isoDate: string) => {
 }
 
 export const isRecurrenceFrequency = (value: unknown): value is RecurrenceFrequency =>
-  RECURRENCE_FREQUENCIES.includes(value as RecurrenceFrequency)
+  isOneOf(RECURRENCE_FREQUENCIES, value)
 
-export const isMonthlyMode = (value: unknown): value is MonthlyMode => MONTHLY_MODES.includes(value as MonthlyMode)
+export const isMonthlyMode = (value: unknown): value is MonthlyMode => isOneOf(MONTHLY_MODES, value)
 
 export const createRecurrence = (frequency: RecurrenceFrequency, startDate: string): Recurrence => ({
   frequency,

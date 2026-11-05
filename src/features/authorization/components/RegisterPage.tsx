@@ -1,7 +1,7 @@
 import type { SubmitEventHandler } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
-import { PasswordField } from '../../../components/PasswordField.tsx'
+import { PageLayout } from '../../../components/PageLayout.tsx'
+import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { TextField } from '../../../components/TextField.tsx'
 import { getRedirectTarget, ROUTES, withRedirect } from '../../../config/routes.ts'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
@@ -12,12 +12,10 @@ import {
   EMAIL_MAX_LENGTH,
   NAME_MAX_LENGTH,
   normalizeEmail,
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
   validateRegister,
   type RegisterFormValues,
 } from '../utils/validation.ts'
-import { AuthLayout } from './AuthLayout.tsx'
+import { NewPasswordFields } from './NewPasswordFields.tsx'
 
 const EMPTY_REGISTRATION: RegisterFormValues = { name: '', email: '', password: '', passwordConfirmation: '' }
 
@@ -39,7 +37,7 @@ export function RegisterPage() {
   }
 
   return (
-    <AuthLayout
+    <PageLayout
       title="Registrieren"
       footer={
         <>
@@ -69,30 +67,12 @@ export function RegisterPage() {
           error={errors.email}
           onChange={(email) => setField('email', email)}
         />
-        <PasswordField
-          label="Passwort"
-          name="password"
-          autoComplete="new-password"
-          maxLength={PASSWORD_MAX_LENGTH}
-          value={values.password}
-          error={errors.password}
-          onChange={(password) => setField('password', password)}
-        />
-        <PasswordField
-          label="Passwort wiederholen"
-          name="passwordConfirmation"
-          autoComplete="new-password"
-          maxLength={PASSWORD_MAX_LENGTH}
-          value={values.passwordConfirmation}
-          error={errors.passwordConfirmation}
-          onChange={(confirmation) => setField('passwordConfirmation', confirmation)}
-        />
-        <p className="formHint">Mindestens {PASSWORD_MIN_LENGTH} Zeichen.</p>
+        <NewPasswordFields values={values} errors={errors} onChange={setField} />
         <ErrorMessage message={error} />
         <button type="submit" className="button button--block" disabled={isPending}>
           {isPending ? 'Konto wird erstellt …' : 'Konto erstellen'}
         </button>
       </form>
-    </AuthLayout>
+    </PageLayout>
   )
 }

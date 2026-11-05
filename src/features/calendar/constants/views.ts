@@ -14,7 +14,7 @@ import {
   startOfWeekISO,
   startOfYearISO,
 } from '../../../utils/date.ts'
-import type { CalendarView, ViewDefinition } from '../types/view.ts'
+import { CALENDAR_VIEWS, type CalendarView, type ViewDefinition } from '../types/view.ts'
 
 const MONTHS_PER_YEAR = 12
 
@@ -56,3 +56,5 @@ export const VIEW_DEFINITIONS: Record<CalendarView, ViewDefinition> = {
     getTitle: (anchor) => anchor.slice(0, 4),
   },
 }
+
+export const VIEW_OPTIONS = CALENDAR_VIEWS.map((view) => ({ value: view, label: VIEW_DEFINITIONS[view].label }))

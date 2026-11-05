@@ -11,7 +11,7 @@ import {
   timeToMinutes,
 } from './date.ts'
 import { getReadableTextColor, isHexColor, type HexColor } from './color.ts'
-import { pick } from './object.ts'
+import { isOneOf, pick } from './object.ts'
 import { hasFieldErrors } from './validation.ts'
 import {
   getOccurrenceDates,
@@ -91,8 +91,7 @@ export type EventValidationErrors = Partial<Record<Exclude<keyof EventInput, 're
 
 export const EVENT_NOT_FOUND_MESSAGE = 'Der Termin wurde nicht gefunden.'
 
-export const isPresetEventColor = (value: unknown): value is PresetEventColor =>
-  PRESET_EVENT_COLORS.includes(value as PresetEventColor)
+export const isPresetEventColor = (value: unknown): value is PresetEventColor => isOneOf(PRESET_EVENT_COLORS, value)
 
 export const isEventColor = (value: unknown): value is EventColor => isPresetEventColor(value) || isHexColor(value)
 

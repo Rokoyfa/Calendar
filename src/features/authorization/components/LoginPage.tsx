@@ -1,7 +1,8 @@
 import type { SubmitEventHandler } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { ErrorMessage } from '../../../components/ErrorMessage.tsx'
+import { PageLayout } from '../../../components/PageLayout.tsx'
 import { PasswordField } from '../../../components/PasswordField.tsx'
+import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { TextField } from '../../../components/TextField.tsx'
 import { getRedirectTarget, ROUTES, withRedirect } from '../../../config/routes.ts'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
@@ -9,7 +10,6 @@ import { useFormState } from '../../../hooks/useFormState.ts'
 import { useAuth } from '../hooks/useAuth.ts'
 import type { LoginInput } from '../types/auth.ts'
 import { EMAIL_MAX_LENGTH, normalizeEmail, PASSWORD_MAX_LENGTH, validateLogin } from '../utils/validation.ts'
-import { AuthLayout } from './AuthLayout.tsx'
 
 const EMPTY_LOGIN: LoginInput = { email: '', password: '' }
 
@@ -31,7 +31,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout
+    <PageLayout
       title="Anmelden"
       footer={
         <>
@@ -61,11 +61,14 @@ export function LoginPage() {
           error={errors.password}
           onChange={(password) => setField('password', password)}
         />
+        <Link to={ROUTES.forgotPassword} className="formLink">
+          Passwort vergessen?
+        </Link>
         <ErrorMessage message={error} />
         <button type="submit" className="button button--block" disabled={isPending}>
           {isPending ? 'Wird angemeldet …' : 'Anmelden'}
         </button>
       </form>
-    </AuthLayout>
+    </PageLayout>
   )
 }

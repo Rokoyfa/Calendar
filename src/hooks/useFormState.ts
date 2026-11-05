@@ -16,5 +16,10 @@ export function useFormState<T extends object>(initialValues: T, validate: (valu
     return !hasFieldErrors(nextErrors)
   }
 
-  return { values, errors, setField, validateAll }
+  const reset = useCallback(() => {
+    setValues(initialValues)
+    setErrors({})
+  }, [initialValues])
+
+  return { values, errors, setField, validateAll, reset }
 }

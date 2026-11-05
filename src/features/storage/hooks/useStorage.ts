@@ -14,3 +14,7 @@ export function useEventRepository() {
 export function useColorRepository() {
   return useStorage().colors
 }
+
+export function usePreferencesRepository() {
+  return useStorage().preferences
+}

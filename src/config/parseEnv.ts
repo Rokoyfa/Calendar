@@ -1,3 +1,5 @@
+import { isOneOf } from '../utils/object.ts'
+
 const STORAGE_MODES = ['local', 'remote'] as const
 
 export type AppStorageMode = (typeof STORAGE_MODES)[number]
@@ -26,7 +28,7 @@ export function parseEnv(raw: RawEnv): AppEnv {
 
   const readStorageMode = (): AppStorageMode => {
     const value = clean(raw.VITE_STORAGE_MODE)?.toLowerCase() ?? 'local'
-    if (STORAGE_MODES.includes(value as AppStorageMode)) return value as AppStorageMode
+    if (isOneOf(STORAGE_MODES, value)) return value
     errors.push(`VITE_STORAGE_MODE muss "local" oder "remote" sein, ist aber "${value}".`)
     return 'local'
   }

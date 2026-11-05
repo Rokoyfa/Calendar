@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { classNames } from '../utils/classNames.ts'
 
 type ModalProps = {
@@ -6,9 +7,10 @@ type ModalProps = {
   onClose: () => void
   children: ReactNode
   variant?: 'default' | 'danger'
+  size?: 'default' | 'large'
 }
 
-export function Modal({ title, onClose, children, variant = 'default' }: ModalProps) {
+export function Modal({ title, onClose, children, variant = 'default', size = 'default' }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -20,10 +22,10 @@ export function Modal({ title, onClose, children, variant = 'default' }: ModalPr
     return () => dialog.close()
   }, [])
 
-  return (
+  return createPortal(
     <dialog
       ref={dialogRef}
-      className={classNames('modal', variant === 'danger' && 'modal--danger')}
+      className={classNames('modal', variant === 'danger' && 'modal--danger', size === 'large' && 'modal--large')}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault()
@@ -44,6 +46,7 @@ export function Modal({ title, onClose, children, variant = 'default' }: ModalPr
         </header>
         {children}
       </div>
-    </dialog>
+    </dialog>,
+    document.body,
   )
 }

@@ -1,11 +1,9 @@
 import type { ReactNode } from 'react'
 import { IconButton } from '../../../components/IconButton.tsx'
 import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
-import { VIEW_DEFINITIONS } from '../constants/views.ts'
-import { CALENDAR_VIEWS, type CalendarView } from '../types/view.ts'
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from './Icons.tsx'
-
-const VIEW_OPTIONS = CALENDAR_VIEWS.map((view) => ({ value: view, label: VIEW_DEFINITIONS[view].label }))
+import { VIEW_DEFINITIONS, VIEW_OPTIONS } from '../constants/views.ts'
+import type { CalendarView } from '../types/view.ts'
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from '../../../components/Icons.tsx'
 
 type CalendarHeaderProps = {
   view: CalendarView

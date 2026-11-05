@@ -12,6 +12,10 @@
   overflow: auto;
 }
 
+.modal--large {
+  width: min(860px, calc(100vw - 2 * var(--space-4)));
+}
+
 .modal[open] {
   animation: modalIn 150ms ease-out;
 }

@@ -2,7 +2,13 @@ export const ROUTES = {
   calendar: '/',
   login: '/login',
   register: '/register',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
+  verifyEmail: '/verify-email',
+  settings: '/settings',
 } as const
+
+export const TOKEN_PARAM = 'token'
 
 const REDIRECT_PARAM = 'redirect'
 

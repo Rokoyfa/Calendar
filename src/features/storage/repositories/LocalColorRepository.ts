@@ -11,6 +11,7 @@ export class LocalColorRepository implements ColorRepository {
 
   constructor(storageKey = DEFAULT_STORAGE_KEY) {
     this.#colors = new LocalStorageList(storageKey, parseColor, 'Die Farbe konnte nicht lokal gespeichert werden.')
+    this.#colors.initialize()
   }
 
   async list() {
