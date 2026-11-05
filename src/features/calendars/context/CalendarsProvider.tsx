@@ -3,7 +3,14 @@ import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import type { StorageConfig } from '../../storage/index.ts'
 import { PERSONAL_CALENDAR } from '../constants/calendars.ts'
 import { createCalendarRepository } from '../repositories/createCalendarRepository.ts'
-import type { CalendarDraft, CalendarsContextValue, CalendarSummary, PendingInvitation } from '../types/calendar.ts'
+import type {
+  CalendarChanges,
+  CalendarDraft,
+  CalendarsContextValue,
+  CalendarSummary,
+  PendingInvitation,
+  TeamChanges,
+} from '../types/calendar.ts'
 import { normalizeDraft } from '../utils/draft.ts'
 import { getVisibleCalendarIds, isPersonalCalendar } from '../utils/permissions.ts'
 import { CalendarsContext } from './CalendarsContext.ts'
@@ -20,7 +27,12 @@ export function CalendarsProvider({ config, children }: CalendarsProviderProps) 
   const repository = useMemo(() => createCalendarRepository(config), [config])
   const loadCalendars = useCallback(() => repository.list(), [repository])
   const loadInvitations = useCallback(() => repository.listInvitations(), [repository])
-  const { data: calendars, error, update: updateCalendars } = useAsyncResource(loadCalendars, INITIAL_CALENDARS)
+  const {
+    data: calendars,
+    error,
+    isLoading,
+    update: updateCalendars,
+  } = useAsyncResource(loadCalendars, INITIAL_CALENDARS)
   const { data: invitations, update: updateInvitations } = useAsyncResource(loadInvitations, NO_INVITATIONS)
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -81,6 +93,29 @@ export function CalendarsProvider({ config, children }: CalendarsProviderProps) 
     [repository, updateInvitations],
   )
 
+  const updateCalendar = useCallback(
+    async (calendar: CalendarSummary, changes: CalendarChanges) => {
+      replaceCalendar(await repository.updateCalendar(calendar.id, changes))
+    },
+    [repository, replaceCalendar],
+  )
+
+  const updateTeam = useCallback(
+    async (calendar: CalendarSummary, changes: TeamChanges) => {
+      const changed = await repository.updateTeam(calendar.teamId, changes)
+      updateCalendars((current) => current.map((entry) => changed.find(({ id }) => id === entry.id) ?? entry))
+    },
+    [repository, updateCalendars],
+  )
+
+  const deleteTeam = useCallback(
+    async (calendar: CalendarSummary) => {
+      await repository.deleteTeam(calendar.teamId)
+      updateCalendars((current) => current.filter((entry) => entry.teamId !== calendar.teamId))
+    },
+    [repository, updateCalendars],
+  )
+
   const visibleCalendarIds = useMemo(
     () => getVisibleCalendarIds(calendars, activeCalendar),
     [calendars, activeCalendar],
@@ -88,6 +123,8 @@ export function CalendarsProvider({ config, children }: CalendarsProviderProps) 
 
   const value = useMemo<CalendarsContextValue>(
     () => ({
+      repository,
+      isLoading,
       calendars,
       invitations,
       error,
@@ -99,8 +136,13 @@ export function CalendarsProvider({ config, children }: CalendarsProviderProps) 
       setShowInPersonal,
       acceptInvitation,
       declineInvitation,
+      updateCalendar,
+      updateTeam,
+      deleteTeam,
     }),
     [
+      repository,
+      isLoading,
       calendars,
       invitations,
       error,
@@ -112,6 +154,9 @@ export function CalendarsProvider({ config, children }: CalendarsProviderProps) 
       setShowInPersonal,
       acceptInvitation,
       declineInvitation,
+      updateCalendar,
+      updateTeam,
+      deleteTeam,
     ],
   )
 

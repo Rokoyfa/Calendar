@@ -53,6 +53,16 @@ export const ROLE_DESCRIPTIONS: Record<TeamRole, string> = {
   viewer: 'Sieht den Kalender, ändert aber nichts.',
 }
 
+export const ROLE_HIERARCHY: Record<TeamRole, number> = {
+  owner: 0,
+  admin: 10,
+  manager: 20,
+  editor: 30,
+  member: 40,
+  contributor: 50,
+  viewer: 60,
+}
+
 export const INVITABLE_ROLES: readonly InvitableRole[] = [
   'admin',
   'manager',

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Button, ButtonLink } from '../../../components/Button.tsx'
-import { ROUTES } from '../../../config/routes.ts'
-import { Modal } from '../../../components/Modal.tsx'
+import { Link } from 'react-router'
+import { calendarSettingsPath, ROUTES } from '../../../config/routes.ts'
+import { ConfirmModal } from '../../../components/ConfirmModal.tsx'
+import { SettingsIcon } from '../../../components/Icons.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
 import { Switch } from '../../../components/Switch.tsx'
 import { ActionFeedback, ErrorMessage } from '../../../components/StatusMessage.tsx'
@@ -10,39 +12,25 @@ import { getEventColorAttributes } from '../../../utils/event.ts'
 import { ROLE_LABELS } from '../constants/calendars.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
-import { canLeaveCalendar, isPersonalCalendar } from '../utils/permissions.ts'
+import { canLeaveCalendar, canOpenSettings, isPersonalCalendar } from '../utils/permissions.ts'
 import { InvitationList } from './InvitationList.tsx'
 
-type LeaveCalendarModalProps = {
-  calendar: CalendarSummary
-  onClose: () => void
-}
-
-function LeaveCalendarModal({ calendar, onClose }: LeaveCalendarModalProps) {
+function LeaveCalendarModal({ calendar, onClose }: { calendar: CalendarSummary; onClose: () => void }) {
   const { leaveCalendar } = useCalendars()
-  const { run, isPending, error } = useAsyncAction(async () => {
-    await leaveCalendar(calendar.id)
-    onClose()
-  })
-
   return (
-    <Modal title="Kalender verlassen?" variant="danger" onClose={onClose}>
-      <div className="formSection">
-        <p className="modalMessage">
-          Du verlässt das Team „{calendar.teamName ?? calendar.name}“ und siehst seinen Kalender nicht mehr. Zurück geht
-          es nur über eine neue Einladung.
-        </p>
-        <ActionFeedback error={error} />
-        <div className="formActions">
-          <Button variant="secondary" onClick={onClose} data-autofocus>
-            Abbrechen
-          </Button>
-          <Button variant="danger" isPending={isPending} pendingLabel="Wird verlassen …" onClick={() => void run()}>
-            Verlassen
-          </Button>
-        </div>
-      </div>
-    </Modal>
+    <ConfirmModal
+      title="Kalender verlassen?"
+      confirmLabel="Verlassen"
+      pendingLabel="Wird verlassen …"
+      onConfirm={async () => {
+        await leaveCalendar(calendar.id)
+        onClose()
+      }}
+      onClose={onClose}
+    >
+      Du verlässt das Team „{calendar.teamName ?? calendar.name}“ und siehst seinen Kalender nicht mehr. Zurück geht es
+      nur über eine neue Einladung.
+    </ConfirmModal>
   )
 }
 
@@ -60,6 +48,16 @@ function CalendarRow({ calendar, onLeave }: { calendar: CalendarSummary; onLeave
           {calendar.description && <span className="itemRowMeta">{calendar.description}</span>}
         </span>
         <span className="badge">{ROLE_LABELS[calendar.role]}</span>
+        {canOpenSettings(calendar) && (
+          <Link
+            to={calendarSettingsPath(calendar.id)}
+            className="iconLink"
+            aria-label={`Einstellungen für ${calendar.name}`}
+            title="Einstellungen"
+          >
+            <SettingsIcon size={20} />
+          </Link>
+        )}
       </div>
       {isPersonalCalendar(calendar) ? (
         <p className="formHint">Dein eigener Kalender. Er lässt sich nicht verlassen oder entfernen.</p>

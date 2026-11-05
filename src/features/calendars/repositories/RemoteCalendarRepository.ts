@@ -1,7 +1,21 @@
 import { encodePathSegment, type ApiClient } from '../../../utils/api.ts'
-import type { CalendarDraft, CalendarRepository, CalendarSummary, PendingInvitation } from '../types/calendar.ts'
+import type {
+  CalendarChanges,
+  CalendarDraft,
+  CalendarRepository,
+  CalendarSummary,
+  Invitation,
+  PendingInvitation,
+  TeamChanges,
+  TeamInvitation,
+  TeamMember,
+  TeamRole,
+} from '../types/calendar.ts'
 
 const segment = encodePathSegment
+
+const teamPath = (teamId: string, ...rest: string[]) =>
+  ['/teams', teamId, ...rest].map((part, index) => (index === 0 ? part : segment(part))).join('/')
 
 export class RemoteCalendarRepository implements CalendarRepository {
   readonly #api: ApiClient
@@ -19,7 +33,43 @@ export class RemoteCalendarRepository implements CalendarRepository {
   }
 
   leave(teamId: string) {
-    return this.#api.delete(`/teams/${segment(teamId)}/membership`)
+    return this.#api.delete(teamPath(teamId, 'membership'))
+  }
+
+  updateCalendar(calendarId: string, changes: CalendarChanges) {
+    return this.#api.patch<CalendarSummary>(`/calendars/${segment(calendarId)}`, changes)
+  }
+
+  updateTeam(teamId: string, changes: TeamChanges) {
+    return this.#api.patch<CalendarSummary[]>(teamPath(teamId), changes)
+  }
+
+  deleteTeam(teamId: string) {
+    return this.#api.delete(teamPath(teamId))
+  }
+
+  listMembers(teamId: string) {
+    return this.#api.get<TeamMember[]>(teamPath(teamId, 'members'))
+  }
+
+  changeMemberRole(teamId: string, userId: string, role: TeamRole) {
+    return this.#api.patch<TeamMember>(teamPath(teamId, 'members', userId), { role })
+  }
+
+  removeMember(teamId: string, userId: string) {
+    return this.#api.delete(teamPath(teamId, 'members', userId))
+  }
+
+  listTeamInvitations(teamId: string) {
+    return this.#api.get<TeamInvitation[]>(teamPath(teamId, 'invitations'))
+  }
+
+  invite(teamId: string, invitation: Invitation) {
+    return this.#api.post<TeamInvitation>(teamPath(teamId, 'invitations'), invitation)
+  }
+
+  revokeInvitation(teamId: string, invitationId: string) {
+    return this.#api.delete(teamPath(teamId, 'invitations', invitationId))
   }
 
   setShowInPersonal(calendarId: string, showInPersonal: boolean) {

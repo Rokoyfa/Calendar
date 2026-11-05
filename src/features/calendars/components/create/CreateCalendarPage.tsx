@@ -70,6 +70,7 @@ export function CreateCalendarPage() {
       case 0:
         return (
           <DetailsStep
+            autoFocus
             values={draft}
             errors={detailErrors}
             onChange={(changes) => {

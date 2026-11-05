@@ -59,6 +59,20 @@ export type PendingInvitation = {
   expiresAt: string
 }
 
+export type TeamMember = {
+  userId: string
+  name: string
+  email: string
+  role: TeamRole
+  joinedAt: string
+}
+
+export type TeamInvitation = PendingInvitation & { email: string }
+
+export type CalendarChanges = Pick<CalendarSummary, 'name' | 'color'>
+
+export type TeamChanges = { name: string; description: string }
+
 export interface CalendarRepository {
   list(): Promise<CalendarSummary[]>
   create(draft: CalendarDraft): Promise<CalendarSummary>
@@ -67,9 +81,20 @@ export interface CalendarRepository {
   listInvitations(): Promise<PendingInvitation[]>
   acceptInvitation(id: string): Promise<CalendarSummary[]>
   declineInvitation(id: string): Promise<void>
+  updateCalendar(calendarId: string, changes: CalendarChanges): Promise<CalendarSummary>
+  updateTeam(teamId: string, changes: TeamChanges): Promise<CalendarSummary[]>
+  deleteTeam(teamId: string): Promise<void>
+  listMembers(teamId: string): Promise<TeamMember[]>
+  changeMemberRole(teamId: string, userId: string, role: TeamRole): Promise<TeamMember>
+  removeMember(teamId: string, userId: string): Promise<void>
+  listTeamInvitations(teamId: string): Promise<TeamInvitation[]>
+  invite(teamId: string, invitation: Invitation): Promise<TeamInvitation>
+  revokeInvitation(teamId: string, invitationId: string): Promise<void>
 }
 
 export type CalendarsContextValue = {
+  repository: CalendarRepository
+  isLoading: boolean
   calendars: readonly CalendarSummary[]
   invitations: readonly PendingInvitation[]
   error: string | null
@@ -81,4 +106,7 @@ export type CalendarsContextValue = {
   setShowInPersonal: (id: string, showInPersonal: boolean) => Promise<void>
   acceptInvitation: (id: string) => Promise<void>
   declineInvitation: (id: string) => Promise<void>
+  updateCalendar: (calendar: CalendarSummary, changes: CalendarChanges) => Promise<void>
+  updateTeam: (calendar: CalendarSummary, changes: TeamChanges) => Promise<void>
+  deleteTeam: (calendar: CalendarSummary) => Promise<void>
 }

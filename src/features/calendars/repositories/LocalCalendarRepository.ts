@@ -21,4 +21,13 @@ export class LocalCalendarRepository implements CalendarRepository {
   setShowInPersonal = requireAccount
   acceptInvitation = requireAccount
   declineInvitation = requireAccount
+  updateCalendar = requireAccount
+  updateTeam = requireAccount
+  deleteTeam = requireAccount
+  listMembers = requireAccount
+  changeMemberRole = requireAccount
+  removeMember = requireAccount
+  listTeamInvitations = requireAccount
+  invite = requireAccount
+  revokeInvitation = requireAccount
 }

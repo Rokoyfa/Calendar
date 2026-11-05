@@ -7,7 +7,13 @@ export const ROUTES = {
   verifyEmail: '/verify-email',
   settings: '/settings',
   createCalendar: '/calendars/new',
+  calendarSettings: '/calendars/:calendarId/settings',
 } as const
+
+export const calendarSettingsPath = (calendarId: string) =>
+  ROUTES.calendarSettings.replace(':calendarId', encodeURIComponent(calendarId))
+
+export const SETTINGS_CALENDARS_PATH = `${ROUTES.settings}?tab=calendars`
 
 export const TOKEN_PARAM = 'token'
 

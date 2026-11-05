@@ -292,6 +292,22 @@ Jeder Termin gehört genau zu einem Kalender (`calendarId`). Geladen werden nur 
 
 Neue Termine landen immer im gerade offenen Kalender. Beim Bearbeiten bleibt ein Termin in seinem Kalender, auch herausgelöste Termine und fortgesetzte Serien. Beim Abmelden oder Kontowechsel wird die Kalenderauswahl zurückgesetzt, damit nichts versehentlich in einen fremden Kalender geschrieben wird.
 
+### Kalender-Einstellungen
+
+Eigene Seite `/calendars/:calendarId/settings` je Kalender (nur angemeldet), erreichbar über das Zahnrad in Einstellungen › Kalender. Oben führt „Zu den Einstellungen“ zurück. Jeder Bereich zeigt nur, was die eigene Rolle darf (`permissions` des Kalenders):
+
+| Bereich | Inhalt | Ändern dürfen |
+| ------- | ------ | ------------- |
+| **Allgemein** | Name, Beschreibung (nur Team), Farbe mit Vorschau | Name und Farbe mit `manage_calendars`, Beschreibung mit `manage_team`. Ohne Recht sind die Felder gesperrt. Mit `manage_team` ändert der Name auch den Teamnamen. |
+| **Anzeige** | „Termine auch im persönlichen Kalender anzeigen“ | jeder für sich |
+| **Mitglieder** | Name, E-Mail, Rolle; Rolle wechseln und Entfernen mit Bestätigung | `manage_members`, nur bei Rollen unterhalb der eigenen. Owner dürfen alles, auch andere zu Owner machen. |
+| **Einladungen** | einladen mit E-Mail und Rolle, offene Einladungen mit Ablaufdatum, zurückziehen | `invite_members`, nur Rollen unterhalb der eigenen. Mitglieder, doppelte Einladungen und die eigene Adresse werden abgefangen. |
+| **Gefahrenbereich** | Kalender verlassen, Team löschen (mit Bestätigung, danach zurück zu den Einstellungen) | Verlassen jeder außer dem letzten Owner, Löschen nur mit `delete_team` (Owner) |
+
+Der persönliche Kalender hat nur **Allgemein** (Name und Farbe) und einen Hinweis, dass er sich nicht teilen oder löschen lässt. Ohne Zugriff (z. B. nach dem Entfernen) zeigt die Seite „Diesen Kalender gibt es nicht, oder du hast keinen Zugriff mehr.“
+
+Die Seite liegt in `features/calendars/components/settings/`, Mitglieder und Einladungen lädt `useTeam`. Bestätigungen laufen über den allgemeinen `ConfirmModal` aus `components/`, den jetzt auch „Kalender verlassen“ in der Liste nutzt.
+
 ### Kalender erstellen
 
 Eigene Seite `/calendars/new` (nur angemeldet, sonst Anmeldung und danach zurück). Erreichbar über die Kachel **Neuer Kalender** in „Kalender wechseln“ und den Button **Kalender erstellen** in den Einstellungen.
@@ -316,6 +332,7 @@ Oben wechseln Tabs zwischen **Kalender**, **Darstellung** (Farbschema, Startansi
 Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, rechts die Einstellungen. Auf dem Handy untereinander.
 
 - **Kalender:** alle Kalender, auf die man Zugriff hat (persönlich und Teams), mit Farbe, Team und eigener Rolle. Bei Team-Kalendern legt ein Schalter fest, ob ihre Termine **auch im persönlichen Kalender** erscheinen (`showInPersonal`, Standard an). Team-Kalender lassen sich mit Bestätigung **verlassen**, außer man ist Owner. Der persönliche Kalender lässt sich nicht entfernen. Schalter und Verlassen werden sofort auf dem Server gespeichert.
+- **Zahnrad an der Kachel** führt zur Einstellungsseite des Kalenders (siehe [Kalender-Einstellungen](#kalender-einstellungen)). Es erscheint beim persönlichen Kalender immer und bei Team-Kalendern nur mit einer Rolle, die dort etwas verwalten darf (Owner, Administrator, Verwalter).
 - **Einladungen:** Offene Einladungen an die eigene E-Mail-Adresse stehen oben mit Team, Beschreibung, Rolle, Absender und Ablaufdatum. **Annehmen** nimmt den Kalender sofort in die Liste und in „Kalender wechseln“ auf, **Ablehnen** entfernt die Einladung.
 - **Farbschema:** Wie System, Hell oder Dunkel. Gesetzt über `data-theme` am `<html>`, die Farben kommen weiter aus `light-dark()`.
 - **Startansicht** getrennt für Computer/Tablet und Handy
@@ -520,12 +537,13 @@ src/
    ├─ calendars/               Kalenderauswahl (persönlich und Teams), vorbereitet für den Team-Modus
    │  ├─ components/           CalendarSwitcher (Button und Fenster), ActiveCalendarIndicator (Plakette im Kopf),
    │  │                        CalendarPreview (Monatsvorschau), InvitationList (offene Einladungen),
+   │  │  ├─ settings/          CalendarSettingsPage mit Allgemein, Mitglieder, Einladungen, Gefahrenbereich
    │  │                        CalendarSettings (Liste in den Einstellungen, Verlassen)
    │  │  └─ create/            CreateCalendarPage mit den Schritten Details, Farbe, Mitglieder, Überprüfen
    │  ├─ constants/            Persönlicher Kalender, Bezeichnungen der Rollen
    │  ├─ context/              CalendarsProvider (lädt Kalender und Einladungen, aktiver Kalender, verlassen), liegt in App.tsx
    │  ├─ repositories/         LocalCalendarRepository (nur „Persönlich“), RemoteCalendarRepository (API)
-   │  ├─ hooks/                useCalendars
+   │  ├─ hooks/                useCalendars, useTeam (Mitglieder und Einladungen eines Teams)
    │  ├─ types/
    │  └─ utils/                Regeln: persönlich oder Team (`kind`), wer verlassen darf, welche Kalender gerade sichtbar sind
    │                           (`visibleCalendarIds`: im persönlichen Kalender dieser plus alle Teams mit showInPersonal)

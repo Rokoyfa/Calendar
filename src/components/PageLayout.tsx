@@ -4,16 +4,19 @@ import { ROUTES } from '../config/routes.ts'
 
 type PageLayoutProps = {
   title: string
+  back?: { to: string; label: string }
   variant?: 'card' | 'full'
   footer?: ReactNode
   children: ReactNode
 }
 
-export function PageLayout({ title, variant = 'card', footer, children }: PageLayoutProps) {
+const DEFAULT_BACK = { to: ROUTES.calendar, label: 'Zum Kalender' }
+
+export function PageLayout({ title, back = DEFAULT_BACK, variant = 'card', footer, children }: PageLayoutProps) {
   const heading = (
     <>
-      <Link to={ROUTES.calendar} className="pageBack">
-        ← Zum Kalender
+      <Link to={back.to} className="pageBack">
+        ← {back.label}
       </Link>
       <h1 className="pageTitle">{title}</h1>
     </>

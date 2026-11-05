@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { PlusIcon } from '../../../components/Icons.tsx'
-import { ROUTES } from '../../../config/routes.ts'
+import { ROUTES, SETTINGS_CALENDARS_PATH } from '../../../config/routes.ts'
 import { isPersonalCalendar } from '../utils/permissions.ts'
 import { Button } from '../../../components/Button.tsx'
 import { Modal } from '../../../components/Modal.tsx'
@@ -78,7 +78,7 @@ function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
             {invitations.length === 1
               ? 'Du hast eine offene Einladung.'
               : `Du hast ${invitations.length} offene Einladungen.`}{' '}
-            <Link to={`${ROUTES.settings}?tab=calendars`} onClick={onClose}>
+            <Link to={SETTINGS_CALENDARS_PATH} onClick={onClose}>
               Ansehen
             </Link>
           </p>
