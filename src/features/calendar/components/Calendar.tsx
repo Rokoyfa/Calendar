@@ -4,6 +4,7 @@ import { useArrowKeyNavigation } from '../../../hooks/useArrowKeyNavigation.ts'
 import { MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
 import {
   createEventInput,
+  createEventInputForSlots,
   expandEvents,
   toEventInput,
   type EditScope,
@@ -17,6 +18,7 @@ import { useNow } from '../hooks/useNow.ts'
 import type { EditorState } from '../types/editor.ts'
 import type { EventSources } from '../types/eventSource.ts'
 import { getSourceText } from '../utils/eventLabels.ts'
+import type { SlotRange } from '../utils/slotSelection.ts'
 import type { CalendarView, CalendarViewProps } from '../types/view.ts'
 import { groupSegmentsByDate } from '../utils/segmentEvents.ts'
 import { CalendarHeader } from './CalendarHeader.tsx'
@@ -75,6 +77,13 @@ export function Calendar({
     [canCreate],
   )
 
+  const openCreateRange = useCallback(
+    ({ first, last }: SlotRange) => {
+      if (canCreate) setEditor({ initialValue: createEventInputForSlots(first, last), occurrence: null })
+    },
+    [canCreate],
+  )
+
   const openEdit = useCallback((occurrence: EventOccurrence) => {
     setEditor({ initialValue: toEventInput(occurrence), occurrence })
   }, [])
@@ -120,7 +129,9 @@ export function Calendar({
           today={today}
           currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
           segmentsByDate={segmentsByDate}
+          canCreate={canCreate}
           onCreate={openCreate}
+          onCreateRange={openCreateRange}
           onEventSelect={openEdit}
           onShowDay={(date) => show('day', date)}
           onShowMonth={(date) => show('month', date)}

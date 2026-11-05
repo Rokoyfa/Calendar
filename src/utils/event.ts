@@ -153,15 +153,16 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
   }
 }
 
-export const createEventInput = (date: string, hour: number): EventInput => {
-  const start = hour * MINUTES_PER_HOUR
-  const end = start + MINUTES_PER_HOUR
+export type HourSlot = { date: string; hour: number }
+
+export const createEventInputForSlots = (first: HourSlot, last: HourSlot): EventInput => {
+  const end = (last.hour + 1) * MINUTES_PER_HOUR
   const endsNextDay = end >= MINUTES_PER_DAY
   return {
     title: '',
-    startDate: date,
-    start: minutesToTime(start),
-    endDate: endsNextDay ? addDaysToISODate(date, 1) : date,
+    startDate: first.date,
+    start: minutesToTime(first.hour * MINUTES_PER_HOUR),
+    endDate: endsNextDay ? addDaysToISODate(last.date, 1) : last.date,
     end: minutesToTime(end % MINUTES_PER_DAY),
     description: '',
     color: 'blue',
@@ -170,6 +171,8 @@ export const createEventInput = (date: string, hour: number): EventInput => {
     ...NO_SERIES_LINK,
   }
 }
+
+export const createEventInput = (date: string, hour: number) => createEventInputForSlots({ date, hour }, { date, hour })
 
 export const toEventInput = (event: CalendarEvent): EventInput => pick(event, EVENT_INPUT_KEYS)
 

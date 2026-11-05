@@ -279,6 +279,18 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 - Kurze Termine werden kompakter dargestellt, ab 90 Minuten wird zusätzlich die Uhrzeit angezeigt
 - **Mehrtägige Termine** werden pro Tag als eigener Abschnitt im Raster gezeigt: am ersten Tag ab Beginn bis 24:00, dazwischen ganztägig, am letzten Tag ab 00:00 bis zum Ende. An den Übergängen sind die Ecken eckig, damit der Zusammenhang sichtbar bleibt. Die Zeitangabe enthält dann auch die Daten, zum Beispiel `30.10. 10:00 – 03.11. 16:00`.
 
+### Zeitraum aufziehen
+
+In der Tages- und Wochenansicht lässt sich ein Zeitraum direkt im Raster auswählen. Danach öffnet sich „Neuer Termin“ mit Startdatum, Beginn, Enddatum und Ende schon ausgefüllt.
+
+- **Maus:** auf eine Stunde drücken und ziehen, auch über mehrere Tage und rückwärts. Ein einfacher Klick legt wie bisher eine Stunde an.
+- **Handy:** kurz gedrückt halten (ca. 0,35 s, leichte Vibration, wo das Gerät es kann), dann mit dem Finger ziehen. Ein normales Wischen scrollt weiter, Antippen legt eine Stunde an.
+- **Ganze Stunden, die Kachel unter Maus oder Finger zählt mit:** von der 12-Uhr-Kachel am 6.11. bis zur 18-Uhr-Kachel am 8.11. ergibt 6.11. 12:00 bis 8.11. 19:00. Wer bis 18:00 will, zieht bis zur 17-Uhr-Kachel.
+- Während des Ziehens ist der Bereich blau hinterlegt, in der ersten Spalte steht der Zeitraum. Am oberen und unteren Rand scrollt das Raster mit.
+- Ohne Recht zum Anlegen (Betrachter) ist die Auswahl aus.
+
+Die Logik steckt in `useSlotSelection` (Maus über Pointer-Events, Touch über Touch-Events, damit das Scrollen erst nach dem langen Drücken gesperrt wird) und `utils/slotSelection.ts`. Den Termin baut `createEventInputForSlots` aus erster und letzter Stunde.
+
 ### Termine und Kalender
 
 Jeder Termin gehört genau zu einem Kalender (`calendarId`). Geladen werden nur die Termine der sichtbaren Kalender (`visibleCalendarIds`):

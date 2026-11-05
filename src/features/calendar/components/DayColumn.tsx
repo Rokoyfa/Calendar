@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import { classNames } from '../../../utils/classNames.ts'
 import {
   formatDay,
@@ -20,6 +20,7 @@ type DayColumnProps = {
   isToday: boolean
   nowMinutes: number | null
   segments: readonly EventSegment[]
+  selection?: { fromHour: number; toHour: number; label: string | null } | null
   onSlotSelect: (date: string, hour: number) => void
   onEventSelect: (event: EventOccurrence) => void
   onHeaderSelect?: (date: string) => void
@@ -30,6 +31,7 @@ export function DayColumn({
   isToday,
   nowMinutes,
   segments,
+  selection = null,
   onSlotSelect,
   onEventSelect,
   onHeaderSelect,
@@ -83,6 +85,20 @@ export function DayColumn({
             onSelect={onEventSelect}
           />
         ))}
+        {selection && (
+          <div
+            className="slotSelection"
+            style={
+              {
+                '--selection-start': selection.fromHour,
+                '--selection-hours': selection.toHour - selection.fromHour + 1,
+              } as CSSProperties
+            }
+            aria-hidden="true"
+          >
+            {selection.label && <span className="slotSelectionLabel">{selection.label}</span>}
+          </div>
+        )}
         {nowMinutes !== null && <NowIndicator minutes={nowMinutes} isToday={isToday} />}
       </div>
     </div>
