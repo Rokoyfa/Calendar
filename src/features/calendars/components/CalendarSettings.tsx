@@ -12,7 +12,7 @@ import { getEventColorAttributes } from '../../../utils/event.ts'
 import { ROLE_LABELS } from '../constants/calendars.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
-import { canLeaveCalendar, canOpenSettings, isPersonalCalendar } from '../utils/permissions.ts'
+import { canLeaveCalendar, canOpenSettings, getCalendarKindLabel, isPersonalCalendar } from '../utils/permissions.ts'
 import { InvitationList } from './InvitationList.tsx'
 
 function LeaveCalendarModal({ calendar, onClose }: { calendar: CalendarSummary; onClose: () => void }) {
@@ -44,7 +44,7 @@ function CalendarRow({ calendar, onLeave }: { calendar: CalendarSummary; onLeave
         <span {...getEventColorAttributes(calendar.color, 'colorSwatch colorSwatch--large')} aria-hidden="true" />
         <span className="itemRowMain">
           <span className="itemRowTitle">{calendar.name}</span>
-          <span className="itemRowMeta">{calendar.teamName ?? 'Persönlicher Kalender'}</span>
+          <span className="itemRowMeta">{getCalendarKindLabel(calendar)}</span>
           {calendar.description && <span className="itemRowMeta">{calendar.description}</span>}
         </span>
         <span className="badge">{ROLE_LABELS[calendar.role]}</span>

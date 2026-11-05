@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { PlusIcon } from '../../../components/Icons.tsx'
 import { ROUTES, SETTINGS_CALENDARS_PATH } from '../../../config/routes.ts'
-import { isPersonalCalendar } from '../utils/permissions.ts'
+import { getDistinctTeamName, isPersonalCalendar } from '../utils/permissions.ts'
 import { Button } from '../../../components/Button.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { classNames } from '../../../utils/classNames.ts'
@@ -30,8 +30,7 @@ function CalendarCard({ calendar, isActive, onSelect }: CalendarCardProps) {
         <span className="calendarCardInfo">
           <span className="calendarCardName">{calendar.name}</span>
           <span className="calendarCardMeta">
-            {calendar.teamName ? `${calendar.teamName} · ` : ''}
-            {ROLE_LABELS[calendar.role]}
+            {[getDistinctTeamName(calendar), ROLE_LABELS[calendar.role]].filter(Boolean).join(' · ')}
           </span>
         </span>
         {isActive && (

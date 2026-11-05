@@ -37,3 +37,12 @@ const SETTINGS_PERMISSIONS: readonly Permission[] = [
 
 export const canOpenSettings = (calendar: CalendarSummary) =>
   SETTINGS_PERMISSIONS.some((permission) => hasPermission(calendar, permission))
+
+export const getDistinctTeamName = ({ name, teamName }: CalendarSummary) =>
+  teamName && teamName !== name ? teamName : null
+
+export const getCalendarKindLabel = (calendar: CalendarSummary) => {
+  if (isPersonalCalendar(calendar)) return 'Persönlicher Kalender'
+  const teamName = getDistinctTeamName(calendar)
+  return teamName ? `Team-Kalender · ${teamName}` : 'Team-Kalender'
+}
