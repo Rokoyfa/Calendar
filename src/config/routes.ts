@@ -6,6 +6,7 @@ export const ROUTES = {
   resetPassword: '/reset-password',
   verifyEmail: '/verify-email',
   settings: '/settings',
+  createCalendar: '/calendars/new',
 } as const
 
 export const TOKEN_PARAM = 'token'

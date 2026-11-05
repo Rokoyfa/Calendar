@@ -29,16 +29,29 @@ const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = 
 }
 
 type CalendarProps = {
+  calendarIds: readonly string[]
+  targetCalendarId: string
   initialView?: CalendarView
+  headerContext?: ReactNode
   headerAccessory?: ReactNode
 }
 
-export function Calendar({ initialView, headerAccessory }: CalendarProps) {
+export function Calendar({
+  calendarIds,
+  targetCalendarId,
+  initialView,
+  headerContext,
+  headerAccessory,
+}: CalendarProps) {
   const now = useNow()
   const today = toISODate(now)
   const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
     useCalendarView(initialView)
-  const { events, error, createEvent, updateEvent, deleteEvent } = useEvents(range)
+  const { events, error, createEvent, updateEvent, deleteEvent } = useEvents({
+    ...range,
+    calendarIds,
+    targetCalendarId,
+  })
   const segmentsByDate = useMemo(
     () => groupSegmentsByDate(expandEvents(events, range.from, range.to), range),
     [events, range],
@@ -83,6 +96,7 @@ export function Calendar({ initialView, headerAccessory }: CalendarProps) {
         onNext={next}
         onToday={goToToday}
         onCreateEvent={() => openCreate(view === 'day' ? anchor : today, now.getHours())}
+        context={headerContext}
         accessory={headerAccessory}
       />
 

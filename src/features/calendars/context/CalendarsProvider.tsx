@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { PERSONAL_CALENDAR } from '../constants/calendars.ts'
-import type { CalendarsContextValue, CalendarSummary } from '../types/calendar.ts'
+import type { CalendarDraft, CalendarsContextValue, CalendarSummary } from '../types/calendar.ts'
+import { normalizeDraft } from '../utils/draft.ts'
 import { canLeaveCalendar, getVisibleCalendarIds, isPersonalCalendar } from '../utils/permissions.ts'
 import { CalendarsContext } from './CalendarsContext.ts'
 
@@ -11,12 +12,23 @@ export function CalendarsProvider({ children }: { children: ReactNode }) {
   const [activeId, setActiveId] = useState(PERSONAL_CALENDAR.id)
   const activeCalendar = calendars.find((calendar) => calendar.id === activeId) ?? PERSONAL_CALENDAR
 
-  const selectCalendar = useCallback(
-    (id: string) => {
-      if (calendars.some((calendar) => calendar.id === id)) setActiveId(id)
-    },
-    [calendars],
-  )
+  const selectCalendar = useCallback((id: string) => setActiveId(id), [])
+
+  const createCalendar = useCallback(async (draft: CalendarDraft) => {
+    const { name, description, color } = normalizeDraft(draft)
+    const calendar: CalendarSummary = {
+      id: crypto.randomUUID(),
+      name,
+      color,
+      kind: 'team',
+      teamName: name,
+      description,
+      role: 'owner',
+      showInPersonal: true,
+    }
+    setCalendars((current) => [...current, calendar])
+    return calendar
+  }, [])
 
   const leaveCalendar = useCallback(async (id: string) => {
     setCalendars((current) => current.filter((calendar) => calendar.id !== id || !canLeaveCalendar(calendar)))
@@ -36,8 +48,16 @@ export function CalendarsProvider({ children }: { children: ReactNode }) {
   )
 
   const value = useMemo<CalendarsContextValue>(
-    () => ({ calendars, activeCalendar, visibleCalendarIds, selectCalendar, leaveCalendar, setShowInPersonal }),
-    [calendars, activeCalendar, visibleCalendarIds, selectCalendar, leaveCalendar, setShowInPersonal],
+    () => ({
+      calendars,
+      activeCalendar,
+      visibleCalendarIds,
+      selectCalendar,
+      createCalendar,
+      leaveCalendar,
+      setShowInPersonal,
+    }),
+    [calendars, activeCalendar, visibleCalendarIds, selectCalendar, createCalendar, leaveCalendar, setShowInPersonal],
   )
 
   return <CalendarsContext value={value}>{children}</CalendarsContext>

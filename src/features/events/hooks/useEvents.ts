@@ -7,14 +7,16 @@ import {
   type EventInput,
   type EventOccurrence,
 } from '../../../utils/event.ts'
-import { useStorage, type DateRange } from '../../storage/index.ts'
+import { useStorage, type EventQuery } from '../../storage/index.ts'
 import { deleteOccurrence, updateOccurrence } from '../utils/seriesActions.ts'
 
 const NO_EVENTS: CalendarEvent[] = []
 
-export function useEvents({ from, to }: DateRange) {
+type UseEventsOptions = EventQuery & { targetCalendarId: string }
+
+export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEventsOptions) {
   const { events: repository, version } = useStorage()
-  const load = useCallback(() => repository.list({ from, to }), [repository, from, to])
+  const load = useCallback(() => repository.list({ from, to, calendarIds }), [repository, from, to, calendarIds])
   const { data: events, error, isLoading, reload } = useAsyncResource(load, NO_EVENTS, version)
 
   const findSeries = useCallback(
@@ -38,8 +40,8 @@ export function useEvents({ from, to }: DateRange) {
   )
 
   const createEvent = useCallback(
-    (input: EventInput) => withReload(() => repository.create(input)),
-    [repository, withReload],
+    (input: EventInput) => withReload(() => repository.create(targetCalendarId, input)),
+    [repository, withReload, targetCalendarId],
   )
 
   const updateEvent = useCallback(

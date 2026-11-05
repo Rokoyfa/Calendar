@@ -1,3 +1,4 @@
+import { PERSONAL_CALENDAR_ID } from '../../../config/calendars.ts'
 import {
   EVENT_NOT_FOUND_MESSAGE,
   eventOccursInRange,
@@ -5,11 +6,16 @@ import {
   type CalendarEvent,
   type EventInput,
 } from '../../../utils/event.ts'
-import type { DateRange, EventRepository } from '../types/storage.ts'
+import type { EventQuery, EventRepository } from '../types/storage.ts'
 import { LocalStorageList } from '../utils/localStorageList.ts'
 
-export const LOCAL_CALENDAR_ID = 'local'
 const DEFAULT_STORAGE_KEY = 'calendar.events.v1'
+const LEGACY_CALENDAR_ID = 'local'
+
+const parseLocalEvent = (value: unknown) => {
+  const event = parseCalendarEvent(value)
+  return event?.calendarId === LEGACY_CALENDAR_ID ? { ...event, calendarId: PERSONAL_CALENDAR_ID } : event
+}
 
 export class LocalEventRepository implements EventRepository {
   readonly #events: LocalStorageList<CalendarEvent>
@@ -17,13 +23,15 @@ export class LocalEventRepository implements EventRepository {
   constructor(storageKey = DEFAULT_STORAGE_KEY) {
     this.#events = new LocalStorageList(
       storageKey,
-      parseCalendarEvent,
+      parseLocalEvent,
       'Der Termin konnte nicht lokal gespeichert werden.',
     )
   }
 
-  async list({ from, to }: DateRange) {
-    return this.#events.read().filter((event) => eventOccursInRange(event, from, to))
+  async list({ from, to, calendarIds }: EventQuery) {
+    return this.#events
+      .read()
+      .filter((event) => calendarIds.includes(event.calendarId) && eventOccursInRange(event, from, to))
   }
 
   async listAll() {
@@ -38,12 +46,12 @@ export class LocalEventRepository implements EventRepository {
     return this.#events.read().filter((event) => event.id === seriesId || event.seriesId === seriesId)
   }
 
-  async create(input: EventInput) {
+  async create(calendarId: string, input: EventInput) {
     const now = new Date().toISOString()
     const event: CalendarEvent = {
       ...input,
       id: crypto.randomUUID(),
-      calendarId: LOCAL_CALENDAR_ID,
+      calendarId,
       createdAt: now,
       updatedAt: now,
     }

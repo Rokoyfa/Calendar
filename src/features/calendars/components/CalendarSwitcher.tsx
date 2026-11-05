@@ -1,4 +1,8 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Link } from 'react-router'
+import { PlusIcon } from '../../../components/Icons.tsx'
+import { ROUTES } from '../../../config/routes.ts'
+import { isPersonalCalendar } from '../utils/permissions.ts'
 import { Button } from '../../../components/Button.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { classNames } from '../../../utils/classNames.ts'
@@ -42,10 +46,10 @@ function CalendarCard({ calendar, isActive, onSelect }: CalendarCardProps) {
 
 function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
   const { calendars, activeCalendar, selectCalendar } = useCalendars()
-  const personal = calendars.filter((calendar) => calendar.kind === 'personal')
-  const teams = calendars.filter((calendar) => calendar.kind === 'team')
+  const personal = calendars.filter(isPersonalCalendar)
+  const teams = calendars.filter((calendar) => !isPersonalCalendar(calendar))
 
-  const renderCards = (list: readonly CalendarSummary[]) => (
+  const renderCards = (list: readonly CalendarSummary[], extra?: ReactNode) => (
     <ul className="calendarCards">
       {list.map((calendar) => (
         <CalendarCard
@@ -58,6 +62,7 @@ function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
           }}
         />
       ))}
+      {extra}
     </ul>
   )
 
@@ -70,12 +75,19 @@ function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
         </section>
         <section className="calendarGroup">
           <h3 className="calendarGroupTitle">Teams</h3>
-          {teams.length > 0 ? (
-            renderCards(teams)
-          ) : (
+          {teams.length === 0 && (
             <p className="emptyHint">
-              Du bist noch in keinem Team. Sobald du einem Team beitrittst, kannst du hier zu dessen Kalender wechseln.
+              Du bist noch in keinem Team. Erstelle einen Kalender oder tritt über eine Einladung bei.
             </p>
+          )}
+          {renderCards(
+            teams,
+            <li>
+              <Link to={ROUTES.createCalendar} className="calendarCard calendarCardNew">
+                <PlusIcon size={28} />
+                <span className="calendarCardName">Neuer Kalender</span>
+              </Link>
+            </li>,
           )}
         </section>
       </div>

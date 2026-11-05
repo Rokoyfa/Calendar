@@ -10,7 +10,7 @@ import { StorageProvider } from './features/storage/index.ts'
 import { router } from './router.tsx'
 
 function SessionStorageProvider({ children }: { children: ReactNode }) {
-  const { status, expireSession } = useAuth()
+  const { status, user, expireSession } = useAuth()
   const isAuthenticated = status === 'authenticated'
   const config = useMemo(
     () => createStorageConfig(env, { isAuthenticated, onUnauthorized: expireSession }),
@@ -21,7 +21,7 @@ function SessionStorageProvider({ children }: { children: ReactNode }) {
   return (
     <StorageProvider config={config}>
       <PreferencesProvider>
-        <CalendarsProvider>{children}</CalendarsProvider>
+        <CalendarsProvider key={user?.id ?? 'guest'}>{children}</CalendarsProvider>
       </PreferencesProvider>
     </StorageProvider>
   )

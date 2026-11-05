@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Button } from '../../../components/Button.tsx'
+import { Button, ButtonLink } from '../../../components/Button.tsx'
+import { ROUTES } from '../../../config/routes.ts'
 import { Modal } from '../../../components/Modal.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
 import { Switch } from '../../../components/Switch.tsx'
@@ -55,6 +56,7 @@ function CalendarRow({ calendar, onLeave }: { calendar: CalendarSummary; onLeave
         <span className="itemRowMain">
           <span className="itemRowTitle">{calendar.name}</span>
           <span className="itemRowMeta">{calendar.teamName ?? 'Persönlicher Kalender'}</span>
+          {calendar.description && <span className="itemRowMeta">{calendar.description}</span>}
         </span>
         <span className="badge">{ROLE_LABELS[calendar.role]}</span>
       </div>
@@ -99,9 +101,12 @@ export function CalendarSettings() {
           <CalendarRow key={calendar.id} calendar={calendar} onLeave={() => setCalendarToLeave(calendar)} />
         ))}
       </ul>
-      {calendars.every((calendar) => calendar.kind === 'personal') && (
-        <p className="emptyHint">Noch keine Team-Kalender. Sie erscheinen hier, sobald du einem Team beitrittst.</p>
+      {calendars.every(isPersonalCalendar) && (
+        <p className="emptyHint">Noch keine Team-Kalender. Erstelle einen oder tritt über eine Einladung bei.</p>
       )}
+      <div className="formActions">
+        <ButtonLink to={ROUTES.createCalendar}>Kalender erstellen</ButtonLink>
+      </div>
       {calendarToLeave && <LeaveCalendarModal calendar={calendarToLeave} onClose={() => setCalendarToLeave(null)} />}
     </PageSection>
   )

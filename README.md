@@ -136,6 +136,7 @@ Eingeschaltet über `VITE_FEATURE_AUTH=true`. Ist der Schalter aus, gibt es kein
 - Der Kalender ist **ohne Anmeldung voll nutzbar**, Termine liegen dann im localStorage. Oben rechts steht **Anmelden**.
 - **Seiten:** `/login` und `/register` sind eigene Seiten (React Router). Nach dem Absenden geht es zurück zur vorherigen Seite des Kalenders. Erlaubt sind dabei nur interne Pfade, Weiterleitungen auf fremde Seiten werden ignoriert. Angemeldet führen beide Seiten direkt zum Kalender.
 - **Angemeldet** zeigt die Kopfzeile einen runden Button mit dem Anfangsbuchstaben. Er öffnet ein kleines Menü mit Name, E-Mail, **Kalender wechseln**, **Einstellungen** und **Abmelden**. Ein Klick auf einen Eintrag schließt das Menü.
+- **Aktueller Kalender:** Unter dem Monatstitel zeigt eine farbige Plakette, welcher Kalender gerade offen ist: Farbpunkt, Name und „Nur für dich“ bzw. „Team · Rolle“. Sie ist nur Anzeige; gewechselt wird über das Profilmenü.
 - **Kalender wechseln** öffnet ein großes Fenster mit dem persönlichen Kalender und den Team-Kalendern als Kacheln: oben eine Vorschau des aktuellen Monats in der Kalenderfarbe, darunter Name, Team und die eigene Rolle. Der aktive Kalender ist blau umrandet mit Haken. Auf dem Handy zwei Kacheln nebeneinander. Vorbereitet für den Team-Modus: Bisher gibt es nur „Persönlich“, unter „Teams“ steht ein Hinweis. Die Liste kommt aus `features/calendars` (`CalendarsProvider`, `useCalendars`) und soll später aus `GET /calendars` bzw. der Sicht `user_calendars` gefüllt werden.
 - **Speicher je nach Sitzung:** Angemeldet werden Termine über die API geladen und gespeichert, abgemeldet wieder lokal. Der Wechsel passiert automatisch.
 - **Sitzung beim Start:** Die App fragt beim Laden `GET /auth/me` ab und zeigt bis zur Antwort kurz „Lädt …“, damit nicht erst lokale und dann Konto-Termine erscheinen.
@@ -264,6 +265,30 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 - Kurze Termine werden kompakter dargestellt, ab 90 Minuten wird zusätzlich die Uhrzeit angezeigt
 - **Mehrtägige Termine** werden pro Tag als eigener Abschnitt im Raster gezeigt: am ersten Tag ab Beginn bis 24:00, dazwischen ganztägig, am letzten Tag ab 00:00 bis zum Ende. An den Übergängen sind die Ecken eckig, damit der Zusammenhang sichtbar bleibt. Die Zeitangabe enthält dann auch die Daten, zum Beispiel `30.10. 10:00 – 03.11. 16:00`.
 
+### Termine und Kalender
+
+Jeder Termin gehört genau zu einem Kalender (`calendarId`). Geladen werden nur die Termine der sichtbaren Kalender (`visibleCalendarIds`):
+
+- **Persönlicher Kalender offen:** die persönlichen Termine plus die Termine aller Team-Kalender, bei denen „Auch im persönlichen Kalender anzeigen“ an ist.
+- **Team-Kalender offen:** nur die Termine dieses Team-Kalenders. **Persönliche Termine erscheinen nie in einem Team-Kalender.**
+
+Neue Termine landen immer im gerade offenen Kalender. Beim Bearbeiten bleibt ein Termin in seinem Kalender, auch herausgelöste Termine und fortgesetzte Serien. Beim Abmelden oder Kontowechsel wird die Kalenderauswahl zurückgesetzt, damit nichts versehentlich in einen fremden Kalender geschrieben wird.
+
+### Kalender erstellen
+
+Eigene Seite `/calendars/new` (nur angemeldet, sonst Anmeldung und danach zurück). Erreichbar über die Kachel **Neuer Kalender** in „Kalender wechseln“ und den Button **Kalender erstellen** in den Einstellungen.
+
+Die Erstellung läuft in Schritten, oben zeigt ein `Stepper` den Fortschritt. Erledigte Schritte lassen sich anklicken, um zurückzuspringen. Eingaben bleiben dabei erhalten.
+
+1. **Name:** Name (Pflicht, bis 80 Zeichen) und Beschreibung (optional, bis 500 Zeichen)
+2. **Farbe:** gleiche Auswahl wie bei Terminen, mit Vorschau des Kalenders
+3. **Mitglieder:** E-Mail und Rolle eingeben, **Hinzufügen** oder Enter. Unter der Auswahl steht, was die Rolle darf. Geprüft wird: gültige Adresse, nicht doppelt, nicht die eigene, höchstens 50. Der Schritt ist optional.
+4. **Überprüfen:** Zusammenfassung mit Vorschau, dann **Kalender erstellen**
+
+Danach ist der neue Kalender aktiv und man landet im Kalender. Der Ersteller ist Owner.
+
+Ohne Backend wird der Kalender nur in der Oberfläche angelegt und ist nach dem Neuladen weg. Einladungen werden noch nicht verschickt. Für das Backend fehlt in der Datenbank noch eine Spalte für die Beschreibung, z. B. `teams.description` oder `calendars.description`.
+
 ### Einstellungen
 
 Seite `/settings`, erreichbar über **Einstellungen** im Kontomenü (runder Button mit dem Anfangsbuchstaben). Mit `VITE_FEATURE_AUTH=true` nur für Angemeldete: `/settings` leitet sonst zum Kalender um, auch direkt nach dem Löschen des Kontos. Ohne Anmeldefunktion gibt es kein Kontomenü, dann führt ein Zahnrad in der Kopfzeile zu den Einstellungen.
@@ -358,7 +383,7 @@ type Recurrence = {
 - Ein herausgelöster Einzeltermin hat `seriesId` (Id der Serie) und `originalDate` (ursprüngliches Startdatum des Vorkommens), sonst sind beide `null`
 - Ältere Termine ohne `recurrence` und `excludedDates` werden als einmalige Termine gelesen, ältere Wiederholungen ohne `monthlyMode` und `count` mit `'dayOfMonth'` und `null`
 - Ältere Termine mit dem früheren Feld `date` werden beim Lesen automatisch übernommen (`endDate` = `startDate`) und beim nächsten Speichern im neuen Format geschrieben
-- `calendarId` ist lokal immer `'local'` und für Team-Kalender vorgesehen
+- `calendarId` ist `'personal'` für den persönlichen Kalender (`PERSONAL_CALENDAR_ID` in `config/calendars.ts`), sonst die ID des Team-Kalenders. Ältere lokale Termine mit `'local'` werden beim Lesen dem persönlichen Kalender zugeordnet.
 - `createdAt` und `updatedAt` sind ISO-Zeitstempel, gedacht für spätere Synchronisierung
 
 ### Vorbereitung für Server-Speicherung
@@ -370,7 +395,7 @@ Der Zugriff auf Daten läuft ausschließlich über die Schnittstellen `EventRepo
 
 Ist die Anmeldung eingeschaltet, entscheidet stattdessen die Sitzung: angemeldet `remote`, abgemeldet `local` (siehe [Anmeldung](#anmeldung)). Antwortet der Server nicht rechtzeitig oder ist er nicht erreichbar, zeigt der Kalender eine verständliche Fehlermeldung.
 
-`RemoteEventRepository` ist dafür bereits angelegt und erwartet eine REST-API mit `GET /events?from=&to=` (liefert alle Termine, die den Zeitraum überschneiden, also `startDate <= to` und `endDate >= from`, sowie alle Serien, die im Zeitraum mindestens ein Vorkommen haben; die Serien werden unverändert geliefert und im Browser aufgefächert), `GET /events?seriesId=` (Serie und alle mit ihr verknüpften Einzeltermine), `POST /events`, `PUT /events/:id` und `DELETE /events/:id`. **Es ist bisher nur gegen einen einfachen Test-Server geprüft (Laden, Anlegen, Timeout), noch nicht gegen ein echtes Backend.** Eigene Farben werden auch im Remote-Modus vorerst lokal gespeichert.
+`RemoteEventRepository` ist dafür bereits angelegt und erwartet eine REST-API mit `GET /events?from=&to=&calendarId=…` (`calendarId` einmal je sichtbarem Kalender, `personal` steht für den eigenen persönlichen Kalender; liefert alle Termine, die den Zeitraum überschneiden, also `startDate <= to` und `endDate >= from`, sowie alle Serien, die im Zeitraum mindestens ein Vorkommen haben; die Serien werden unverändert geliefert und im Browser aufgefächert), `GET /events?seriesId=` (Serie und alle mit ihr verknüpften Einzeltermine), `POST /events` (mit `calendarId` im Body), `PUT /events/:id` (ändert den Kalender nicht) und `DELETE /events/:id`. **Es ist bisher nur gegen einen einfachen Test-Server geprüft (Laden, Anlegen, Timeout), noch nicht gegen ein echtes Backend.** Eigene Farben werden auch im Remote-Modus vorerst lokal gespeichert.
 
 ---
 
@@ -387,7 +412,7 @@ database/
    └─ 002_automation.down.sql
 src/
 ├─ App.tsx                     AuthProvider + StorageProvider (je nach Sitzung) + PreferencesProvider + CalendarsProvider + Router
-├─ router.tsx                  Routen: /, /settings, /login, /register, /forgot-password, /reset-password, /verify-email
+├─ router.tsx                  Routen: /, /settings, /calendars/new, /login, /register, /forgot-password, /reset-password, /verify-email
 ├─ pages/
 │  ├─ CalendarPage.tsx         Kalender mit Startansicht, Kontomenü (Zahnrad nur ohne Anmeldefunktion), Bestätigungsleiste und Übernahme-Abfrage
 │  └─ SettingsPage.tsx         Einstellungen in Tabs: Kalender, Darstellung, Konto
@@ -398,6 +423,7 @@ src/
 │  ├─ env.ts                   Geprüfte Konfiguration für die App
 │  ├─ api.ts                   Fertig konfigurierter API-Client
 │  ├─ auth.ts                  AuthRepository für die App
+│  ├─ calendars.ts             ID des persönlichen Kalenders
 │  ├─ routes.ts                Pfade, Token-Parameter und sichere Weiterleitung nach dem Login
 │  └─ storage.ts               StorageConfig je nach Konfiguration und Anmeldung
 ├─ assets/
@@ -418,6 +444,7 @@ src/
 │  ├─ SegmentedField.tsx       Umschalter mit Beschriftung als Formularfeld
 │  ├─ Tabs.tsx                 Tabs mit Inhalt (role=tablist/tabpanel, Pfeiltasten)
 │  ├─ Switch.tsx               Ein/Aus-Schalter (Checkbox mit role=switch)
+│  ├─ Stepper.tsx              Fortschritt in Schritten, erledigte Schritte anklickbar
 │  ├─ TextField.tsx            Textfeld mit Beschriftung und Fehler
 │  ├─ PasswordField.tsx        Passwortfeld mit „Anzeigen“
 │  ├─ StatusMessage.tsx        Fehler- (role="alert") und Erfolgsmeldung (role="status"), ActionFeedback für beides
@@ -446,7 +473,7 @@ src/
 │  ├─ preferences.ts           Einstellungen: Typen, Standardwerte, Prüfung, Startansicht
 │  ├─ recurrence.ts            Wiederholungsregeln, Berechnung der Vorkommen
 │  ├─ series.ts                Serien ausnehmen, aufteilen, ändern
-│  └─ validation.ts            Fehler je Feld, gemeinsame Prüfung „gibt es Fehler?“
+│  └─ validation.ts            Fehler je Feld, gemeinsame Prüfung „gibt es Fehler?“, E-Mail prüfen
 └─ features/
    ├─ calendar/                Anzeige: Tag, Woche, Monat, Jahr
    │  │                        constants/views.ts beschreibt jede Ansicht einmal (Zeitraum, Schritt, Titel),
@@ -472,8 +499,10 @@ src/
    │  ├─ types/
    │  └─ utils/                LocalStorageValue/LocalStorageList (localStorage lesen/schreiben), copyEvents (Termine samt Serien-Verknüpfung kopieren)
    ├─ calendars/               Kalenderauswahl (persönlich und Teams), vorbereitet für den Team-Modus
-   │  ├─ components/           CalendarSwitcher (Button und Fenster), CalendarPreview (Monatsvorschau),
+   │  ├─ components/           CalendarSwitcher (Button und Fenster), ActiveCalendarIndicator (Plakette im Kopf),
+   │  │                        CalendarPreview (Monatsvorschau),
    │  │                        CalendarSettings (Liste in den Einstellungen, Verlassen)
+   │  │  └─ create/            CreateCalendarPage mit den Schritten Details, Farbe, Mitglieder, Überprüfen
    │  ├─ constants/            Persönlicher Kalender, Bezeichnungen der Rollen
    │  ├─ context/              CalendarsProvider (verfügbare Kalender, aktiver Kalender, verlassen), liegt in App.tsx
    │  ├─ hooks/                useCalendars

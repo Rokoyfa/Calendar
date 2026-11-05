@@ -5,10 +5,12 @@ import type { Preferences } from '../../../utils/preferences.ts'
 
 export type { DateRange }
 
+export type EventQuery = DateRange & { calendarIds: readonly string[] }
+
 export interface EventRepository {
-  list(range: DateRange): Promise<CalendarEvent[]>
+  list(query: EventQuery): Promise<CalendarEvent[]>
   listSeries(seriesId: string): Promise<CalendarEvent[]>
-  create(input: EventInput): Promise<CalendarEvent>
+  create(calendarId: string, input: EventInput): Promise<CalendarEvent>
   update(id: string, input: EventInput): Promise<CalendarEvent>
   remove(id: string): Promise<void>
 }

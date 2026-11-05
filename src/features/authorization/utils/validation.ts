@@ -1,12 +1,11 @@
-import type { FieldErrors } from '../../../utils/validation.ts'
+import { validateEmail, type FieldErrors } from '../../../utils/validation.ts'
 import type { AccountDeletionInput, LoginInput, PasswordResetRequestInput, ProfileInput, RegisterInput } from '../types/auth.ts'
 
+export { EMAIL_MAX_LENGTH, normalizeEmail } from '../../../utils/validation.ts'
+
 export const NAME_MAX_LENGTH = 80
-export const EMAIL_MAX_LENGTH = 254
 export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 128
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export type NewPasswordValues = {
   password: string
@@ -19,17 +18,9 @@ export type PasswordChangeFormValues = NewPasswordValues & {
   currentPassword: string
 }
 
-export const normalizeEmail = (email: string) => email.trim().toLowerCase()
-
 const validateName = (name: string) => {
   if (!name) return 'Bitte einen Namen eingeben.'
   if (name.length > NAME_MAX_LENGTH) return `Der Name darf höchstens ${NAME_MAX_LENGTH} Zeichen lang sein.`
-  return undefined
-}
-
-const validateEmail = (email: string) => {
-  if (!email) return 'Bitte eine E-Mail-Adresse eingeben.'
-  if (email.length > EMAIL_MAX_LENGTH || !EMAIL_PATTERN.test(email)) return 'Bitte eine gültige E-Mail-Adresse eingeben.'
   return undefined
 }
 

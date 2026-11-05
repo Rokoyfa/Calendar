@@ -1,3 +1,4 @@
+import { PERSONAL_CALENDAR_ID } from '../../../config/calendars.ts'
 import { NO_SERIES_LINK, toEventInput, type CalendarEvent } from '../../../utils/event.ts'
 import type { EventRepository } from '../types/storage.ts'
 
@@ -9,7 +10,7 @@ export async function copyEvents(events: readonly CalendarEvent[], target: Event
 
   for (const event of ordered) {
     const seriesId = event.seriesId === null ? undefined : newIds.get(event.seriesId)
-    const created = await target.create({
+    const created = await target.create(PERSONAL_CALENDAR_ID, {
       ...toEventInput(event),
       ...(seriesId ? { seriesId, originalDate: event.originalDate } : NO_SERIES_LINK),
     })

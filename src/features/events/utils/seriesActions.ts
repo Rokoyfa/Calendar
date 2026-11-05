@@ -61,11 +61,11 @@ export const updateOccurrence = (
     plain: () => repository.update(series.id, input),
     single: async () => {
       await repository.update(series.id, excludeOccurrence(series, occurrenceDate))
-      await repository.create(detachOccurrence(series, occurrenceDate, input))
+      await repository.create(series.calendarId, detachOccurrence(series, occurrenceDate, input))
     },
     following: async (detached) => {
       await repository.update(series.id, truncateSeries(series, occurrenceDate))
-      const created = await repository.create(continueSeries(series, occurrenceDate, input))
+      const created = await repository.create(series.calendarId, continueSeries(series, occurrenceDate, input))
       await relinkAll(
         detached.filter((event) => isDetachedFrom(event, occurrenceDate)),
         created.recurrence ? created.id : null,
@@ -85,8 +85,7 @@ export const deleteOccurrence = (
   occurrenceDate: string,
   scope: EditScope,
 ) => {
-  const removeAll = (events: readonly CalendarEvent[]) =>
-    forEachInOrder(events, (event) => repository.remove(event.id))
+  const removeAll = (events: readonly CalendarEvent[]) => forEachInOrder(events, (event) => repository.remove(event.id))
 
   return applyScope(repository, series, occurrenceDate, scope, {
     plain: () => repository.remove(series.id),

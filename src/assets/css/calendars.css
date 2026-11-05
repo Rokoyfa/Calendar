@@ -153,7 +153,182 @@
   height: 32px;
 }
 
+.calendarCardNew {
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  border-style: dashed;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.calendarCardNew:hover {
+  color: var(--color-blue);
+  border-color: var(--color-blue);
+}
+
+.wizard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 760px;
+  margin: var(--space-5) auto 0;
+}
+
+.wizardPanel {
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--color-grid);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.wizardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.wizardStepCount {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-blue);
+}
+
+.wizardTitle {
+  font-size: var(--font-size-lg);
+}
+
+.wizardActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-grid);
+}
+
+.wizardSplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  align-items: start;
+  gap: var(--space-5);
+}
+
+.inviteRow {
+  align-items: flex-end;
+}
+
+.inviteAdd {
+  flex: none;
+}
+
+.summaryList {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+}
+
+.summaryList dt {
+  color: var(--color-muted);
+}
+
+.summaryList dd {
+  overflow-wrap: anywhere;
+}
+
+.summaryInvitations {
+  list-style: none;
+}
+
+.stepper {
+  display: flex;
+  list-style: none;
+}
+
+.step {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.step + .step::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  right: 50%;
+  left: -50%;
+  height: 2px;
+  margin: 0 22px;
+  background-color: var(--color-grid);
+}
+
+.step--done + .step::before,
+.step--done + .step--current::before {
+  background-color: var(--color-blue);
+}
+
+.stepContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+button.stepContent:hover .stepLabel {
+  color: var(--color-blue);
+}
+
+.stepNumber {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--color-grid);
+  border-radius: var(--radius-round);
+  background-color: var(--color-bg);
+}
+
+.step--done .stepNumber {
+  border-color: var(--color-blue);
+  color: var(--color-blue);
+}
+
+.step--current .stepNumber {
+  border-color: var(--color-blue);
+  background-color: var(--color-blue);
+  color: var(--color-on-accent);
+}
+
+.step--current .stepContent {
+  color: var(--color-text);
+}
+
 @media (max-width: 700px) {
+  .wizard {
+    margin-top: var(--space-4);
+  }
+
+  .wizardPanel {
+    padding: var(--space-4);
+  }
+
+  .wizardSplit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inviteRow {
+    flex-wrap: wrap;
+  }
+
+  .step:not(.step--current) .stepLabel {
+    display: none;
+  }
+
   .calendarSettingCard {
     padding: var(--space-4);
   }
@@ -174,4 +349,38 @@
   .calendarPreviewMonth .miniDay {
     font-size: 9px;
   }
+}
+
+.activeCalendar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--event-color, var(--color-blue)) 45%, transparent);
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--event-color, var(--color-blue)) 12%, var(--color-bg));
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.activeCalendarDot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-round);
+  background-color: var(--event-color, var(--color-blue));
+}
+
+.activeCalendarName {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activeCalendarMeta {
+  flex: none;
+  color: var(--color-muted);
 }

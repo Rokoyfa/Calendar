@@ -9,6 +9,7 @@ import {
   ResetPasswordPage,
   VerifyEmailPage,
 } from './features/authorization/index.ts'
+import { CreateCalendarPage } from './features/calendars/index.ts'
 import { CalendarPage } from './pages/CalendarPage.tsx'
 import { SettingsPage } from './pages/SettingsPage.tsx'
 
@@ -18,9 +19,12 @@ const withAuth = (page: ReactNode) => <AuthGate access="any">{page}</AuthGate>
 
 const usersOnly = (page: ReactNode) => <AuthGate access="user">{page}</AuthGate>
 
+const accountsOnly = (page: ReactNode) => <AuthGate access="account">{page}</AuthGate>
+
 export const router = createBrowserRouter([
   { path: ROUTES.calendar, element: <CalendarPage /> },
   { path: ROUTES.settings, element: usersOnly(<SettingsPage />) },
+  { path: ROUTES.createCalendar, element: accountsOnly(<CreateCalendarPage />) },
   { path: ROUTES.login, element: guestOnly(<LoginPage />) },
   { path: ROUTES.register, element: guestOnly(<RegisterPage />) },
   { path: ROUTES.forgotPassword, element: guestOnly(<ForgotPasswordPage />) },

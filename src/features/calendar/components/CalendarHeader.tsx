@@ -15,6 +15,7 @@ type CalendarHeaderProps = {
   onNext: () => void
   onToday: () => void
   onCreateEvent: () => void
+  context?: ReactNode
   accessory?: ReactNode
 }
 
@@ -27,6 +28,7 @@ export function CalendarHeader({
   onNext,
   onToday,
   onCreateEvent,
+  context,
   accessory,
 }: CalendarHeaderProps) {
   const { previousLabel, nextLabel } = VIEW_DEFINITIONS[view]
@@ -44,10 +46,13 @@ export function CalendarHeader({
         </Button>
       </div>
 
-      <h1 className="headerTitle">
-        {title}
-        {subtitle && <span className="headerSubtitle">{subtitle}</span>}
-      </h1>
+      <div className="headerCenter">
+        <h1 className="headerTitle">
+          {title}
+          {subtitle && <span className="headerSubtitle">{subtitle}</span>}
+        </h1>
+        {context}
+      </div>
 
       <div className="headerActions">
         <SegmentedControl label="Ansicht" value={view} options={VIEW_OPTIONS} onChange={onViewChange} />

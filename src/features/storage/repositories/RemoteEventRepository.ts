@@ -1,6 +1,6 @@
 import { createApiClient, encodePathSegment, type ApiClient, type QueryParams } from '../../../utils/api.ts'
 import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
-import type { DateRange, EventRepository } from '../types/storage.ts'
+import type { EventQuery, EventRepository } from '../types/storage.ts'
 
 type RemoteEventRepositoryOptions = {
   timeoutMs?: number
@@ -17,16 +17,16 @@ export class RemoteEventRepository implements EventRepository {
     this.#api = createApiClient({ baseUrl, timeoutMs, getAccessToken, onUnauthorized })
   }
 
-  list(range: DateRange) {
-    return this.#query(range)
+  list({ from, to, calendarIds }: EventQuery) {
+    return this.#query({ from, to, calendarId: calendarIds })
   }
 
   listSeries(seriesId: string) {
     return this.#query({ seriesId })
   }
 
-  create(input: EventInput) {
-    return this.#api.post<CalendarEvent>(EVENTS_PATH, input)
+  create(calendarId: string, input: EventInput) {
+    return this.#api.post<CalendarEvent>(EVENTS_PATH, { ...input, calendarId })
   }
 
   update(id: string, input: EventInput) {

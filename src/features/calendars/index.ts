@@ -1,6 +1,8 @@
 export { CalendarsProvider } from './context/CalendarsProvider.tsx'
 export { useCalendars } from './hooks/useCalendars.ts'
 export { CalendarSettings } from './components/CalendarSettings.tsx'
+export { CreateCalendarPage } from './components/create/CreateCalendarPage.tsx'
 export { CalendarSwitcher } from './components/CalendarSwitcher.tsx'
+export { ActiveCalendarIndicator } from './components/ActiveCalendarIndicator.tsx'
 export { getVisibleCalendarIds, isPersonalCalendar } from './utils/permissions.ts'
 export type { CalendarKind, CalendarSummary, TeamRole } from './types/calendar.ts'
