@@ -31,6 +31,7 @@ const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = 
 type CalendarProps = {
   calendarIds: readonly string[]
   targetCalendarId: string
+  canCreate?: boolean
   initialView?: CalendarView
   headerContext?: ReactNode
   headerAccessory?: ReactNode
@@ -39,6 +40,7 @@ type CalendarProps = {
 export function Calendar({
   calendarIds,
   targetCalendarId,
+  canCreate = true,
   initialView,
   headerContext,
   headerAccessory,
@@ -61,9 +63,12 @@ export function Calendar({
 
   useArrowKeyNavigation({ onPrevious: previous, onNext: next })
 
-  const openCreate = useCallback((date: string, hour: number) => {
-    setEditor({ initialValue: createEventInput(date, hour), occurrence: null })
-  }, [])
+  const openCreate = useCallback(
+    (date: string, hour: number) => {
+      if (canCreate) setEditor({ initialValue: createEventInput(date, hour), occurrence: null })
+    },
+    [canCreate],
+  )
 
   const openEdit = useCallback((occurrence: EventOccurrence) => {
     setEditor({ initialValue: toEventInput(occurrence), occurrence })
@@ -95,7 +100,7 @@ export function Calendar({
         onPrevious={previous}
         onNext={next}
         onToday={goToToday}
-        onCreateEvent={() => openCreate(view === 'day' ? anchor : today, now.getHours())}
+        onCreateEvent={canCreate ? () => openCreate(view === 'day' ? anchor : today, now.getHours()) : undefined}
         context={headerContext}
         accessory={headerAccessory}
       />

@@ -45,7 +45,7 @@ function CalendarCard({ calendar, isActive, onSelect }: CalendarCardProps) {
 }
 
 function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
-  const { calendars, activeCalendar, selectCalendar } = useCalendars()
+  const { calendars, invitations, activeCalendar, selectCalendar } = useCalendars()
   const personal = calendars.filter(isPersonalCalendar)
   const teams = calendars.filter((calendar) => !isPersonalCalendar(calendar))
 
@@ -73,6 +73,16 @@ function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
           <h3 className="calendarGroupTitle">Persönlich</h3>
           {renderCards(personal)}
         </section>
+        {invitations.length > 0 && (
+          <p className="formHint">
+            {invitations.length === 1
+              ? 'Du hast eine offene Einladung.'
+              : `Du hast ${invitations.length} offene Einladungen.`}{' '}
+            <Link to={`${ROUTES.settings}?tab=calendars`} onClick={onClose}>
+              Ansehen
+            </Link>
+          </p>
+        )}
         <section className="calendarGroup">
           <h3 className="calendarGroupTitle">Teams</h3>
           {teams.length === 0 && (

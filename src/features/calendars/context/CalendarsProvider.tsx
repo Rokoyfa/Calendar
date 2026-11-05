@@ -1,46 +1,85 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
+import type { StorageConfig } from '../../storage/index.ts'
 import { PERSONAL_CALENDAR } from '../constants/calendars.ts'
-import type { CalendarDraft, CalendarsContextValue, CalendarSummary } from '../types/calendar.ts'
+import { createCalendarRepository } from '../repositories/createCalendarRepository.ts'
+import type { CalendarDraft, CalendarsContextValue, CalendarSummary, PendingInvitation } from '../types/calendar.ts'
 import { normalizeDraft } from '../utils/draft.ts'
-import { canLeaveCalendar, getVisibleCalendarIds, isPersonalCalendar } from '../utils/permissions.ts'
+import { getVisibleCalendarIds, isPersonalCalendar } from '../utils/permissions.ts'
 import { CalendarsContext } from './CalendarsContext.ts'
 
-const INITIAL_CALENDARS: readonly CalendarSummary[] = [PERSONAL_CALENDAR]
+const INITIAL_CALENDARS: CalendarSummary[] = [PERSONAL_CALENDAR]
+const NO_INVITATIONS: PendingInvitation[] = []
 
-export function CalendarsProvider({ children }: { children: ReactNode }) {
-  const [calendars, setCalendars] = useState(INITIAL_CALENDARS)
-  const [activeId, setActiveId] = useState(PERSONAL_CALENDAR.id)
-  const activeCalendar = calendars.find((calendar) => calendar.id === activeId) ?? PERSONAL_CALENDAR
+type CalendarsProviderProps = {
+  config: StorageConfig
+  children: ReactNode
+}
+
+export function CalendarsProvider({ config, children }: CalendarsProviderProps) {
+  const repository = useMemo(() => createCalendarRepository(config), [config])
+  const loadCalendars = useCallback(() => repository.list(), [repository])
+  const loadInvitations = useCallback(() => repository.listInvitations(), [repository])
+  const { data: calendars, error, update: updateCalendars } = useAsyncResource(loadCalendars, INITIAL_CALENDARS)
+  const { data: invitations, update: updateInvitations } = useAsyncResource(loadInvitations, NO_INVITATIONS)
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  const personalCalendar = calendars.find(isPersonalCalendar) ?? PERSONAL_CALENDAR
+  const activeCalendar = calendars.find((calendar) => calendar.id === activeId) ?? personalCalendar
 
   const selectCalendar = useCallback((id: string) => setActiveId(id), [])
 
-  const createCalendar = useCallback(async (draft: CalendarDraft) => {
-    const { name, description, color } = normalizeDraft(draft)
-    const calendar: CalendarSummary = {
-      id: crypto.randomUUID(),
-      name,
-      color,
-      kind: 'team',
-      teamName: name,
-      description,
-      role: 'owner',
-      showInPersonal: true,
-    }
-    setCalendars((current) => [...current, calendar])
-    return calendar
-  }, [])
+  const replaceCalendar = useCallback(
+    (changed: CalendarSummary) =>
+      updateCalendars((current) => current.map((calendar) => (calendar.id === changed.id ? changed : calendar))),
+    [updateCalendars],
+  )
 
-  const leaveCalendar = useCallback(async (id: string) => {
-    setCalendars((current) => current.filter((calendar) => calendar.id !== id || !canLeaveCalendar(calendar)))
-  }, [])
+  const createCalendar = useCallback(
+    async (draft: CalendarDraft) => {
+      const calendar = await repository.create(normalizeDraft(draft))
+      updateCalendars((current) => [...current, calendar])
+      return calendar
+    },
+    [repository, updateCalendars],
+  )
 
-  const setShowInPersonal = useCallback(async (id: string, showInPersonal: boolean) => {
-    setCalendars((current) =>
-      current.map((calendar) =>
-        calendar.id === id && !isPersonalCalendar(calendar) ? { ...calendar, showInPersonal } : calendar,
-      ),
-    )
-  }, [])
+  const leaveCalendar = useCallback(
+    async (id: string) => {
+      const calendar = calendars.find((entry) => entry.id === id)
+      if (!calendar || isPersonalCalendar(calendar)) return
+      await repository.leave(calendar.teamId)
+      updateCalendars((current) => current.filter((entry) => entry.teamId !== calendar.teamId))
+    },
+    [calendars, repository, updateCalendars],
+  )
+
+  const setShowInPersonal = useCallback(
+    async (id: string, showInPersonal: boolean) => {
+      replaceCalendar(await repository.setShowInPersonal(id, showInPersonal))
+    },
+    [repository, replaceCalendar],
+  )
+
+  const acceptInvitation = useCallback(
+    async (id: string) => {
+      const added = await repository.acceptInvitation(id)
+      updateCalendars((current) => [
+        ...current.filter((calendar) => !added.some(({ id }) => id === calendar.id)),
+        ...added,
+      ])
+      updateInvitations((current) => current.filter((invitation) => invitation.id !== id))
+    },
+    [repository, updateCalendars, updateInvitations],
+  )
+
+  const declineInvitation = useCallback(
+    async (id: string) => {
+      await repository.declineInvitation(id)
+      updateInvitations((current) => current.filter((invitation) => invitation.id !== id))
+    },
+    [repository, updateInvitations],
+  )
 
   const visibleCalendarIds = useMemo(
     () => getVisibleCalendarIds(calendars, activeCalendar),
@@ -50,14 +89,30 @@ export function CalendarsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CalendarsContextValue>(
     () => ({
       calendars,
+      invitations,
+      error,
       activeCalendar,
       visibleCalendarIds,
       selectCalendar,
       createCalendar,
       leaveCalendar,
       setShowInPersonal,
+      acceptInvitation,
+      declineInvitation,
     }),
-    [calendars, activeCalendar, visibleCalendarIds, selectCalendar, createCalendar, leaveCalendar, setShowInPersonal],
+    [
+      calendars,
+      invitations,
+      error,
+      activeCalendar,
+      visibleCalendarIds,
+      selectCalendar,
+      createCalendar,
+      leaveCalendar,
+      setShowInPersonal,
+      acceptInvitation,
+      declineInvitation,
+    ],
   )
 
   return <CalendarsContext value={value}>{children}</CalendarsContext>

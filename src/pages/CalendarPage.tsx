@@ -3,7 +3,7 @@ import { SettingsIcon } from '../components/Icons.tsx'
 import { ROUTES } from '../config/routes.ts'
 import { AccountMenu, EmailVerificationBanner, useAuth } from '../features/authorization/index.ts'
 import { Calendar } from '../features/calendar/index.ts'
-import { ActiveCalendarIndicator, CalendarSwitcher, useCalendars } from '../features/calendars/index.ts'
+import { ActiveCalendarIndicator, CalendarSwitcher, hasPermission, useCalendars } from '../features/calendars/index.ts'
 import { usePreferences } from '../features/preferences/index.ts'
 import { LocalImportPrompt } from '../features/storage/index.ts'
 import { getStartView, MOBILE_MEDIA_QUERY } from '../utils/preferences.ts'
@@ -20,6 +20,7 @@ export function CalendarPage() {
       <Calendar
         calendarIds={visibleCalendarIds}
         targetCalendarId={activeCalendar.id}
+        canCreate={hasPermission(activeCalendar, 'create_entry')}
         initialView={initialView}
         headerContext={<ActiveCalendarIndicator />}
         headerAccessory={

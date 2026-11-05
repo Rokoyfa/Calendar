@@ -14,7 +14,7 @@ type CalendarHeaderProps = {
   onPrevious: () => void
   onNext: () => void
   onToday: () => void
-  onCreateEvent: () => void
+  onCreateEvent?: () => void
   context?: ReactNode
   accessory?: ReactNode
 }
@@ -57,9 +57,11 @@ export function CalendarHeader({
       <div className="headerActions">
         <SegmentedControl label="Ansicht" value={view} options={VIEW_OPTIONS} onChange={onViewChange} />
         <span className="headerCreate">
-          <IconButton label="Neuer Termin" onClick={onCreateEvent}>
-            <PlusIcon size={16} />
-          </IconButton>
+          {onCreateEvent && (
+            <IconButton label="Neuer Termin" onClick={onCreateEvent}>
+              <PlusIcon size={16} />
+            </IconButton>
+          )}
           {accessory}
         </span>
       </div>

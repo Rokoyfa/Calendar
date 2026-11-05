@@ -137,7 +137,7 @@ Eingeschaltet über `VITE_FEATURE_AUTH=true`. Ist der Schalter aus, gibt es kein
 - **Seiten:** `/login` und `/register` sind eigene Seiten (React Router). Nach dem Absenden geht es zurück zur vorherigen Seite des Kalenders. Erlaubt sind dabei nur interne Pfade, Weiterleitungen auf fremde Seiten werden ignoriert. Angemeldet führen beide Seiten direkt zum Kalender.
 - **Angemeldet** zeigt die Kopfzeile einen runden Button mit dem Anfangsbuchstaben. Er öffnet ein kleines Menü mit Name, E-Mail, **Kalender wechseln**, **Einstellungen** und **Abmelden**. Ein Klick auf einen Eintrag schließt das Menü.
 - **Aktueller Kalender:** Unter dem Monatstitel zeigt eine farbige Plakette, welcher Kalender gerade offen ist: Farbpunkt, Name und „Nur für dich“ bzw. „Team · Rolle“. Sie ist nur Anzeige; gewechselt wird über das Profilmenü.
-- **Kalender wechseln** öffnet ein großes Fenster mit dem persönlichen Kalender und den Team-Kalendern als Kacheln: oben eine Vorschau des aktuellen Monats in der Kalenderfarbe, darunter Name, Team und die eigene Rolle. Der aktive Kalender ist blau umrandet mit Haken. Auf dem Handy zwei Kacheln nebeneinander. Vorbereitet für den Team-Modus: Bisher gibt es nur „Persönlich“, unter „Teams“ steht ein Hinweis. Die Liste kommt aus `features/calendars` (`CalendarsProvider`, `useCalendars`) und soll später aus `GET /calendars` bzw. der Sicht `user_calendars` gefüllt werden.
+- **Kalender wechseln** öffnet ein großes Fenster mit dem persönlichen Kalender und den Team-Kalendern als Kacheln: oben eine Vorschau des aktuellen Monats in der Kalenderfarbe, darunter Name, Team und die eigene Rolle. Der aktive Kalender ist blau umrandet mit Haken. Auf dem Handy zwei Kacheln nebeneinander. Gibt es offene Einladungen, steht darüber ein Hinweis mit Link zu den Einstellungen. Die Liste kommt aus `features/calendars` (`CalendarsProvider`, `useCalendars`), angemeldet von `GET /calendars`, ohne Anmeldung nur „Persönlich“.
 - **Speicher je nach Sitzung:** Angemeldet werden Termine über die API geladen und gespeichert, abgemeldet wieder lokal. Der Wechsel passiert automatisch.
 - **Sitzung beim Start:** Die App fragt beim Laden `GET /auth/me` ab und zeigt bis zur Antwort kurz „Lädt …“, damit nicht erst lokale und dann Konto-Termine erscheinen.
 - **Abgelaufene Sitzung:** Antwortet die API bei einem Termin-Aufruf mit 401, gilt man als abgemeldet und sieht wieder die lokalen Termine.
@@ -190,7 +190,21 @@ Die Anmeldung läuft über ein **HttpOnly-Cookie**, das ausschließlich das Back
 
 Die Links in den E-Mails zeigen auf `/reset-password?token=…` und `/verify-email?token=…` der App.
 
-`User` ist `{ id: string, email: string, name: string, emailVerified: boolean }`. Alle `/events`-Aufrufe gelten für den angemeldeten Nutzer und antworten ohne gültige Sitzung mit `401`.
+`User` ist `{ id: string, email: string, name: string, emailVerified: boolean }`. Alle `/events`-, `/calendars`-, `/teams`- und `/invitations`-Aufrufe gelten für den angemeldeten Nutzer und antworten ohne gültige Sitzung mit `401`.
+
+**Kalender und Einladungen** (`RemoteCalendarRepository`):
+
+| Aufruf | Body | Antwort |
+| ------ | ---- | ------- |
+| `GET /calendars` | – | `CalendarSummary[]`, persönlicher Kalender zuerst |
+| `POST /calendars` | `{ name, description, color, invitations: [{ email, role }] }` | `201` mit `CalendarSummary` |
+| `PUT /calendars/:id/settings` | `{ showInPersonal }` | `200` mit `CalendarSummary` |
+| `DELETE /teams/:teamId/membership` | – | `204`, Team verlassen. `409` als letzter Owner. |
+| `GET /invitations` | – | offene Einladungen an die eigene E-Mail-Adresse |
+| `POST /invitations/:id/accept` | – | `200` mit den `CalendarSummary[]` des Teams |
+| `POST /invitations/:id/decline` | – | `204` |
+
+`CalendarSummary` ist `{ id, teamId, name, color, kind: 'personal' | 'team', teamName, description, role, showInPersonal, permissions }`. Weitere Endpunkte für Mitglieder, Rollen, weitere Kalender und Team-Verwaltung bietet das Test-Backend schon an (siehe dessen README), die Oberfläche dafür fehlt noch.
 
 Ohne eigene `message` vom Server zeigt die App passende Meldungen, z. B. bei `401` am Login „E-Mail-Adresse oder Passwort ist falsch.“, bei `409` an der Registrierung „Für diese E-Mail-Adresse gibt es bereits ein Konto.“ und bei `410` „Der Link ist ungültig oder abgelaufen.“. Liefert der Server `{ "message": "…" }`, wird diese Meldung angezeigt.
 
@@ -272,6 +286,8 @@ Jeder Termin gehört genau zu einem Kalender (`calendarId`). Geladen werden nur 
 - **Persönlicher Kalender offen:** die persönlichen Termine plus die Termine aller Team-Kalender, bei denen „Auch im persönlichen Kalender anzeigen“ an ist.
 - **Team-Kalender offen:** nur die Termine dieses Team-Kalenders. **Persönliche Termine erscheinen nie in einem Team-Kalender.**
 
+**Rechte:** Jeder Kalender bringt die Berechtigungen der eigenen Rolle mit (`permissions`, siehe Rollen-Tabelle im Datenbank-README). Fehlt `create_entry` (Betrachter), verschwindet der Plus-Button und ein Klick ins Raster legt nichts an. Bearbeiten und Löschen prüft der Server; ohne Recht erscheint seine Meldung im Dialog, z. B. „Du darfst diesen Termin nicht bearbeiten.“
+
 Neue Termine landen immer im gerade offenen Kalender. Beim Bearbeiten bleibt ein Termin in seinem Kalender, auch herausgelöste Termine und fortgesetzte Serien. Beim Abmelden oder Kontowechsel wird die Kalenderauswahl zurückgesetzt, damit nichts versehentlich in einen fremden Kalender geschrieben wird.
 
 ### Kalender erstellen
@@ -287,7 +303,7 @@ Die Erstellung läuft in Schritten, oben zeigt ein `Stepper` den Fortschritt. Er
 
 Danach ist der neue Kalender aktiv und man landet im Kalender. Der Ersteller ist Owner.
 
-Ohne Backend wird der Kalender nur in der Oberfläche angelegt und ist nach dem Neuladen weg. Einladungen werden noch nicht verschickt. Für das Backend fehlt in der Datenbank noch eine Spalte für die Beschreibung, z. B. `teams.description` oder `calendars.description`.
+Angelegt wird über `POST /calendars` mit Name, Beschreibung, Farbe und Einladungen. Der Server macht dich zum Owner und verschickt die Einladungen per E-Mail. Die Beschreibung liegt in der Datenbank in `teams.description` (Migration `003`).
 
 ### Einstellungen
 
@@ -297,7 +313,8 @@ Oben wechseln Tabs zwischen **Kalender**, **Darstellung** (Farbschema, Startansi
 
 Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, rechts die Einstellungen. Auf dem Handy untereinander.
 
-- **Kalender:** alle Kalender, auf die man Zugriff hat (persönlich und Teams), mit Farbe, Team und eigener Rolle. Bei Team-Kalendern legt ein Schalter fest, ob ihre Termine **auch im persönlichen Kalender** erscheinen (`showInPersonal`, Standard an). Team-Kalender lassen sich mit Bestätigung **verlassen**, außer man ist Owner. Der persönliche Kalender lässt sich nicht entfernen. Bisher gibt es nur „Persönlich“, die Teams kommen später vom Backend.
+- **Kalender:** alle Kalender, auf die man Zugriff hat (persönlich und Teams), mit Farbe, Team und eigener Rolle. Bei Team-Kalendern legt ein Schalter fest, ob ihre Termine **auch im persönlichen Kalender** erscheinen (`showInPersonal`, Standard an). Team-Kalender lassen sich mit Bestätigung **verlassen**, außer man ist Owner. Der persönliche Kalender lässt sich nicht entfernen. Schalter und Verlassen werden sofort auf dem Server gespeichert.
+- **Einladungen:** Offene Einladungen an die eigene E-Mail-Adresse stehen oben mit Team, Beschreibung, Rolle, Absender und Ablaufdatum. **Annehmen** nimmt den Kalender sofort in die Liste und in „Kalender wechseln“ auf, **Ablehnen** entfernt die Einladung.
 - **Farbschema:** Wie System, Hell oder Dunkel. Gesetzt über `data-theme` am `<html>`, die Farben kommen weiter aus `light-dark()`.
 - **Startansicht** getrennt für Computer/Tablet und Handy
 - **Eigene Farben** ansehen und entfernen. Termine mit dieser Farbe behalten sie.
@@ -500,11 +517,12 @@ src/
    │  └─ utils/                LocalStorageValue/LocalStorageList (localStorage lesen/schreiben), copyEvents (Termine samt Serien-Verknüpfung kopieren)
    ├─ calendars/               Kalenderauswahl (persönlich und Teams), vorbereitet für den Team-Modus
    │  ├─ components/           CalendarSwitcher (Button und Fenster), ActiveCalendarIndicator (Plakette im Kopf),
-   │  │                        CalendarPreview (Monatsvorschau),
+   │  │                        CalendarPreview (Monatsvorschau), InvitationList (offene Einladungen),
    │  │                        CalendarSettings (Liste in den Einstellungen, Verlassen)
    │  │  └─ create/            CreateCalendarPage mit den Schritten Details, Farbe, Mitglieder, Überprüfen
    │  ├─ constants/            Persönlicher Kalender, Bezeichnungen der Rollen
-   │  ├─ context/              CalendarsProvider (verfügbare Kalender, aktiver Kalender, verlassen), liegt in App.tsx
+   │  ├─ context/              CalendarsProvider (lädt Kalender und Einladungen, aktiver Kalender, verlassen), liegt in App.tsx
+   │  ├─ repositories/         LocalCalendarRepository (nur „Persönlich“), RemoteCalendarRepository (API)
    │  ├─ hooks/                useCalendars
    │  ├─ types/
    │  └─ utils/                Regeln: persönlich oder Team (`kind`), wer verlassen darf, welche Kalender gerade sichtbar sind

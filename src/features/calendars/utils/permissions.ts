@@ -1,4 +1,4 @@
-import type { CalendarSummary } from '../types/calendar.ts'
+import type { CalendarSummary, Permission } from '../types/calendar.ts'
 
 export const isPersonalCalendar = ({ kind }: CalendarSummary) => kind === 'personal'
 
@@ -9,3 +9,6 @@ export const getVisibleCalendarIds = (calendars: readonly CalendarSummary[], act
   isPersonalCalendar(active)
     ? calendars.filter((calendar) => isPersonalCalendar(calendar) || calendar.showInPersonal).map(({ id }) => id)
     : [active.id]
+
+export const hasPermission = (calendar: CalendarSummary, permission: Permission) =>
+  calendar.permissions.includes(permission)

@@ -4,13 +4,14 @@ import { ROUTES } from '../../../config/routes.ts'
 import { Modal } from '../../../components/Modal.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
 import { Switch } from '../../../components/Switch.tsx'
-import { ActionFeedback } from '../../../components/StatusMessage.tsx'
+import { ActionFeedback, ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { getEventColorAttributes } from '../../../utils/event.ts'
 import { ROLE_LABELS } from '../constants/calendars.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
 import { canLeaveCalendar, isPersonalCalendar } from '../utils/permissions.ts'
+import { InvitationList } from './InvitationList.tsx'
 
 type LeaveCalendarModalProps = {
   calendar: CalendarSummary
@@ -88,26 +89,30 @@ function CalendarRow({ calendar, onLeave }: { calendar: CalendarSummary; onLeave
 }
 
 export function CalendarSettings() {
-  const { calendars } = useCalendars()
+  const { calendars, error } = useCalendars()
   const [calendarToLeave, setCalendarToLeave] = useState<CalendarSummary | null>(null)
 
   return (
-    <PageSection
-      title="Kalender"
-      description="Alle Kalender, auf die du Zugriff hast, mit deiner Rolle. Bei Team-Kalendern legst du fest, ob ihre Termine auch in deinem persönlichen Kalender erscheinen. Verlassen kannst du sie, außer du bist Owner. Dann musst du die Leitung vorher übergeben."
-    >
-      <ul className="calendarSettingList">
-        {calendars.map((calendar) => (
-          <CalendarRow key={calendar.id} calendar={calendar} onLeave={() => setCalendarToLeave(calendar)} />
-        ))}
-      </ul>
-      {calendars.every(isPersonalCalendar) && (
-        <p className="emptyHint">Noch keine Team-Kalender. Erstelle einen oder tritt über eine Einladung bei.</p>
-      )}
-      <div className="formActions">
-        <ButtonLink to={ROUTES.createCalendar}>Kalender erstellen</ButtonLink>
-      </div>
-      {calendarToLeave && <LeaveCalendarModal calendar={calendarToLeave} onClose={() => setCalendarToLeave(null)} />}
-    </PageSection>
+    <>
+      <InvitationList />
+      <PageSection
+        title="Kalender"
+        description="Alle Kalender, auf die du Zugriff hast, mit deiner Rolle. Bei Team-Kalendern legst du fest, ob ihre Termine auch in deinem persönlichen Kalender erscheinen. Verlassen kannst du sie, außer du bist Owner. Dann musst du die Leitung vorher übergeben."
+      >
+        <ErrorMessage message={error} />
+        <ul className="calendarSettingList">
+          {calendars.map((calendar) => (
+            <CalendarRow key={calendar.id} calendar={calendar} onLeave={() => setCalendarToLeave(calendar)} />
+          ))}
+        </ul>
+        {calendars.every(isPersonalCalendar) && (
+          <p className="emptyHint">Noch keine Team-Kalender. Erstelle einen oder tritt über eine Einladung bei.</p>
+        )}
+        <div className="formActions">
+          <ButtonLink to={ROUTES.createCalendar}>Kalender erstellen</ButtonLink>
+        </div>
+        {calendarToLeave && <LeaveCalendarModal calendar={calendarToLeave} onClose={() => setCalendarToLeave(null)} />}
+      </PageSection>
+    </>
   )
 }

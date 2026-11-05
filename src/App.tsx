@@ -21,7 +21,9 @@ function SessionStorageProvider({ children }: { children: ReactNode }) {
   return (
     <StorageProvider config={config}>
       <PreferencesProvider>
-        <CalendarsProvider key={user?.id ?? 'guest'}>{children}</CalendarsProvider>
+        <CalendarsProvider key={user?.id ?? 'guest'} config={config}>
+          {children}
+        </CalendarsProvider>
       </PreferencesProvider>
     </StorageProvider>
   )

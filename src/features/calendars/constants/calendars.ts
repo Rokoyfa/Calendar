@@ -7,6 +7,7 @@ export const MAX_INVITATIONS = 50
 
 export const PERSONAL_CALENDAR: CalendarSummary = {
   id: PERSONAL_CALENDAR_ID,
+  teamId: PERSONAL_CALENDAR_ID,
   name: 'Persönlich',
   color: 'blue',
   kind: 'personal',
@@ -14,6 +15,15 @@ export const PERSONAL_CALENDAR: CalendarSummary = {
   description: '',
   role: 'owner',
   showInPersonal: true,
+  permissions: [
+    'read_calendar',
+    'manage_calendars',
+    'create_entry',
+    'update_own_entry',
+    'update_any_entry',
+    'delete_own_entry',
+    'delete_any_entry',
+  ],
 }
 
 export const EMPTY_CALENDAR_DRAFT: CalendarDraft = {

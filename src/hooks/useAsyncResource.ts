@@ -31,6 +31,10 @@ export function useAsyncResource<T>(load: () => Promise<T>, initialData: T, refr
 
   const reload = useCallback(() => setVersion((current) => current + 1), [])
   const setData = useCallback((data: T) => setState((previous) => ({ ...previous, data })), [])
+  const update = useCallback(
+    (change: (data: T) => T) => setState((previous) => ({ ...previous, data: change(previous.data) })),
+    [],
+  )
 
   const apply = useCallback(
     async (request: Promise<T>) => {
@@ -41,5 +45,5 @@ export function useAsyncResource<T>(load: () => Promise<T>, initialData: T, refr
     [setData],
   )
 
-  return { data: state.data, error: state.error, isLoading: state.source !== source, reload, setData, apply }
+  return { data: state.data, error: state.error, isLoading: state.source !== source, reload, setData, update, apply }
 }
