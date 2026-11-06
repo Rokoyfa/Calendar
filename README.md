@@ -200,6 +200,7 @@ Die Links in den E-Mails zeigen auf `/reset-password?token=…` und `/verify-ema
 | `POST /calendars` | `{ name, description, color, invitations: [{ email, role }] }` | `201` mit `CalendarSummary` |
 | `PUT /calendars/:id/settings` | `{ showInPersonal }` | `200` mit `CalendarSummary` |
 | `DELETE /teams/:teamId/membership` | – | `204`, Team verlassen. `409` als letzter Owner. |
+| `POST /teams/:teamId/transfer-ownership` | `{ userId }` | `200` mit den `CalendarSummary[]` des Teams, nur für Owner |
 | `GET /invitations` | – | offene Einladungen an die eigene E-Mail-Adresse |
 | `POST /invitations/:id/accept` | – | `200` mit den `CalendarSummary[]` des Teams |
 | `POST /invitations/:id/decline` | – | `204` |
@@ -314,7 +315,9 @@ Eigene Seite `/calendars/:calendarId/settings` je Kalender (nur angemeldet), err
 | **Anzeige** | „Termine auch im persönlichen Kalender anzeigen“ | jeder für sich |
 | **Mitglieder** | Name, E-Mail, Rolle; Rolle wechseln und Entfernen mit Bestätigung | `manage_members`, nur bei Rollen unterhalb der eigenen. Owner dürfen alles, auch andere zu Owner machen. |
 | **Einladungen** | einladen mit E-Mail und Rolle, offene Einladungen mit Ablaufdatum, zurückziehen | `invite_members`, nur Rollen unterhalb der eigenen. Mitglieder, doppelte Einladungen und die eigene Adresse werden abgefangen. |
-| **Gefahrenbereich** | Kalender verlassen, Team löschen (mit Bestätigung, danach zurück zu den Einstellungen) | Verlassen jeder außer dem letzten Owner, Löschen nur mit `delete_team` (Owner) |
+| **Gefahrenbereich** | Leitung übertragen, Kalender verlassen, Team löschen (mit Bestätigung, nach Verlassen oder Löschen zurück zu den Einstellungen) | Übertragen nur Owner, Verlassen jeder außer dem letzten Owner, Löschen nur mit `delete_team` (Owner) |
+
+**Leitung übertragen:** Ein Fenster listet alle Mitglieder außer dir und bestehenden Owners, oben mit Suche nach Name oder E-Mail. Nach Auswahl und „Bestätigen“ folgt eine zweite Rückfrage, die den neuen Owner nennt und sagt, was sich ändert. Erst „Endgültig übertragen“ ruft `POST /teams/:teamId/transfer-ownership` auf: Das Mitglied wird Owner, du wirst Administrator, beides in einem Schritt. Danach verschwinden „Leitung übertragen“ und „Team löschen“, Verlassen ist möglich.
 
 Der persönliche Kalender hat keine Tabs, nur **Allgemein** (Name und Farbe) und einen Hinweis, dass er sich nicht teilen oder löschen lässt. Ohne Zugriff (z. B. nach dem Entfernen) zeigt die Seite „Diesen Kalender gibt es nicht, oder du hast keinen Zugriff mehr.“
 

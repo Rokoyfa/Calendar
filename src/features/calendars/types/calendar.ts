@@ -84,6 +84,7 @@ export interface CalendarRepository {
   updateCalendar(calendarId: string, changes: CalendarChanges): Promise<CalendarSummary>
   updateTeam(teamId: string, changes: TeamChanges): Promise<CalendarSummary[]>
   deleteTeam(teamId: string): Promise<void>
+  transferOwnership(teamId: string, userId: string): Promise<CalendarSummary[]>
   listMembers(teamId: string): Promise<TeamMember[]>
   changeMemberRole(teamId: string, userId: string, role: TeamRole): Promise<TeamMember>
   removeMember(teamId: string, userId: string): Promise<void>
@@ -109,4 +110,5 @@ export type CalendarsContextValue = {
   updateCalendar: (calendar: CalendarSummary, changes: CalendarChanges) => Promise<void>
   updateTeam: (calendar: CalendarSummary, changes: TeamChanges) => Promise<void>
   deleteTeam: (calendar: CalendarSummary) => Promise<void>
+  transferOwnership: (calendar: CalendarSummary, userId: string) => Promise<void>
 }

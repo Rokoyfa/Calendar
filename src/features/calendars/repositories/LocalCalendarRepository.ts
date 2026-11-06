@@ -24,6 +24,7 @@ export class LocalCalendarRepository implements CalendarRepository {
   updateCalendar = requireAccount
   updateTeam = requireAccount
   deleteTeam = requireAccount
+  transferOwnership = requireAccount
   listMembers = requireAccount
   changeMemberRole = requireAccount
   removeMember = requireAccount

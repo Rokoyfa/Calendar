@@ -100,12 +100,24 @@ export function CalendarsProvider({ config, children }: CalendarsProviderProps) 
     [repository, replaceCalendar],
   )
 
+  const replaceCalendars = useCallback(
+    (changed: readonly CalendarSummary[]) =>
+      updateCalendars((current) => current.map((entry) => changed.find(({ id }) => id === entry.id) ?? entry)),
+    [updateCalendars],
+  )
+
   const updateTeam = useCallback(
     async (calendar: CalendarSummary, changes: TeamChanges) => {
-      const changed = await repository.updateTeam(calendar.teamId, changes)
-      updateCalendars((current) => current.map((entry) => changed.find(({ id }) => id === entry.id) ?? entry))
+      replaceCalendars(await repository.updateTeam(calendar.teamId, changes))
     },
-    [repository, updateCalendars],
+    [repository, replaceCalendars],
+  )
+
+  const transferOwnership = useCallback(
+    async (calendar: CalendarSummary, userId: string) => {
+      replaceCalendars(await repository.transferOwnership(calendar.teamId, userId))
+    },
+    [repository, replaceCalendars],
   )
 
   const deleteTeam = useCallback(
@@ -139,6 +151,7 @@ export function CalendarsProvider({ config, children }: CalendarsProviderProps) 
       updateCalendar,
       updateTeam,
       deleteTeam,
+      transferOwnership,
     }),
     [
       repository,
@@ -157,6 +170,7 @@ export function CalendarsProvider({ config, children }: CalendarsProviderProps) 
       updateCalendar,
       updateTeam,
       deleteTeam,
+      transferOwnership,
     ],
   )
 

@@ -59,6 +59,7 @@ export function useTeam(calendar: CalendarSummary) {
   )
 
   return {
+    reloadMembers: members.reload,
     members: members.data,
     membersError: members.error,
     invitations: invitations.data,

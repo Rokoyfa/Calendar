@@ -90,7 +90,14 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
     {
       value: 'danger',
       label: 'Gefahrenbereich',
-      content: <DangerSection calendar={calendar} members={team.members} />,
+      content: (
+        <DangerSection
+          calendar={calendar}
+          members={team.members}
+          currentUserId={user?.id ?? null}
+          onOwnershipTransferred={team.reloadMembers}
+        />
+      ),
     },
   ]
   const [active, select] = useTabParam(tabs)

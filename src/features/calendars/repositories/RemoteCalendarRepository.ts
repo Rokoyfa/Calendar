@@ -48,6 +48,10 @@ export class RemoteCalendarRepository implements CalendarRepository {
     return this.#api.delete(teamPath(teamId))
   }
 
+  transferOwnership(teamId: string, userId: string) {
+    return this.#api.post<CalendarSummary[]>(teamPath(teamId, 'transfer-ownership'), { userId })
+  }
+
   listMembers(teamId: string) {
     return this.#api.get<TeamMember[]>(teamPath(teamId, 'members'))
   }
