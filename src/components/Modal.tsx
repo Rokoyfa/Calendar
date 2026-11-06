@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useRootElement } from '../context/RootElementContext.ts'
 import { classNames } from '../utils/classNames.ts'
+import { useI18n } from '../i18n/index.ts'
 
 type ModalProps = {
   title: string
@@ -12,6 +13,7 @@ type ModalProps = {
 }
 
 export function Modal({ title, onClose, children, variant = 'default', size = 'default' }: ModalProps) {
+  const { m } = useI18n()
   const root = useRootElement()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
@@ -42,7 +44,7 @@ export function Modal({ title, onClose, children, variant = 'default', size = 'd
           <h2 id={titleId} className="modalTitle">
             {title}
           </h2>
-          <button type="button" className="closeButton" aria-label="Schließen" onClick={onClose}>
+          <button type="button" className="closeButton" aria-label={m.common.close} onClick={onClose}>
             ×
           </button>
         </header>

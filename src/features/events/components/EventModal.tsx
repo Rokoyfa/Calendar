@@ -1,4 +1,5 @@
 import { useState, type SubmitEventHandler } from 'react'
+import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
 import { DateTimeField } from '../../../components/DateTimeField.tsx'
 import { Form } from '../../../components/Form.tsx'
@@ -41,12 +42,9 @@ type PendingSave = {
   options: EditScope[]
 }
 
-const TITLES: Record<EventModalMode, string> = {
-  create: 'Neuer Termin',
-  edit: 'Termin bearbeiten',
-}
-
 export function EventModal({ initialValue, occurrence = null, notice, onSave, onDelete, onClose }: EventModalProps) {
+  const i18n = useI18n()
+  const { m } = i18n
   const mode: EventModalMode = occurrence ? 'edit' : 'create'
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
@@ -77,7 +75,7 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
   const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
     const input = normalizeEventInput(values)
-    const nextErrors = validateEventInput(input)
+    const nextErrors = validateEventInput(input, m)
     setErrors(nextErrors)
     if (hasValidationErrors(nextErrors)) return
 
@@ -94,11 +92,11 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
 
   return (
     <>
-      <Modal title={TITLES[mode]} onClose={onClose}>
+      <Modal title={mode === 'create' ? m.events.createTitle : m.events.editTitle} onClose={onClose}>
         <Form className="eventForm" onSubmit={handleSubmit}>
           {notice && <p className="formHint eventNotice">{notice}</p>}
           <TextField
-            label="Titel"
+            label={m.events.title}
             name="title"
             autoComplete="off"
             maxLength={EVENT_TITLE_MAX_LENGTH}
@@ -110,8 +108,8 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
 
           <DateTimeField
             name="start"
-            dateLabel="Startdatum"
-            timeLabel="Beginn"
+            dateLabel={m.events.startDate}
+            timeLabel={m.events.startTime}
             date={values.startDate}
             time={values.start}
             dateError={errors.startDate}
@@ -122,8 +120,8 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
 
           <DateTimeField
             name="end"
-            dateLabel="Enddatum"
-            timeLabel="Ende"
+            dateLabel={m.events.endDate}
+            timeLabel={m.events.endTime}
             date={values.endDate}
             time={values.end}
             minDate={values.startDate}
@@ -140,7 +138,7 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
             onChange={setRecurrence}
           />
 
-          <FormField label="Beschreibung" error={errors.description}>
+          <FormField label={m.events.description} error={errors.description}>
             <textarea
               className="textarea eventDescription"
               name="description"
@@ -155,16 +153,16 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
           <ErrorMessage message={submitError} />
 
           <div className="modalActions">
-            <Button type="submit" isPending={isPending} pendingLabel="Speichert …">
-              Speichern
+            <Button type="submit" isPending={isPending} pendingLabel={m.common.saving}>
+              {m.common.save}
             </Button>
             {onDelete && (
               <Button variant="danger" disabled={isPending} onClick={onDelete}>
-                Löschen
+                {m.common.delete}
               </Button>
             )}
             <Button variant="secondary" onClick={onClose}>
-              Abbrechen
+              {m.common.cancel}
             </Button>
           </div>
         </Form>

@@ -1,8 +1,9 @@
+import { useI18n } from '../../../i18n/index.ts'
 import { ChoiceChip } from '../../../components/ChoiceChip.tsx'
 import { FormField } from '../../../components/FormField.tsx'
 import { NumberField } from '../../../components/NumberField.tsx'
 import { SelectField, type SelectOption } from '../../../components/SelectField.tsx'
-import { addMonthsToISODate, isISODate, WEEKDAY_SHORT_LABELS } from '../../../utils/date.ts'
+import { addMonthsToISODate, isISODate } from '../../../utils/date.ts'
 import { isIntegerInRange } from '../../../utils/number.ts'
 import {
   createRecurrence,
@@ -13,9 +14,7 @@ import {
   normalizeWeekdays,
   RECURRENCE_COUNT_MAX,
   RECURRENCE_FREQUENCIES,
-  RECURRENCE_FREQUENCY_LABELS,
   RECURRENCE_INTERVAL_MAX,
-  RECURRENCE_UNIT_LABELS,
   type Recurrence,
   type RecurrenceFrequency,
   type RecurrenceValidationErrors,
@@ -33,17 +32,6 @@ type EndMode = 'never' | 'date' | 'count'
 const DEFAULT_COUNT = 10
 const DEFAULT_UNTIL_MONTHS = 3
 
-const FREQUENCY_OPTIONS: SelectOption<RecurrenceFrequency | 'never'>[] = [
-  { value: 'never', label: 'Nie' },
-  ...RECURRENCE_FREQUENCIES.map((frequency) => ({ value: frequency, label: RECURRENCE_FREQUENCY_LABELS[frequency] })),
-]
-
-const END_OPTIONS: SelectOption<EndMode>[] = [
-  { value: 'never', label: 'Nie' },
-  { value: 'date', label: 'Am Datum' },
-  { value: 'count', label: 'Nach Anzahl' },
-]
-
 const getEndMode = ({ until, count }: Recurrence): EndMode =>
   until !== null ? 'date' : count !== null ? 'count' : 'never'
 
@@ -56,7 +44,20 @@ const canSummarize = (recurrence: Recurrence, startDate: string, errors: Recurre
   (recurrence.count === null || isIntegerInRange(recurrence.count, 1))
 
 export function RecurrenceFields({ value, startDate, errors, onChange }: RecurrenceFieldsProps) {
+  const i18n = useI18n()
+  const { m, format } = i18n
   const hasValidStart = isISODate(startDate)
+
+  const frequencyOptions: SelectOption<RecurrenceFrequency | 'never'>[] = [
+    { value: 'never', label: m.events.never },
+    ...RECURRENCE_FREQUENCIES.map((frequency) => ({ value: frequency, label: m.recurrence.frequency[frequency] })),
+  ]
+
+  const endOptions: SelectOption<EndMode>[] = [
+    { value: 'never', label: m.events.never },
+    { value: 'date', label: m.events.endsOnDate },
+    { value: 'count', label: m.events.endsAfterCount },
+  ]
 
   const changeFrequency = (frequency: RecurrenceFrequency | 'never') => {
     if (frequency === 'never') onChange(null)
@@ -81,22 +82,22 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
     onChange({ ...value, weekdays })
   }
 
-  const unit = value ? RECURRENCE_UNIT_LABELS[value.frequency] : null
+  const unit = value ? m.recurrence.units[value.frequency] : null
   const endMode = value ? getEndMode(value) : 'never'
 
   return (
     <div className="formSection">
       <div className="formRow">
         <SelectField
-          label="Wiederholen"
+          label={m.events.repeat}
           name="recurrenceFrequency"
           value={value?.frequency ?? 'never'}
-          options={FREQUENCY_OPTIONS}
+          options={frequencyOptions}
           onChange={changeFrequency}
         />
         {value && unit && (
           <NumberField
-            label="Alle"
+            label={m.events.every}
             name="recurrenceInterval"
             value={value.interval}
             min={1}
@@ -109,11 +110,11 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
       </div>
 
       {value?.frequency === 'weekly' && (
-        <FormField as="fieldset" label="An diesen Tagen" error={errors.weekdays}>
+        <FormField as="fieldset" label={m.events.onTheseDays} error={errors.weekdays}>
           <div className="choiceList">
-            {WEEKDAY_SHORT_LABELS.map((label, weekday) => (
+            {format.shortWeekdays.map(({ weekday, label }) => (
               <ChoiceChip
-                key={label}
+                key={weekday}
                 type="checkbox"
                 label={label}
                 checked={value.weekdays.includes(weekday)}
@@ -129,12 +130,12 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
 
       {value?.frequency === 'monthly' && hasValidStart && (
         <SelectField
-          label="Im Monat"
+          label={m.events.inMonth}
           name="recurrenceMonthlyMode"
           value={value.monthlyMode}
           options={getMonthlyModeOptions(startDate).map((mode) => ({
             value: mode,
-            label: formatMonthlyMode(mode, startDate),
+            label: formatMonthlyMode(mode, startDate, i18n),
           }))}
           onChange={(monthlyMode) => onChange({ ...value, monthlyMode })}
         />
@@ -143,15 +144,15 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
       {value && (
         <div className="formRow">
           <SelectField
-            label="Endet"
+            label={m.events.ends}
             name="recurrenceEnds"
             value={endMode}
-            options={END_OPTIONS}
+            options={endOptions}
             onChange={changeEndMode}
           />
 
           {endMode === 'date' && (
-            <FormField label="Letzter Termin" error={errors.until}>
+            <FormField label={m.events.lastOccurrence} error={errors.until}>
               <input
                 className="input"
                 type="date"
@@ -166,12 +167,12 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
 
           {endMode === 'count' && (
             <NumberField
-              label="Nach"
+              label={m.events.after}
               name="recurrenceCount"
               value={value.count}
               min={1}
               max={RECURRENCE_COUNT_MAX}
-              unit={pluralize(value.count, 'Termin', 'Terminen')}
+              unit={pluralize(value.count, m.events.occurrences.one, m.events.occurrences.many)}
               error={errors.count}
               onChange={(count) => onChange({ ...value, count })}
             />
@@ -180,7 +181,7 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
       )}
 
       {value && canSummarize(value, startDate, errors) && (
-        <p className="formHint">{formatRecurrence(value, startDate)}</p>
+        <p className="formHint">{formatRecurrence(value, startDate, i18n)}</p>
       )}
     </div>
   )

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../../../../i18n/index.ts'
 import { Button } from '../../../../components/Button.tsx'
 import { Form } from '../../../../components/Form.tsx'
 import { Modal } from '../../../../components/Modal.tsx'
@@ -13,22 +14,24 @@ import { CurrentPasswordField } from '../AuthFields.tsx'
 const EMPTY_DELETION: AccountDeletionInput = { password: '' }
 
 function DeleteAccountModal({ onClose }: { onClose: () => void }) {
+  const { m } = useI18n()
   const { deleteAccount } = useAuth()
   const { values, errors, setField, handleSubmit, isPending, error } = useForm({
     initialValues: EMPTY_DELETION,
-    validate: validateAccountDeletion,
+    validate: (input) => validateAccountDeletion(input, m),
     onSubmit: deleteAccount,
   })
 
   return (
-    <Modal title="Konto löschen" variant="danger" onClose={onClose}>
+    <Modal title={m.auth.account.deleteTitle} variant="danger" onClose={onClose}>
       <Form onSubmit={handleSubmit}>
         <p>
-          Dein Konto, dein persönlicher Kalender und alle Termine darin werden <strong>endgültig gelöscht</strong>. Das
-          lässt sich nicht rückgängig machen.
+          {m.auth.account.deleteWarningBefore}
+          <strong>{m.auth.account.deleteWarningStrong}</strong>
+          {m.auth.account.deleteWarningAfter}
         </p>
         <CurrentPasswordField
-          label="Passwort zur Bestätigung"
+          label={m.auth.account.deletePassword}
           value={values.password}
           error={errors.password}
           onChange={(password) => setField('password', password)}
@@ -37,10 +40,10 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
         <ActionFeedback error={error} />
         <div className="formActions">
           <Button variant="secondary" onClick={onClose}>
-            Abbrechen
+            {m.common.cancel}
           </Button>
-          <Button type="submit" variant="danger" isPending={isPending} pendingLabel="Wird gelöscht …">
-            Endgültig löschen
+          <Button type="submit" variant="danger" isPending={isPending} pendingLabel={m.auth.account.deletePending}>
+            {m.auth.account.deleteSubmit}
           </Button>
         </div>
       </Form>
@@ -49,13 +52,14 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
 }
 
 export function DeleteAccountSection() {
+  const { m } = useI18n()
   const [isConfirming, setIsConfirming] = useState(false)
 
   return (
-    <PageSection title="Konto löschen" tone="danger" description="Löscht dein Konto mit allen persönlichen Terminen.">
+    <PageSection title={m.auth.account.deleteTitle} tone="danger" description={m.auth.account.deleteDescription}>
       <div className="formActions">
         <Button variant="danger" onClick={() => setIsConfirming(true)}>
-          Konto löschen …
+          {m.auth.account.deleteOpen}
         </Button>
       </div>
       {isConfirming && <DeleteAccountModal onClose={() => setIsConfirming(false)} />}

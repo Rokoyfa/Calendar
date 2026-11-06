@@ -1,3 +1,4 @@
+import { useI18n } from '../../../../i18n/index.ts'
 import { Button } from '../../../../components/Button.tsx'
 import { Form } from '../../../../components/Form.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
@@ -15,13 +16,15 @@ import { DetailsStep } from '../create/DetailsStep.tsx'
 type GeneralValues = { name: string; description: string; color: EventColor }
 
 export function GeneralSection({ calendar }: { calendar: CalendarSummary }) {
+  const { m } = useI18n()
+  const { general } = m.calendars
   const { updateCalendar, updateTeam } = useCalendars()
   const isTeam = !isPersonalCalendar(calendar)
   const canEditCalendar = hasPermission(calendar, 'manage_calendars')
   const canEditTeam = isTeam && hasPermission(calendar, 'manage_team')
   const { values, errors, setField, handleSubmit, isPending, isSuccess, error } = useForm<GeneralValues>({
     initialValues: { name: calendar.name, description: calendar.description, color: calendar.color },
-    validate: validateDetails,
+    validate: (input) => validateDetails(input, m),
     prepare: (input) => ({ ...input, name: input.name.trim(), description: input.description.trim() }),
     onSubmit: async ({ name, description, color }) => {
       if (canEditCalendar && (name !== calendar.name || color !== calendar.color))
@@ -37,12 +40,8 @@ export function GeneralSection({ calendar }: { calendar: CalendarSummary }) {
 
   return (
     <PageSection
-      title="Allgemein"
-      description={
-        isTeam
-          ? 'Name und Farbe ändern Owner, Administratoren und Verwalter. Die Beschreibung ändern Owner und Administratoren.'
-          : 'Name und Farbe deines persönlichen Kalenders. Nur du siehst ihn.'
-      }
+      title={general.title}
+      description={isTeam ? general.teamDescription : general.personalDescription}
     >
       <Form onSubmit={handleSubmit}>
         {isTeam ? (
@@ -69,11 +68,11 @@ export function GeneralSection({ calendar }: { calendar: CalendarSummary }) {
         ) : (
           <CalendarPreview color={values.color} />
         )}
-        <ActionFeedback error={error} success={isSuccess && !isDirty && 'Gespeichert.'} />
+        <ActionFeedback error={error} success={isSuccess && !isDirty && m.common.saved} />
         {(canEditCalendar || canEditTeam) && (
           <div className="formActions">
-            <Button type="submit" isPending={isPending} pendingLabel="Wird gespeichert …" disabled={!isDirty}>
-              Speichern
+            <Button type="submit" isPending={isPending} pendingLabel={general.pending} disabled={!isDirty}>
+              {m.common.save}
             </Button>
           </div>
         )}

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '../../../../components/Button.tsx'
 import { Modal } from '../../../../components/Modal.tsx'
 import { TextField } from '../../../../components/TextField.tsx'
-import { ROLE_LABELS } from '../../constants/calendars.ts'
+import { useI18n } from '../../../../i18n/index.ts'
 import type { TeamMember } from '../../types/calendar.ts'
 
 type TransferOwnershipModalProps = {
@@ -11,32 +11,34 @@ type TransferOwnershipModalProps = {
   onClose: () => void
 }
 
-const matches = ({ name, email }: TeamMember, query: string) =>
-  `${name} ${email}`.toLocaleLowerCase('de').includes(query.trim().toLocaleLowerCase('de'))
+const matches = ({ name, email }: TeamMember, query: string, locale: string) =>
+  `${name} ${email}`.toLocaleLowerCase(locale).includes(query.trim().toLocaleLowerCase(locale))
 
 export function TransferOwnershipModal({ candidates, onSelect, onClose }: TransferOwnershipModalProps) {
+  const { m, locale } = useI18n()
+  const { transfer, roles } = m.calendars
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const results = candidates.filter((member) => matches(member, query))
+  const results = candidates.filter((member) => matches(member, query, locale))
   const selected = candidates.find((member) => member.userId === selectedId) ?? null
 
   return (
-    <Modal title="Leitung übertragen" onClose={onClose}>
+    <Modal title={transfer.title} onClose={onClose}>
       <div className="formSection">
         <TextField
-          label="Mitglied suchen"
+          label={transfer.search}
           name="memberSearch"
           type="search"
           autoComplete="off"
-          placeholder="Name oder E-Mail"
+          placeholder={transfer.searchPlaceholder}
           value={query}
           onChange={setQuery}
           data-autofocus
         />
         {results.length === 0 ? (
-          <p className="emptyHint">Kein Mitglied gefunden.</p>
+          <p className="emptyHint">{transfer.noResults}</p>
         ) : (
-          <ul className="memberPicker" role="radiogroup" aria-label="Neuer Owner">
+          <ul className="memberPicker" role="radiogroup" aria-label={transfer.newOwner}>
             {results.map((member) => (
               <li key={member.userId}>
                 <label className="memberOption">
@@ -51,7 +53,7 @@ export function TransferOwnershipModal({ candidates, onSelect, onClose }: Transf
                     <span className="itemRowTitle">{member.name}</span>
                     <span className="itemRowMeta">{member.email}</span>
                   </span>
-                  <span className="badge">{ROLE_LABELS[member.role]}</span>
+                  <span className="badge">{roles[member.role]}</span>
                 </label>
               </li>
             ))}
@@ -59,10 +61,10 @@ export function TransferOwnershipModal({ candidates, onSelect, onClose }: Transf
         )}
         <div className="formActions">
           <Button variant="secondary" onClick={onClose}>
-            Abbrechen
+            {m.common.cancel}
           </Button>
           <Button disabled={!selected} onClick={() => selected && onSelect(selected)}>
-            Bestätigen
+            {transfer.confirm}
           </Button>
         </div>
       </div>

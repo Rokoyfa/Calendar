@@ -1,10 +1,11 @@
-import { formatMonthName } from '../../../utils/date.ts'
+import { useI18n } from '../../../i18n/index.ts'
 import type { CalendarViewProps } from '../types/view.ts'
 import { MiniMonth } from './MiniMonth.tsx'
 
 const MONTHS = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'))
 
 export function YearView({ anchor, today, segmentsByDate, onShowDay, onShowMonth }: CalendarViewProps) {
+  const { format } = useI18n()
   const year = anchor.slice(0, 4)
   return (
     <div className="yearView">
@@ -14,7 +15,7 @@ export function YearView({ anchor, today, segmentsByDate, onShowDay, onShowMonth
           <section key={month} className="yearMonth">
             <h2>
               <button type="button" className="yearMonthTitle" onClick={() => onShowMonth(firstDay)}>
-                {formatMonthName(firstDay)}
+                {format.monthName(firstDay)}
               </button>
             </h2>
             <MiniMonth

@@ -2,7 +2,6 @@ import type { CSSProperties } from 'react'
 import {
   addDaysToISODate,
   daysBetween,
-  formatShortDay,
   isISODate,
   isTime,
   MINUTES_PER_DAY,
@@ -10,6 +9,7 @@ import {
   minutesToTime,
   timeToMinutes,
 } from './date.ts'
+import type { I18n, Messages } from '../i18n/index.ts'
 import { classNames, type ClassNameValue } from './classNames.ts'
 import { getReadableTextColor, isHexColor, type HexColor } from './color.ts'
 import { isOneOf, pick } from './object.ts'
@@ -28,13 +28,6 @@ export const PRESET_EVENT_COLORS = ['blue', 'red', 'green', 'yellow'] as const
 export type PresetEventColor = (typeof PRESET_EVENT_COLORS)[number]
 
 export type EventColor = PresetEventColor | HexColor
-
-export const PRESET_EVENT_COLOR_LABELS: Record<PresetEventColor, string> = {
-  blue: 'Blau',
-  red: 'Rot',
-  green: 'Grün',
-  yellow: 'Gelb',
-}
 
 export const EVENT_TITLE_MAX_LENGTH = 100
 export const EVENT_DESCRIPTION_MAX_LENGTH = 2000
@@ -90,14 +83,12 @@ export type EventValidationErrors = Partial<Record<Exclude<keyof EventInput, 're
   recurrence?: RecurrenceValidationErrors
 }
 
-export const EVENT_NOT_FOUND_MESSAGE = 'Der Termin wurde nicht gefunden.'
-
 export const isPresetEventColor = (value: unknown): value is PresetEventColor => isOneOf(PRESET_EVENT_COLORS, value)
 
 export const isEventColor = (value: unknown): value is EventColor => isPresetEventColor(value) || isHexColor(value)
 
-export const getEventColorLabel = (color: EventColor) =>
-  isPresetEventColor(color) ? PRESET_EVENT_COLOR_LABELS[color] : color.toUpperCase()
+export const getEventColorLabel = (color: EventColor, m: Messages) =>
+  isPresetEventColor(color) ? m.colors[color] : color.toUpperCase()
 
 export const getEventColorAttributes = (
   color: EventColor,
@@ -229,35 +220,38 @@ export const expandEvents = (events: readonly CalendarEvent[], from: string, to:
     })),
   )
 
-export const formatEventPeriod = (event: EventPeriod) =>
-  isMultiDayEvent(event)
-    ? `${formatShortDay(event.startDate)} ${event.start} – ${formatShortDay(event.endDate)} ${event.end}`
-    : `${event.start} – ${event.end}`
+export const formatEventPeriod = (event: EventPeriod, { format }: Pick<I18n, 'format'>) => {
+  const start = format.time(timeToMinutes(event.start))
+  const end = format.time(timeToMinutes(event.end))
+  return isMultiDayEvent(event)
+    ? `${format.shortDay(event.startDate)} ${start} – ${format.shortDay(event.endDate)} ${end}`
+    : `${start} – ${end}`
+}
 
-export const validateEventInput = (input: EventInput): EventValidationErrors => {
+export const validateEventInput = (input: EventInput, m: Messages): EventValidationErrors => {
   const errors: EventValidationErrors = {}
+  const { validation } = m
 
-  if (!input.title) errors.title = 'Bitte einen Titel eingeben.'
-  else if (input.title.length > EVENT_TITLE_MAX_LENGTH)
-    errors.title = `Der Titel darf höchstens ${EVENT_TITLE_MAX_LENGTH} Zeichen lang sein.`
+  if (!input.title) errors.title = validation.titleRequired
+  else if (input.title.length > EVENT_TITLE_MAX_LENGTH) errors.title = validation.titleTooLong(EVENT_TITLE_MAX_LENGTH)
 
-  if (!isISODate(input.startDate)) errors.startDate = 'Bitte ein gültiges Startdatum wählen.'
-  if (!isTime(input.start)) errors.start = 'Bitte eine gültige Startzeit wählen.'
-  if (!isISODate(input.endDate)) errors.endDate = 'Bitte ein gültiges Enddatum wählen.'
-  if (!isTime(input.end)) errors.end = 'Bitte eine gültige Endzeit wählen.'
+  if (!isISODate(input.startDate)) errors.startDate = validation.startDateInvalid
+  if (!isTime(input.start)) errors.start = validation.startTimeInvalid
+  if (!isISODate(input.endDate)) errors.endDate = validation.endDateInvalid
+  if (!isTime(input.end)) errors.end = validation.endTimeInvalid
 
   if (!errors.startDate && !errors.endDate && input.endDate < input.startDate)
-    errors.endDate = 'Das Enddatum darf nicht vor dem Startdatum liegen.'
+    errors.endDate = validation.endDateBeforeStart
   else if (!errors.startDate && !errors.start && !errors.endDate && !errors.end && getEventDuration(input) <= 0)
-    errors.end = 'Das Ende muss nach dem Beginn liegen.'
+    errors.end = validation.endBeforeStart
 
   if (input.recurrence) {
-    const recurrenceErrors = validateRecurrence(input.recurrence, input.startDate)
+    const recurrenceErrors = validateRecurrence(input.recurrence, input.startDate, m)
     if (hasRecurrenceErrors(recurrenceErrors)) errors.recurrence = recurrenceErrors
   }
 
   if (input.description.length > EVENT_DESCRIPTION_MAX_LENGTH)
-    errors.description = `Die Beschreibung darf höchstens ${EVENT_DESCRIPTION_MAX_LENGTH} Zeichen lang sein.`
+    errors.description = validation.descriptionTooLong(EVENT_DESCRIPTION_MAX_LENGTH)
 
   return errors
 }

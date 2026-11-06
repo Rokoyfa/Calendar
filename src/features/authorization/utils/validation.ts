@@ -1,3 +1,4 @@
+import type { Messages } from '../../../i18n/index.ts'
 import { validateEmail, type FieldErrors } from '../../../utils/validation.ts'
 import type { AccountDeletionInput, LoginInput, PasswordResetRequestInput, ProfileInput, RegisterInput } from '../types/auth.ts'
 
@@ -18,51 +19,62 @@ export type PasswordChangeFormValues = NewPasswordValues & {
   currentPassword: string
 }
 
-const validateName = (name: string) => {
-  if (!name) return 'Bitte einen Namen eingeben.'
-  if (name.length > NAME_MAX_LENGTH) return `Der Name darf höchstens ${NAME_MAX_LENGTH} Zeichen lang sein.`
+const validateName = (name: string, m: Messages) => {
+  if (!name) return m.auth.validation.nameRequired
+  if (name.length > NAME_MAX_LENGTH) return m.auth.validation.nameTooLong(NAME_MAX_LENGTH)
   return undefined
 }
 
-const requirePassword = (password: string) => (password ? undefined : 'Bitte das Passwort eingeben.')
+const requirePassword = (password: string, m: Messages) => (password ? undefined : m.auth.validation.passwordRequired)
 
-const validateNewPassword = ({ password, passwordConfirmation }: NewPasswordValues): FieldErrors<NewPasswordValues> => ({
+const validateNewPassword = (
+  { password, passwordConfirmation }: NewPasswordValues,
+  m: Messages,
+): FieldErrors<NewPasswordValues> => ({
   password:
     password.length < PASSWORD_MIN_LENGTH
-      ? `Das Passwort muss mindestens ${PASSWORD_MIN_LENGTH} Zeichen lang sein.`
+      ? m.auth.validation.passwordTooShort(PASSWORD_MIN_LENGTH)
       : password.length > PASSWORD_MAX_LENGTH
-        ? `Das Passwort darf höchstens ${PASSWORD_MAX_LENGTH} Zeichen lang sein.`
+        ? m.auth.validation.passwordTooLong(PASSWORD_MAX_LENGTH)
         : undefined,
-  passwordConfirmation:
-    passwordConfirmation === password ? undefined : 'Die Passwörter stimmen nicht überein.',
+  passwordConfirmation: passwordConfirmation === password ? undefined : m.auth.validation.passwordMismatch,
 })
 
-export const validateLogin = ({ email, password }: LoginInput): FieldErrors<LoginInput> => ({
-  email: validateEmail(email),
-  password: requirePassword(password),
+export const validateLogin = ({ email, password }: LoginInput, m: Messages): FieldErrors<LoginInput> => ({
+  email: validateEmail(email, m),
+  password: requirePassword(password, m),
 })
 
-export const validateRegister = (values: RegisterFormValues): FieldErrors<RegisterFormValues> => ({
-  name: validateName(values.name),
-  email: validateEmail(values.email),
-  ...validateNewPassword(values),
+export const validateRegister = (values: RegisterFormValues, m: Messages): FieldErrors<RegisterFormValues> => ({
+  name: validateName(values.name, m),
+  email: validateEmail(values.email, m),
+  ...validateNewPassword(values, m),
 })
 
-export const validateProfile = ({ name }: ProfileInput): FieldErrors<ProfileInput> => ({ name: validateName(name) })
+export const validateProfile = ({ name }: ProfileInput, m: Messages): FieldErrors<ProfileInput> => ({
+  name: validateName(name, m),
+})
 
-export const validatePasswordResetRequest = ({
-  email,
-}: PasswordResetRequestInput): FieldErrors<PasswordResetRequestInput> => ({ email: validateEmail(email) })
+export const validatePasswordResetRequest = (
+  { email }: PasswordResetRequestInput,
+  m: Messages,
+): FieldErrors<PasswordResetRequestInput> => ({ email: validateEmail(email, m) })
 
 export const validatePasswordReset = validateNewPassword
 
-export const validatePasswordChange = (values: PasswordChangeFormValues): FieldErrors<PasswordChangeFormValues> => {
-  const errors = { currentPassword: requirePassword(values.currentPassword), ...validateNewPassword(values) }
+export const validatePasswordChange = (
+  values: PasswordChangeFormValues,
+  m: Messages,
+): FieldErrors<PasswordChangeFormValues> => {
+  const errors = { currentPassword: requirePassword(values.currentPassword, m), ...validateNewPassword(values, m) }
   if (!errors.password && values.password === values.currentPassword)
-    errors.password = 'Das neue Passwort muss sich vom aktuellen unterscheiden.'
+    errors.password = m.auth.validation.passwordUnchanged
   return errors
 }
 
-export const validateAccountDeletion = ({ password }: AccountDeletionInput): FieldErrors<AccountDeletionInput> => ({
-  password: requirePassword(password),
+export const validateAccountDeletion = (
+  { password }: AccountDeletionInput,
+  m: Messages,
+): FieldErrors<AccountDeletionInput> => ({
+  password: requirePassword(password, m),
 })

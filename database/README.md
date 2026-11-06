@@ -8,6 +8,7 @@
 | `migrations/001_initial_schema.sql` | Alle Tabellen mit Schlüsseln und Prüfregeln, dazu der Katalog der Rollen und Berechtigungen |
 | `migrations/002_automation.sql` | Trigger und die Sichten `user_calendars` und `user_team_permissions`: legt persönliche und Team-Kalender automatisch an und setzt die Regeln für Teams, Einladungen und Serien durch |
 | `migrations/003_calendar_settings.sql` | Beschreibung für Teams (`teams.description`), die Tabelle `user_calendar_settings` für „Auch im persönlichen Kalender anzeigen“ und die erweiterte Sicht `user_calendars` |
+| `migrations/004_locale.sql` | Spalte `user_preferences.locale` für Sprache und Region |
 | `migrations/*.down.sql` | Macht die jeweilige Migration rückgängig (in umgekehrter Reihenfolge ausführen) |
 
 ### Einrichten
@@ -17,11 +18,12 @@ mysql -u root -p < database/create_database.sql
 mysql -u root -p kalender < database/migrations/001_initial_schema.sql
 mysql -u root -p kalender < database/migrations/002_automation.sql
 mysql -u root -p kalender < database/migrations/003_calendar_settings.sql
+mysql -u root -p kalender < database/migrations/004_locale.sql
 ```
 
 Unter MariaDB heißt der Client `mariadb`, die Aufrufe sind gleich.
 
-**Der Name der Datenbank ist frei.** Die Migrationen enthalten keinen Datenbanknamen und laufen in der gerade gewählten Datenbank. Bei einer gehosteten Datenbank, deren Name vom Anbieter vorgegeben ist, entfällt `create_database.sql`. Dort einfach die vorhandene Datenbank auswählen (z. B. in phpMyAdmin) und `001`, `002` und `003` ausführen. **Wer `001` und `002` schon eingespielt hat, führt nur `003` aus.** Vorhandene Daten bleiben erhalten. Sie sollte als Kollation `utf8mb4_unicode_ci` haben, die Tabellen setzen ihren Zeichensatz aber ohnehin selbst. Das Konto braucht das Recht `TRIGGER`.
+**Der Name der Datenbank ist frei.** Die Migrationen enthalten keinen Datenbanknamen und laufen in der gerade gewählten Datenbank. Bei einer gehosteten Datenbank, deren Name vom Anbieter vorgegeben ist, entfällt `create_database.sql`. Dort einfach die vorhandene Datenbank auswählen (z. B. in phpMyAdmin) und `001` bis `004` ausführen. **Wer ältere Migrationen schon eingespielt hat, führt nur die fehlenden aus** (z. B. nur `004`). Vorhandene Daten bleiben erhalten. Sie sollte als Kollation `utf8mb4_unicode_ci` haben, die Tabellen setzen ihren Zeichensatz aber ohnehin selbst. Das Konto braucht das Recht `TRIGGER`.
 
 - `001` ist reines SQL und läuft mit jedem Migrations-Werkzeug.
 - `002` und `003` enthalten Trigger und nutzen dafür `DELIMITER`. Das versteht der `mysql`/`mariadb`-Client und z. B. Flyway. Werkzeuge ohne `DELIMITER`-Unterstützung (z. B. Knex) brauchen die Trigger einzeln als je eine Anweisung.
@@ -129,6 +131,7 @@ Protokoll der Login-Versuche zur Begrenzung, z. B. höchstens 5 Fehlversuche je 
 | `theme` | `system`, `light`, `dark` | Für den geplanten Schalter Hell/Dunkel |
 | `default_view` | `day`, `week`, `month`, `year`, `NULL` | Startansicht |
 | `mobile_default_view` | wie oben | Startansicht auf dem Handy (geplant: `day`) |
+| `locale` | `auto` oder ein Sprach-Tag wie `en-US`, `en-GB`, `de-DE` | Sprache und Region (ab `004`). `auto` folgt Gastgeber und Browser. Prüfregel: nur `auto` oder ein gültig aufgebautes Tag. |
 
 ### `user_colors`
 
@@ -428,3 +431,5 @@ Beide Migrationen wurden auf **MySQL 8.0.46** und **MariaDB 10.11** angelegt, zu
 - Mit `003` laufen alle 123 Prüffälle oben weiter.
 - 19 neue Prüffälle: Beschreibung mit Längengrenze, Standardwert der Anzeige, Einstellung je Nutzer, nur für Mitglieder und nur für Team-Kalender, kein Verschieben, Aufräumen beim Austritt, beim Löschen von Konto und Team, Umlaute in den Fehlermeldungen.
 - Nachträglich auf eine Datenbank mit vorhandenen Nutzern eingespielt, zurückgerollt und erneut angelegt. Danach sind es 18 Tabellen, 2 Sichten und 28 Trigger.
+
+**Migration `004`** wurde auf **MariaDB 10.11** geprüft: neue Nutzer bekommen `auto`, `en-GB` wird angenommen, `x y` und `DE` lehnt die Prüfregel ab. Zurückrollen und erneutes Einspielen auf eine Datenbank mit vorhandenen Nutzern funktioniert. Das Zurückrollen nutzt `DROP CONSTRAINT` und braucht unter MySQL 8.0.19 oder neuer.

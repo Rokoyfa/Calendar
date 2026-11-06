@@ -1,3 +1,4 @@
+import { useI18n } from '../../../i18n/index.ts'
 import { Modal } from '../../../components/Modal.tsx'
 import type { EditScope } from '../../../utils/event.ts'
 import { ScopeButtons } from './ScopeButtons.tsx'
@@ -9,9 +10,10 @@ type RecurrenceScopeModalProps = {
 }
 
 export function RecurrenceScopeModal({ options, onSelect, onClose }: RecurrenceScopeModalProps) {
+  const { m } = useI18n()
   return (
-    <Modal title="Wiederkehrenden Termin ändern" onClose={onClose}>
-      <p className="modalMessage">Für welche Termine der Serie sollen die Änderungen gelten?</p>
+    <Modal title={m.events.scopeTitle} onClose={onClose}>
+      <p className="modalMessage">{m.events.scopeMessage}</p>
       <ScopeButtons options={options} onSelect={onSelect} onCancel={onClose} />
     </Modal>
   )

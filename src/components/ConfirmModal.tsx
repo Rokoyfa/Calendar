@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useI18n } from '../i18n/index.ts'
 import { useAsyncAction } from '../hooks/useAsyncAction.ts'
 import { Button } from './Button.tsx'
 import { Modal } from './Modal.tsx'
@@ -14,6 +15,7 @@ type ConfirmModalProps = {
 }
 
 export function ConfirmModal({ title, confirmLabel, pendingLabel, onConfirm, onClose, children }: ConfirmModalProps) {
+  const { m } = useI18n()
   const { run, isPending, error } = useAsyncAction(onConfirm)
 
   return (
@@ -23,7 +25,7 @@ export function ConfirmModal({ title, confirmLabel, pendingLabel, onConfirm, onC
         <ActionFeedback error={error} />
         <div className="formActions">
           <Button variant="secondary" onClick={onClose} data-autofocus>
-            Abbrechen
+            {m.common.cancel}
           </Button>
           <Button variant="danger" isPending={isPending} pendingLabel={pendingLabel} onClick={() => void run()}>
             {confirmLabel}

@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react'
+import { useI18n } from '../../../i18n/index.ts'
 import { classNames } from '../../../utils/classNames.ts'
 import { createEventInputForSlots, formatEventPeriod } from '../../../utils/event.ts'
 import { useSlotSelection } from '../hooks/useSlotSelection.ts'
@@ -21,10 +22,11 @@ export function TimeGridView({
   onEventSelect,
   onShowDay,
 }: CalendarViewProps) {
+  const i18n = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const { selection, isClickSuppressed } = useSlotSelection(containerRef, canCreate, onCreateRange)
   const range = useMemo(() => (selection ? toSlotRange(selection) : null), [selection])
-  const rangeLabel = range ? formatEventPeriod(createEventInputForSlots(range.first, range.last)) : null
+  const rangeLabel = range ? formatEventPeriod(createEventInputForSlots(range.first, range.last), i18n) : null
   const isSingleDay = dates.length === 1
   const showsToday = dates.includes(today)
 

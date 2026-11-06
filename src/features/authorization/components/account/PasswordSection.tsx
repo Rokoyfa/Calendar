@@ -1,3 +1,4 @@
+import { useI18n } from '../../../../i18n/index.ts'
 import { Button } from '../../../../components/Button.tsx'
 import { Form } from '../../../../components/Form.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
@@ -10,10 +11,11 @@ import { CurrentPasswordField, NewPasswordFields } from '../AuthFields.tsx'
 const EMPTY_PASSWORD_CHANGE: PasswordChangeFormValues = { currentPassword: '', password: '', passwordConfirmation: '' }
 
 export function PasswordSection() {
+  const { m } = useI18n()
   const { changePassword } = useAuth()
   const { values, errors, setField, handleSubmit, reset, isPending, isSuccess, error } = useForm({
     initialValues: EMPTY_PASSWORD_CHANGE,
-    validate: validatePasswordChange,
+    validate: (input) => validatePasswordChange(input, m),
     onSubmit: async ({ currentPassword, password }) => {
       await changePassword({ currentPassword, newPassword: password })
       reset()
@@ -21,20 +23,20 @@ export function PasswordSection() {
   })
 
   return (
-    <PageSection title="Passwort ändern" description="Andere Geräte werden danach abgemeldet.">
+    <PageSection title={m.auth.account.passwordTitle} description={m.auth.account.passwordDescription}>
       <Form onSubmit={handleSubmit}>
         <CurrentPasswordField
-          label="Aktuelles Passwort"
+          label={m.auth.account.currentPassword}
           name="currentPassword"
           value={values.currentPassword}
           error={errors.currentPassword}
           onChange={(currentPassword) => setField('currentPassword', currentPassword)}
         />
-        <NewPasswordFields label="Neues Passwort" values={values} errors={errors} onChange={setField} />
-        <ActionFeedback error={error} success={isSuccess && 'Dein Passwort wurde geändert.'} />
+        <NewPasswordFields label={m.auth.account.newPassword} values={values} errors={errors} onChange={setField} />
+        <ActionFeedback error={error} success={isSuccess && m.auth.account.passwordChanged} />
         <div className="formActions">
-          <Button type="submit" isPending={isPending} pendingLabel="Wird geändert …">
-            Passwort ändern
+          <Button type="submit" isPending={isPending} pendingLabel={m.auth.account.passwordPending}>
+            {m.auth.account.passwordSubmit}
           </Button>
         </div>
       </Form>

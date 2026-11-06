@@ -8,7 +8,7 @@ export const DEFAULT_ELEMENT_NAME = 'calendar-widget'
 
 const FILL = { height: '100%' }
 
-const ATTRIBUTES = ['storage-mode', 'api-base-url', 'api-timeout-ms', 'auth', 'teams', 'initial-path'] as const
+const ATTRIBUTES = ['storage-mode', 'api-base-url', 'api-timeout-ms', 'auth', 'teams', 'initial-path', 'locale'] as const
 
 export class CalendarElement extends HTMLElement {
   static observedAttributes = ATTRIBUTES
@@ -45,6 +45,7 @@ export class CalendarElement extends HTMLElement {
       apiTimeoutMs: Number.isInteger(timeout) && timeout > 0 ? timeout : undefined,
       features: { auth: this.#flag('auth'), teams: this.#flag('teams') },
       initialPath: this.getAttribute('initial-path') ?? undefined,
+      locale: this.getAttribute('locale') ?? undefined,
     }
   }
 

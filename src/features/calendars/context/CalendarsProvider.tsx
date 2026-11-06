@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useI18n } from '../../../i18n/index.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import type { StorageConfig } from '../../storage/index.ts'
 import { PERSONAL_CALENDAR } from '../constants/calendars.ts'
@@ -24,19 +25,28 @@ type CalendarsProviderProps = {
 }
 
 export function CalendarsProvider({ config, children }: CalendarsProviderProps) {
+  const { m } = useI18n()
   const repository = useMemo(() => createCalendarRepository(config), [config])
   const loadCalendars = useCallback(() => repository.list(), [repository])
   const loadInvitations = useCallback(() => repository.listInvitations(), [repository])
   const {
-    data: calendars,
+    data: storedCalendars,
     error,
     isLoading,
     update: updateCalendars,
   } = useAsyncResource(loadCalendars, INITIAL_CALENDARS)
   const { data: invitations, update: updateInvitations } = useAsyncResource(loadInvitations, NO_INVITATIONS)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const personalName = m.calendars.personalName
+  const calendars = useMemo(
+    () =>
+      storedCalendars.map((calendar) =>
+        isPersonalCalendar(calendar) ? { ...calendar, name: personalName } : calendar,
+      ),
+    [storedCalendars, personalName],
+  )
 
-  const personalCalendar = calendars.find(isPersonalCalendar) ?? PERSONAL_CALENDAR
+  const personalCalendar = calendars.find(isPersonalCalendar) ?? { ...PERSONAL_CALENDAR, name: personalName }
   const activeCalendar = calendars.find((calendar) => calendar.id === activeId) ?? personalCalendar
 
   const selectCalendar = useCallback((id: string) => setActiveId(id), [])

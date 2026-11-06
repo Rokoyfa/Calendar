@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { Modal } from '../../../components/Modal.tsx'
@@ -13,7 +14,7 @@ import { LocalStorageList } from '../utils/localStorageList.ts'
 const declinedUsers = new LocalStorageList<string>(
   'calendar.localImportDeclined.v1',
   (value) => (typeof value === 'string' ? value : null),
-  'Die Entscheidung konnte nicht gespeichert werden.',
+  'saveDecisionFailed',
 )
 
 const NO_EVENTS: CalendarEvent[] = []
@@ -23,6 +24,7 @@ type LocalImportPromptProps = {
 }
 
 export function LocalImportPrompt({ userId }: LocalImportPromptProps) {
+  const { m } = useI18n()
   const { mode, events: target, invalidate } = useStorage()
   const localEvents = useMemo(() => new LocalEventRepository(), [])
   const load = useCallback(() => localEvents.listAll(), [localEvents])
@@ -47,27 +49,22 @@ export function LocalImportPrompt({ userId }: LocalImportPromptProps) {
 
   if (mode !== 'remote' || isLoading || isDismissed || pending.length === 0) return null
 
-  const count = pending.length === 1 ? 'einen Termin' : `${pending.length} Termine`
-
   return (
-    <Modal title="Lokale Termine übernehmen?" onClose={keepLocal}>
-      <p className="modalMessage">
-        In diesem Browser sind {count} ohne Konto gespeichert. Sollen sie in dein Konto übernommen werden? Danach sind
-        sie auf allen Geräten verfügbar und werden hier lokal entfernt.
-      </p>
+    <Modal title={m.storage.importTitle} onClose={keepLocal}>
+      <p className="modalMessage">{m.storage.importMessage(pending.length)}</p>
       <ErrorMessage message={error} />
       <div className="modalActions modalActions--stacked">
         <Button
           block
           isPending={isPending}
-          pendingLabel="Wird übernommen …"
+          pendingLabel={m.storage.importing}
           onClick={() => void importEvents()}
           data-autofocus
         >
-          In mein Konto übernehmen
+          {m.storage.importConfirm}
         </Button>
         <Button variant="secondary" block disabled={isPending} onClick={keepLocal}>
-          Nur in diesem Browser behalten
+          {m.storage.keepLocal}
         </Button>
       </div>
     </Modal>

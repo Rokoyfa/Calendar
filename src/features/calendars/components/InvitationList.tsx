@@ -2,12 +2,14 @@ import { Button } from '../../../components/Button.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
 import { ActionFeedback } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
-import { formatLongDate, toISODate } from '../../../utils/date.ts'
-import { ROLE_LABELS } from '../constants/calendars.ts'
+import { useI18n } from '../../../i18n/index.ts'
+import { toISODate } from '../../../utils/date.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { PendingInvitation } from '../types/calendar.ts'
 
 function InvitationRow({ invitation }: { invitation: PendingInvitation }) {
+  const { m, format } = useI18n()
+  const { invitations: text, roles } = m.calendars
   const { acceptInvitation, declineInvitation } = useCalendars()
   const accept = useAsyncAction(() => acceptInvitation(invitation.id))
   const decline = useAsyncAction(() => declineInvitation(invitation.id))
@@ -19,12 +21,12 @@ function InvitationRow({ invitation }: { invitation: PendingInvitation }) {
         <span className="itemRowMain">
           <span className="itemRowTitle">{invitation.teamName}</span>
           <span className="itemRowMeta">
-            {invitation.invitedBy ? `${invitation.invitedBy} lädt dich ein` : 'Du bist eingeladen'} · gültig bis{' '}
-            {formatLongDate(toISODate(new Date(invitation.expiresAt)))}
+            {invitation.invitedBy ? text.invitedBy(invitation.invitedBy) : text.invited} ·{' '}
+            {text.validUntil(format.longDate(toISODate(new Date(invitation.expiresAt))))}
           </span>
           {invitation.description && <span className="itemRowMeta">{invitation.description}</span>}
         </span>
-        <span className="badge">{ROLE_LABELS[invitation.role]}</span>
+        <span className="badge">{roles[invitation.role]}</span>
       </div>
       <div className="calendarSettingBody">
         <ActionFeedback error={accept.error ?? decline.error} />
@@ -33,18 +35,18 @@ function InvitationRow({ invitation }: { invitation: PendingInvitation }) {
             variant="outline"
             disabled={isBusy}
             isPending={decline.isPending}
-            pendingLabel="Wird abgelehnt …"
+            pendingLabel={text.declining}
             onClick={() => void decline.run()}
           >
-            Ablehnen
+            {text.decline}
           </Button>
           <Button
             disabled={isBusy}
             isPending={accept.isPending}
-            pendingLabel="Wird angenommen …"
+            pendingLabel={text.accepting}
             onClick={() => void accept.run()}
           >
-            Annehmen
+            {text.accept}
           </Button>
         </div>
       </div>
@@ -53,13 +55,14 @@ function InvitationRow({ invitation }: { invitation: PendingInvitation }) {
 }
 
 export function InvitationList() {
+  const { m } = useI18n()
   const { invitations } = useCalendars()
   if (invitations.length === 0) return null
 
   return (
     <PageSection
-      title="Einladungen"
-      description="Du wurdest in diese Kalender eingeladen. Nach dem Annehmen erscheinen sie unten und in „Kalender wechseln“."
+      title={m.calendars.invitations.title}
+      description={m.calendars.invitations.description}
     >
       <ul className="calendarSettingList">
         {invitations.map((invitation) => (

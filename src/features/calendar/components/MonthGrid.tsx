@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { classNames } from '../../../utils/classNames.ts'
-import { getMonthWeeks, isSameMonthISO, WEEKDAY_SHORT_LABELS } from '../../../utils/date.ts'
+import { useI18n } from '../../../i18n/index.ts'
+import { getMonthWeeks, isSameMonthISO } from '../../../utils/date.ts'
 
 type MonthGridProps = {
   month: string
@@ -9,14 +10,15 @@ type MonthGridProps = {
 }
 
 export function MonthGrid({ month, className, renderDay }: MonthGridProps) {
+  const { format } = useI18n()
   return (
     <div className={classNames('monthGrid', className)}>
-      {WEEKDAY_SHORT_LABELS.map((label) => (
-        <div key={label} className="monthGridWeekday" aria-hidden="true">
+      {format.shortWeekdays.map(({ weekday, label }) => (
+        <div key={weekday} className="monthGridWeekday" aria-hidden="true">
           {label}
         </div>
       ))}
-      {getMonthWeeks(month)
+      {getMonthWeeks(month, format.firstDay)
         .flat()
         .map((date) => renderDay(date, isSameMonthISO(date, month)))}
     </div>

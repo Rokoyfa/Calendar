@@ -60,7 +60,7 @@ export function parseEnv(raw: RawEnv): AppEnv {
     },
   }
 
-  if (errors.length > 0) throw new Error(`Ungültige Umgebungsvariablen:\n- ${errors.join('\n- ')}`)
+  if (errors.length > 0) throw new Error(`Invalid environment variables:\n- ${errors.join('\n- ')}`)
 
   return env
 }

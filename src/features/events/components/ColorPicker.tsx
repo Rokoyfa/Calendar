@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { useI18n } from '../../../i18n/index.ts'
 import { ChoiceChip } from '../../../components/ChoiceChip.tsx'
 import { FormField } from '../../../components/FormField.tsx'
 import { isHexColor, normalizeHexColor } from '../../../utils/color.ts'
@@ -17,6 +18,7 @@ type ColorPickerProps = {
 }
 
 export function ColorPicker({ value, onChange }: ColorPickerProps) {
+  const { m } = useI18n()
   const { colors: customColors, addColor, canAddMore } = useCustomColors()
   const addInputRef = useRef<HTMLInputElement>(null)
 
@@ -42,7 +44,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
   }, [addColor, onChange, canAddMore])
 
   return (
-    <FormField as="fieldset" label="Farbe">
+    <FormField as="fieldset" label={m.events.color}>
       <div className="choiceList">
         {options.map((color) => {
           const { className, style } = getEventColorAttributes(color, 'color')
@@ -51,7 +53,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
               key={color}
               type="radio"
               name="eventColor"
-              label={getEventColorLabel(color)}
+              label={getEventColorLabel(color, m)}
               checked={value === color}
               onChange={() => onChange(color)}
               className={className}
@@ -61,12 +63,12 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
         })}
 
         {canAddMore && (
-          <label className="chip color colorAdd" title="Eigene Farbe hinzufügen">
+          <label className="chip color colorAdd" title={m.events.addCustomColor}>
             <input
               ref={addInputRef}
               type="color"
               className="visuallyHidden"
-              aria-label="Eigene Farbe hinzufügen"
+              aria-label={m.events.addCustomColor}
               defaultValue={DEFAULT_CUSTOM_COLOR}
             />
           </label>

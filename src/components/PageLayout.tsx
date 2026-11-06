@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { ROUTES } from '../config/routes.ts'
+import { useI18n } from '../i18n/index.ts'
 
 type PageLayoutProps = {
   title: string
@@ -10,13 +11,13 @@ type PageLayoutProps = {
   children: ReactNode
 }
 
-const DEFAULT_BACK = { to: ROUTES.calendar, label: 'Zum Kalender' }
-
-export function PageLayout({ title, back = DEFAULT_BACK, variant = 'card', footer, children }: PageLayoutProps) {
+export function PageLayout({ title, back, variant = 'card', footer, children }: PageLayoutProps) {
+  const { m } = useI18n()
+  const backLink = back ?? { to: ROUTES.calendar, label: m.common.backToCalendar }
   const heading = (
     <>
-      <Link to={back.to} className="pageBack">
-        ← {back.label}
+      <Link to={backLink.to} className="pageBack">
+        ← {backLink.label}
       </Link>
       <h1 className="pageTitle">{title}</h1>
     </>

@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { getErrorMessage } from '../utils/error.ts'
+import { getErrorMessage, useI18n } from '../i18n/index.ts'
 
 type ResourceState<T> = {
   source: object | null
   data: T
-  error: string | null
+  failure: { reason: unknown } | null
 }
 
 export function useAsyncResource<T>(load: () => Promise<T>, initialData: T, refreshKey: unknown = null) {
+  const { m } = useI18n()
   const [version, setVersion] = useState(0)
-  const [state, setState] = useState<ResourceState<T>>({ source: null, data: initialData, error: null })
+  const [state, setState] = useState<ResourceState<T>>({ source: null, data: initialData, failure: null })
   const source = useMemo(() => ({ load, version, refreshKey }), [load, version, refreshKey])
 
   useEffect(() => {
@@ -18,10 +19,10 @@ export function useAsyncResource<T>(load: () => Promise<T>, initialData: T, refr
     source
       .load()
       .then((data) => {
-        if (!cancelled) setState({ source, data, error: null })
+        if (!cancelled) setState({ source, data, failure: null })
       })
       .catch((reason: unknown) => {
-        if (!cancelled) setState((previous) => ({ ...previous, source, error: getErrorMessage(reason) }))
+        if (!cancelled) setState((previous) => ({ ...previous, source, failure: { reason } }))
       })
 
     return () => {
@@ -45,5 +46,7 @@ export function useAsyncResource<T>(load: () => Promise<T>, initialData: T, refr
     [setData],
   )
 
-  return { data: state.data, error: state.error, isLoading: state.source !== source, reload, setData, update, apply }
+  const error = state.failure ? getErrorMessage(state.failure.reason, m) : null
+
+  return { data: state.data, error, isLoading: state.source !== source, reload, setData, update, apply }
 }

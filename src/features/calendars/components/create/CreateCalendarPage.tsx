@@ -1,5 +1,6 @@
 import { useState, type SubmitEventHandler } from 'react'
 import { useNavigate } from 'react-router'
+import { useI18n } from '../../../../i18n/index.ts'
 import { Button } from '../../../../components/Button.tsx'
 import { Form } from '../../../../components/Form.tsx'
 import { PageLayout } from '../../../../components/PageLayout.tsx'
@@ -18,24 +19,11 @@ import { DetailsStep } from './DetailsStep.tsx'
 import { MembersStep } from './MembersStep.tsx'
 import { ReviewStep } from './ReviewStep.tsx'
 
-const STEPS = [
-  { label: 'Name', title: 'Wie heißt der Kalender?', hint: 'Name und Beschreibung sehen alle Mitglieder.' },
-  {
-    label: 'Farbe',
-    title: 'Welche Farbe bekommt er?',
-    hint: 'Neue Termine in diesem Kalender starten mit dieser Farbe.',
-  },
-  {
-    label: 'Mitglieder',
-    title: 'Wen möchtest du einladen?',
-    hint: 'Eingeladene bekommen eine E-Mail und sehen den Kalender, sobald sie annehmen.',
-  },
-  { label: 'Überprüfen', title: 'Alles richtig?', hint: 'Du bist Owner und kannst alles später noch ändern.' },
-] as const
-
-const LAST_STEP = STEPS.length - 1
-
 export function CreateCalendarPage() {
+  const { m } = useI18n()
+  const { create: text } = m.calendars
+  const steps = text.steps
+  const lastStep = steps.length - 1
   const { user } = useAuth()
   const { createCalendar, selectCalendar } = useCalendars()
   const navigate = useNavigate()
@@ -57,11 +45,11 @@ export function CreateCalendarPage() {
   const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
     if (step === 0) {
-      const errors = validateDetails(draft)
+      const errors = validateDetails(draft, m)
       setDetailErrors(errors)
       if (hasFieldErrors(errors)) return
     }
-    if (step === LAST_STEP) void create()
+    if (step === lastStep) void create()
     else setStep(step + 1)
   }
 
@@ -94,17 +82,15 @@ export function CreateCalendarPage() {
     }
   }
 
-  const { title, hint } = STEPS[step]
+  const { title, hint } = steps[step]
 
   return (
-    <PageLayout title="Neuer Kalender" variant="full">
+    <PageLayout title={text.title} variant="full">
       <div className="wizard">
-        <Stepper steps={STEPS} current={step} onSelect={setStep} />
+        <Stepper steps={steps} current={step} onSelect={setStep} />
         <Form onSubmit={handleSubmit} className="wizardPanel">
           <header className="wizardHeader">
-            <p className="wizardStepCount">
-              Schritt {step + 1} von {STEPS.length}
-            </p>
+            <p className="wizardStepCount">{text.stepCount(step + 1, steps.length)}</p>
             <h2 className="wizardTitle">{title}</h2>
             <p className="formHint">{hint}</p>
           </header>
@@ -113,11 +99,11 @@ export function CreateCalendarPage() {
           <div className="wizardActions">
             {step > 0 && (
               <Button variant="secondary" onClick={() => setStep(step - 1)}>
-                Zurück
+                {m.common.back}
               </Button>
             )}
-            <Button type="submit" isPending={isPending} pendingLabel="Wird erstellt …">
-              {step === LAST_STEP ? 'Kalender erstellen' : 'Weiter'}
+            <Button type="submit" isPending={isPending} pendingLabel={text.pending}>
+              {step === lastStep ? text.submit : text.next}
             </Button>
           </div>
         </Form>

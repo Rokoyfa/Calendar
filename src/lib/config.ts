@@ -33,6 +33,7 @@ export type CalendarProps = {
   routing?: CalendarRouting
   basename?: string
   initialPath?: string
+  locale?: string
   className?: string
   style?: CSSProperties
 }

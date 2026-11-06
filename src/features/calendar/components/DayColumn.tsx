@@ -1,13 +1,7 @@
 import { useMemo, type CSSProperties } from 'react'
 import { classNames } from '../../../utils/classNames.ts'
-import {
-  formatDay,
-  formatHour,
-  formatShortWeekday,
-  formatWeekday,
-  fromISODate,
-  getDayOfMonth,
-} from '../../../utils/date.ts'
+import { useI18n } from '../../../i18n/index.ts'
+import { fromISODate, getDayOfMonth } from '../../../utils/date.ts'
 import type { EventOccurrence } from '../../../utils/event.ts'
 import { HOURS } from '../constants/grid.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
@@ -36,17 +30,18 @@ export function DayColumn({
   onEventSelect,
   onHeaderSelect,
 }: DayColumnProps) {
+  const { m, format } = useI18n()
   const day = fromISODate(date)
-  const dayLabel = `${formatWeekday(day)}, ${formatDay(day)}`
+  const dayLabel = format.longDate(date)
   const positionedSegments = useMemo(() => layoutEvents(segments), [segments])
   const header = (
     <>
       <span className="dayName">
-        <span className="compactHidden">{formatWeekday(day)}</span>
-        <span className="compactOnly">{formatShortWeekday(day)}</span>
+        <span className="compactHidden">{format.weekday(day)}</span>
+        <span className="compactOnly">{format.shortWeekday(day)}</span>
       </span>
       <span className="dayDisplay">
-        <span className="compactHidden">{formatDay(day)}</span>
+        <span className="compactHidden">{format.day(day)}</span>
         <span className="compactOnly">{getDayOfMonth(date)}</span>
       </span>
     </>
@@ -58,7 +53,7 @@ export function DayColumn({
         <button
           type="button"
           className="columnHeader"
-          title={`${dayLabel} öffnen`}
+          title={m.calendar.openDay(dayLabel)}
           onClick={() => onHeaderSelect(date)}
         >
           {header}
@@ -72,7 +67,7 @@ export function DayColumn({
             key={hour}
             className="slot"
             data-hour={hour}
-            title={`${dayLabel} ${formatHour(hour)}`}
+            title={`${dayLabel} ${format.hour(hour)}`}
             onClick={() => onSlotSelect(date, hour)}
           />
         ))}

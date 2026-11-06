@@ -1,5 +1,6 @@
 import { classNames } from '../../../utils/classNames.ts'
-import { formatLongDate, getDayOfMonth } from '../../../utils/date.ts'
+import { useI18n } from '../../../i18n/index.ts'
+import { getDayOfMonth } from '../../../utils/date.ts'
 import { MonthGrid } from './MonthGrid.tsx'
 
 type MiniMonthProps = {
@@ -11,6 +12,7 @@ type MiniMonthProps = {
 }
 
 export function MiniMonth({ month, today, className, hasEvents, onSelectDay }: MiniMonthProps) {
+  const { format } = useI18n()
   return (
     <MonthGrid
       month={month}
@@ -23,7 +25,7 @@ export function MiniMonth({ month, today, className, hasEvents, onSelectDay }: M
             key={date}
             type="button"
             className={dayClassName}
-            title={formatLongDate(date)}
+            title={format.longDate(date)}
             onClick={() => onSelectDay(date)}
           >
             {getDayOfMonth(date)}

@@ -10,7 +10,7 @@ export class LocalColorRepository implements ColorRepository {
   readonly #colors: LocalStorageList<HexColor>
 
   constructor(storageKey = DEFAULT_STORAGE_KEY) {
-    this.#colors = new LocalStorageList(storageKey, parseColor, 'Die Farbe konnte nicht lokal gespeichert werden.')
+    this.#colors = new LocalStorageList(storageKey, parseColor, 'saveColorFailed')
     this.#colors.initialize()
   }
 

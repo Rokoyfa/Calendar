@@ -1,4 +1,5 @@
 import { ApiError, isApiError } from '../../../utils/apiError.ts'
+import type { ErrorCode } from '../../../utils/appError.ts'
 import type { ApiClient } from '../../../utils/api.ts'
 import type {
   AccountDeletionInput,
@@ -15,24 +16,22 @@ import type {
 const AUTH_PATH = '/auth'
 const ME_PATH = `${AUTH_PATH}/me`
 
-type StatusMessages = Partial<Record<number, string>>
+type StatusCodes = Partial<Record<number, ErrorCode>>
 
-const withMessages = (error: unknown, messages: StatusMessages) => {
-  if (!isApiError(error) || error.status === null || error.body !== undefined) return error
-  const message = messages[error.status]
-  if (!message) return error
-  return new ApiError(message, { kind: error.kind, status: error.status, body: error.body, cause: error })
+const withCode = (error: unknown, codes: StatusCodes) => {
+  if (!isApiError(error) || error.status === null) return error
+  const code = codes[error.status]
+  if (!code) return error
+  return new ApiError(error.message, { kind: error.kind, code, status: error.status, body: error.body, cause: error })
 }
 
-const translateErrors = async <T>(request: Promise<T>, messages: StatusMessages) => {
+const translateErrors = async <T>(request: Promise<T>, codes: StatusCodes) => {
   try {
     return await request
   } catch (error) {
-    throw withMessages(error, messages)
+    throw withCode(error, codes)
   }
 }
-
-const INVALID_LINK = 'Der Link ist ungültig oder abgelaufen.'
 
 export class RemoteAuthRepository implements AuthRepository {
   readonly #api: ApiClient
@@ -52,13 +51,13 @@ export class RemoteAuthRepository implements AuthRepository {
 
   login(input: LoginInput) {
     return translateErrors(this.#api.post<User>(`${AUTH_PATH}/login`, input), {
-      401: 'E-Mail-Adresse oder Passwort ist falsch.',
+      401: 'invalidCredentials',
     })
   }
 
   register(input: RegisterInput) {
     return translateErrors(this.#api.post<User>(`${AUTH_PATH}/register`, input), {
-      409: 'Für diese E-Mail-Adresse gibt es bereits ein Konto.',
+      409: 'emailTaken',
     })
   }
 
@@ -72,14 +71,14 @@ export class RemoteAuthRepository implements AuthRepository {
 
   changePassword(input: PasswordChangeInput) {
     return translateErrors(this.#api.post<void>(`${ME_PATH}/password`, input), {
-      403: 'Das aktuelle Passwort ist falsch.',
+      403: 'wrongCurrentPassword',
     })
   }
 
   deleteAccount(input: AccountDeletionInput) {
     return translateErrors(this.#api.request<void>('DELETE', ME_PATH, { body: input }), {
-      403: 'Das Passwort ist falsch.',
-      409: 'Du bist einziger Owner eines Teams mit weiteren Mitgliedern. Bitte übergib zuerst die Leitung.',
+      403: 'wrongPassword',
+      409: 'soleOwner',
     })
   }
 
@@ -89,12 +88,12 @@ export class RemoteAuthRepository implements AuthRepository {
 
   resetPassword(input: PasswordResetInput) {
     return translateErrors(this.#api.post<void>(`${AUTH_PATH}/password-reset/confirm`, input), {
-      410: `${INVALID_LINK} Bitte fordere einen neuen an.`,
+      410: 'invalidResetLink',
     })
   }
 
   verifyEmail(token: string) {
-    return translateErrors(this.#api.post<void>(`${AUTH_PATH}/verify-email`, { token }), { 410: INVALID_LINK })
+    return translateErrors(this.#api.post<void>(`${AUTH_PATH}/verify-email`, { token }), { 410: 'invalidLink' })
   }
 
   async resendVerificationEmail() {

@@ -6,9 +6,10 @@ import { SelectField } from '../../../../components/SelectField.tsx'
 import { ActionFeedback, ErrorMessage } from '../../../../components/StatusMessage.tsx'
 import { TextField } from '../../../../components/TextField.tsx'
 import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
-import { formatLongDate, toISODate } from '../../../../utils/date.ts'
+import { useI18n } from '../../../../i18n/index.ts'
+import { toISODate } from '../../../../utils/date.ts'
 import { EMAIL_MAX_LENGTH, normalizeEmail } from '../../../../utils/validation.ts'
-import { DEFAULT_INVITATION_ROLE, ROLE_DESCRIPTIONS, ROLE_LABELS } from '../../constants/calendars.ts'
+import { DEFAULT_INVITATION_ROLE } from '../../constants/calendars.ts'
 import type { CalendarSummary, InvitableRole, Invitation, TeamInvitation, TeamMember } from '../../types/calendar.ts'
 import { validateInvitation } from '../../utils/draft.ts'
 import { getInvitableRoles, outranks } from '../../utils/permissions.ts'
@@ -32,19 +33,21 @@ function InvitationRow({
   canRevoke: boolean
   onRevoke: () => Promise<void>
 }) {
+  const { m, format } = useI18n()
+  const { teamInvitations: text, invitations, roles } = m.calendars
   const { run, isPending, error } = useAsyncAction(onRevoke)
   return (
     <li className="itemRow">
       <span className="itemRowMain">
         <span className="itemRowTitle">{invitation.email}</span>
         <span className="itemRowMeta">
-          {ROLE_LABELS[invitation.role]} · gültig bis {formatLongDate(toISODate(new Date(invitation.expiresAt)))}
+          {roles[invitation.role]} · {invitations.validUntil(format.longDate(toISODate(new Date(invitation.expiresAt))))}
         </span>
         <ActionFeedback error={error} />
       </span>
       {canRevoke && (
-        <Button variant="outline" isPending={isPending} pendingLabel="Wird zurückgezogen …" onClick={() => void run()}>
-          Zurückziehen
+        <Button variant="outline" isPending={isPending} pendingLabel={text.revoking} onClick={() => void run()}>
+          {text.revoke}
         </Button>
       )}
     </li>
@@ -60,6 +63,8 @@ export function TeamInvitationsSection({
   onInvite,
   onRevoke,
 }: TeamInvitationsSectionProps) {
+  const { m } = useI18n()
+  const { teamInvitations: text, invite, roles: roleLabels, roleDescriptions } = m.calendars
   const roles = getInvitableRoles(calendar.role)
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<InvitableRole>(
@@ -76,9 +81,9 @@ export function TeamInvitationsSection({
   const submit = () => {
     const invitation = { email: normalizeEmail(email), role }
     const memberError = members.some((member) => member.email === invitation.email)
-      ? 'Diese Person ist schon Mitglied.'
+      ? m.calendars.validation.alreadyMember
       : undefined
-    const errors = validateInvitation(invitation, invitations, ownEmail)
+    const errors = validateInvitation(invitation, invitations, ownEmail, m)
     const message = memberError ?? errors.email
     setFieldError(message)
     setSentTo(null)
@@ -87,8 +92,8 @@ export function TeamInvitationsSection({
 
   return (
     <PageSection
-      title="Einladungen"
-      description="Neue Mitglieder per E-Mail einladen. Du kannst nur Rollen unterhalb deiner eigenen vergeben. Eine Einladung ist 7 Tage gültig."
+      title={text.title}
+      description={text.description}
     >
       <Form
         onSubmit={(event) => {
@@ -98,7 +103,7 @@ export function TeamInvitationsSection({
       >
         <div className="formRow inviteRow">
           <TextField
-            label="E-Mail-Adresse"
+            label={invite.email}
             name="inviteEmail"
             type="email"
             inputMode="email"
@@ -112,25 +117,23 @@ export function TeamInvitationsSection({
             }}
           />
           <SelectField
-            label="Rolle"
+            label={invite.role}
             name="inviteRole"
             value={role}
-            options={roles.map((value) => ({ value, label: ROLE_LABELS[value] }))}
+            options={roles.map((value) => ({ value, label: roleLabels[value] }))}
             onChange={setRole}
           />
-          <Button type="submit" className="inviteAdd" isPending={send.isPending} pendingLabel="Wird gesendet …">
-            Einladen
+          <Button type="submit" className="inviteAdd" isPending={send.isPending} pendingLabel={text.sending}>
+            {text.submit}
           </Button>
         </div>
-        <p className="formHint">
-          {ROLE_LABELS[role]}: {ROLE_DESCRIPTIONS[role]}
-        </p>
-        <ActionFeedback error={send.error} success={sentTo && `Einladung an ${sentTo} verschickt.`} />
+        <p className="formHint">{m.calendars.roleHint(roleLabels[role], roleDescriptions[role])}</p>
+        <ActionFeedback error={send.error} success={sentTo && text.sent(sentTo)} />
       </Form>
 
       <ErrorMessage message={error} />
       {invitations.length === 0 ? (
-        <p className="emptyHint">Keine offenen Einladungen.</p>
+        <p className="emptyHint">{text.none}</p>
       ) : (
         <ul className="itemList">
           {invitations.map((invitation) => (

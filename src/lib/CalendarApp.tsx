@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { RouterProvider } from 'react-router'
+import { useI18n } from '../i18n/index.ts'
 import { createStorageConfig } from '../config/storage.ts'
 import { AuthProvider, RemoteAuthRepository, useAuth } from '../features/authorization/index.ts'
 import { CalendarsProvider } from '../features/calendars/index.ts'
@@ -15,6 +16,7 @@ type SessionStorageProviderProps = {
 }
 
 function SessionStorageProvider({ config, children }: SessionStorageProviderProps) {
+  const { m } = useI18n()
   const { status, user, expireSession } = useAuth()
   const isAuthenticated = status === 'authenticated'
   const storageConfig = useMemo(
@@ -22,7 +24,7 @@ function SessionStorageProvider({ config, children }: SessionStorageProviderProp
     [config, isAuthenticated, expireSession],
   )
 
-  if (status === 'loading') return <p className="appLoading">Lädt …</p>
+  if (status === 'loading') return <p className="appLoading">{m.common.loading}</p>
   return (
     <StorageProvider config={storageConfig}>
       <PreferencesProvider>

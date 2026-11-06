@@ -11,7 +11,7 @@ export class LocalPreferencesRepository implements PreferencesRepository {
     this.#preferences = new LocalStorageValue(
       storageKey,
       parsePreferences,
-      'Die Einstellungen konnten nicht lokal gespeichert werden.',
+      'savePreferencesFailed',
     )
     this.#preferences.initialize()
   }

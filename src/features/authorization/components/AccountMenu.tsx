@@ -2,6 +2,7 @@ import type { MouseEvent, ReactNode, ToggleEvent } from 'react'
 import { useLocation } from 'react-router'
 import { Button, ButtonLink } from '../../../components/Button.tsx'
 import { ROUTES, withRedirect } from '../../../config/routes.ts'
+import { useI18n } from '../../../i18n/index.ts'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useAuth } from '../hooks/useAuth.ts'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
@@ -35,6 +36,7 @@ type AccountMenuProps = {
 }
 
 export function AccountMenu({ menuItems }: AccountMenuProps) {
+  const { m } = useI18n()
   const { enabled, status, user, logout } = useAuth()
   const location = useLocation()
   const { run, isPending, error } = useAsyncAction(logout)
@@ -48,7 +50,7 @@ export function AccountMenu({ menuItems }: AccountMenuProps) {
         variant="outline"
         className="accountLogin"
       >
-        Anmelden
+        {m.auth.menu.signIn}
       </ButtonLink>
     )
 
@@ -58,7 +60,7 @@ export function AccountMenu({ menuItems }: AccountMenuProps) {
         type="button"
         className="accountButton"
         popoverTarget={ACCOUNT_POPOVER_ID}
-        aria-label={`Konto von ${user.name}`}
+        aria-label={m.auth.menu.accountOf(user.name)}
         title={user.name}
       >
         {getInitial(user.name)}
@@ -75,16 +77,16 @@ export function AccountMenu({ menuItems }: AccountMenuProps) {
         <ErrorMessage message={error} />
         {menuItems}
         <ButtonLink to={ROUTES.settings} variant="outline" block>
-          Einstellungen
+          {m.common.settings}
         </ButtonLink>
         <Button
           variant="secondary"
           block
           isPending={isPending}
-          pendingLabel="Wird abgemeldet …"
+          pendingLabel={m.auth.menu.signingOut}
           onClick={() => void run()}
         >
-          Abmelden
+          {m.auth.menu.signOut}
         </Button>
       </div>
     </>

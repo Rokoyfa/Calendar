@@ -1,4 +1,5 @@
 import { useParams } from 'react-router'
+import { useI18n } from '../../../../i18n/index.ts'
 import { PageLayout } from '../../../../components/PageLayout.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { Switch } from '../../../../components/Switch.tsx'
@@ -17,15 +18,14 @@ import { GeneralSection } from './GeneralSection.tsx'
 import { MembersSection } from './MembersSection.tsx'
 import { TeamInvitationsSection } from './TeamInvitationsSection.tsx'
 
-const BACK = { to: SETTINGS_CALENDARS_PATH, label: 'Zu den Einstellungen' }
-
 function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
+  const { m } = useI18n()
   const { setShowInPersonal } = useCalendars()
   const { run, error } = useAsyncAction(setShowInPersonal)
   return (
-    <PageSection title="Anzeige" description="Gilt nur für dich. Andere Mitglieder stellen das selbst ein.">
+    <PageSection title={m.calendars.settings.displayTitle} description={m.calendars.settings.displayDescription}>
       <Switch
-        label="Termine auch im persönlichen Kalender anzeigen"
+        label={m.calendars.list.showInPersonal}
         checked={calendar.showInPersonal}
         onChange={(checked) => void run(calendar.id, checked)}
       />
@@ -34,19 +34,18 @@ function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
   )
 }
 
-const withCount = (label: string, count: number) => (count > 0 ? `${label} (${count})` : label)
-
 type TeamTab = 'general' | 'members' | 'invitations' | 'danger'
 
-const TABS_LABEL = 'Bereiche der Kalender-Einstellungen'
-
 function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
+  const { m } = useI18n()
+  const { settings } = m.calendars
+  const { withCount } = settings
   const { user } = useAuth()
   const team = useTeam(calendar)
   const tabs: TabDefinition<TeamTab>[] = [
     {
       value: 'general',
-      label: 'Allgemein',
+      label: settings.tabs.general,
       content: (
         <>
           <GeneralSection calendar={calendar} />
@@ -56,7 +55,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
     },
     {
       value: 'members',
-      label: withCount('Mitglieder', team.members.length),
+      label: withCount(settings.tabs.members, team.members.length),
       content: (
         <MembersSection
           calendar={calendar}
@@ -72,7 +71,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
       ? [
           {
             value: 'invitations' as const,
-            label: withCount('Einladungen', team.invitations.length),
+            label: withCount(settings.tabs.invitations, team.invitations.length),
             content: (
               <TeamInvitationsSection
                 calendar={calendar}
@@ -89,7 +88,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
       : []),
     {
       value: 'danger',
-      label: 'Gefahrenbereich',
+      label: settings.tabs.danger,
       content: (
         <DangerSection
           calendar={calendar}
@@ -102,33 +101,31 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
   ]
   const [active, select] = useTabParam(tabs)
 
-  return <Tabs label={TABS_LABEL} tabs={tabs} value={active} onChange={select} />
+  return <Tabs label={settings.tabsLabel} tabs={tabs} value={active} onChange={select} />
 }
 
 export function CalendarSettingsPage() {
+  const { m } = useI18n()
+  const { settings } = m.calendars
+  const back = { to: SETTINGS_CALENDARS_PATH, label: m.common.backToSettings }
   const { calendarId } = useParams()
   const { calendars, isLoading } = useCalendars()
   const calendar = calendars.find((entry) => entry.id === calendarId)
 
   if (!calendar)
     return (
-      <PageLayout title="Kalender-Einstellungen" back={BACK} variant="full">
-        <p className="emptyHint">
-          {isLoading ? 'Lädt …' : 'Diesen Kalender gibt es nicht, oder du hast keinen Zugriff mehr.'}
-        </p>
+      <PageLayout title={settings.title} back={back} variant="full">
+        <p className="emptyHint">{isLoading ? m.common.loading : settings.notFound}</p>
       </PageLayout>
     )
 
   return (
-    <PageLayout title={`${calendar.name} · Einstellungen`} back={BACK} variant="full">
+    <PageLayout title={settings.pageTitle(calendar.name)} back={back} variant="full">
       {isPersonalCalendar(calendar) ? (
         <>
           <GeneralSection calendar={calendar} />
-          <PageSection title="Persönlicher Kalender">
-            <p className="formHint">
-              Nur du siehst diesen Kalender. Er lässt sich nicht teilen, verlassen oder löschen. Termine aus
-              Team-Kalendern blendest du in deren Einstellungen ein oder aus.
-            </p>
+          <PageSection title={settings.personalTitle}>
+            <p className="formHint">{settings.personalHint}</p>
           </PageSection>
         </>
       ) : (

@@ -1,6 +1,6 @@
 import type { EditScope } from '../../../utils/event.ts'
 import { Button } from '../../../components/Button.tsx'
-import { EDIT_SCOPE_LABELS } from '../constants/scopes.ts'
+import { useI18n } from '../../../i18n/index.ts'
 
 type ScopeButtonsProps = {
   options: readonly EditScope[]
@@ -11,6 +11,7 @@ type ScopeButtonsProps = {
 }
 
 export function ScopeButtons({ options, variant = 'default', disabled, onSelect, onCancel }: ScopeButtonsProps) {
+  const { m } = useI18n()
   const focusCancel = variant === 'danger'
   return (
     <div className="modalActions modalActions--stacked">
@@ -23,11 +24,11 @@ export function ScopeButtons({ options, variant = 'default', disabled, onSelect,
           onClick={() => onSelect(scope)}
           data-autofocus={!focusCancel && index === 0 ? true : undefined}
         >
-          {EDIT_SCOPE_LABELS[scope]}
+          {m.events.scopes[scope]}
         </Button>
       ))}
       <Button variant="secondary" block onClick={onCancel} data-autofocus={focusCancel ? true : undefined}>
-        Abbrechen
+        {m.common.cancel}
       </Button>
     </div>
   )

@@ -61,6 +61,7 @@ import { Calendar } from 'calendar'
 | `routing` | – | `memory` | `memory`: Ansichten nur intern, die Adresse der Gastgeberseite bleibt unverändert. `browser`: eigene Adressen wie diese Website. |
 | `basename` | – | – | Pfad-Präfix bei `routing="browser"` |
 | `initialPath` | `initial-path` | `/` | Startansicht bei `memory`, z. B. `/settings` oder `/reset-password?token=…` |
+| `locale` | `locale` | Browser | Sprache und Region, z. B. `en-US`, `en-GB`, `de-DE`. Siehe [Sprache und Region](#sprache-und-region). |
 | `className`, `style` | `class`, `style` | – | Größe und Platz auf der Gastgeberseite |
 
 **Was die Einbettung absichert:**
@@ -78,7 +79,39 @@ import { Calendar } from 'calendar'
 
 Getestet mit einer statischen HTML-Seite (nur die Script-Datei) und einem frischen React-19.2-Projekt, das das gepackte npm-Paket installiert, mit strenger Typprüfung.
 
-**Noch offen:** Die Sprache ist fest Deutsch. Mehrere Widgets mit `storage-mode="local"` auf derselben Seite teilen sich den Browser-Speicher. E-Mail-Links (Passwort zurücksetzen, E-Mail bestätigen) zeigen auf die Adresse aus der Backend-Konfiguration; bei `routing="memory"` muss der Gastgeber sie per `initialPath` weiterreichen. Tenant-ID und Daten-Adapter folgen in Phase 2 und 3.
+**Noch offen:** Mehrere Widgets mit `storage-mode="local"` auf derselben Seite teilen sich den Browser-Speicher. E-Mail-Links (Passwort zurücksetzen, E-Mail bestätigen) zeigen auf die Adresse aus der Backend-Konfiguration; bei `routing="memory"` muss der Gastgeber sie per `initialPath` weiterreichen. Tenant-ID und Daten-Adapter folgen in Phase 2 und 3.
+
+### Sprache und Region
+
+Standardsprache ist **Englisch**, dazu gibt es **Deutsch**. Welche gilt, entscheidet in dieser Reihenfolge:
+
+1. **Einstellung des Nutzers** unter Einstellungen → Darstellung → Sprache und Region (`Automatisch`, `English (US)`, `English (UK)`, `Deutsch`). Gespeichert in den Einstellungen (`locale`, Standard `auto`).
+2. **Prop `locale` bzw. Attribut `locale`** des Gastgebers
+3. **Browser** (`navigator.languages`)
+4. Sonst `en-US`
+
+Eine Sprache, die es nicht gibt, fällt auf Englisch **mit der Region des Nutzers** zurück: `fr-FR` wird `en-FR`, also englische Texte mit Montag als Wochenbeginn und 24-Stunden-Uhr.
+
+**Formate kommen aus der Region, nicht aus der Sprache** (über `Intl`):
+
+| | `en-US` | `en-GB` | `de-DE` |
+| --- | --- | --- | --- |
+| Erster Wochentag | Sonntag | Montag | Montag |
+| Uhrzeit | `1:00 PM` | `13:00` | `13:00` |
+| Kurze Stunde (Handy) | `1p` | `13` | `13` |
+| Datum | `11/05/26` | `05/11/26` | `05.11.26` |
+| Wochennummer | `Wk 45` | `Wk 45` | `KW 45` |
+| Zählweise der Wochen | erste Woche enthält den 1. Januar | ISO 8601 | ISO 8601 |
+
+Wochenbeginn und Zählweise liefert `Intl.Locale#getWeekInfo`, wo es fehlt, eine Liste der Länder mit Sonntag als Wochenbeginn. Die Wochenansicht, das Monatsraster, die Mini-Monate und die Wochentage bei wiederkehrenden Terminen folgen dem Wochenbeginn. Gespeichert wird weiter unabhängig davon (Wochentage als 0 = Montag … 6 = Sonntag).
+
+**Aufbau (`src/i18n/`):**
+
+- `messages/en/*.ts` sind die Quelle der Texte, je Bereich eine Datei (`core`, `calendar`, `events`, `calendars`, `auth`, `settings`, `storage`). Der Typ `Messages` wird aus Englisch abgeleitet. `messages/de/*.ts` muss genau dieselben Schlüssel haben, sonst schlägt die Typprüfung fehl.
+- Texte mit Werten sind Funktionen, z. B. `views.weekNumber(45)` → `Wk 45` bzw. `KW 45`. Abkürzungen und Mehrzahl stehen so je Sprache an einer Stelle.
+- `useI18n()` liefert `m` (Texte), `format` (Datum, Uhrzeit, Wochentage, Listen), `weekInfo` und `locale`.
+- Fehler tragen einen **Code** statt eines Textes (`AppError`, `ApiError.code`) und werden erst beim Anzeigen übersetzt (`getErrorMessage(error, m)`). Meldungen, die der Server ohne bekannten Code schickt, werden unverändert angezeigt.
+- Prüfungen (`validateEventInput`, `validateEmail`, Formular-Validierung) bekommen `m` übergeben.
 
 ---
 
@@ -158,15 +191,15 @@ Weitere Optionen: `createApiClient({ baseUrl, timeoutMs, getAccessToken, onUnaut
 
 ### Fehler
 
-Jeder Fehler ist ein `ApiError` (aus `src/utils/apiError.ts`) mit einer deutschen, anzeigbaren Meldung. Er funktioniert mit `getErrorMessage` und `ErrorMessage` wie jeder andere Fehler.
+Jeder Fehler ist ein `ApiError` (aus `src/utils/apiError.ts`). Angezeigt wird er über `getErrorMessage(error, m)` in der Sprache des Nutzers: bekannte Fälle über `code` (z. B. `invalidCredentials`, `emailTaken`), sonst die `message` des Servers, sonst eine Standardmeldung je Status oder Art.
 
 | `kind`    | `status` | Meldung |
 | --------- | -------- | ------- |
-| `http`    | 4xx/5xx  | `message` aus der Server-Antwort, sonst eine Standardmeldung je Status, z. B. 401 „Bitte melde dich an.“, 404 „Der Eintrag wurde nicht gefunden.“, 5xx „Auf dem Server ist ein Fehler aufgetreten.“ |
-| `timeout` | `null`   | Der Server hat nicht rechtzeitig geantwortet. |
-| `network` | `null`   | Der Server ist nicht erreichbar. |
-| `aborted` | `null`   | Die Anfrage wurde abgebrochen. |
-| `parse`   | `null`   | Die Antwort des Servers konnte nicht gelesen werden. |
+| `http`    | 4xx/5xx  | `message` aus der Server-Antwort, sonst eine Standardmeldung je Status, z. B. 401 „Please sign in.“ / „Bitte melde dich an.“ |
+| `timeout` | `null`   | Zeitlimit überschritten |
+| `network` | `null`   | Server nicht erreichbar |
+| `aborted` | `null`   | Anfrage abgebrochen |
+| `parse`   | `null`   | Antwort nicht lesbar |
 
 Zusätzlich gibt es `error.isUnauthorized`, `error.isNotFound`, `error.isServerError` und `error.body` mit der vollständigen Server-Antwort. Prüfen mit `isApiError(error)`.
 
@@ -391,17 +424,18 @@ Angelegt wird über `POST /calendars` mit Name, Beschreibung, Farbe und Einladun
 
 Seite `/settings`, erreichbar über **Einstellungen** im Kontomenü (runder Button mit dem Anfangsbuchstaben). Mit `VITE_FEATURE_AUTH=true` nur für Angemeldete: `/settings` leitet sonst zum Kalender um, auch direkt nach dem Löschen des Kontos. Ohne Anmeldefunktion gibt es kein Kontomenü, dann führt ein Zahnrad in der Kopfzeile zu den Einstellungen.
 
-Oben wechseln Tabs zwischen **Kalender**, **Darstellung** (Farbschema, Startansicht, eigene Farben) und **Konto** (nur angemeldet). Der gewählte Tab steht in der Adresse (`/settings?tab=appearance`), bleibt also beim Neuladen erhalten und lässt sich verlinken. Pfeiltasten links/rechts wechseln den Tab.
+Oben wechseln Tabs zwischen **Kalender**, **Darstellung** (Sprache und Region, Farbschema, Startansicht, eigene Farben) und **Konto** (nur angemeldet). Der gewählte Tab steht in der Adresse (`/settings?tab=appearance`), bleibt also beim Neuladen erhalten und lässt sich verlinken. Pfeiltasten links/rechts wechseln den Tab.
 
 Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, rechts die Einstellungen. Auf dem Handy untereinander.
 
 - **Kalender:** alle Kalender, auf die man Zugriff hat (persönlich und Teams), mit Farbe, Team und eigener Rolle. Bei Team-Kalendern legt ein Schalter fest, ob ihre Termine **auch im persönlichen Kalender** erscheinen (`showInPersonal`, Standard an). Team-Kalender lassen sich mit Bestätigung **verlassen**, außer man ist Owner. Der persönliche Kalender lässt sich nicht entfernen. Schalter und Verlassen werden sofort auf dem Server gespeichert.
 - **Zahnrad an der Kachel** führt zur Einstellungsseite des Kalenders (siehe [Kalender-Einstellungen](#kalender-einstellungen)). Es erscheint beim persönlichen Kalender immer und bei Team-Kalendern nur mit einer Rolle, die dort etwas verwalten darf (Owner, Administrator, Verwalter).
 - **Einladungen:** Offene Einladungen an die eigene E-Mail-Adresse stehen oben mit Team, Beschreibung, Rolle, Absender und Ablaufdatum. **Annehmen** nimmt den Kalender sofort in die Liste und in „Kalender wechseln“ auf, **Ablehnen** entfernt die Einladung.
+- **Sprache und Region:** Automatisch (Browser bzw. Vorgabe des Gastgebers), English (US), English (UK) oder Deutsch. Wirkt sofort, siehe [Sprache und Region](#sprache-und-region).
 - **Farbschema:** Wie System, Hell oder Dunkel. Gesetzt über `data-theme` am `<html>`, die Farben kommen weiter aus `light-dark()`.
 - **Startansicht** getrennt für Computer/Tablet und Handy
 - **Eigene Farben** ansehen und entfernen. Termine mit dieser Farbe behalten sie.
-- Gespeichert in diesem Browser unter `calendar.preferences.v1` (Farben weiter unter `calendar.colors.v1`). Beim ersten Start legt die App beide Einträge mit Standardwerten an: Farbschema `system`, Startansicht Woche bzw. Tag auf dem Handy, keine eigenen Farben. Vorhandene Werte bleiben unverändert. Das Datenbankschema hat dafür schon `user_preferences` und `user_colors`.
+- Gespeichert in diesem Browser unter `calendar.preferences.v1` (Farben weiter unter `calendar.colors.v1`). Beim ersten Start legt die App beide Einträge mit Standardwerten an: Farbschema `system`, Startansicht Woche bzw. Tag auf dem Handy, Sprache `auto`, keine eigenen Farben. Vorhandene Werte bleiben unverändert. Das Datenbankschema hat dafür schon `user_preferences` und `user_colors`.
 - Angemeldet kommen die Konto-Abschnitte dazu, siehe [Konto in den Einstellungen](#konto-in-den-einstellungen).
 
 ### Farben
@@ -511,7 +545,9 @@ database/
    ├─ 002_automation.sql       Trigger und Sichten user_calendars, user_team_permissions
    ├─ 002_automation.down.sql
    ├─ 003_calendar_settings.sql Beschreibung für Teams, Anzeige im persönlichen Kalender
-   └─ 003_calendar_settings.down.sql
+   ├─ 003_calendar_settings.down.sql
+   ├─ 004_locale.sql           Sprache und Region in user_preferences
+   └─ 004_locale.down.sql
 demo/embed.html                Demo-Gastgeberseite: zwei Widgets, störendes CSS
 scripts/collect-types.mjs      Öffentliche Typdefinitionen für das npm-Paket einsammeln
 vite.lib.config.ts             Library-Build (npm und Script-Datei)
@@ -525,6 +561,14 @@ src/
 │  ├─ element.tsx              <calendar-widget> (Custom Element, Attribute → Props)
 │  ├─ element-auto.ts          Einstieg der Script-Datei: registriert <calendar-widget>
 │  └─ config.ts                CalendarProps, CalendarConfig, Standardwerte
+├─ i18n/                       Sprache und Region
+│  ├─ messages/en/, de/        Texte je Bereich, Englisch definiert den Typ
+│  ├─ I18nProvider.tsx         Wählt die Sprache (Nutzer > Gastgeber > Browser > en-US), setzt lang an der Wurzel
+│  ├─ useI18n.ts               m, format, weekInfo, locale
+│  ├─ format.ts                Datum, Uhrzeit, Wochentage und Listen je Locale (Intl)
+│  ├─ weekInfo.ts              Erster Wochentag und Zählweise der Wochen
+│  ├─ locale.ts                Unterstützte Sprachen, Auswahl und Rückfall
+│  └─ errorMessage.ts          Fehler-Codes in Text übersetzen
 ├─ context/
 │  └─ RootElementContext.ts    Wurzel-Element des Widgets (Theme, Modals, Tasten, Breakpoints)
 ├─ router.tsx                  Routen und createCalendarRouter (memory oder browser): /, /settings, /calendars/new, /login, …
@@ -617,7 +661,7 @@ src/
    │  │  ├─ settings/          CalendarSettingsPage mit Allgemein, Mitglieder, Einladungen, Gefahrenbereich
    │  │                        CalendarSettings (Liste in den Einstellungen, Verlassen)
    │  │  └─ create/            CreateCalendarPage mit den Schritten Details, Farbe, Mitglieder, Überprüfen
-   │  ├─ constants/            Persönlicher Kalender, Bezeichnungen der Rollen
+   │  ├─ constants/            Persönlicher Kalender, Rangfolge der Rollen (Bezeichnungen in i18n)
    │  ├─ context/              CalendarsProvider (lädt Kalender und Einladungen, aktiver Kalender, verlassen), liegt in App.tsx
    │  ├─ repositories/         LocalCalendarRepository (nur „Persönlich“), RemoteCalendarRepository (API)
    │  ├─ hooks/                useCalendars, useTeam (Mitglieder und Einladungen eines Teams)
@@ -660,7 +704,9 @@ src/
 - Keine Ganztagstermine und keine eigene Leiste für mehrtägige Termine oberhalb des Rasters
 - Serien-Aktionen bestehen aus mehreren einzelnen Speichervorgängen. Bricht einer davon ab, kann eine Serie teilweise geändert sein.
 - Eigene Farben lassen sich noch nicht wieder entfernen
-- Datums- und Zeitfelder zeigen das Format der Browser- bzw. Systemsprache
+- Datums- und Zeitfelder (`<input type="date">`, `type="time"`) zeigen das Format der Browser- bzw. Systemsprache, nicht die gewählte Sprache
+- Die Einstellung „Sprache und Region“ liegt wie die übrigen Einstellungen noch im Browser. Die Spalte `user_preferences.locale` ist vorbereitet.
+- Fehlermeldungen, die das Test-Backend ohne bekannten Code schickt (z. B. bei Rechten), kommen auf Deutsch
 
 ## Nächste Schritte
 

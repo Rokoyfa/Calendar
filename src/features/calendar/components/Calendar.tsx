@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
+import { useI18n } from '../../../i18n/index.ts'
 import { useArrowKeyNavigation } from '../../../hooks/useArrowKeyNavigation.ts'
 import { MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
 import {
@@ -52,6 +53,7 @@ export function Calendar({
   headerContext,
   headerAccessory,
 }: CalendarProps) {
+  const i18n = useI18n()
   const now = useNow()
   const today = toISODate(now)
   const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
@@ -143,7 +145,7 @@ export function Calendar({
           key={editor.occurrence?.occurrenceKey ?? 'new'}
           initialValue={editor.initialValue}
           occurrence={editor.occurrence}
-          notice={editorSource && `${getSourceText(editorSource)}. Änderungen sehen alle Mitglieder.`}
+          notice={editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n))}
           onSave={handleSave}
           onDelete={editor.occurrence ? () => setEventToDelete(editor.occurrence) : undefined}
           onClose={() => setEditor(null)}

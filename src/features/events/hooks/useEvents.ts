@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
+import { AppError } from '../../../utils/appError.ts'
 import {
-  EVENT_NOT_FOUND_MESSAGE,
   type CalendarEvent,
   type EditScope,
   type EventInput,
@@ -22,7 +22,7 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
   const findSeries = useCallback(
     (occurrence: EventOccurrence) => {
       const series = events.find((event) => event.id === occurrence.id)
-      if (!series) throw new Error(EVENT_NOT_FOUND_MESSAGE)
+      if (!series) throw new AppError('eventNotFound')
       return series
     },
     [events],

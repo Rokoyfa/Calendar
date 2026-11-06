@@ -1,3 +1,4 @@
+import type { Messages } from '../../../i18n/index.ts'
 import { INVITABLE_ROLES, ROLE_HIERARCHY } from '../constants/calendars.ts'
 import { TEAM_ROLES, type CalendarSummary, type Permission, type TeamRole } from '../types/calendar.ts'
 
@@ -41,8 +42,8 @@ export const canOpenSettings = (calendar: CalendarSummary) =>
 export const getDistinctTeamName = ({ name, teamName }: CalendarSummary) =>
   teamName && teamName !== name ? teamName : null
 
-export const getCalendarKindLabel = (calendar: CalendarSummary) => {
-  if (isPersonalCalendar(calendar)) return 'Persönlicher Kalender'
+export const getCalendarKindLabel = (calendar: CalendarSummary, { calendars: { kind } }: Messages) => {
+  if (isPersonalCalendar(calendar)) return kind.personal
   const teamName = getDistinctTeamName(calendar)
-  return teamName ? `Team-Kalender · ${teamName}` : 'Team-Kalender'
+  return teamName ? kind.teamWithName(teamName) : kind.team
 }

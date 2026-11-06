@@ -1,3 +1,4 @@
+import type { Messages } from '../../../i18n/index.ts'
 import {
   addDaysToISODate,
   addMonthsToISODate,
@@ -5,11 +6,8 @@ import {
   endOfMonthISO,
   endOfWeekISO,
   endOfYearISO,
-  formatLongDate,
-  formatMonthYear,
-  formatWeekTitle,
   fromISODate,
-  getIsoWeek,
+  getWeekNumber,
   startOfMonthISO,
   startOfWeekISO,
   startOfYearISO,
@@ -20,41 +18,29 @@ const MONTHS_PER_YEAR = 12
 
 export const VIEW_DEFINITIONS: Record<CalendarView, ViewDefinition> = {
   day: {
-    label: 'Tag',
-    previousLabel: 'Vorheriger Tag',
-    nextLabel: 'Nächster Tag',
     getRange: (anchor) => ({ from: anchor, to: anchor }),
     step: (anchor, direction) => addDaysToISODate(anchor, direction),
-    getTitle: formatLongDate,
+    getTitle: (anchor, { format }) => format.longDate(anchor),
   },
   week: {
-    label: 'Woche',
-    previousLabel: 'Vorherige Woche',
-    nextLabel: 'Nächste Woche',
-    getRange: (anchor) => ({ from: startOfWeekISO(anchor), to: endOfWeekISO(anchor) }),
+    getRange: (anchor, firstDay) => ({ from: startOfWeekISO(anchor, firstDay), to: endOfWeekISO(anchor, firstDay) }),
     step: (anchor, direction) => addDaysToISODate(anchor, direction * DAYS_PER_WEEK),
-    getTitle: (anchor) => formatWeekTitle(fromISODate(startOfWeekISO(anchor))),
-    getSubtitle: (anchor) => `KW ${getIsoWeek(fromISODate(anchor))}`,
+    getTitle: (anchor, { format, weekInfo }) => format.weekTitle(fromISODate(startOfWeekISO(anchor, weekInfo.firstDay))),
+    getSubtitle: (anchor, { m, weekInfo }) => m.views.weekNumber(getWeekNumber(fromISODate(anchor), weekInfo)),
   },
   month: {
-    label: 'Monat',
-    previousLabel: 'Vorheriger Monat',
-    nextLabel: 'Nächster Monat',
-    getRange: (anchor) => ({
-      from: startOfWeekISO(startOfMonthISO(anchor)),
-      to: endOfWeekISO(endOfMonthISO(anchor)),
+    getRange: (anchor, firstDay) => ({
+      from: startOfWeekISO(startOfMonthISO(anchor), firstDay),
+      to: endOfWeekISO(endOfMonthISO(anchor), firstDay),
     }),
     step: (anchor, direction) => addMonthsToISODate(anchor, direction),
-    getTitle: formatMonthYear,
+    getTitle: (anchor, { format }) => format.monthYear(anchor),
   },
   year: {
-    label: 'Jahr',
-    previousLabel: 'Vorheriges Jahr',
-    nextLabel: 'Nächstes Jahr',
     getRange: (anchor) => ({ from: startOfYearISO(anchor), to: endOfYearISO(anchor) }),
     step: (anchor, direction) => addMonthsToISODate(anchor, direction * MONTHS_PER_YEAR),
     getTitle: (anchor) => anchor.slice(0, 4),
   },
 }
 
-export const VIEW_OPTIONS = CALENDAR_VIEWS.map((view) => ({ value: view, label: VIEW_DEFINITIONS[view].label }))
+export const getViewOptions = (m: Messages) => CALENDAR_VIEWS.map((view) => ({ value: view, label: m.views[view].label }))

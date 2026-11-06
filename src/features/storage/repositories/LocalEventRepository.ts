@@ -1,6 +1,6 @@
+import { AppError } from '../../../utils/appError.ts'
 import { PERSONAL_CALENDAR_ID } from '../../../config/calendars.ts'
 import {
-  EVENT_NOT_FOUND_MESSAGE,
   eventOccursInRange,
   parseCalendarEvent,
   type CalendarEvent,
@@ -24,7 +24,7 @@ export class LocalEventRepository implements EventRepository {
     this.#events = new LocalStorageList(
       storageKey,
       parseLocalEvent,
-      'Der Termin konnte nicht lokal gespeichert werden.',
+      'saveEventsFailed',
     )
   }
 
@@ -61,7 +61,7 @@ export class LocalEventRepository implements EventRepository {
 
   async update(id: string, input: EventInput) {
     const existing = this.#events.read().find((event) => event.id === id)
-    if (!existing) throw new Error(EVENT_NOT_FOUND_MESSAGE)
+    if (!existing) throw new AppError('eventNotFound')
 
     const updated: CalendarEvent = { ...existing, ...input, updatedAt: new Date().toISOString() }
     this.#events.update((events) => events.map((event) => (event.id === id ? updated : event)))

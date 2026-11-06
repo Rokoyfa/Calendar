@@ -1,0 +1,43 @@
+import type { Messages } from '../types.ts'
+
+export const events: Messages['events'] = {
+  createTitle: 'Neuer Termin',
+  editTitle: 'Termin bearbeiten',
+  title: 'Titel',
+  startDate: 'Startdatum',
+  startTime: 'Beginn',
+  endDate: 'Enddatum',
+  endTime: 'Ende',
+  description: 'Beschreibung',
+  color: 'Farbe',
+  addCustomColor: 'Eigene Farbe hinzufügen',
+  customColors: 'Eigene Farben',
+  customColorsDescription: (max) =>
+    `Bis zu ${max} Farben, die du beim Bearbeiten eines Termins hinzufügst. Termine behalten ihre Farbe, auch wenn du sie hier entfernst.`,
+  noCustomColors: 'Noch keine eigenen Farben.',
+  removeColor: (label) => `Farbe ${label} entfernen`,
+  deleteTitle: 'Termin löschen?',
+  deleteSeriesMessage: (title) =>
+    `„${title}“ ist ein wiederkehrender Termin. Was soll gelöscht werden? Das kann nicht rückgängig gemacht werden.`,
+  deleteMessage: (title) => `Soll „${title}“ wirklich gelöscht werden? Das kann nicht rückgängig gemacht werden.`,
+  yes: 'Ja',
+  no: 'Nein',
+  scopeTitle: 'Wiederkehrenden Termin ändern',
+  scopeMessage: 'Für welche Termine der Serie sollen die Änderungen gelten?',
+  scopes: {
+    single: 'Nur dieser Termin',
+    following: 'Dieser und alle folgenden',
+    all: 'Alle Termine',
+  },
+  repeat: 'Wiederholen',
+  never: 'Nie',
+  every: 'Alle',
+  onTheseDays: 'An diesen Tagen',
+  inMonth: 'Im Monat',
+  ends: 'Endet',
+  endsOnDate: 'Am Datum',
+  endsAfterCount: 'Nach Anzahl',
+  lastOccurrence: 'Letzter Termin',
+  after: 'Nach',
+  occurrences: { one: 'Termin', many: 'Terminen' },
+}

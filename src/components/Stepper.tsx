@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/index.ts'
 import { classNames } from '../utils/classNames.ts'
 
 type StepperProps = {
@@ -10,8 +11,9 @@ const getState = (index: number, current: number) =>
   index < current ? 'done' : index === current ? 'current' : 'upcoming'
 
 export function Stepper({ steps, current, onSelect }: StepperProps) {
+  const { m } = useI18n()
   return (
-    <ol className="stepper" aria-label="Fortschritt">
+    <ol className="stepper" aria-label={m.common.progress}>
       {steps.map((step, index) => {
         const state = getState(index, current)
         const content = (

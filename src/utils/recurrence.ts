@@ -3,8 +3,6 @@ import {
   daysBetween,
   daysInMonth,
   DAYS_PER_WEEK,
-  formatFullDay,
-  formatShortDay,
   fromISODate,
   getWeekdayIndex,
   isISODate,
@@ -12,7 +10,8 @@ import {
   maxISODate,
   toISODate,
 } from './date.ts'
-import { integerRangeMessage, isIntegerInRange } from './number.ts'
+import type { I18n, Messages } from '../i18n/index.ts'
+import { isIntegerInRange } from './number.ts'
 import { isOneOf } from './object.ts'
 import { hasFieldErrors } from './validation.ts'
 
@@ -37,24 +36,6 @@ export const RECURRENCE_INTERVAL_MAX = 99
 export const RECURRENCE_COUNT_MAX = 999
 
 const MAX_EMPTY_PERIODS = 1000
-
-const WEEKDAY_LABELS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] as const
-
-const ORDINAL_LABELS = ['ersten', 'zweiten', 'dritten', 'vierten', 'fünften'] as const
-
-export const RECURRENCE_FREQUENCY_LABELS: Record<RecurrenceFrequency, string> = {
-  daily: 'Täglich',
-  weekly: 'Wöchentlich',
-  monthly: 'Monatlich',
-  yearly: 'Jährlich',
-}
-
-export const RECURRENCE_UNIT_LABELS: Record<RecurrenceFrequency, { one: string; many: string }> = {
-  daily: { one: 'Tag', many: 'Tage' },
-  weekly: { one: 'Woche', many: 'Wochen' },
-  monthly: { one: 'Monat', many: 'Monate' },
-  yearly: { one: 'Jahr', many: 'Jahre' },
-}
 
 export const getISODateWeekday = (isoDate: string) => getWeekdayIndex(fromISODate(isoDate))
 
@@ -134,59 +115,56 @@ export const hasRecurrenceErrors = (errors: RecurrenceValidationErrors) => hasFi
 
 export type RecurrenceValidationErrors = Partial<Record<'interval' | 'weekdays' | 'until' | 'count', string>>
 
-export const validateRecurrence = (recurrence: Recurrence, startDate: string): RecurrenceValidationErrors => {
+export const validateRecurrence = (
+  recurrence: Recurrence,
+  startDate: string,
+  { validation }: Messages,
+): RecurrenceValidationErrors => {
   const errors: RecurrenceValidationErrors = {}
   const { interval, frequency, weekdays, until, count } = recurrence
 
-  if (!isIntegerInRange(interval, 1, RECURRENCE_INTERVAL_MAX)) errors.interval = integerRangeMessage(1, RECURRENCE_INTERVAL_MAX)
+  if (!isIntegerInRange(interval, 1, RECURRENCE_INTERVAL_MAX)) errors.interval = validation.integerRange(1, RECURRENCE_INTERVAL_MAX)
 
-  if (frequency === 'weekly' && weekdays.length === 0) errors.weekdays = 'Bitte mindestens einen Wochentag wählen.'
+  if (frequency === 'weekly' && weekdays.length === 0) errors.weekdays = validation.weekdaysRequired
 
   if (until !== null) {
-    if (!isISODate(until)) errors.until = 'Bitte ein gültiges Datum wählen.'
+    if (!isISODate(until)) errors.until = validation.dateInvalid
     else if (isISODate(startDate) && until < startDate)
-      errors.until = 'Das Ende der Wiederholung darf nicht vor dem Startdatum liegen.'
+      errors.until = validation.untilBeforeStart
   }
 
   if (count !== null && !isIntegerInRange(count, 1, RECURRENCE_COUNT_MAX))
-    errors.count = integerRangeMessage(1, RECURRENCE_COUNT_MAX)
+    errors.count = validation.integerRange(1, RECURRENCE_COUNT_MAX)
 
   return errors
 }
 
-const joinLabels = (labels: readonly string[]) =>
-  labels.length <= 1 ? labels.join('') : `${labels.slice(0, -1).join(', ')} und ${labels.at(-1)}`
-
-export const formatMonthlyMode = (mode: MonthlyMode, startDate: string) => {
-  const weekday = WEEKDAY_LABELS[getISODateWeekday(startDate)]
-  if (mode === 'weekdayOfMonth') return `am ${ORDINAL_LABELS[getWeekdayOrdinal(startDate) - 1]} ${weekday}`
-  if (mode === 'lastWeekdayOfMonth') return `am letzten ${weekday}`
-  return `am ${fromISODate(startDate).getDate()}.`
+export const formatMonthlyMode = (mode: MonthlyMode, startDate: string, { m, format }: Pick<I18n, 'm' | 'format'>) => {
+  const weekday = format.weekdayName(getISODateWeekday(startDate))
+  if (mode === 'weekdayOfMonth') return m.recurrence.monthlyOnWeekday(getWeekdayOrdinal(startDate), weekday)
+  if (mode === 'lastWeekdayOfMonth') return m.recurrence.monthlyOnLastWeekday(weekday)
+  return m.recurrence.monthlyOnDay(fromISODate(startDate).getDate())
 }
 
 export const getMonthlyModeOptions = (startDate: string): MonthlyMode[] =>
   isInLastWeekOfMonth(startDate) ? [...MONTHLY_MODES] : ['dayOfMonth', 'weekdayOfMonth']
 
-export const formatRecurrence = (recurrence: Recurrence, startDate: string) => {
+export const formatRecurrence = (recurrence: Recurrence, startDate: string, i18n: Pick<I18n, 'm' | 'format'>) => {
+  const { m, format } = i18n
   const { frequency, interval, weekdays, until, count } = recurrence
-  const unit = RECURRENCE_UNIT_LABELS[frequency]
-  const base = interval === 1 ? RECURRENCE_FREQUENCY_LABELS[frequency] : `Alle ${interval} ${unit.many}`
+  const base =
+    interval === 1 ? m.recurrence.frequency[frequency] : m.recurrence.every(interval, m.recurrence.units[frequency].many)
 
   const detail =
     frequency === 'weekly'
-      ? ` am ${joinLabels(normalizeWeekdays(weekdays).map((day) => WEEKDAY_LABELS[day]))}`
+      ? m.recurrence.onWeekdays(format.list(normalizeWeekdays(weekdays).map((day) => format.weekdayName(day))))
       : frequency === 'monthly'
-        ? ` ${formatMonthlyMode(recurrence.monthlyMode, startDate)}`
+        ? ` ${formatMonthlyMode(recurrence.monthlyMode, startDate, i18n)}`
         : frequency === 'yearly'
-          ? ` am ${formatShortDay(startDate)}`
+          ? m.recurrence.onDate(format.shortDay(startDate))
           : ''
 
-  const end =
-    until !== null
-      ? ` bis ${formatFullDay(until)}`
-      : count !== null
-        ? `, ${count === 1 ? 'einmal' : `${count}-mal`}`
-        : ''
+  const end = until !== null ? m.recurrence.until(format.fullDay(until)) : count !== null ? m.recurrence.times(count) : ''
 
   return `${base}${detail}${end}`
 }

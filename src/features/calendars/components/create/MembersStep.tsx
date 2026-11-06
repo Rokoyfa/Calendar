@@ -4,11 +4,10 @@ import { IconButton } from '../../../../components/IconButton.tsx'
 import { SelectField } from '../../../../components/SelectField.tsx'
 import { TextField } from '../../../../components/TextField.tsx'
 import { normalizeEmail, EMAIL_MAX_LENGTH } from '../../../../utils/validation.ts'
-import { DEFAULT_INVITATION_ROLE, INVITABLE_ROLES, ROLE_DESCRIPTIONS, ROLE_LABELS } from '../../constants/calendars.ts'
+import { useI18n } from '../../../../i18n/index.ts'
+import { DEFAULT_INVITATION_ROLE, INVITABLE_ROLES } from '../../constants/calendars.ts'
 import type { InvitableRole, Invitation } from '../../types/calendar.ts'
 import { validateInvitation } from '../../utils/draft.ts'
-
-const ROLE_OPTIONS = INVITABLE_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] }))
 
 type MembersStepProps = {
   invitations: readonly Invitation[]
@@ -17,13 +16,16 @@ type MembersStepProps = {
 }
 
 export function MembersStep({ invitations, ownEmail, onChange }: MembersStepProps) {
+  const { m } = useI18n()
+  const { invite, roles, roleDescriptions } = m.calendars
+  const roleOptions = INVITABLE_ROLES.map((value) => ({ value, label: roles[value] }))
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<InvitableRole>(DEFAULT_INVITATION_ROLE)
   const [error, setError] = useState<string>()
 
   const add = () => {
     const invitation = { email: normalizeEmail(email), role }
-    const errors = validateInvitation(invitation, invitations, ownEmail)
+    const errors = validateInvitation(invitation, invitations, ownEmail, m)
     setError(errors.email)
     if (errors.email) return
     onChange([...invitations, invitation])
@@ -34,7 +36,7 @@ export function MembersStep({ invitations, ownEmail, onChange }: MembersStepProp
     <>
       <div className="formRow inviteRow">
         <TextField
-          label="E-Mail-Adresse"
+          label={invite.email}
           name="inviteEmail"
           type="email"
           inputMode="email"
@@ -52,27 +54,25 @@ export function MembersStep({ invitations, ownEmail, onChange }: MembersStepProp
             add()
           }}
         />
-        <SelectField label="Rolle" name="inviteRole" value={role} options={ROLE_OPTIONS} onChange={setRole} />
+        <SelectField label={invite.role} name="inviteRole" value={role} options={roleOptions} onChange={setRole} />
         <Button variant="outline" className="inviteAdd" onClick={add}>
-          Hinzufügen
+          {invite.add}
         </Button>
       </div>
-      <p className="formHint">
-        {ROLE_LABELS[role]}: {ROLE_DESCRIPTIONS[role]}
-      </p>
+      <p className="formHint">{m.calendars.roleHint(roles[role], roleDescriptions[role])}</p>
 
       {invitations.length === 0 ? (
-        <p className="emptyHint">Noch niemand eingeladen. Das geht auch später noch.</p>
+        <p className="emptyHint">{invite.nobodyYet}</p>
       ) : (
         <ul className="itemList">
           {invitations.map((invitation) => (
             <li key={invitation.email} className="itemRow">
               <span className="itemRowMain">
                 <span className="itemRowTitle">{invitation.email}</span>
-                <span className="itemRowMeta">{ROLE_LABELS[invitation.role]}</span>
+                <span className="itemRowMeta">{roles[invitation.role]}</span>
               </span>
               <IconButton
-                label={`${invitation.email} entfernen`}
+                label={invite.remove(invitation.email)}
                 plain
                 onClick={() => onChange(invitations.filter((entry) => entry.email !== invitation.email))}
               >

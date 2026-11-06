@@ -1,3 +1,4 @@
+import { useI18n } from '../../../i18n/index.ts'
 import { PasswordField } from '../../../components/PasswordField.tsx'
 import { TextField } from '../../../components/TextField.tsx'
 import type { FieldErrors } from '../../../utils/validation.ts'
@@ -17,14 +18,16 @@ type FieldProps = {
 }
 
 export function NameField(props: FieldProps) {
-  return <TextField {...props} label="Name" name="name" autoComplete="name" maxLength={NAME_MAX_LENGTH} />
+  const { m } = useI18n()
+  return <TextField {...props} label={m.auth.name} name="name" autoComplete="name" maxLength={NAME_MAX_LENGTH} />
 }
 
 export function EmailField({ isNewAccount = false, ...props }: FieldProps & { isNewAccount?: boolean }) {
+  const { m } = useI18n()
   return (
     <TextField
       {...props}
-      label="E-Mail-Adresse"
+      label={m.auth.email}
       name="email"
       type="email"
       inputMode="email"
@@ -40,11 +43,12 @@ type CurrentPasswordFieldProps = FieldProps & {
   'data-autofocus'?: boolean
 }
 
-export function CurrentPasswordField({ label = 'Passwort', name = 'password', ...props }: CurrentPasswordFieldProps) {
+export function CurrentPasswordField({ label, name = 'password', ...props }: CurrentPasswordFieldProps) {
+  const { m } = useI18n()
   return (
     <PasswordField
       {...props}
-      label={label}
+      label={label ?? m.auth.password}
       name={name}
       autoComplete="current-password"
       maxLength={PASSWORD_MAX_LENGTH}
@@ -59,10 +63,12 @@ type NewPasswordFieldsProps = {
   onChange: (field: keyof NewPasswordValues, value: string) => void
 }
 
-export function NewPasswordFields({ values, errors, label = 'Passwort', onChange }: NewPasswordFieldsProps) {
+export function NewPasswordFields({ values, errors, label, onChange }: NewPasswordFieldsProps) {
+  const { m } = useI18n()
+  const passwordLabel = label ?? m.auth.password
   const fields = [
-    { name: 'password', label },
-    { name: 'passwordConfirmation', label: `${label} wiederholen` },
+    { name: 'password', label: passwordLabel },
+    { name: 'passwordConfirmation', label: m.auth.repeat(passwordLabel) },
   ] as const
 
   return (
@@ -79,7 +85,7 @@ export function NewPasswordFields({ values, errors, label = 'Passwort', onChange
           onChange={(value) => onChange(field.name, value)}
         />
       ))}
-      <p className="formHint">Mindestens {PASSWORD_MIN_LENGTH} Zeichen.</p>
+      <p className="formHint">{m.auth.passwordHint(PASSWORD_MIN_LENGTH)}</p>
     </>
   )
 }

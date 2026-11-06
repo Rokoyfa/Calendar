@@ -1,4 +1,5 @@
 import { Link, useNavigate, useSearchParams } from 'react-router'
+import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
 import { Form } from '../../../components/Form.tsx'
 import { PageLayout } from '../../../components/PageLayout.tsx'
@@ -13,13 +14,14 @@ import { CurrentPasswordField, EmailField } from './AuthFields.tsx'
 const EMPTY_LOGIN: LoginInput = { email: '', password: '' }
 
 export function LoginPage() {
+  const { m } = useI18n()
   const { login } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const redirectTo = getRedirectTarget(searchParams)
   const { values, errors, setField, handleSubmit, isPending, error } = useForm({
     initialValues: EMPTY_LOGIN,
-    validate: validateLogin,
+    validate: (input) => validateLogin(input, m),
     prepare: (input) => ({ ...input, email: normalizeEmail(input.email) }),
     onSubmit: async (input) => {
       await login(input)
@@ -29,10 +31,10 @@ export function LoginPage() {
 
   return (
     <PageLayout
-      title="Anmelden"
+      title={m.auth.login.title}
       footer={
         <>
-          Noch kein Konto? <Link to={withRedirect(ROUTES.register, redirectTo)}>Jetzt registrieren</Link>
+          {m.auth.login.noAccount} <Link to={withRedirect(ROUTES.register, redirectTo)}>{m.auth.login.registerLink}</Link>
         </>
       }
     >
@@ -49,11 +51,11 @@ export function LoginPage() {
           onChange={(password) => setField('password', password)}
         />
         <Link to={ROUTES.forgotPassword} className="formLink">
-          Passwort vergessen?
+          {m.auth.login.forgotPassword}
         </Link>
         <ActionFeedback error={error} />
-        <Button type="submit" block isPending={isPending} pendingLabel="Wird angemeldet …">
-          Anmelden
+        <Button type="submit" block isPending={isPending} pendingLabel={m.auth.login.pending}>
+          {m.auth.login.submit}
         </Button>
       </Form>
     </PageLayout>

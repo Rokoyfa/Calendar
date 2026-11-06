@@ -13,6 +13,7 @@ import {
 } from '../features/calendars/index.ts'
 import { usePreferences } from '../features/preferences/index.ts'
 import { LocalImportPrompt } from '../features/storage/index.ts'
+import { useI18n } from '../i18n/index.ts'
 import { useRootElement } from '../context/RootElementContext.ts'
 import { getStartView, isCompactWidth } from '../utils/preferences.ts'
 
@@ -20,6 +21,7 @@ export function CalendarPage() {
   const root = useRootElement()
   const { enabled, user } = useAuth()
   const { preferences } = usePreferences()
+  const { m } = useI18n()
   const { calendars, activeCalendar, visibleCalendarIds } = useCalendars()
   const eventSources = useMemo(
     () => new Map(getSharedCalendars(calendars, activeCalendar).map(({ id, name, color }) => [id, { name, color }])),
@@ -40,7 +42,7 @@ export function CalendarPage() {
         headerAccessory={
           <>
             {!enabled && (
-              <Link to={ROUTES.settings} className="iconLink" aria-label="Einstellungen" title="Einstellungen">
+              <Link to={ROUTES.settings} className="iconLink" aria-label={m.common.settings} title={m.common.settings}>
                 <SettingsIcon size={20} />
               </Link>
             )}

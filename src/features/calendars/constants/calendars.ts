@@ -8,7 +8,7 @@ export const MAX_INVITATIONS = 50
 export const PERSONAL_CALENDAR: CalendarSummary = {
   id: PERSONAL_CALENDAR_ID,
   teamId: PERSONAL_CALENDAR_ID,
-  name: 'Persönlich',
+  name: '',
   color: 'blue',
   kind: 'personal',
   teamName: null,
@@ -31,26 +31,6 @@ export const EMPTY_CALENDAR_DRAFT: CalendarDraft = {
   description: '',
   color: 'green',
   invitations: [],
-}
-
-export const ROLE_LABELS: Record<TeamRole, string> = {
-  owner: 'Owner',
-  admin: 'Administrator',
-  manager: 'Verwalter',
-  editor: 'Redakteur',
-  member: 'Mitglied',
-  contributor: 'Beitragender',
-  viewer: 'Betrachter',
-}
-
-export const ROLE_DESCRIPTIONS: Record<TeamRole, string> = {
-  owner: 'Leitet den Kalender und hat immer alle Rechte.',
-  admin: 'Verwaltet Kalender, Mitglieder und alle Termine. Kann den Kalender nicht löschen.',
-  manager: 'Verwaltet den Kalender und alle Termine und lädt neue Mitglieder ein.',
-  editor: 'Legt Termine an und bearbeitet und löscht alle Termine.',
-  member: 'Legt Termine an und bearbeitet und löscht die eigenen.',
-  contributor: 'Legt Termine an und bearbeitet die eigenen, löscht aber nichts.',
-  viewer: 'Sieht den Kalender, ändert aber nichts.',
 }
 
 export const ROLE_HIERARCHY: Record<TeamRole, number> = {

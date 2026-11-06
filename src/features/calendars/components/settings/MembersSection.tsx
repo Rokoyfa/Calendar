@@ -4,7 +4,7 @@ import { ConfirmModal } from '../../../../components/ConfirmModal.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { ActionFeedback, ErrorMessage } from '../../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
-import { ROLE_LABELS } from '../../constants/calendars.ts'
+import { useI18n } from '../../../../i18n/index.ts'
 import type { CalendarSummary, TeamMember, TeamRole } from '../../types/calendar.ts'
 import { getAssignableRoles, hasPermission, outranks } from '../../utils/permissions.ts'
 
@@ -27,6 +27,8 @@ type MemberRowProps = {
 }
 
 function MemberRow({ member, isSelf, canManage, roles, onChangeRole, onRemove }: MemberRowProps) {
+  const { m } = useI18n()
+  const { members: text, roles: roleLabels } = m.calendars
   const { run, isPending, error } = useAsyncAction(onChangeRole)
   const options = roles.includes(member.role) ? roles : [member.role, ...roles]
 
@@ -35,7 +37,7 @@ function MemberRow({ member, isSelf, canManage, roles, onChangeRole, onRemove }:
       <span className="itemRowMain">
         <span className="itemRowTitle">
           {member.name}
-          {isSelf && ' (du)'}
+          {isSelf && text.you}
         </span>
         <span className="itemRowMeta">{member.email}</span>
         <ActionFeedback error={error} />
@@ -44,23 +46,23 @@ function MemberRow({ member, isSelf, canManage, roles, onChangeRole, onRemove }:
         <>
           <select
             className="input memberRole"
-            aria-label={`Rolle von ${member.name}`}
+            aria-label={text.roleOf(member.name)}
             value={member.role}
             disabled={isPending}
             onChange={(event) => void run(event.target.value as TeamRole)}
           >
             {options.map((role) => (
               <option key={role} value={role}>
-                {ROLE_LABELS[role]}
+                {roleLabels[role]}
               </option>
             ))}
           </select>
           <Button variant="outline" onClick={onRemove}>
-            Entfernen
+            {text.remove}
           </Button>
         </>
       ) : (
-        <span className="badge">{ROLE_LABELS[member.role]}</span>
+        <span className="badge">{roleLabels[member.role]}</span>
       )}
     </li>
   )
@@ -74,14 +76,16 @@ export function MembersSection({
   onChangeRole,
   onRemove,
 }: MembersSectionProps) {
+  const { m } = useI18n()
+  const { members: text } = m.calendars
   const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null)
   const canManageMembers = hasPermission(calendar, 'manage_members')
   const roles = getAssignableRoles(calendar.role)
 
   return (
     <PageSection
-      title="Mitglieder"
-      description="Alle, die diesen Kalender sehen. Rollen ändern und Mitglieder entfernen dürfen Owner und Administratoren, und zwar nur bei Rollen unterhalb der eigenen."
+      title={text.title}
+      description={text.description}
     >
       <ErrorMessage message={error} />
       <ul className="itemList">
@@ -102,16 +106,16 @@ export function MembersSection({
       </ul>
       {memberToRemove && (
         <ConfirmModal
-          title="Mitglied entfernen?"
-          confirmLabel="Entfernen"
-          pendingLabel="Wird entfernt …"
+          title={text.removeTitle}
+          confirmLabel={text.remove}
+          pendingLabel={text.removing}
           onConfirm={async () => {
             await onRemove(memberToRemove.userId)
             setMemberToRemove(null)
           }}
           onClose={() => setMemberToRemove(null)}
         >
-          {memberToRemove.name} sieht „{calendar.name}“ danach nicht mehr. Zurück geht es nur über eine neue Einladung.
+          {text.removeMessage(memberToRemove.name, calendar.name)}
         </ConfirmModal>
       )}
     </PageSection>

@@ -2,7 +2,8 @@ import type { ReactNode } from 'react'
 import { Button } from '../../../components/Button.tsx'
 import { IconButton } from '../../../components/IconButton.tsx'
 import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
-import { VIEW_DEFINITIONS, VIEW_OPTIONS } from '../constants/views.ts'
+import { useI18n } from '../../../i18n/index.ts'
+import { getViewOptions } from '../constants/views.ts'
 import type { CalendarView } from '../types/view.ts'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from '../../../components/Icons.tsx'
 
@@ -31,7 +32,8 @@ export function CalendarHeader({
   context,
   accessory,
 }: CalendarHeaderProps) {
-  const { previousLabel, nextLabel } = VIEW_DEFINITIONS[view]
+  const { m } = useI18n()
+  const { previous: previousLabel, next: nextLabel } = m.views[view]
   return (
     <header className="header">
       <div className="headerNav">
@@ -42,7 +44,7 @@ export function CalendarHeader({
           <ChevronRightIcon />
         </IconButton>
         <Button variant="outline" className="todayButton" onClick={onToday}>
-          Heute
+          {m.calendar.today}
         </Button>
       </div>
 
@@ -55,10 +57,10 @@ export function CalendarHeader({
       </div>
 
       <div className="headerActions">
-        <SegmentedControl label="Ansicht" value={view} options={VIEW_OPTIONS} onChange={onViewChange} />
+        <SegmentedControl label={m.views.label} value={view} options={getViewOptions(m)} onChange={onViewChange} />
         <span className="headerCreate">
           {onCreateEvent && (
-            <IconButton label="Neuer Termin" onClick={onCreateEvent}>
+            <IconButton label={m.calendar.newEvent} onClick={onCreateEvent}>
               <PlusIcon size={16} />
             </IconButton>
           )}

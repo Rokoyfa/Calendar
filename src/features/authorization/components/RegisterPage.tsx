@@ -1,4 +1,5 @@
 import { Link, useNavigate, useSearchParams } from 'react-router'
+import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
 import { Form } from '../../../components/Form.tsx'
 import { PageLayout } from '../../../components/PageLayout.tsx'
@@ -12,13 +13,14 @@ import { EmailField, NameField, NewPasswordFields } from './AuthFields.tsx'
 const EMPTY_REGISTRATION: RegisterFormValues = { name: '', email: '', password: '', passwordConfirmation: '' }
 
 export function RegisterPage() {
+  const { m } = useI18n()
   const { register } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const redirectTo = getRedirectTarget(searchParams)
   const { values, errors, setField, handleSubmit, isPending, error } = useForm({
     initialValues: EMPTY_REGISTRATION,
-    validate: validateRegister,
+    validate: (input) => validateRegister(input, m),
     prepare: (input) => ({ ...input, name: input.name.trim(), email: normalizeEmail(input.email) }),
     onSubmit: async ({ name, email, password }) => {
       await register({ name, email, password })
@@ -28,10 +30,10 @@ export function RegisterPage() {
 
   return (
     <PageLayout
-      title="Registrieren"
+      title={m.auth.register.title}
       footer={
         <>
-          Schon ein Konto? <Link to={withRedirect(ROUTES.login, redirectTo)}>Anmelden</Link>
+          {m.auth.register.hasAccount} <Link to={withRedirect(ROUTES.login, redirectTo)}>{m.auth.register.loginLink}</Link>
         </>
       }
     >
@@ -45,8 +47,8 @@ export function RegisterPage() {
         />
         <NewPasswordFields values={values} errors={errors} onChange={setField} />
         <ActionFeedback error={error} />
-        <Button type="submit" block isPending={isPending} pendingLabel="Konto wird erstellt …">
-          Konto erstellen
+        <Button type="submit" block isPending={isPending} pendingLabel={m.auth.register.pending}>
+          {m.auth.register.submit}
         </Button>
       </Form>
     </PageLayout>

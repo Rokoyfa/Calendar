@@ -6,7 +6,7 @@ import { getDistinctTeamName, isPersonalCalendar } from '../utils/permissions.ts
 import { Button } from '../../../components/Button.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { classNames } from '../../../utils/classNames.ts'
-import { ROLE_LABELS } from '../constants/calendars.ts'
+import { useI18n } from '../../../i18n/index.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
 import { CalendarPreview } from './CalendarPreview.tsx'
@@ -18,6 +18,7 @@ type CalendarCardProps = {
 }
 
 function CalendarCard({ calendar, isActive, onSelect }: CalendarCardProps) {
+  const { m } = useI18n()
   return (
     <li>
       <button
@@ -30,11 +31,11 @@ function CalendarCard({ calendar, isActive, onSelect }: CalendarCardProps) {
         <span className="calendarCardInfo">
           <span className="calendarCardName">{calendar.name}</span>
           <span className="calendarCardMeta">
-            {[getDistinctTeamName(calendar), ROLE_LABELS[calendar.role]].filter(Boolean).join(' · ')}
+            {[getDistinctTeamName(calendar), m.calendars.roles[calendar.role]].filter(Boolean).join(' · ')}
           </span>
         </span>
         {isActive && (
-          <span className="calendarCardBadge" aria-label="Aktiv">
+          <span className="calendarCardBadge" aria-label={m.calendars.switcher.active}>
             ✓
           </span>
         )}
@@ -44,6 +45,8 @@ function CalendarCard({ calendar, isActive, onSelect }: CalendarCardProps) {
 }
 
 function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
+  const { m } = useI18n()
+  const { switcher } = m.calendars
   const { calendars, invitations, activeCalendar, selectCalendar } = useCalendars()
   const personal = calendars.filter(isPersonalCalendar)
   const teams = calendars.filter((calendar) => !isPersonalCalendar(calendar))
@@ -66,35 +69,31 @@ function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
   )
 
   return (
-    <Modal title="Kalender wechseln" size="large" onClose={onClose}>
+    <Modal title={switcher.title} size="large" onClose={onClose}>
       <div className="formSection">
         <section className="calendarGroup">
-          <h3 className="calendarGroupTitle">Persönlich</h3>
+          <h3 className="calendarGroupTitle">{switcher.personal}</h3>
           {renderCards(personal)}
         </section>
         {invitations.length > 0 && (
           <p className="formHint">
-            {invitations.length === 1
-              ? 'Du hast eine offene Einladung.'
-              : `Du hast ${invitations.length} offene Einladungen.`}{' '}
+            {switcher.openInvitations(invitations.length)}{' '}
             <Link to={SETTINGS_CALENDARS_PATH} onClick={onClose}>
-              Ansehen
+              {switcher.view}
             </Link>
           </p>
         )}
         <section className="calendarGroup">
-          <h3 className="calendarGroupTitle">Teams</h3>
+          <h3 className="calendarGroupTitle">{switcher.teams}</h3>
           {teams.length === 0 && (
-            <p className="emptyHint">
-              Du bist noch in keinem Team. Erstelle einen Kalender oder tritt über eine Einladung bei.
-            </p>
+            <p className="emptyHint">{switcher.noTeams}</p>
           )}
           {renderCards(
             teams,
             <li>
               <Link to={ROUTES.createCalendar} className="calendarCard calendarCardNew">
                 <PlusIcon size={28} />
-                <span className="calendarCardName">Neuer Kalender</span>
+                <span className="calendarCardName">{switcher.newCalendar}</span>
               </Link>
             </li>,
           )}
@@ -105,11 +104,12 @@ function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
 }
 
 export function CalendarSwitcher() {
+  const { m } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
   return (
     <>
       <Button variant="outline" block onClick={() => setIsOpen(true)}>
-        Kalender wechseln
+        {m.calendars.switcher.open}
       </Button>
       {isOpen && <CalendarSwitcherModal onClose={() => setIsOpen(false)} />}
     </>

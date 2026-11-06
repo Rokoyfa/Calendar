@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
 import { Form } from '../../../components/Form.tsx'
 import { PageLayout } from '../../../components/PageLayout.tsx'
@@ -13,33 +14,32 @@ import { EmailField } from './AuthFields.tsx'
 const EMPTY_REQUEST: PasswordResetRequestInput = { email: '' }
 
 export function ForgotPasswordPage() {
+  const { m } = useI18n()
   const { requestPasswordReset } = useAuth()
   const { values, errors, setField, handleSubmit, isPending, isSuccess, error } = useForm({
     initialValues: EMPTY_REQUEST,
-    validate: validatePasswordResetRequest,
+    validate: (input) => validatePasswordResetRequest(input, m),
     prepare: ({ email }) => ({ email: normalizeEmail(email) }),
     onSubmit: requestPasswordReset,
   })
 
   return (
     <PageLayout
-      title="Passwort vergessen"
+      title={m.auth.forgot.title}
       footer={
         <>
-          Wieder eingefallen? <Link to={ROUTES.login}>Anmelden</Link>
+          {m.auth.forgot.remembered} <Link to={ROUTES.login}>{m.auth.forgot.loginLink}</Link>
         </>
       }
     >
       {isSuccess ? (
         <ActionFeedback
           error={null}
-          success={`Falls es ein Konto für ${normalizeEmail(values.email)} gibt, haben wir dir einen Link zum Zurücksetzen geschickt. Er ist eine Stunde gültig.`}
+          success={m.auth.forgot.success(normalizeEmail(values.email))}
         />
       ) : (
         <Form onSubmit={handleSubmit}>
-          <p className="formHint">
-            Gib die E-Mail-Adresse deines Kontos ein. Wir schicken dir einen Link für ein neues Passwort.
-          </p>
+          <p className="formHint">{m.auth.forgot.hint}</p>
           <EmailField
             value={values.email}
             error={errors.email}
@@ -47,8 +47,8 @@ export function ForgotPasswordPage() {
             autoFocus
           />
           <ActionFeedback error={error} />
-          <Button type="submit" block isPending={isPending} pendingLabel="Wird gesendet …">
-            Link senden
+          <Button type="submit" block isPending={isPending} pendingLabel={m.auth.forgot.pending}>
+            {m.auth.forgot.submit}
           </Button>
         </Form>
       )}

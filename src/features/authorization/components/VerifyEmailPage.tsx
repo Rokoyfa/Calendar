@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router'
+import { useI18n } from '../../../i18n/index.ts'
 import { PageLayout } from '../../../components/PageLayout.tsx'
 import { ActionFeedback } from '../../../components/StatusMessage.tsx'
 import { ROUTES, TOKEN_PARAM } from '../../../config/routes.ts'
@@ -19,6 +20,7 @@ const verifyOnce = (token: string, verify: (token: string) => Promise<void>) => 
 }
 
 export function VerifyEmailPage() {
+  const { m } = useI18n()
   const { user, verifyEmail } = useAuth()
   const [searchParams] = useSearchParams()
   const token = searchParams.get(TOKEN_PARAM)
@@ -27,21 +29,23 @@ export function VerifyEmailPage() {
 
   if (token && isLoading)
     return (
-      <PageLayout title="E-Mail bestätigen">
-        <p className="formHint">E-Mail-Adresse wird bestätigt …</p>
+      <PageLayout title={m.auth.verify.title}>
+        <p className="formHint">{m.auth.verify.verifying}</p>
       </PageLayout>
     )
 
   return (
-    <PageLayout title="E-Mail bestätigen">
+    <PageLayout title={m.auth.verify.title}>
       <ActionFeedback
-        error={token ? error : 'Dieser Link ist unvollständig.'}
-        success={isVerified && 'Deine E-Mail-Adresse ist bestätigt.'}
+        error={token ? error : m.auth.verify.incompleteLink}
+        success={isVerified && m.auth.verify.success}
       />
       <ContinueLink />
       {error && user && (
         <p className="formHint">
-          Einen neuen Link kannst du in den <Link to={ROUTES.settings}>Einstellungen</Link> anfordern.
+          {m.auth.verify.newLinkBefore}
+          <Link to={ROUTES.settings}>{m.auth.verify.newLinkSettings}</Link>
+          {m.auth.verify.newLinkAfter}
         </p>
       )}
     </PageLayout>

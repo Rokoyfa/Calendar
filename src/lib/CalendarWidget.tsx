@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { I18nProvider } from '../i18n/index.ts'
 import { CalendarApp } from './CalendarApp.tsx'
 import { DEFAULT_CONFIG, type CalendarConfig, type CalendarProps } from './config.ts'
 import { IsolatedRoot } from './IsolatedRoot.tsx'
@@ -11,6 +12,7 @@ export function CalendarWidget({
   routing = 'memory',
   basename,
   initialPath,
+  locale,
   className,
   style,
 }: CalendarProps) {
@@ -23,7 +25,9 @@ export function CalendarWidget({
 
   return (
     <IsolatedRoot className={className} style={style} autoFocus={routing === 'browser'}>
-      <CalendarApp config={config} routing={routing} basename={basename} initialPath={initialPath} />
+      <I18nProvider locale={locale}>
+        <CalendarApp config={config} routing={routing} basename={basename} initialPath={initialPath} />
+      </I18nProvider>
     </IsolatedRoot>
   )
 }

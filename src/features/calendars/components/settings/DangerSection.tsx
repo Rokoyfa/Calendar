@@ -4,7 +4,7 @@ import { Button } from '../../../../components/Button.tsx'
 import { ConfirmModal } from '../../../../components/ConfirmModal.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { SETTINGS_CALENDARS_PATH } from '../../../../config/routes.ts'
-import { ROLE_LABELS } from '../../constants/calendars.ts'
+import { useI18n } from '../../../../i18n/index.ts'
 import { useCalendars } from '../../hooks/useCalendars.ts'
 import type { CalendarSummary, TeamMember } from '../../types/calendar.ts'
 import { hasPermission } from '../../utils/permissions.ts'
@@ -20,6 +20,8 @@ type DangerSectionProps = {
 }
 
 export function DangerSection({ calendar, members, currentUserId, onOwnershipTransferred }: DangerSectionProps) {
+  const { m } = useI18n()
+  const { danger, leave, roles } = m.calendars
   const { leaveCalendar, deleteTeam, transferOwnership } = useCalendars()
   const navigate = useNavigate()
   const [action, setAction] = useState<Action | null>(null)
@@ -36,36 +38,30 @@ export function DangerSection({ calendar, members, currentUserId, onOwnershipTra
   }
 
   return (
-    <PageSection title="Gefahrenbereich" tone="danger">
+    <PageSection title={danger.title} tone="danger">
       {isOwner && (
         <div className="dangerAction">
           <p className="formHint">
-            {candidates.length > 0
-              ? 'Ein anderes Mitglied wird Owner, du wirst Administrator. Zurück geht es nur, wenn der neue Owner dir die Rolle wieder gibt.'
-              : 'Zum Übertragen braucht das Team ein weiteres Mitglied, das noch nicht Owner ist.'}
+            {candidates.length > 0 ? danger.transferHint : danger.transferUnavailable}
           </p>
           <Button variant="outline" disabled={candidates.length === 0} onClick={() => setAction({ type: 'transfer' })}>
-            Leitung übertragen
+            {danger.transfer}
           </Button>
         </div>
       )}
       <div className="dangerAction">
         <p className="formHint">
-          {isLastOwner
-            ? 'Als einziger Owner kannst du nicht austreten. Übertrage vorher die Leitung oder lösche das Team.'
-            : 'Du siehst den Kalender danach nicht mehr. Zurück geht es nur über eine neue Einladung.'}
+          {isLastOwner ? danger.lastOwnerHint : danger.leaveHint}
         </p>
         <Button variant="outline" disabled={isLastOwner} onClick={() => setAction({ type: 'leave' })}>
-          Kalender verlassen
+          {m.calendars.list.leave}
         </Button>
       </div>
       {canDelete && (
         <div className="dangerAction">
-          <p className="formHint">
-            Löscht das Team „{teamName}“ mit allen Kalendern, Terminen und Einladungen für alle Mitglieder.
-          </p>
+          <p className="formHint">{danger.deleteHint(teamName)}</p>
           <Button variant="danger" onClick={() => setAction({ type: 'delete' })}>
-            Team löschen
+            {danger.deleteTeam}
           </Button>
         </div>
       )}
@@ -79,9 +75,9 @@ export function DangerSection({ calendar, members, currentUserId, onOwnershipTra
       )}
       {action?.type === 'confirmTransfer' && (
         <ConfirmModal
-          title="Leitung wirklich übertragen?"
-          confirmLabel="Endgültig übertragen"
-          pendingLabel="Wird übertragen …"
+          title={danger.transferConfirmTitle}
+          confirmLabel={danger.transferConfirm}
+          pendingLabel={danger.transferring}
           onConfirm={async () => {
             await transferOwnership(calendar, action.member.userId)
             onOwnershipTransferred()
@@ -89,33 +85,29 @@ export function DangerSection({ calendar, members, currentUserId, onOwnershipTra
           }}
           onClose={() => setAction(null)}
         >
-          {action.member.name} ({action.member.email}) wird Owner von „{teamName}“ und bekommt alle Rechte, auch zum
-          Löschen des Teams. Du wirst {ROLE_LABELS.admin} und kannst das Team danach nicht mehr löschen oder die Leitung
-          selbst zurückholen.
+          {danger.transferMessage(action.member.name, action.member.email, teamName, roles.admin)}
         </ConfirmModal>
       )}
       {action?.type === 'leave' && (
         <ConfirmModal
-          title="Kalender verlassen?"
-          confirmLabel="Verlassen"
-          pendingLabel="Wird verlassen …"
+          title={leave.title}
+          confirmLabel={leave.confirm}
+          pendingLabel={leave.pending}
           onConfirm={() => finish(() => leaveCalendar(calendar.id))}
           onClose={() => setAction(null)}
         >
-          Du verlässt das Team „{teamName}“ und siehst seinen Kalender nicht mehr. Zurück geht es nur über eine neue
-          Einladung.
+          {leave.message(teamName)}
         </ConfirmModal>
       )}
       {action?.type === 'delete' && (
         <ConfirmModal
-          title="Team löschen?"
-          confirmLabel="Endgültig löschen"
-          pendingLabel="Wird gelöscht …"
+          title={danger.deleteTitle}
+          confirmLabel={danger.deleteConfirm}
+          pendingLabel={danger.deleting}
           onConfirm={() => finish(() => deleteTeam(calendar))}
           onClose={() => setAction(null)}
         >
-          „{teamName}“ wird mit allen Kalendern, Terminen und Einladungen gelöscht, auch für alle {members.length}{' '}
-          Mitglieder. Das kann nicht rückgängig gemacht werden.
+          {danger.deleteMessage(teamName, members.length)}
         </ConfirmModal>
       )}
     </PageSection>

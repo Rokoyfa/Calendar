@@ -1,15 +1,16 @@
-import { formatHour } from '../../../utils/date.ts'
+import { useI18n } from '../../../i18n/index.ts'
 import { HOURS } from '../constants/grid.ts'
 
 export function TimeColumn() {
+  const { format } = useI18n()
   return (
     <div className="dayTime" aria-hidden="true">
       <div className="columnHeader" />
       <div className="slots">
         {HOURS.map((hour) => (
           <div key={hour} className="time">
-            <span className="compactHidden">{formatHour(hour)}</span>
-            <span className="compactOnly">{hour}</span>
+            <span className="compactHidden">{format.hour(hour)}</span>
+            <span className="compactOnly">{format.compactHour(hour)}</span>
           </div>
         ))}
       </div>

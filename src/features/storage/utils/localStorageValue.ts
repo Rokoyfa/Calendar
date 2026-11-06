@@ -1,9 +1,11 @@
+import { AppError, type ErrorCode } from '../../../utils/appError.ts'
+
 export class LocalStorageValue<T> {
   readonly #key: string
   readonly #parse: (value: unknown) => T
-  readonly #writeError: string
+  readonly #writeError: ErrorCode
 
-  constructor(key: string, parse: (value: unknown) => T, writeError: string) {
+  constructor(key: string, parse: (value: unknown) => T, writeError: ErrorCode) {
     this.#key = key
     this.#parse = parse
     this.#writeError = writeError
@@ -30,7 +32,7 @@ export class LocalStorageValue<T> {
     try {
       localStorage.setItem(this.#key, JSON.stringify(value))
     } catch {
-      throw new Error(this.#writeError)
+      throw new AppError(this.#writeError)
     }
   }
 
