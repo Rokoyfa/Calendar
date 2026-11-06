@@ -1,21 +1,22 @@
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
+import { useRootElement } from '../../../context/RootElementContext.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { DEFAULT_PREFERENCES, type Preferences, type Theme } from '../../../utils/preferences.ts'
 import { usePreferencesRepository } from '../../storage/index.ts'
 import { PreferencesContext, type PreferencesContextValue } from './PreferencesContext.ts'
 
-const applyTheme = (theme: Theme) => {
-  const root = document.documentElement
+const applyTheme = (root: HTMLElement, theme: Theme) => {
   if (theme === 'system') delete root.dataset.theme
   else root.dataset.theme = theme
 }
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
+  const root = useRootElement()
   const repository = usePreferencesRepository()
   const load = useCallback(() => repository.get(), [repository])
   const { data: preferences, isLoading, apply } = useAsyncResource(load, DEFAULT_PREFERENCES)
 
-  useEffect(() => applyTheme(preferences.theme), [preferences.theme])
+  useEffect(() => applyTheme(root, preferences.theme), [root, preferences.theme])
 
   const updatePreferences = useCallback(
     async (changes: Partial<Preferences>) => {

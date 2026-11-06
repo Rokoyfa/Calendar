@@ -29,8 +29,56 @@ Unter Windows (PowerShell) statt `cp`: `Copy-Item .example.env .env`. Ohne `.env
 | `npm run build`   | Typprüfung und Produktions-Build nach `dist/` |
 | `npm run preview` | Produktions-Build lokal ansehen             |
 | `npm run lint`    | ESLint ausführen                            |
+| `npm run build:lib` | Bibliothek bauen: npm-Paket nach `dist-lib/npm/`, Script-Datei nach `dist-lib/cdn/` |
 
 **Technik:** React 19, React Router 8, TypeScript 6, Vite 8, ESLint. Voraussetzung ist **Node.js 22.22 oder neuer** (verlangt von React Router 8).
+
+## Einbetten
+
+Der Kalender ist eine einbettbare Komponente. Diese Website ist selbst nur ein Gastgeber: `src/main.tsx` rendert `<Calendar routing="browser" />` mit den Werten aus der `.env`. Eine Demo-Gastgeberseite mit zwei Widgets und absichtlich störendem CSS liegt unter `/demo/embed.html` (im Dev-Server erreichbar).
+
+**React-Projekte (npm-Paket):**
+
+```tsx
+import { Calendar } from 'calendar'
+
+<Calendar storageMode="remote" apiBaseUrl="https://api.example.com" features={{ auth: true }} style={{ height: 700 }} />
+```
+
+**Alle anderen Seiten (Script-Tag):**
+
+```html
+<script type="module" src="https://…/calendar-widget.js"></script>
+<calendar-widget storage-mode="remote" api-base-url="https://api.example.com" auth style="height: 700px"></calendar-widget>
+```
+
+| Prop | Attribut | Standard | Bedeutung |
+| --- | --- | --- | --- |
+| `storageMode` | `storage-mode` | `local` | `local` (Browser) oder `remote` (API). Mit Anmeldung entscheidet die Sitzung. |
+| `apiBaseUrl` | `api-base-url` | `/api` | Adresse der REST-API |
+| `apiTimeoutMs` | `api-timeout-ms` | `10000` | Zeitlimit je Anfrage |
+| `features` | `auth`, `teams` | aus | Anmeldung und Team-Funktionen; Attribute ohne Wert schalten an |
+| `routing` | – | `memory` | `memory`: Ansichten nur intern, die Adresse der Gastgeberseite bleibt unverändert. `browser`: eigene Adressen wie diese Website. |
+| `basename` | – | – | Pfad-Präfix bei `routing="browser"` |
+| `initialPath` | `initial-path` | `/` | Startansicht bei `memory`, z. B. `/settings` oder `/reset-password?token=…` |
+| `className`, `style` | `class`, `style` | – | Größe und Platz auf der Gastgeberseite |
+
+**Was die Einbettung absichert:**
+
+- **Shadow DOM:** Die Komponente rendert in einen eigenen Shadow Root (`IsolatedRoot`). Stile des Gastgebers wirken nicht hinein, unsere nicht heraus. Die Stile werden als Text gebündelt (`index.css?inline`), es gibt keine separate CSS-Datei.
+- **Größe:** Das Widget füllt die Höhe, die der Gastgeber ihm gibt, und scrollt darin. Ohne feste Höhe wächst es mit dem Inhalt.
+- **Breakpoints über die Breite des Widgets** (Container Queries) statt über die Fenster­breite. Ein schmales Widget auf einem breiten Bildschirm zeigt die Handy-Darstellung.
+- **Alles an die Wurzel gebunden statt an Seite oder Fenster:** Farbschema (`data-theme`), Modals, Kontomenü-Position, Pfeiltasten (nur wenn der Fokus im Widget liegt) und das Aufziehen von Zeiträumen. Die Wurzel kommt aus `RootElementContext`.
+- **Mehrere Widgets auf einer Seite** sind unabhängig: eigene Ansicht, eigener Router, eigene Modals.
+
+**Build:** `npm run build:lib` erzeugt zwei Pakete aus derselben Codebasis:
+
+- `dist-lib/npm/`: ES-Modul mit Typdefinitionen. React und React DOM bringt der Gastgeber mit (`peerDependencies`, ab React 19.0), React Router ist eingebaut.
+- `dist-lib/cdn/calendar-widget.js`: eine minifizierte Datei mit React, die `<calendar-widget>` selbst registriert (ca. 140 kB gzip).
+
+Getestet mit einer statischen HTML-Seite (nur die Script-Datei) und einem frischen React-19.2-Projekt, das das gepackte npm-Paket installiert, mit strenger Typprüfung.
+
+**Noch offen:** Die Sprache ist fest Deutsch. Mehrere Widgets mit `storage-mode="local"` auf derselben Seite teilen sich den Browser-Speicher. E-Mail-Links (Passwort zurücksetzen, E-Mail bestätigen) zeigen auf die Adresse aus der Backend-Konfiguration; bei `routing="memory"` muss der Gastgeber sie per `initialPath` weiterreichen. Tenant-ID und Daten-Adapter folgen in Phase 2 und 3.
 
 ---
 
@@ -62,7 +110,7 @@ Die App wird über Umgebungsvariablen eingestellt. Vite liest sie aus diesen Dat
 - `API_PROXY_TARGET` hat kein `VITE_` und wird nur vom Vite-Server gelesen, nicht vom Browser.
 - Werte werden beim Start von `npm run dev` bzw. `npm run build` geprüft. Ein ungültiger Wert, zum Beispiel `VITE_STORAGE_MODE=cloud`, bricht mit einer genauen Fehlermeldung ab. Nach einer Änderung an einer `.env`-Datei den Dev-Server neu starten.
 - Variablen werden beim Build fest eingebaut. Für eine andere Umgebung muss neu gebaut werden.
-- Alle Variablen werden zentral in `src/config/parseEnv.ts` gelesen und geprüft. Der Rest der App nutzt nur `env` aus `src/config/env.ts`, nie `import.meta.env` direkt. Neue Variablen dort und in `src/env.d.ts` ergänzen und in `.example.env` aufnehmen.
+- Die `.env` gilt nur für diese Website. Sie wird in `src/config/parseEnv.ts` gelesen und geprüft, `src/main.tsx` reicht die Werte als Props an `<Calendar>` weiter. Die Komponente selbst liest nie `import.meta.env`, sondern nur ihre Props. Neue Variablen dort und in `src/env.d.ts` ergänzen und in `.example.env` aufnehmen.
 
 ### API lokal anbinden
 
@@ -82,11 +130,12 @@ Alle Aufrufe an das Backend laufen über einen gemeinsamen Client aus `src/utils
 
 ### Verwendung
 
-Für neue Features gibt es eine fertig konfigurierte Instanz mit Adresse und Timeout aus der `.env`:
+Instanzen entstehen je Widget aus den Props (Adresse und Timeout), nie als globale Instanz, weil mehrere Widgets auf einer Seite verschiedene APIs nutzen können:
 
 ```ts
-import { apiClient } from '../../../config/api.ts'
-import { encodePathSegment } from '../../../utils/api.ts'
+import { createApiClient, encodePathSegment } from '../../../utils/api.ts'
+
+const apiClient = createApiClient({ baseUrl: config.apiBaseUrl, timeoutMs: config.apiTimeoutMs })
 
 const teams = await apiClient.get<Team[]>('/teams', { query: { page: 1, tags: ['a', 'b'] } })
 const team = await apiClient.post<Team>('/teams', { name: 'Familie' })
@@ -95,7 +144,7 @@ await apiClient.patch<Team>(`/teams/${encodePathSegment(id)}`, { name: 'Neu' })
 await apiClient.delete(`/teams/${encodePathSegment(id)}`)
 ```
 
-Eigene Instanzen entstehen mit `createApiClient({ baseUrl, timeoutMs, getAccessToken, onUnauthorized, headers, credentials })`, so macht es auch `RemoteEventRepository`.
+Weitere Optionen: `createApiClient({ baseUrl, timeoutMs, getAccessToken, onUnauthorized, headers, credentials })`, so macht es auch `RemoteEventRepository`.
 
 ### Was der Client übernimmt
 
@@ -439,7 +488,7 @@ type Recurrence = {
 
 ### Vorbereitung für Server-Speicherung
 
-Der Zugriff auf Daten läuft ausschließlich über die Schnittstellen `EventRepository` und `ColorRepository` im Feature `storage`. Welche Umsetzung genutzt wird, entscheidet der `StorageProvider` in `App.tsx` anhand von `createStorageConfig` aus `src/config/storage.ts`:
+Der Zugriff auf Daten läuft ausschließlich über die Schnittstellen `EventRepository` und `ColorRepository` im Feature `storage`. Welche Umsetzung genutzt wird, entscheidet der `StorageProvider` in `lib/CalendarApp.tsx` anhand von `createStorageConfig` aus `src/config/storage.ts`:
 
 - `VITE_STORAGE_MODE=local` → `{ mode: 'local' }`
 - `VITE_STORAGE_MODE=remote` → `{ mode: 'remote', baseUrl: VITE_API_BASE_URL, timeoutMs: VITE_API_TIMEOUT_MS }`
@@ -460,20 +509,33 @@ database/
    ├─ 001_initial_schema.sql   Alle Tabellen und der Rollenkatalog (MySQL 8 / MariaDB)
    ├─ 001_initial_schema.down.sql
    ├─ 002_automation.sql       Trigger und Sichten user_calendars, user_team_permissions
-   └─ 002_automation.down.sql
+   ├─ 002_automation.down.sql
+   ├─ 003_calendar_settings.sql Beschreibung für Teams, Anzeige im persönlichen Kalender
+   └─ 003_calendar_settings.down.sql
+demo/embed.html                Demo-Gastgeberseite: zwei Widgets, störendes CSS
+scripts/collect-types.mjs      Öffentliche Typdefinitionen für das npm-Paket einsammeln
+vite.lib.config.ts             Library-Build (npm und Script-Datei)
+tsconfig.lib.json              Typdefinitionen der Bibliothek erzeugen
 src/
-├─ App.tsx                     AuthProvider + StorageProvider (je nach Sitzung) + PreferencesProvider + CalendarsProvider + Router
-├─ router.tsx                  Routen: /, /settings, /calendars/new, /login, /register, /forgot-password, /reset-password, /verify-email
+├─ lib/                        Öffentliche Bibliothek
+│  ├─ index.ts                 Öffentliche Exporte: Calendar, defineCalendarElement, Typen
+│  ├─ CalendarWidget.tsx       <Calendar>: Props → Konfiguration, IsolatedRoot + CalendarApp
+│  ├─ CalendarApp.tsx          AuthProvider + StorageProvider (je nach Sitzung) + PreferencesProvider + CalendarsProvider + Router je Instanz
+│  ├─ IsolatedRoot.tsx         Shadow Root mit gebündelten Stilen, stellt die Wurzel per RootElementContext bereit
+│  ├─ element.tsx              <calendar-widget> (Custom Element, Attribute → Props)
+│  ├─ element-auto.ts          Einstieg der Script-Datei: registriert <calendar-widget>
+│  └─ config.ts                CalendarProps, CalendarConfig, Standardwerte
+├─ context/
+│  └─ RootElementContext.ts    Wurzel-Element des Widgets (Theme, Modals, Tasten, Breakpoints)
+├─ router.tsx                  Routen und createCalendarRouter (memory oder browser): /, /settings, /calendars/new, /login, …
 ├─ pages/
 │  ├─ CalendarPage.tsx         Kalender mit Startansicht, Kontomenü (Zahnrad nur ohne Anmeldefunktion), Bestätigungsleiste und Übernahme-Abfrage
 │  └─ SettingsPage.tsx         Einstellungen in Tabs: Kalender, Darstellung, Konto
-├─ main.tsx                    Einstiegspunkt
+├─ main.tsx                    Einstieg der Website: <Calendar routing="browser" /> mit Werten aus der .env
 ├─ env.d.ts                    Typen der Umgebungsvariablen
 ├─ config/
 │  ├─ parseEnv.ts              Umgebungsvariablen lesen und prüfen (auch in vite.config.ts)
-│  ├─ env.ts                   Geprüfte Konfiguration für die App
-│  ├─ api.ts                   Fertig konfigurierter API-Client
-│  ├─ auth.ts                  AuthRepository für die App
+│  ├─ env.ts                   Geprüfte .env-Werte für die Website (nur main.tsx)
 │  ├─ calendars.ts             ID des persönlichen Kalenders
 │  ├─ routes.ts                Pfade, Token-Parameter und sichere Weiterleitung nach dem Login
 │  └─ storage.ts               StorageConfig je nach Konfiguration und Anmeldung
@@ -614,4 +676,7 @@ src/
 - [x] Eigene Farben entfernen
 - [x] Schalter für Hell- und Dunkelmodus in der Oberfläche
 - [x] Handy startet in der Tagesansicht, Startansicht einstellbar
+- [x] Phase 1: einbettbare Bibliothek (`<Calendar>`, `<calendar-widget>`, Shadow DOM, Library-Build)
+- [ ] Phase 2: Daten-Adapter `CalendarDataSource` und OpenAPI-Vertrag
+- [ ] Phase 3: Tenants mit eigenen Konten
 - [ ] Einstellungen und eigene Farben im Remote-Modus übers Backend speichern (`user_preferences`, `user_colors`)

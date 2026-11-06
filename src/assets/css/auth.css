@@ -1,7 +1,7 @@
 .appLoading {
   display: grid;
   place-items: center;
-  min-height: 100dvh;
+  min-height: 100%;
   color: var(--color-muted);
 }
 

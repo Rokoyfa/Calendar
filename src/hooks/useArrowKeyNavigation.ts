@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useRootElement } from '../context/RootElementContext.ts'
 
 type ArrowKeyNavigationOptions = {
   onPrevious: () => void
@@ -10,6 +11,8 @@ const isEditableTarget = (target: EventTarget | null) =>
   (target.isContentEditable || target.closest('input, textarea, select, [role="dialog"], dialog') !== null)
 
 export function useArrowKeyNavigation({ onPrevious, onNext }: ArrowKeyNavigationOptions) {
+  const root = useRootElement()
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
@@ -21,7 +24,7 @@ export function useArrowKeyNavigation({ onPrevious, onNext }: ArrowKeyNavigation
       action()
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onPrevious, onNext])
+    root.addEventListener('keydown', handleKeyDown)
+    return () => root.removeEventListener('keydown', handleKeyDown)
+  }, [root, onPrevious, onNext])
 }

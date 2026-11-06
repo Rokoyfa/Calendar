@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react'
+import type { MouseEvent, ReactNode, ToggleEvent } from 'react'
 import { useLocation } from 'react-router'
 import { Button, ButtonLink } from '../../../components/Button.tsx'
 import { ROUTES, withRedirect } from '../../../config/routes.ts'
@@ -14,6 +14,20 @@ const closeOnAction = (event: MouseEvent<HTMLDivElement>) => {
   const menu = event.currentTarget
   if (menu.matches(':popover-open') && event.target instanceof Element && event.target.closest('a, button'))
     menu.hidePopover()
+}
+
+const POPOVER_GAP_PX = 8
+
+const placeBelowTrigger = (event: ToggleEvent<HTMLDivElement>) => {
+  if (event.newState !== 'open') return
+  const menu = event.currentTarget
+  const trigger = (menu.getRootNode() as Document | ShadowRoot).querySelector<HTMLElement>(
+    `[popovertarget="${menu.id}"]`,
+  )
+  if (!trigger) return
+  const { bottom, right } = trigger.getBoundingClientRect()
+  menu.style.top = `${bottom + POPOVER_GAP_PX}px`
+  menu.style.right = `${Math.max(document.documentElement.clientWidth - right, POPOVER_GAP_PX)}px`
 }
 
 type AccountMenuProps = {
@@ -49,7 +63,13 @@ export function AccountMenu({ menuItems }: AccountMenuProps) {
       >
         {getInitial(user.name)}
       </button>
-      <div id={ACCOUNT_POPOVER_ID} popover="auto" className="accountPopover surface" onClick={closeOnAction}>
+      <div
+        id={ACCOUNT_POPOVER_ID}
+        popover="auto"
+        className="accountPopover surface"
+        onBeforeToggle={placeBelowTrigger}
+        onClick={closeOnAction}
+      >
         <p className="accountName">{user.name}</p>
         <p className="accountEmail">{user.email}</p>
         <ErrorMessage message={error} />

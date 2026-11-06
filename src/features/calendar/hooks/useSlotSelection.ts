@@ -42,9 +42,10 @@ export function useSlotSelection(
     let pressPoint: Point | null = null
     let lastPoint: Point | null = null
     const scroller = container.closest<HTMLElement>('.scrollArea')
+    const scope = container.getRootNode() as Document | ShadowRoot
 
     const moveTo = ({ x, y }: Point) => {
-      const slot = findSlotAt(x, y)
+      const slot = findSlotAt(scope, x, y)
       if (!slot || !anchor || isSameSlot(slot, current)) return
       current = slot
       setSelection({ anchor, current })

@@ -403,7 +403,7 @@ button.miniDay:hover {
   background-color: var(--color-on-accent);
 }
 
-@media (max-width: 600px) {
+@container calendar (max-width: 600px) {
   .dayTime {
     width: 56px;
     font-size: var(--font-size-sm);

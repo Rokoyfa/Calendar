@@ -20,8 +20,8 @@ export const getHoursOnDate = ({ first, last }: SlotRange, date: string) => {
   return { fromHour, toHour }
 }
 
-export const findSlotAt = (x: number, y: number): HourSlot | null => {
-  const day = document.elementFromPoint(x, y)?.closest<HTMLElement>('.day[data-date]')
+export const findSlotAt = (scope: Document | ShadowRoot, x: number, y: number): HourSlot | null => {
+  const day = scope.elementFromPoint(x, y)?.closest<HTMLElement>('.day[data-date]')
   const slots = day?.querySelector<HTMLElement>('.slots')
   if (!day?.dataset.date || !slots) return null
   const { top, height } = slots.getBoundingClientRect()

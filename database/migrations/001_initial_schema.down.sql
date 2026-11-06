@@ -1,0 +1,17 @@
+DROP TABLE IF EXISTS event_exclusions;
+DROP TABLE IF EXISTS event_recurrence_weekdays;
+DROP TABLE IF EXISTS event_recurrences;
+DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS calendars;
+DROP TABLE IF EXISTS team_invitations;
+DROP TABLE IF EXISTS team_members;
+DROP TABLE IF EXISTS teams;
+DROP TABLE IF EXISTS user_colors;
+DROP TABLE IF EXISTS user_preferences;
+DROP TABLE IF EXISTS login_attempts;
+DROP TABLE IF EXISTS user_tokens;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS role_permissions;
+DROP TABLE IF EXISTS permissions;
+DROP TABLE IF EXISTS roles;

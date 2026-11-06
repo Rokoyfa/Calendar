@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router'
+import { createBrowserRouter, createMemoryRouter, Navigate, type RouteObject } from 'react-router'
+import type { CalendarRouting } from './lib/config.ts'
 import { ROUTES } from './config/routes.ts'
 import {
   AuthGate,
@@ -21,7 +22,7 @@ const usersOnly = (page: ReactNode) => <AuthGate access="user">{page}</AuthGate>
 
 const accountsOnly = (page: ReactNode) => <AuthGate access="account">{page}</AuthGate>
 
-export const router = createBrowserRouter([
+const routes: RouteObject[] = [
   { path: ROUTES.calendar, element: <CalendarPage /> },
   { path: ROUTES.settings, element: usersOnly(<SettingsPage />) },
   { path: ROUTES.createCalendar, element: accountsOnly(<CreateCalendarPage />) },
@@ -32,4 +33,14 @@ export const router = createBrowserRouter([
   { path: ROUTES.resetPassword, element: withAuth(<ResetPasswordPage />) },
   { path: ROUTES.verifyEmail, element: withAuth(<VerifyEmailPage />) },
   { path: '*', element: <Navigate to={ROUTES.calendar} replace /> },
-])
+]
+
+type RouterOptions = {
+  basename?: string
+  initialPath?: string
+}
+
+export function createCalendarRouter(routing: CalendarRouting, { basename, initialPath }: RouterOptions = {}) {
+  if (routing === 'browser') return createBrowserRouter(routes, { basename })
+  return createMemoryRouter(routes, { initialEntries: [initialPath ?? ROUTES.calendar] })
+}

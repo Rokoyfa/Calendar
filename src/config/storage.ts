@@ -1,5 +1,5 @@
 import type { StorageConfig } from '../features/storage/index.ts'
-import type { AppEnv } from './env.ts'
+import type { CalendarConfig } from '../lib/config.ts'
 
 type SessionState = {
   isAuthenticated: boolean
@@ -9,7 +9,7 @@ type SessionState = {
 const LOCAL_CONFIG: StorageConfig = { mode: 'local' }
 
 export function createStorageConfig(
-  { storageMode, apiBaseUrl, apiTimeoutMs, features }: AppEnv,
+  { storageMode, apiBaseUrl, apiTimeoutMs, features }: CalendarConfig,
   session?: SessionState,
 ): StorageConfig {
   const useRemote = features.auth ? Boolean(session?.isAuthenticated) : storageMode === 'remote'

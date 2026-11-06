@@ -1,4 +1,4 @@
-:root {
+:host {
   color-scheme: light dark;
 
   --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -49,10 +49,10 @@
   --transition-base: 200ms ease-in;
 }
 
-:root[data-theme="light"] {
+.calendarRoot[data-theme="light"] {
   color-scheme: light;
 }
 
-:root[data-theme="dark"] {
+.calendarRoot[data-theme="dark"] {
   color-scheme: dark;
 }

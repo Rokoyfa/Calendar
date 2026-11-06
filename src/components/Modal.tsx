@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useRootElement } from '../context/RootElementContext.ts'
 import { classNames } from '../utils/classNames.ts'
 
 type ModalProps = {
@@ -11,6 +12,7 @@ type ModalProps = {
 }
 
 export function Modal({ title, onClose, children, variant = 'default', size = 'default' }: ModalProps) {
+  const root = useRootElement()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -47,6 +49,6 @@ export function Modal({ title, onClose, children, variant = 'default', size = 'd
         {children}
       </div>
     </dialog>,
-    document.body,
+    root,
   )
 }

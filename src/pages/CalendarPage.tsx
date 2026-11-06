@@ -13,9 +13,11 @@ import {
 } from '../features/calendars/index.ts'
 import { usePreferences } from '../features/preferences/index.ts'
 import { LocalImportPrompt } from '../features/storage/index.ts'
-import { getStartView, MOBILE_MEDIA_QUERY } from '../utils/preferences.ts'
+import { useRootElement } from '../context/RootElementContext.ts'
+import { getStartView, isCompactWidth } from '../utils/preferences.ts'
 
 export function CalendarPage() {
+  const root = useRootElement()
   const { enabled, user } = useAuth()
   const { preferences } = usePreferences()
   const { calendars, activeCalendar, visibleCalendarIds } = useCalendars()
@@ -23,7 +25,7 @@ export function CalendarPage() {
     () => new Map(getSharedCalendars(calendars, activeCalendar).map(({ id, name, color }) => [id, { name, color }])),
     [calendars, activeCalendar],
   )
-  const initialView = getStartView(preferences, window.matchMedia(MOBILE_MEDIA_QUERY).matches)
+  const initialView = getStartView(preferences, isCompactWidth(root.clientWidth))
 
   return (
     <div className="app">

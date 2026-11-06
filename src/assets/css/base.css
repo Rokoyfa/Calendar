@@ -6,12 +6,15 @@
   padding: 0;
 }
 
-html {
+:host {
+  display: block;
   -webkit-text-size-adjust: 100%;
 }
 
-body {
-  min-height: 100dvh;
+.calendarRoot {
+  container: calendar / inline-size;
+  height: 100%;
+  overflow: auto;
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   line-height: 1.4;
@@ -20,8 +23,8 @@ body {
   transition: background-color var(--transition-base), color var(--transition-base);
 }
 
-#root {
-  min-height: 100dvh;
+.calendarRoot:focus {
+  outline: none;
 }
 
 h1,

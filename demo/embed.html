@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Einbettung – Demo</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: Georgia, serif;
+        background: #fdf6e3;
+      }
+
+      h1,
+      h2,
+      p {
+        color: #8b0000;
+      }
+
+      button,
+      .button,
+      .modal,
+      .event,
+      .slot {
+        background: magenta !important;
+        font-size: 30px !important;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+      }
+
+      calendar-widget {
+        height: 640px;
+        border: 2px solid #8b0000;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Gastgeberseite mit eigenem CSS</h1>
+    <p>Die Regeln oben färben jeden Button, jede .button, .modal, .event und .slot pink. Im Kalender darf davon nichts ankommen.</p>
+    <button type="button">Button des Gastgebers</button>
+    <div class="layout">
+      <section>
+        <h2>Breites Widget</h2>
+        <calendar-widget id="wide"></calendar-widget>
+      </section>
+      <section>
+        <h2>Schmales Widget</h2>
+        <calendar-widget id="narrow"></calendar-widget>
+      </section>
+    </div>
+    <p style="height: 600px">Inhalt unter den Widgets, damit die Seite scrollt.</p>
+    <script type="module" src="/src/lib/element-auto.ts"></script>
+  </body>
+</html>

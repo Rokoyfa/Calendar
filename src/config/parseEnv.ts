@@ -1,21 +1,12 @@
+import { DEFAULT_CONFIG, STORAGE_MODES, type CalendarConfig, type StorageMode } from '../lib/config.ts'
 import { isOneOf } from '../utils/object.ts'
 
-const STORAGE_MODES = ['local', 'remote'] as const
+export type AppStorageMode = StorageMode
 
-export type AppStorageMode = (typeof STORAGE_MODES)[number]
+export type AppEnv = CalendarConfig
 
-export type AppEnv = {
-  storageMode: AppStorageMode
-  apiBaseUrl: string
-  apiTimeoutMs: number
-  features: {
-    auth: boolean
-    teams: boolean
-  }
-}
-
-const DEFAULT_API_BASE_URL = '/api'
-const DEFAULT_API_TIMEOUT_MS = 10_000
+const DEFAULT_API_BASE_URL = DEFAULT_CONFIG.apiBaseUrl
+const DEFAULT_API_TIMEOUT_MS = DEFAULT_CONFIG.apiTimeoutMs
 const TRUE_VALUES = ['true', '1', 'yes', 'on']
 const FALSE_VALUES = ['false', '0', 'no', 'off']
 

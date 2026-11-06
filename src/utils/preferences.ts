@@ -23,7 +23,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
   mobileDefaultView: 'day',
 }
 
-export const MOBILE_MEDIA_QUERY = '(max-width: 700px)'
+export const COMPACT_MAX_WIDTH = 700
+
+export const isCompactWidth = (width: number) => width <= COMPACT_MAX_WIDTH
 
 export const parsePreferences = (value: unknown): Preferences => {
   const { theme, defaultView, mobileDefaultView } = asRecord(value)
