@@ -34,4 +34,5 @@ export const getSegmentAttributes = (
     continuesAfter && 'eventContinuesAfter',
   ),
   title: getEventTooltip(event, source, i18n),
+  'data-occurrence-key': event.occurrenceKey,
 })

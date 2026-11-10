@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState, type ComponentType, type ReactNode } from 'react'
+import { useCallback, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useViewerTimeZone } from '../../../context/HostContext.ts'
-import { useI18n } from '../../../i18n/index.ts'
+import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
 import { useArrowKeyNavigation } from '../../../hooks/useArrowKeyNavigation.ts'
 import { MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
 import {
@@ -13,13 +13,23 @@ import {
   type EditScope,
   type EventInput,
   type EventOccurrence,
+  type EventPeriod,
 } from '../../../utils/event.ts'
-import { DeleteEventModal, EventModal, useEvents } from '../../events/index.ts'
+import {
+  DeleteEventModal,
+  EventModal,
+  getScopeOptions,
+  RecurrenceScopeModal,
+  useEvents,
+} from '../../events/index.ts'
+import { DraggingEventContext } from '../context/DragContext.ts'
 import { EventSourcesContext, NO_EVENT_SOURCES } from '../context/EventSourcesContext.ts'
 import { useCalendarView } from '../hooks/useCalendarView.ts'
+import { useEventDrag, type DragPreview } from '../hooks/useEventDrag.ts'
 import { useNow } from '../hooks/useNow.ts'
 import type { EditorState } from '../types/editor.ts'
 import type { EventSources } from '../types/eventSource.ts'
+import { toDropInput } from '../utils/eventDrag.ts'
 import { getSourceText } from '../utils/eventLabels.ts'
 import type { SlotRange } from '../utils/slotSelection.ts'
 import type { CalendarView, CalendarViewProps } from '../types/view.ts'
@@ -46,6 +56,8 @@ type CalendarProps = {
   headerAccessory?: ReactNode
 }
 
+type PendingDrop = { occurrence: EventOccurrence; period: EventPeriod; options: EditScope[] }
+
 export function Calendar({
   calendarIds,
   targetCalendarId,
@@ -66,10 +78,26 @@ export function Calendar({
     targetCalendarId,
   })
   const viewerTimeZone = useViewerTimeZone()
-  const segmentsByDate = useMemo(
-    () => groupSegmentsByDate(expandEvents(events, range.from, range.to, viewerTimeZone), range),
+  const occurrences = useMemo(
+    () => expandEvents(events, range.from, range.to, viewerTimeZone),
     [events, range, viewerTimeZone],
   )
+  const occurrencesByKey = useMemo(
+    () => new Map(occurrences.map((occurrence) => [occurrence.occurrenceKey, occurrence])),
+    [occurrences],
+  )
+  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null)
+  const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
+  const [dropError, setDropError] = useState<string | null>(null)
+  const segmentsByDate = useMemo(() => {
+    const shown = dragPreview
+      ? occurrences.map((occurrence) =>
+          occurrence.occurrenceKey === dragPreview.occurrenceKey ? { ...occurrence, ...dragPreview.period } : occurrence,
+        )
+      : occurrences
+    return groupSegmentsByDate(shown, range)
+  }, [occurrences, dragPreview, range])
+  const mainRef = useRef<HTMLElement>(null)
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [eventToDelete, setEventToDelete] = useState<EventOccurrence | null>(null)
 
@@ -107,6 +135,33 @@ export function Calendar({
     goToDate(input.startDate)
   }
 
+  const saveDrop = async (occurrence: EventOccurrence, period: EventPeriod, scope: EditScope) => {
+    setPendingDrop(null)
+    setDropError(null)
+    try {
+      await updateEvent(occurrence, toDropInput(occurrence, period, viewerTimeZone, scope), scope)
+    } catch (caught) {
+      setDropError(getErrorMessage(caught, i18n.m))
+    } finally {
+      setDragPreview(null)
+    }
+  }
+
+  const handleDrop = (occurrence: EventOccurrence, period: EventPeriod) => {
+    setDragPreview({ occurrenceKey: occurrence.occurrenceKey, period })
+    const options = getScopeOptions(occurrence)
+    if (options.length > 1) setPendingDrop({ occurrence, period, options })
+    else void saveDrop(occurrence, period, options[0])
+  }
+
+  useEventDrag({
+    containerRef: mainRef,
+    enabled: canCreate,
+    occurrences: occurrencesByKey,
+    onPreview: setDragPreview,
+    onDrop: handleDrop,
+  })
+
   const handleDelete = async (scope: EditScope) => {
     if (!eventToDelete) return
     await deleteEvent(eventToDelete, scope)
@@ -119,6 +174,7 @@ export function Calendar({
 
   return (
     <EventSourcesContext value={eventSources}>
+      <DraggingEventContext value={dragPreview?.occurrenceKey ?? null}>
       <CalendarHeader
         view={view}
         title={title}
@@ -133,8 +189,9 @@ export function Calendar({
       />
 
       <ErrorMessage message={error} className="textCenter" />
+      <ErrorMessage message={dropError} className="textCenter" />
 
-      <main className="main scrollArea" data-view={view}>
+      <main ref={mainRef} className="main scrollArea" data-view={view}>
         <ViewComponent
           anchor={anchor}
           dates={dates}
@@ -163,9 +220,21 @@ export function Calendar({
         />
       )}
 
+      {pendingDrop && (
+        <RecurrenceScopeModal
+          options={pendingDrop.options}
+          onSelect={(scope) => void saveDrop(pendingDrop.occurrence, pendingDrop.period, scope)}
+          onClose={() => {
+            setPendingDrop(null)
+            setDragPreview(null)
+          }}
+        />
+      )}
+
       {eventToDelete && (
         <DeleteEventModal occurrence={eventToDelete} onConfirm={handleDelete} onClose={() => setEventToDelete(null)} />
       )}
+      </DraggingEventContext>
     </EventSourcesContext>
   )
 }

@@ -6,6 +6,7 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 - All-day events: `allDay` in the event format, switch in the event dialog, all-day row above the day and week grid
 - Time zones: events store an IANA `timeZone` (or `null` for the same local time everywhere), the dialog has a zone picker and shows the time in the viewer's zone, new prop `timeZone` / attribute `time-zone` sets the zone the calendar is shown in
+- Move events by pressing and holding them for one second, then dragging (mouse and touch). In the day and week view the lower edge changes the end time. Recurring events ask whether to change this, the following or all events
 - Events without `allDay`/`timeZone` keep working as floating timed events
 - The visible range sent to the backend is one day wider on each side
 - Automated tests with Vitest (`npm test`), run before every publish

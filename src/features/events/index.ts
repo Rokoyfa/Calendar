@@ -1,5 +1,7 @@
 export { useEvents } from './hooks/useEvents.ts'
 export { EventModal } from './components/EventModal.tsx'
 export { DeleteEventModal } from './components/DeleteEventModal.tsx'
+export { RecurrenceScopeModal } from './components/RecurrenceScopeModal.tsx'
+export { getScopeOptions } from './utils/scopeOptions.ts'
 export { CustomColorSettings } from './components/CustomColorSettings.tsx'
 export { ColorPicker } from './components/ColorPicker.tsx'

@@ -564,3 +564,35 @@ button.miniDay:hover {
     font-size: var(--font-size-base);
   }
 }
+
+.event,
+.eventChip {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.eventResizeHandle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.eventDragging {
+  z-index: 3;
+  box-shadow: var(--shadow);
+  outline: 2px solid var(--color-bg);
+  filter: brightness(1.08);
+}
+
+.isDraggingEvent,
+.isDraggingEvent * {
+  cursor: grabbing !important;
+}
+
+.isDraggingEvent .slot:hover,
+.isDraggingEvent .allDayLane:hover {
+  background-color: transparent;
+}
