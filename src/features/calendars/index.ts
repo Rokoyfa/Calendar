@@ -6,4 +6,20 @@ export { CreateCalendarPage } from './components/create/CreateCalendarPage.tsx'
 export { CalendarSwitcher } from './components/CalendarSwitcher.tsx'
 export { ActiveCalendarIndicator } from './components/ActiveCalendarIndicator.tsx'
 export { getSharedCalendars, getVisibleCalendarIds, hasPermission, isPersonalCalendar } from './utils/permissions.ts'
-export type { CalendarKind, CalendarSummary, Permission, TeamRole } from './types/calendar.ts'
+export { LocalCalendarRepository } from './repositories/LocalCalendarRepository.ts'
+export { RemoteCalendarRepository } from './repositories/RemoteCalendarRepository.ts'
+export type {
+  CalendarChanges,
+  CalendarDraft,
+  CalendarKind,
+  CalendarRepository,
+  CalendarSummary,
+  InvitableRole,
+  Invitation,
+  PendingInvitation,
+  Permission,
+  TeamChanges,
+  TeamInvitation,
+  TeamMember,
+  TeamRole,
+} from './types/calendar.ts'

@@ -1,31 +1,17 @@
 import type { CSSProperties } from 'react'
+import type { CalendarDataSource } from '../data/index.ts'
+import type { UserTokenProvider } from '../features/authorization/index.ts'
+import type { CalendarFeatures, StorageMode } from './defaults.ts'
 
-export const STORAGE_MODES = ['local', 'remote'] as const
-
-export type StorageMode = (typeof STORAGE_MODES)[number]
-
-export type CalendarFeatures = {
-  auth: boolean
-  teams: boolean
-}
-
-export type CalendarConfig = {
-  storageMode: StorageMode
-  apiBaseUrl: string
-  apiTimeoutMs: number
-  features: CalendarFeatures
-}
-
-export const DEFAULT_CONFIG: CalendarConfig = {
-  storageMode: 'local',
-  apiBaseUrl: '/api',
-  apiTimeoutMs: 10_000,
-  features: { auth: false, teams: false },
-}
+export { DEFAULT_CONFIG, STORAGE_MODES } from './defaults.ts'
+export type { CalendarConfig, CalendarFeatures, StorageMode } from './defaults.ts'
 
 export type CalendarRouting = 'memory' | 'browser'
 
 export type CalendarProps = {
+  dataSource?: CalendarDataSource
+  tenant?: string
+  getUserToken?: UserTokenProvider
   storageMode?: StorageMode
   apiBaseUrl?: string
   apiTimeoutMs?: number

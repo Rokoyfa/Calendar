@@ -54,6 +54,9 @@ import { Calendar } from 'calendar'
 
 | Prop | Attribut | Standard | Bedeutung |
 | --- | --- | --- | --- |
+| `dataSource` | – | – | Eigener Daten-Adapter, siehe [Daten-Adapter](#daten-adapter). Ohne ihn wählen `storageMode`, `apiBaseUrl` und `features.auth` einen der eingebauten. |
+| `tenant` | `tenant` | – | Öffentliche Tenant-ID für ein Backend mit mehreren Gastgebern, siehe [Tenants](#tenants-und-anmeldung-über-den-gastgeber) |
+| `getUserToken` | Eigenschaft `getUserToken` | – | Anmeldung über den Gastgeber statt eigener Konten |
 | `storageMode` | `storage-mode` | `local` | `local` (Browser) oder `remote` (API). Mit Anmeldung entscheidet die Sitzung. |
 | `apiBaseUrl` | `api-base-url` | `/api` | Adresse der REST-API |
 | `apiTimeoutMs` | `api-timeout-ms` | `10000` | Zeitlimit je Anfrage |
@@ -63,6 +66,82 @@ import { Calendar } from 'calendar'
 | `initialPath` | `initial-path` | `/` | Startansicht bei `memory`, z. B. `/settings` oder `/reset-password?token=…` |
 | `locale` | `locale` | Browser | Sprache und Region, z. B. `en-US`, `en-GB`, `de-DE`. Siehe [Sprache und Region](#sprache-und-region). |
 | `className`, `style` | `class`, `style` | – | Größe und Platz auf der Gastgeberseite |
+
+### Daten-Adapter
+
+Woher die Daten kommen, entscheidet ein `CalendarDataSource`. Die Komponente ist immer dieselbe, nur der Adapter wechselt.
+
+```tsx
+import { Calendar, localDataSource, restDataSource } from 'calendar'
+
+<Calendar dataSource={localDataSource()} />
+<Calendar dataSource={restDataSource({ baseUrl: 'https://api.example.com' })} />
+<Calendar dataSource={restDataSource({ baseUrl: '/api', auth: false, getAccessToken: () => myToken })} />
+```
+
+| Adapter | Verhalten |
+| --- | --- |
+| `localDataSource()` | Alles im Browser (localStorage), ohne Anmeldung |
+| `restDataSource({ baseUrl, timeoutMs?, auth?, headers?, getAccessToken? })` | Spricht die [REST-API](api/openapi.yaml). Mit `auth: true` (Standard) gibt es Anmeldung im Widget. Gäste arbeiten dann im Browser, Angemeldete auf dem Server. Mit `auth: false` immer Server, z. B. wenn der Gastgeber selbst anmeldet und per `getAccessToken` ein Token mitgibt. |
+
+**Eigener Adapter:** Wer eine ganz andere Datenquelle hat, setzt die Schnittstellen selbst um. Alle Typen werden exportiert.
+
+```ts
+import type { CalendarDataSource } from 'calendar'
+
+const myDataSource: CalendarDataSource = {
+  createAuthRepository: ({ getLanguage }) => myAuth,
+  connect: ({ isAuthenticated }, { getLanguage, onUnauthorized }) => ({
+    mode: 'remote',
+    events: myEvents,
+    calendars: myCalendars,
+    colors: myColors,
+    preferences: myPreferences,
+  }),
+}
+```
+
+- `connect` liefert die Repositories für den aktuellen Zustand und wird bei An- und Abmeldung neu aufgerufen.
+- `createAuthRepository` ist optional. Ohne gibt es keine Anmeldung im Widget.
+- `mode: 'remote'` zeigt nach der Anmeldung die Abfrage, lokale Termine ins Konto zu übernehmen.
+- Fehler mit einem der bekannten Codes (`AppError`, `ApiError` mit `code`) zeigt die Komponente übersetzt an, andere mit ihrer `message`.
+
+Getestet in einem frischen React-Projekt mit strenger Typprüfung: ein Adapter, der Kalender und Einstellungen von `localDataSource()` übernimmt und Termine nur im Speicher hält.
+
+### Tenants und Anmeldung über den Gastgeber
+
+Mit `tenant` spricht das Widget ein Backend an, das mehrere Gastgeber bedient. Jede Anfrage trägt dann den Header `X-Calendar-Tenant`.
+
+```html
+<script type="module" src="https://…/calendar-widget.js"></script>
+<calendar-widget tenant="acme" api-base-url="https://api.example.com" style="height: 700px"></calendar-widget>
+```
+
+**a) Eigene Konten:** ohne weitere Angaben. Registrierung und Anmeldung laufen im Widget wie bisher.
+
+**b) Anmeldung über den Gastgeber:** Der Gastgeber gibt eine Funktion `getUserToken` mit, die ein kurzlebiges, von seinem Server signiertes Token liefert (oder `null`, wenn auf seiner Seite niemand angemeldet ist).
+
+```tsx
+<Calendar tenant="acme" apiBaseUrl="https://api.example.com" getUserToken={() => fetch('/calendar-token').then((r) => r.text())} />
+```
+
+```js
+document.querySelector('calendar-widget').getUserToken = async () => (await fetch('/calendar-token')).text()
+```
+
+- Das Widget fragt erst `GET /auth/me`. Bei `401` holt es ein Token und tauscht es an `POST /auth/token` gegen eine Sitzung. Läuft die Sitzung später ab, passiert das automatisch noch einmal.
+- In diesem Modus gibt es keine Anmelde-, Registrierungs- und Passwort-Seiten, keinen Abmelden-Button, keinen Konto-Tab und keine Bestätigungsleiste. Das Konto gehört dem Gastgeber.
+- Liefert `getUserToken` `null`, arbeitet das Widget wie für Gäste im Browser. Statt des Kontomenüs gibt es dann das Zahnrad für die Einstellungen.
+- Die Eigenschaft kann vor oder nach dem Laden der Script-Datei gesetzt werden.
+- Als Daten-Adapter: `tenantDataSource({ tenant, baseUrl, getUserToken })`.
+
+Was das Backend dafür tun muss (Tenant prüfen, erlaubte Domains, Token prüfen, Nutzer anlegen), steht in [`api/openapi.yaml`](api/openapi.yaml). Getestet gegen ein simuliertes Backend: Tenant-Header bei allen Aufrufen, Anmeldung per Token, Gastmodus ohne Token und erneute Anmeldung nach abgelaufener Sitzung.
+
+### REST-API (OpenAPI)
+
+Der Vertrag zwischen `restDataSource` und einem Backend liegt als **OpenAPI 3.1** in [`api/openapi.yaml`](api/openapi.yaml): alle Endpunkte mit Anfragen, Antworten, Fehlercodes und Rechten. Das Test-Backend ist die Referenz-Umsetzung, `database/` das Referenz-Schema. Geprüft wurde, dass das Test-Backend alle beschriebenen Endpunkte außer `POST /auth/token` (Tenants) hat und dass seine Antworten in einem Durchlauf über alle 40 Endpunkte (65 Aufrufe, auch Fehlerfälle) den Schemas entsprechen.
+
+Die Datei lässt sich z. B. mit Swagger UI oder Redocly ansehen und mit Generatoren für Server-Gerüste in anderen Sprachen nutzen.
 
 **Was die Einbettung absichert:**
 
@@ -79,7 +158,7 @@ import { Calendar } from 'calendar'
 
 Getestet mit einer statischen HTML-Seite (nur die Script-Datei) und einem frischen React-19.2-Projekt, das das gepackte npm-Paket installiert, mit strenger Typprüfung.
 
-**Noch offen:** Mehrere Widgets mit `storage-mode="local"` auf derselben Seite teilen sich den Browser-Speicher. E-Mail-Links (Passwort zurücksetzen, E-Mail bestätigen) zeigen auf die Adresse aus der Backend-Konfiguration; bei `routing="memory"` muss der Gastgeber sie per `initialPath` weiterreichen. Tenant-ID und Daten-Adapter folgen in Phase 2 und 3.
+**Noch offen:** Mehrere Widgets mit `storage-mode="local"` auf derselben Seite teilen sich den Browser-Speicher. E-Mail-Links (Passwort zurücksetzen, E-Mail bestätigen) zeigen auf die Adresse aus der Backend-Konfiguration; bei `routing="memory"` muss der Gastgeber sie per `initialPath` weiterreichen.
 
 ### Sprache und Region
 
@@ -287,9 +366,21 @@ Die Links in den E-Mails zeigen auf `/reset-password?token=…` und `/verify-ema
 | `POST /invitations/:id/accept` | – | `200` mit den `CalendarSummary[]` des Teams |
 | `POST /invitations/:id/decline` | – | `204` |
 
+**Einstellungen und eigene Farben** (`RemotePreferencesRepository`, `RemoteColorRepository`, nur angemeldet):
+
+| Aufruf | Body | Antwort |
+| ------ | ---- | ------- |
+| `GET /preferences` | – | `{ theme, defaultView, mobileDefaultView, locale }`, ohne gespeicherte Werte die Standardwerte |
+| `PATCH /preferences` | einzelne Felder davon | `200` mit allen Einstellungen |
+| `GET /colors` | – | `HexColor[]` in der Reihenfolge des Hinzufügens |
+| `POST /colors` | `{ color: '#rrggbb' }` | `200` mit allen Farben. Schon vorhandene Farben werden nicht doppelt angelegt. `409` (`tooManyColors`) ab 12 Farben. |
+| `DELETE /colors/:rrggbb` | – | `200` mit den übrigen Farben (Farbe ohne `#` im Pfad) |
+
 `CalendarSummary` ist `{ id, teamId, name, color, kind: 'personal' | 'team', teamName, description, role, showInPersonal, permissions }`. Weitere Endpunkte für Mitglieder, Rollen, weitere Kalender und Team-Verwaltung bietet das Test-Backend schon an (siehe dessen README), die Oberfläche dafür fehlt noch.
 
-Ohne eigene `message` vom Server zeigt die App passende Meldungen, z. B. bei `401` am Login „E-Mail-Adresse oder Passwort ist falsch.“, bei `409` an der Registrierung „Für diese E-Mail-Adresse gibt es bereits ein Konto.“ und bei `410` „Der Link ist ungültig oder abgelaufen.“. Liefert der Server `{ "message": "…" }`, wird diese Meldung angezeigt.
+**Fehler** kommen als `{ "code": "…", "message": "…" }`. Kennt die App den `code` (z. B. `invalidCredentials`, `emailTaken`, `forbidden`, `lastOwner`, `tooManyColors`, vollständige Liste in `src/utils/appError.ts`), zeigt sie ihre eigene Übersetzung. Sonst zeigt sie die englische `message` des Servers, ohne beides eine Standardmeldung je Status. Eingaben, die schon die App prüft, meldet der Server nur allgemein als `invalidInput`.
+
+**Sprache:** Jede Anfrage trägt `Accept-Language` mit der aktuellen Sprache der App (z. B. `de-DE`). Das Backend schreibt E-Mails in der Sprache aus den gespeicherten Einstellungen des Empfängers, sonst nach `Accept-Language`, sonst Englisch.
 
 **Anforderungen an das Backend:**
 
@@ -435,7 +526,7 @@ Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, r
 - **Farbschema:** Wie System, Hell oder Dunkel. Gesetzt über `data-theme` am `<html>`, die Farben kommen weiter aus `light-dark()`.
 - **Startansicht** getrennt für Computer/Tablet und Handy
 - **Eigene Farben** ansehen und entfernen. Termine mit dieser Farbe behalten sie.
-- Gespeichert in diesem Browser unter `calendar.preferences.v1` (Farben weiter unter `calendar.colors.v1`). Beim ersten Start legt die App beide Einträge mit Standardwerten an: Farbschema `system`, Startansicht Woche bzw. Tag auf dem Handy, Sprache `auto`, keine eigenen Farben. Vorhandene Werte bleiben unverändert. Das Datenbankschema hat dafür schon `user_preferences` und `user_colors`.
+- Gespeichert in diesem Browser unter `calendar.preferences.v1` (Farben weiter unter `calendar.colors.v1`). Beim ersten Start legt die App beide Einträge mit Standardwerten an: Farbschema `system`, Startansicht Woche bzw. Tag auf dem Handy, Sprache `auto`, keine eigenen Farben. Vorhandene Werte bleiben unverändert. **Angemeldet** liegen Einstellungen und Farben auf dem Server (`/preferences`, `/colors`, in der Datenbank `user_preferences` und `user_colors`) und gelten auf jedem Gerät.
 - Angemeldet kommen die Konto-Abschnitte dazu, siehe [Konto in den Einstellungen](#konto-in-den-einstellungen).
 
 ### Farben
@@ -548,19 +639,22 @@ database/
    ├─ 003_calendar_settings.down.sql
    ├─ 004_locale.sql           Sprache und Region in user_preferences
    └─ 004_locale.down.sql
+api/openapi.yaml               REST-Vertrag (OpenAPI 3.1) für restDataSource und eigene Backends
 demo/embed.html                Demo-Gastgeberseite: zwei Widgets, störendes CSS
 scripts/collect-types.mjs      Öffentliche Typdefinitionen für das npm-Paket einsammeln
 vite.lib.config.ts             Library-Build (npm und Script-Datei)
 tsconfig.lib.json              Typdefinitionen der Bibliothek erzeugen
 src/
+├─ data/                       Daten-Adapter: CalendarDataSource, localDataSource, restDataSource, tenantDataSource
 ├─ lib/                        Öffentliche Bibliothek
-│  ├─ index.ts                 Öffentliche Exporte: Calendar, defineCalendarElement, Typen
+│  ├─ index.ts                 Öffentliche Exporte: Calendar, defineCalendarElement, Daten-Adapter, Typen
 │  ├─ CalendarWidget.tsx       <Calendar>: Props → Konfiguration, IsolatedRoot + CalendarApp
-│  ├─ CalendarApp.tsx          AuthProvider + StorageProvider (je nach Sitzung) + PreferencesProvider + CalendarsProvider + Router je Instanz
+│  ├─ CalendarApp.tsx          AuthProvider + Repositories aus dataSource.connect (je nach Sitzung) + Provider + Router je Instanz
 │  ├─ IsolatedRoot.tsx         Shadow Root mit gebündelten Stilen, stellt die Wurzel per RootElementContext bereit
 │  ├─ element.tsx              <calendar-widget> (Custom Element, Attribute → Props)
 │  ├─ element-auto.ts          Einstieg der Script-Datei: registriert <calendar-widget>
-│  └─ config.ts                CalendarProps, CalendarConfig, Standardwerte
+│  ├─ config.ts                CalendarProps
+│  └─ defaults.ts              CalendarConfig und Standardwerte (auch für vite.config.ts)
 ├─ i18n/                       Sprache und Region
 │  ├─ messages/en/, de/        Texte je Bereich, Englisch definiert den Typ
 │  ├─ I18nProvider.tsx         Wählt die Sprache (Nutzer > Gastgeber > Browser > en-US), setzt lang an der Wurzel
@@ -652,9 +746,9 @@ src/
    │  ├─ components/           LocalImportPrompt: lokale Termine ins Konto übernehmen
    │  ├─ context/              StorageContext, StorageProvider (inkl. version/invalidate zum Neuladen)
    │  ├─ hooks/                useStorage, useEventRepository, useColorRepository, usePreferencesRepository
-   │  ├─ repositories/         Local- und Remote-Umsetzungen, LocalPreferencesRepository
+   │  ├─ repositories/         Local- und Remote-Umsetzungen für Termine, Einstellungen und Farben; createRepositories wählt je nach Modus
    │  ├─ types/
-   │  └─ utils/                LocalStorageValue/LocalStorageList (localStorage lesen/schreiben), copyEvents (Termine samt Serien-Verknüpfung kopieren)
+   │  └─ utils/                LocalStorageValue/LocalStorageList (localStorage lesen/schreiben), copyEvents (Termine samt Serien-Verknüpfung kopieren), createRemoteApi
    ├─ calendars/               Kalenderauswahl (persönlich und Teams), vorbereitet für den Team-Modus
    │  ├─ components/           CalendarSwitcher (Button und Fenster), ActiveCalendarIndicator (Plakette im Kopf),
    │  │                        CalendarPreview (Monatsvorschau), InvitationList (offene Einladungen),
@@ -705,8 +799,8 @@ src/
 - Serien-Aktionen bestehen aus mehreren einzelnen Speichervorgängen. Bricht einer davon ab, kann eine Serie teilweise geändert sein.
 - Eigene Farben lassen sich noch nicht wieder entfernen
 - Datums- und Zeitfelder (`<input type="date">`, `type="time"`) zeigen das Format der Browser- bzw. Systemsprache, nicht die gewählte Sprache
-- Die Einstellung „Sprache und Region“ liegt wie die übrigen Einstellungen noch im Browser. Die Spalte `user_preferences.locale` ist vorbereitet.
-- Fehlermeldungen, die das Test-Backend ohne bekannten Code schickt (z. B. bei Rechten), kommen auf Deutsch
+- Meldungen zu ungültigen Eingaben (`invalidInput`), die erst der Server erkennt, kommen auf Englisch
+- Beim ersten Anmelden werden Einstellungen und Farben aus dem Browser nicht ins Konto übernommen, das Konto startet mit den Standardwerten
 
 ## Nächste Schritte
 
@@ -717,12 +811,14 @@ src/
 - [x] Datenbankschema für das Backend (`database/`)
 - [ ] Backend mit der oben beschriebenen REST-API inkl. `/auth`
 - [ ] Server-Speicherung über `RemoteEventRepository` aktivieren
-- [ ] `RemoteColorRepository`, damit eigene Farben im Remote-Modus mitwandern
-- [ ] Team-Modus mit Einladung per E-Mail (`features/teams`)
+- [x] `RemoteColorRepository`, damit eigene Farben im Remote-Modus mitwandern
+- [x] Team-Modus mit Einladung per E-Mail (`features/calendars`)
 - [x] Eigene Farben entfernen
 - [x] Schalter für Hell- und Dunkelmodus in der Oberfläche
 - [x] Handy startet in der Tagesansicht, Startansicht einstellbar
 - [x] Phase 1: einbettbare Bibliothek (`<Calendar>`, `<calendar-widget>`, Shadow DOM, Library-Build)
-- [ ] Phase 2: Daten-Adapter `CalendarDataSource` und OpenAPI-Vertrag
-- [ ] Phase 3: Tenants mit eigenen Konten
-- [ ] Einstellungen und eigene Farben im Remote-Modus übers Backend speichern (`user_preferences`, `user_colors`)
+- [x] Phase 2: Daten-Adapter `CalendarDataSource` und OpenAPI-Vertrag
+- [x] Phase 3 und 4 im Frontend: `tenant`, `tenantDataSource`, Anmeldung über den Gastgeber (`getUserToken`), Vertrag in `api/openapi.yaml`
+- [ ] Backend für Tenants (Tenant-Trennung, erlaubte Domains, Rate-Limits, Token-Prüfung) und Migration für Tenants im Datenbankschema
+- [x] Einstellungen und eigene Farben im Remote-Modus übers Backend speichern (`user_preferences`, `user_colors`)
+- [x] Fehlercodes vom Backend, E-Mails in der Sprache des Empfängers

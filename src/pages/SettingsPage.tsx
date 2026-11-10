@@ -11,7 +11,7 @@ type SettingsTab = 'calendars' | 'appearance' | 'account'
 
 export function SettingsPage() {
   const { m } = useI18n()
-  const { enabled, user } = useAuth()
+  const { enabled, method, user } = useAuth()
   const tabs: TabDefinition<SettingsTab>[] = [
     { value: 'calendars', label: m.settings.tabs.calendars, content: <CalendarSettings /> },
     {
@@ -25,7 +25,7 @@ export function SettingsPage() {
       ),
     },
   ]
-  if (enabled && user) tabs.push({ value: 'account', label: m.settings.tabs.account, content: <AccountSettings /> })
+  if (enabled && user && method === 'password') tabs.push({ value: 'account', label: m.settings.tabs.account, content: <AccountSettings /> })
   const [active, select] = useTabParam(tabs)
 
   return (

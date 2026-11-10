@@ -12,12 +12,28 @@ import type {
   RegisterInput,
   User,
 } from '../types/auth.ts'
+import { AppError } from '../../../utils/appError.ts'
 import { AuthContext } from './AuthContext.ts'
 
 type AuthProviderProps = {
-  repository: AuthRepository
-  enabled: boolean
+  repository: AuthRepository | null
   children: ReactNode
+}
+
+const unavailable = () => Promise.reject(new AppError('unknown'))
+
+const DISABLED_AUTH: AuthRepository = {
+  getCurrentUser: async () => null,
+  login: unavailable,
+  register: unavailable,
+  logout: async () => undefined,
+  updateProfile: unavailable,
+  changePassword: unavailable,
+  deleteAccount: unavailable,
+  requestPasswordReset: unavailable,
+  resetPassword: unavailable,
+  verifyEmail: unavailable,
+  resendVerificationEmail: unavailable,
 }
 
 type Session = {
@@ -29,7 +45,10 @@ const ANONYMOUS: Session = { status: 'anonymous', user: null }
 
 const authenticated = (user: User): Session => ({ status: 'authenticated', user })
 
-export function AuthProvider({ repository, enabled, children }: AuthProviderProps) {
+export function AuthProvider({ repository: configuredRepository, children }: AuthProviderProps) {
+  const enabled = configuredRepository !== null
+  const repository = configuredRepository ?? DISABLED_AUTH
+  const method = repository.method ?? 'password'
   const [session, setSession] = useState<Session>(enabled ? { status: 'loading', user: null } : ANONYMOUS)
 
   useEffect(() => {
@@ -97,11 +116,21 @@ export function AuthProvider({ repository, enabled, children }: AuthProviderProp
     [repository],
   )
 
-  const expireSession = useCallback(() => setSession(ANONYMOUS), [])
+  const expireSession = useCallback(() => {
+    if (method !== 'hostToken') {
+      setSession(ANONYMOUS)
+      return
+    }
+    repository
+      .getCurrentUser()
+      .then((user) => setSession(user ? authenticated(user) : ANONYMOUS))
+      .catch(() => setSession(ANONYMOUS))
+  }, [method, repository])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       enabled,
+      method,
       ...session,
       ...accountRequests,
       login,
@@ -112,7 +141,7 @@ export function AuthProvider({ repository, enabled, children }: AuthProviderProp
       verifyEmail,
       expireSession,
     }),
-    [enabled, session, accountRequests, login, register, logout, updateProfile, deleteAccount, verifyEmail, expireSession],
+    [enabled, method, session, accountRequests, login, register, logout, updateProfile, deleteAccount, verifyEmail, expireSession],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

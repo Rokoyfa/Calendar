@@ -1,4 +1,4 @@
-import { DEFAULT_CONFIG, STORAGE_MODES, type CalendarConfig, type StorageMode } from '../lib/config.ts'
+import { DEFAULT_CONFIG, STORAGE_MODES, type CalendarConfig, type StorageMode } from '../lib/defaults.ts'
 import { isOneOf } from '../utils/object.ts'
 
 export type AppStorageMode = StorageMode
@@ -20,7 +20,7 @@ export function parseEnv(raw: RawEnv): AppEnv {
   const readStorageMode = (): AppStorageMode => {
     const value = clean(raw.VITE_STORAGE_MODE)?.toLowerCase() ?? 'local'
     if (isOneOf(STORAGE_MODES, value)) return value
-    errors.push(`VITE_STORAGE_MODE muss "local" oder "remote" sein, ist aber "${value}".`)
+    errors.push(`VITE_STORAGE_MODE must be "local" or "remote", but is "${value}".`)
     return 'local'
   }
 
@@ -29,7 +29,7 @@ export function parseEnv(raw: RawEnv): AppEnv {
     const isRelative = value.startsWith('/')
     const isAbsolute = URL.canParse(value) && /^https?:$/.test(new URL(value).protocol)
     if (isRelative || isAbsolute) return value.replace(/\/+$/, '')
-    errors.push(`VITE_API_BASE_URL muss mit "/" oder "http(s)://" beginnen, ist aber "${value}".`)
+    errors.push(`VITE_API_BASE_URL must start with "/" or "http(s)://", but is "${value}".`)
     return DEFAULT_API_BASE_URL
   }
 
@@ -38,7 +38,7 @@ export function parseEnv(raw: RawEnv): AppEnv {
     if (value === undefined) return DEFAULT_API_TIMEOUT_MS
     const timeout = Number(value)
     if (Number.isInteger(timeout) && timeout > 0) return timeout
-    errors.push(`VITE_API_TIMEOUT_MS muss eine positive ganze Zahl sein, ist aber "${value}".`)
+    errors.push(`VITE_API_TIMEOUT_MS must be a positive integer, but is "${value}".`)
     return DEFAULT_API_TIMEOUT_MS
   }
 
@@ -46,7 +46,7 @@ export function parseEnv(raw: RawEnv): AppEnv {
     const value = clean(raw[name])?.toLowerCase()
     if (value === undefined || FALSE_VALUES.includes(value)) return false
     if (TRUE_VALUES.includes(value)) return true
-    errors.push(`${name} muss "true" oder "false" sein, ist aber "${value}".`)
+    errors.push(`${name} must be "true" or "false", but is "${value}".`)
     return false
   }
 

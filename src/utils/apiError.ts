@@ -1,4 +1,4 @@
-import type { ErrorCode } from './appError.ts'
+import { isErrorCode, type ErrorCode } from './appError.ts'
 
 export type ApiErrorKind = 'http' | 'timeout' | 'network' | 'aborted' | 'parse'
 
@@ -14,6 +14,12 @@ export const getServerMessage = (body: unknown) => {
   if (typeof body !== 'object' || body === null) return null
   const message = (body as Record<string, unknown>).message
   return typeof message === 'string' && message.trim() ? message.trim() : null
+}
+
+export const getServerCode = (body: unknown) => {
+  if (typeof body !== 'object' || body === null) return undefined
+  const code = (body as Record<string, unknown>).code
+  return isErrorCode(code) ? code : undefined
 }
 
 export class ApiError extends Error {
@@ -36,7 +42,12 @@ export class ApiError extends Error {
   }
 
   static fromResponse(status: number, body: unknown) {
-    return new ApiError(getServerMessage(body) ?? `Request failed with status ${status}.`, { kind: 'http', status, body })
+    return new ApiError(getServerMessage(body) ?? `Request failed with status ${status}.`, {
+      kind: 'http',
+      code: getServerCode(body),
+      status,
+      body,
+    })
   }
 
   static fromKind(kind: Exclude<ApiErrorKind, 'http'>, cause?: unknown) {

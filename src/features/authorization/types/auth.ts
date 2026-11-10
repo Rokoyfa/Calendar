@@ -34,7 +34,12 @@ export type AccountDeletionInput = {
 
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
 
+export type AuthMethod = 'password' | 'hostToken'
+
+export type UserTokenProvider = () => string | null | Promise<string | null>
+
 export interface AuthRepository {
+  readonly method?: AuthMethod
   getCurrentUser(): Promise<User | null>
   login(input: LoginInput): Promise<User>
   register(input: RegisterInput): Promise<User>
@@ -64,6 +69,7 @@ type AccountActions = Pick<
 
 export type AuthContextValue = AccountActions & {
   enabled: boolean
+  method: AuthMethod
   status: AuthStatus
   user: User | null
   expireSession: () => void

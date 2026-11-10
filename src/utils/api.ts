@@ -20,6 +20,7 @@ export type ApiClientOptions = {
   credentials?: RequestCredentials
   headers?: HeadersInit
   getAccessToken?: () => string | null
+  getLanguage?: () => string | null
   onUnauthorized?: (error: ApiError) => void
 }
 
@@ -71,6 +72,7 @@ export function createApiClient({
   credentials = 'include',
   headers: defaultHeaders,
   getAccessToken = () => null,
+  getLanguage = () => null,
   onUnauthorized,
 }: ApiClientOptions): ApiClient {
   const request = async <T>(
@@ -81,6 +83,9 @@ export function createApiClient({
     const timeoutSignal = AbortSignal.timeout(timeoutMs)
     const requestHeaders = new Headers(defaultHeaders)
     requestHeaders.set('Accept', 'application/json')
+
+    const language = getLanguage()
+    if (language) requestHeaders.set('Accept-Language', language)
 
     const token = getAccessToken()
     if (token) requestHeaders.set('Authorization', `Bearer ${token}`)

@@ -19,7 +19,8 @@ import { getStartView, isCompactWidth } from '../utils/preferences.ts'
 
 export function CalendarPage() {
   const root = useRootElement()
-  const { enabled, user } = useAuth()
+  const { enabled, method, user } = useAuth()
+  const hasAccountMenu = enabled && (user !== null || method === 'password')
   const { preferences } = usePreferences()
   const { m } = useI18n()
   const { calendars, activeCalendar, visibleCalendarIds } = useCalendars()
@@ -41,7 +42,7 @@ export function CalendarPage() {
         headerContext={<ActiveCalendarIndicator />}
         headerAccessory={
           <>
-            {!enabled && (
+            {!hasAccountMenu && (
               <Link to={ROUTES.settings} className="iconLink" aria-label={m.common.settings} title={m.common.settings}>
                 <SettingsIcon size={20} />
               </Link>

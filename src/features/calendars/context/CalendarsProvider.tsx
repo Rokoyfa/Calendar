@@ -1,11 +1,10 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { useI18n } from '../../../i18n/index.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
-import type { StorageConfig } from '../../storage/index.ts'
 import { PERSONAL_CALENDAR } from '../constants/calendars.ts'
-import { createCalendarRepository } from '../repositories/createCalendarRepository.ts'
 import type {
   CalendarChanges,
+  CalendarRepository,
   CalendarDraft,
   CalendarsContextValue,
   CalendarSummary,
@@ -20,13 +19,12 @@ const INITIAL_CALENDARS: CalendarSummary[] = [PERSONAL_CALENDAR]
 const NO_INVITATIONS: PendingInvitation[] = []
 
 type CalendarsProviderProps = {
-  config: StorageConfig
+  repository: CalendarRepository
   children: ReactNode
 }
 
-export function CalendarsProvider({ config, children }: CalendarsProviderProps) {
+export function CalendarsProvider({ repository, children }: CalendarsProviderProps) {
   const { m } = useI18n()
-  const repository = useMemo(() => createCalendarRepository(config), [config])
   const loadCalendars = useCallback(() => repository.list(), [repository])
   const loadInvitations = useCallback(() => repository.listInvitations(), [repository])
   const {

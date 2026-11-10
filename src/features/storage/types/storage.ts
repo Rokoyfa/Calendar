@@ -26,23 +26,16 @@ export interface PreferencesRepository {
   update(changes: Partial<Preferences>): Promise<Preferences>
 }
 
-export type StorageConfig =
-  | { mode: 'local' }
-  | {
-      mode: 'remote'
-      baseUrl: string
-      timeoutMs?: number
-      getAccessToken?: () => string | null
-      onUnauthorized?: () => void
-    }
+export type StorageMode = 'local' | 'remote'
 
-export type StorageMode = StorageConfig['mode']
-
-export type StorageContextValue = {
+export type StorageRepositories = {
   mode: StorageMode
   events: EventRepository
   colors: ColorRepository
   preferences: PreferencesRepository
+}
+
+export type StorageContextValue = StorageRepositories & {
   version: number
   invalidate: () => void
 }

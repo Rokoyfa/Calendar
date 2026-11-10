@@ -9,13 +9,16 @@ type AuthGateProps = {
 }
 
 export function AuthGate({ access, children }: AuthGateProps) {
-  const { enabled, user } = useAuth()
+  const { enabled, method, user } = useAuth()
   const [searchParams] = useSearchParams()
   const location = useLocation()
 
-  if (access === 'user') return enabled && !user ? <Navigate to={ROUTES.calendar} replace /> : children
+  const usesPassword = method === 'password'
+  if (access === 'user') return enabled && usesPassword && !user ? <Navigate to={ROUTES.calendar} replace /> : children
   if (!enabled) return <Navigate to={ROUTES.calendar} replace />
-  if (access === 'account' && !user) return <Navigate to={withRedirect(ROUTES.login, location.pathname)} replace />
+  if (access === 'guest' && !usesPassword) return <Navigate to={ROUTES.calendar} replace />
+  if (access === 'account' && !user)
+    return <Navigate to={usesPassword ? withRedirect(ROUTES.login, location.pathname) : ROUTES.calendar} replace />
   if (access === 'guest' && user) return <Navigate to={getRedirectTarget(searchParams)} replace />
   return children
 }

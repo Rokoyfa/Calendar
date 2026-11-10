@@ -34,6 +34,7 @@ const translateErrors = async <T>(request: Promise<T>, codes: StatusCodes) => {
 }
 
 export class RemoteAuthRepository implements AuthRepository {
+  readonly method = 'password'
   readonly #api: ApiClient
 
   constructor(api: ApiClient) {

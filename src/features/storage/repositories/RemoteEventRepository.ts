@@ -1,20 +1,14 @@
-import { createApiClient, encodePathSegment, type ApiClient, type QueryParams } from '../../../utils/api.ts'
+import { encodePathSegment, type ApiClient, type QueryParams } from '../../../utils/api.ts'
 import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
 import type { EventQuery, EventRepository } from '../types/storage.ts'
-
-type RemoteEventRepositoryOptions = {
-  timeoutMs?: number
-  getAccessToken?: () => string | null
-  onUnauthorized?: () => void
-}
 
 const EVENTS_PATH = '/events'
 
 export class RemoteEventRepository implements EventRepository {
   readonly #api: ApiClient
 
-  constructor(baseUrl: string, { timeoutMs, getAccessToken, onUnauthorized }: RemoteEventRepositoryOptions = {}) {
-    this.#api = createApiClient({ baseUrl, timeoutMs, getAccessToken, onUnauthorized })
+  constructor(api: ApiClient) {
+    this.#api = api
   }
 
   list({ from, to, calendarIds }: EventQuery) {

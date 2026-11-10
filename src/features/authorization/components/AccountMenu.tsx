@@ -37,11 +37,13 @@ type AccountMenuProps = {
 
 export function AccountMenu({ menuItems }: AccountMenuProps) {
   const { m } = useI18n()
-  const { enabled, status, user, logout } = useAuth()
+  const { enabled, method, status, user, logout } = useAuth()
   const location = useLocation()
   const { run, isPending, error } = useAsyncAction(logout)
 
   if (!enabled || status === 'loading') return null
+
+  if (!user && method === 'hostToken') return null
 
   if (!user)
     return (
@@ -79,15 +81,17 @@ export function AccountMenu({ menuItems }: AccountMenuProps) {
         <ButtonLink to={ROUTES.settings} variant="outline" block>
           {m.common.settings}
         </ButtonLink>
-        <Button
-          variant="secondary"
-          block
-          isPending={isPending}
-          pendingLabel={m.auth.menu.signingOut}
-          onClick={() => void run()}
-        >
-          {m.auth.menu.signOut}
-        </Button>
+        {method === 'password' && (
+          <Button
+            variant="secondary"
+            block
+            isPending={isPending}
+            pendingLabel={m.auth.menu.signingOut}
+            onClick={() => void run()}
+          >
+            {m.auth.menu.signOut}
+          </Button>
+        )}
       </div>
     </>
   )

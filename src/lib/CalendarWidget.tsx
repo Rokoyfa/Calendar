@@ -1,10 +1,14 @@
 import { useMemo } from 'react'
+import { localDataSource, restDataSource, tenantDataSource } from '../data/index.ts'
 import { I18nProvider } from '../i18n/index.ts'
 import { CalendarApp } from './CalendarApp.tsx'
-import { DEFAULT_CONFIG, type CalendarConfig, type CalendarProps } from './config.ts'
+import { DEFAULT_CONFIG, type CalendarProps } from './config.ts'
 import { IsolatedRoot } from './IsolatedRoot.tsx'
 
 export function CalendarWidget({
+  dataSource: providedDataSource,
+  tenant,
+  getUserToken,
   storageMode = DEFAULT_CONFIG.storageMode,
   apiBaseUrl = DEFAULT_CONFIG.apiBaseUrl,
   apiTimeoutMs = DEFAULT_CONFIG.apiTimeoutMs,
@@ -17,16 +21,21 @@ export function CalendarWidget({
   style,
 }: CalendarProps) {
   const auth = features?.auth ?? DEFAULT_CONFIG.features.auth
-  const teams = features?.teams ?? DEFAULT_CONFIG.features.teams
-  const config = useMemo<CalendarConfig>(
-    () => ({ storageMode, apiBaseUrl: apiBaseUrl.replace(/\/+$/, ''), apiTimeoutMs, features: { auth, teams } }),
-    [storageMode, apiBaseUrl, apiTimeoutMs, auth, teams],
+  const dataSource = useMemo(
+    () =>
+      providedDataSource ??
+      (tenant
+        ? tenantDataSource({ tenant, baseUrl: apiBaseUrl, timeoutMs: apiTimeoutMs, getUserToken })
+        : auth || storageMode === 'remote'
+          ? restDataSource({ baseUrl: apiBaseUrl, timeoutMs: apiTimeoutMs, auth, getUserToken })
+          : localDataSource()),
+    [providedDataSource, tenant, getUserToken, auth, storageMode, apiBaseUrl, apiTimeoutMs],
   )
 
   return (
     <IsolatedRoot className={className} style={style} autoFocus={routing === 'browser'}>
       <I18nProvider locale={locale}>
-        <CalendarApp config={config} routing={routing} basename={basename} initialPath={initialPath} />
+        <CalendarApp dataSource={dataSource} routing={routing} basename={basename} initialPath={initialPath} />
       </I18nProvider>
     </IsolatedRoot>
   )

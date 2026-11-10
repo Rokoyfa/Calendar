@@ -1,0 +1,911 @@
+openapi: 3.1.0
+info:
+  title: Calendar API
+  version: 1.0.0
+  description: |
+    REST contract between the calendar component (`restDataSource`) and a backend.
+    The test backend (`TestBE`) is the reference implementation, `database/` the reference schema.
+
+    - Authentication uses an HttpOnly session cookie set by the backend. Alternatively a host can send
+      `Authorization: Bearer …` (`restDataSource({ getAccessToken })`).
+    - Changing requests must use `Content-Type: application/json`.
+    - Every request carries `Accept-Language` with the current language of the component. Mails use the
+      recipient's stored `locale`, otherwise this header, otherwise English.
+    - Errors are `Problem` objects. The component translates known `code` values itself and otherwise shows `message`.
+
+    **Tenants** (public multi-tenant backend, `tenantDataSource`): every request carries the header
+    `X-Calendar-Tenant: <public tenant id>`. A backend with exactly one tenant may ignore it. A multi-tenant backend
+    answers `403` with `unknownTenant` for an unknown id and `403` with `originNotAllowed` when `Origin` is not in the
+    tenant's allowed domains, and scopes every query to the tenant.
+
+    **Host token sign-in** (`getUserToken`): when `GET /auth/me` answers `401`, the component asks the host page for a
+    short-lived token (a JWT signed with the tenant key, claims `tenant`, `sub`, `name`, `email`, `exp`) and exchanges it at
+    `POST /auth/token` for a normal session. The same happens when any request answers `401` later. Password endpoints
+    are not used in this mode.
+servers:
+  - url: /api
+security:
+  - sessionCookie: []
+  - bearerToken: []
+tags:
+  - name: Auth
+  - name: Events
+  - name: Calendars
+  - name: Teams
+  - name: Invitations
+  - name: Preferences
+paths:
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '401': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Auth]
+      summary: Change name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { $ref: '#/components/schemas/PersonName' }
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Auth]
+      summary: Delete account
+      description: Deletes the account, sessions, preferences, the personal team and teams the user was alone in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+      responses:
+        '204': { description: Deleted, session cookie cleared }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /auth/me/password:
+    post:
+      tags: [Auth]
+      summary: Change password
+      description: Ends all other sessions of the user. `403` with `wrongCurrentPassword`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { $ref: '#/components/schemas/NewPassword' }
+      responses:
+        '204': { description: Changed }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register
+      description: |
+        Creates the account with a personal team and calendar, starts a session and sends a confirmation link.
+        `409` with `emailTaken`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { $ref: '#/components/schemas/PersonName' }
+                email: { $ref: '#/components/schemas/Email' }
+                password: { $ref: '#/components/schemas/NewPassword' }
+      responses:
+        '201': { $ref: '#/components/responses/User' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in
+      description: '`401` with `invalidCredentials`, `429` with `tooManyLoginAttempts` after 5 failures in 15 minutes.'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { $ref: '#/components/schemas/Email' }
+                password: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+  /auth/token:
+    post:
+      tags: [Auth]
+      summary: Sign in with a token issued by the host page
+      description: |
+        Verifies signature, expiry and tenant, creates the user on first use (`external_id` = `sub`) and starts a session.
+        `401` with `invalidUserToken`, `403` with `unknownTenant` or when token sign-in is disabled for the tenant.
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/Tenant' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, description: JWT signed with a key of the tenant }
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Sign out
+      security: []
+      responses:
+        '204': { description: Session ended, cookie cleared }
+  /auth/password-reset:
+    post:
+      tags: [Auth]
+      summary: Request a password reset link
+      description: Always answers 204, also for unknown addresses. The link is valid for one hour.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { $ref: '#/components/schemas/Email' }
+      responses:
+        '204': { description: Accepted }
+  /auth/password-reset/confirm:
+    post:
+      tags: [Auth]
+      summary: Set a new password with a reset token
+      description: Ends all sessions. `410` with `invalidLink`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { $ref: '#/components/schemas/NewPassword' }
+      responses:
+        '204': { description: Changed }
+        '410': { $ref: '#/components/responses/Problem' }
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Confirm the email address
+      description: '`410` with `invalidLink`.'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '204': { description: Confirmed }
+        '410': { $ref: '#/components/responses/Problem' }
+  /auth/verify-email/resend:
+    post:
+      tags: [Auth]
+      summary: Send a new confirmation link
+      responses:
+        '204': { description: Sent }
+        '401': { $ref: '#/components/responses/Problem' }
+  /events:
+    get:
+      tags: [Events]
+      summary: List events
+      description: |
+        Either `from`, `to` and at least one `calendarId` (events in the range and all series that can occur in it),
+        or `seriesId` (the series and its detached events).
+      parameters:
+        - { name: from, in: query, schema: { $ref: '#/components/schemas/ISODate' } }
+        - { name: to, in: query, schema: { $ref: '#/components/schemas/ISODate' } }
+        - name: calendarId
+          in: query
+          description: Repeatable. `personal` stands for the own personal calendar.
+          schema: { type: array, items: { type: string } }
+          style: form
+          explode: true
+        - { name: seriesId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Events
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CalendarEvent' } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Events]
+      summary: Create an event
+      description: Needs `create_entry`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/EventInput'
+                - type: object
+                  required: [calendarId]
+                  properties:
+                    calendarId: { type: string }
+      responses:
+        '201': { $ref: '#/components/responses/Event' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /events/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Events]
+      summary: Replace an event
+      description: |
+        The calendar stays the same. Needs `update_any_entry` or, for own events, `update_own_entry`.
+        `409` with `seriesHasDetached` when the recurrence is removed while detached events exist.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Event' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Events]
+      summary: Delete an event
+      description: Also deletes detached events of a series. Needs `delete_any_entry` or, for own events, `delete_own_entry`.
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /calendars:
+    get:
+      tags: [Calendars]
+      summary: Calendars of the user
+      description: Personal calendar first, then team calendars by team name.
+      responses:
+        '200': { $ref: '#/components/responses/CalendarSummaries' }
+    post:
+      tags: [Calendars]
+      summary: Create a team with its first calendar
+      description: The caller becomes owner. `400` with `selfInvite` when the own address is in `invitations`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { $ref: '#/components/schemas/CalendarName' }
+                description: { $ref: '#/components/schemas/Description' }
+                color: { $ref: '#/components/schemas/EventColor' }
+                invitations:
+                  type: array
+                  maxItems: 50
+                  items: { $ref: '#/components/schemas/InvitationInput' }
+      responses:
+        '201': { $ref: '#/components/responses/CalendarSummary' }
+        '400': { $ref: '#/components/responses/Problem' }
+  /calendars/{calendarId}:
+    parameters:
+      - { $ref: '#/components/parameters/CalendarId' }
+    patch:
+      tags: [Calendars]
+      summary: Change name or color
+      description: Needs `manage_calendars`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { $ref: '#/components/schemas/CalendarName' }
+                color: { $ref: '#/components/schemas/EventColor' }
+      responses:
+        '200': { $ref: '#/components/responses/CalendarSummary' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Calendars]
+      summary: Delete a calendar of a team
+      description: Needs `manage_calendars`. `409` with `lastCalendar` for the last calendar of a team.
+      responses:
+        '204': { description: Deleted with its events }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /calendars/{calendarId}/settings:
+    parameters:
+      - { $ref: '#/components/parameters/CalendarId' }
+    put:
+      tags: [Calendars]
+      summary: Personal display settings for a team calendar
+      description: '`409` with `personalTeam` for the personal calendar.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [showInPersonal]
+              properties:
+                showInPersonal: { type: boolean }
+      responses:
+        '200': { $ref: '#/components/responses/CalendarSummary' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /teams/{teamId}:
+    parameters:
+      - { $ref: '#/components/parameters/TeamId' }
+    patch:
+      tags: [Teams]
+      summary: Change team name or description
+      description: Needs `manage_team`. `409` with `personalTeam`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { $ref: '#/components/schemas/CalendarName' }
+                description: { $ref: '#/components/schemas/Description' }
+      responses:
+        '200': { $ref: '#/components/responses/CalendarSummaries' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Teams]
+      summary: Delete a team
+      description: Needs `delete_team`. Deletes calendars, events and invitations. `409` with `personalTeam`.
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /teams/{teamId}/calendars:
+    parameters:
+      - { $ref: '#/components/parameters/TeamId' }
+    post:
+      tags: [Teams]
+      summary: Add a calendar to a team
+      description: Needs `manage_calendars`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { $ref: '#/components/schemas/CalendarName' }
+                color: { $ref: '#/components/schemas/EventColor' }
+      responses:
+        '201': { $ref: '#/components/responses/CalendarSummary' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /teams/{teamId}/membership:
+    parameters:
+      - { $ref: '#/components/parameters/TeamId' }
+    delete:
+      tags: [Teams]
+      summary: Leave a team
+      description: '`409` with `personalTeam` or `lastOwner`.'
+      responses:
+        '204': { description: Left }
+        '409': { $ref: '#/components/responses/Problem' }
+  /teams/{teamId}/transfer-ownership:
+    parameters:
+      - { $ref: '#/components/parameters/TeamId' }
+    post:
+      tags: [Teams]
+      summary: Make another member owner
+      description: |
+        Only for owners. The new owner gets `owner`, the caller becomes `admin`.
+        `400` with `alreadyOwner` for the caller itself, `409` with `alreadyOwner` for another owner.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/CalendarSummaries' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /teams/{teamId}/members:
+    parameters:
+      - { $ref: '#/components/parameters/TeamId' }
+    get:
+      tags: [Teams]
+      summary: Members of a team
+      responses:
+        '200':
+          description: Members
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/TeamMember' } }
+  /teams/{teamId}/members/{userId}:
+    parameters:
+      - { $ref: '#/components/parameters/TeamId' }
+      - { name: userId, in: path, required: true, schema: { type: string } }
+    patch:
+      tags: [Teams]
+      summary: Change a member's role
+      description: Needs `manage_members` and a role above the target and the new role. `409` with `lastOwner`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { $ref: '#/components/schemas/TeamRole' }
+      responses:
+        '200':
+          description: Member
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamMember' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Teams]
+      summary: Remove a member
+      description: Members can remove themselves. `409` with `lastOwner`.
+      responses:
+        '204': { description: Removed }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /teams/{teamId}/invitations:
+    parameters:
+      - { $ref: '#/components/parameters/TeamId' }
+    get:
+      tags: [Invitations]
+      summary: Open invitations of a team
+      description: Needs `invite_members`.
+      responses:
+        '200':
+          description: Invitations
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/TeamInvitation' } }
+    post:
+      tags: [Invitations]
+      summary: Invite by email
+      description: |
+        Needs `invite_members` and a role above the invited role. Valid for 7 days.
+        `409` with `selfInvite`, `alreadyMember`, `alreadyInvited` or `personalTeam`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InvitationInput' }
+      responses:
+        '201':
+          description: Invitation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamInvitation' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /teams/{teamId}/invitations/{invitationId}:
+    parameters:
+      - { $ref: '#/components/parameters/TeamId' }
+      - { $ref: '#/components/parameters/InvitationId' }
+    delete:
+      tags: [Invitations]
+      summary: Withdraw an invitation
+      responses:
+        '204': { description: Withdrawn }
+        '403': { $ref: '#/components/responses/Problem' }
+  /invitations:
+    get:
+      tags: [Invitations]
+      summary: Open invitations to the own email address
+      responses:
+        '200':
+          description: Invitations
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/PendingInvitation' } }
+  /invitations/accept:
+    post:
+      tags: [Invitations]
+      summary: Accept an invitation with the token from the mail
+      description: '`410` with `invitationExpired`.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/CalendarSummaries' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
+  /invitations/{invitationId}/accept:
+    parameters:
+      - { $ref: '#/components/parameters/InvitationId' }
+    post:
+      tags: [Invitations]
+      summary: Accept an invitation
+      description: '`409` with `alreadyMember`, `410` with `invitationExpired`.'
+      responses:
+        '200': { $ref: '#/components/responses/CalendarSummaries' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
+  /invitations/{invitationId}/decline:
+    parameters:
+      - { $ref: '#/components/parameters/InvitationId' }
+    post:
+      tags: [Invitations]
+      summary: Decline an invitation
+      responses:
+        '204': { description: Declined }
+        '404': { $ref: '#/components/responses/Problem' }
+  /preferences:
+    get:
+      tags: [Preferences]
+      summary: Preferences of the user
+      description: Defaults until something is stored.
+      responses:
+        '200': { $ref: '#/components/responses/Preferences' }
+    patch:
+      tags: [Preferences]
+      summary: Change single preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                theme: { $ref: '#/components/schemas/Theme' }
+                defaultView: { $ref: '#/components/schemas/CalendarView' }
+                mobileDefaultView: { $ref: '#/components/schemas/CalendarView' }
+                locale: { $ref: '#/components/schemas/Locale' }
+      responses:
+        '200': { $ref: '#/components/responses/Preferences' }
+        '400': { $ref: '#/components/responses/Problem' }
+  /colors:
+    get:
+      tags: [Preferences]
+      summary: Custom colors in the order they were added
+      responses:
+        '200': { $ref: '#/components/responses/Colors' }
+    post:
+      tags: [Preferences]
+      summary: Add a custom color
+      description: An existing color is not added twice. `409` with `tooManyColors` from 12 colors.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [color]
+              properties:
+                color: { $ref: '#/components/schemas/HexColor' }
+      responses:
+        '200': { $ref: '#/components/responses/Colors' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /colors/{color}:
+    delete:
+      tags: [Preferences]
+      summary: Remove a custom color
+      parameters:
+        - name: color
+          in: path
+          required: true
+          description: Color without `#`, e.g. `ff8800`
+          schema: { type: string, pattern: '^[0-9a-fA-F]{6}$' }
+      responses:
+        '200': { $ref: '#/components/responses/Colors' }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sid
+    bearerToken:
+      type: http
+      scheme: bearer
+  parameters:
+    Tenant:
+      name: X-Calendar-Tenant
+      in: header
+      required: false
+      description: Public tenant id. Sent by `tenantDataSource` on every request.
+      schema: { type: string }
+    CalendarId:
+      name: calendarId
+      in: path
+      required: true
+      description: '`personal` stands for the own personal calendar.'
+      schema: { type: string }
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      schema: { type: string }
+    InvitationId:
+      name: invitationId
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    Problem:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    User:
+      description: User
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/User' }
+    Event:
+      description: Event
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/CalendarEvent' }
+    CalendarSummary:
+      description: Calendar
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/CalendarSummary' }
+    CalendarSummaries:
+      description: Calendars
+      content:
+        application/json:
+          schema: { type: array, items: { $ref: '#/components/schemas/CalendarSummary' } }
+    Preferences:
+      description: Preferences
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Preferences' }
+    Colors:
+      description: Custom colors
+      content:
+        application/json:
+          schema: { type: array, maxItems: 12, items: { $ref: '#/components/schemas/HexColor' } }
+  schemas:
+    Problem:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable reason. The component translates the codes it knows.
+          examples: [invalidCredentials, emailTaken, forbidden, lastOwner, tooManyColors, invalidInput, unknownTenant, originNotAllowed, invalidUserToken]
+        message:
+          type: string
+          description: English description, shown when the component does not know the code.
+    User:
+      type: object
+      required: [id, email, name, emailVerified]
+      properties:
+        id: { type: string }
+        email: { $ref: '#/components/schemas/Email' }
+        name: { $ref: '#/components/schemas/PersonName' }
+        emailVerified: { type: boolean }
+    Email:
+      type: string
+      format: email
+      maxLength: 254
+    PersonName:
+      type: string
+      minLength: 1
+      maxLength: 80
+    NewPassword:
+      type: string
+      minLength: 8
+      maxLength: 128
+    ISODate:
+      type: string
+      pattern: '^\d{4}-\d{2}-\d{2}$'
+    Time:
+      type: string
+      pattern: '^\d{2}:\d{2}$'
+    HexColor:
+      type: string
+      pattern: '^#[0-9a-f]{6}$'
+    EventColor:
+      description: A preset name or a custom color
+      anyOf:
+        - { type: string, enum: [blue, red, green, yellow] }
+        - { $ref: '#/components/schemas/HexColor' }
+    Recurrence:
+      type: object
+      required: [frequency, interval, weekdays, monthlyMode, until, count]
+      properties:
+        frequency: { type: string, enum: [daily, weekly, monthly, yearly] }
+        interval: { type: integer, minimum: 1, maximum: 99 }
+        weekdays:
+          type: array
+          description: 0 = Monday … 6 = Sunday, at least one for weekly
+          items: { type: integer, minimum: 0, maximum: 6 }
+        monthlyMode: { type: string, enum: [dayOfMonth, weekdayOfMonth, lastWeekdayOfMonth] }
+        until: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
+        count: { oneOf: [{ type: integer, minimum: 1, maximum: 999 }, { type: 'null' }] }
+    EventInput:
+      type: object
+      required: [title, startDate, start, endDate, end, description, color, recurrence, excludedDates, seriesId, originalDate]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 100 }
+        startDate: { $ref: '#/components/schemas/ISODate' }
+        start: { $ref: '#/components/schemas/Time' }
+        endDate: { $ref: '#/components/schemas/ISODate' }
+        end: { $ref: '#/components/schemas/Time' }
+        description: { type: string, maxLength: 2000 }
+        color: { $ref: '#/components/schemas/EventColor' }
+        recurrence: { oneOf: [{ $ref: '#/components/schemas/Recurrence' }, { type: 'null' }] }
+        excludedDates: { type: array, items: { $ref: '#/components/schemas/ISODate' } }
+        seriesId:
+          description: For a detached occurrence, the series it was taken from
+          oneOf: [{ type: string }, { type: 'null' }]
+        originalDate:
+          description: For a detached occurrence, its original date in the series
+          oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }]
+    CalendarEvent:
+      allOf:
+        - $ref: '#/components/schemas/EventInput'
+        - type: object
+          required: [id, calendarId, createdBy, createdAt, updatedAt]
+          properties:
+            id: { type: string }
+            calendarId: { type: string }
+            createdBy: { oneOf: [{ type: string }, { type: 'null' }] }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    TeamRole:
+      type: string
+      enum: [owner, admin, manager, editor, member, contributor, viewer]
+    InvitableRole:
+      type: string
+      enum: [admin, manager, editor, member, contributor, viewer]
+    Permission:
+      type: string
+      enum:
+        - read_calendar
+        - manage_calendars
+        - create_entry
+        - update_own_entry
+        - update_any_entry
+        - delete_own_entry
+        - delete_any_entry
+        - invite_members
+        - manage_members
+        - manage_team
+        - delete_team
+    CalendarName:
+      type: string
+      minLength: 1
+      maxLength: 80
+    Description:
+      type: string
+      maxLength: 500
+    CalendarSummary:
+      type: object
+      required: [id, teamId, name, color, kind, teamName, description, role, showInPersonal, permissions]
+      properties:
+        id: { type: string }
+        teamId: { type: string }
+        name: { type: string }
+        color: { $ref: '#/components/schemas/EventColor' }
+        kind: { type: string, enum: [personal, team] }
+        teamName: { oneOf: [{ type: string }, { type: 'null' }] }
+        description: { type: string }
+        role: { $ref: '#/components/schemas/TeamRole' }
+        showInPersonal: { type: boolean }
+        permissions: { type: array, items: { $ref: '#/components/schemas/Permission' } }
+    TeamMember:
+      type: object
+      required: [userId, name, email, role, joinedAt]
+      properties:
+        userId: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { $ref: '#/components/schemas/TeamRole' }
+        joinedAt: { type: string, format: date-time }
+    InvitationInput:
+      type: object
+      required: [email, role]
+      properties:
+        email: { $ref: '#/components/schemas/Email' }
+        role: { $ref: '#/components/schemas/InvitableRole' }
+    PendingInvitation:
+      type: object
+      required: [id, teamId, teamName, description, role, invitedBy, expiresAt]
+      properties:
+        id: { type: string }
+        teamId: { type: string }
+        teamName: { type: string }
+        description: { type: string }
+        role: { $ref: '#/components/schemas/InvitableRole' }
+        invitedBy:
+          description: Name of the inviting person
+          oneOf: [{ type: string }, { type: 'null' }]
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+    TeamInvitation:
+      allOf:
+        - $ref: '#/components/schemas/PendingInvitation'
+        - type: object
+          required: [email]
+          properties:
+            email: { $ref: '#/components/schemas/Email' }
+    Theme:
+      type: string
+      enum: [system, light, dark]
+    CalendarView:
+      type: string
+      enum: [day, week, month, year]
+    Locale:
+      type: string
+      description: '`auto` or a BCP 47 language tag such as `en-US`, `en-GB`, `de-DE`'
+      maxLength: 35
+      pattern: '^(auto|[a-z]{2,3}(-[A-Za-z0-9]{2,8})*)$'
+    Preferences:
+      type: object
+      required: [theme, defaultView, mobileDefaultView, locale]
+      properties:
+        theme: { $ref: '#/components/schemas/Theme' }
+        defaultView: { $ref: '#/components/schemas/CalendarView' }
+        mobileDefaultView: { $ref: '#/components/schemas/CalendarView' }
+        locale: { $ref: '#/components/schemas/Locale' }

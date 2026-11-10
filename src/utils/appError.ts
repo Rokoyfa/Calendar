@@ -13,7 +13,34 @@ export const ERROR_CODES = [
   'wrongCurrentPassword',
   'wrongPassword',
   'soleOwner',
+  'unauthorized',
+  'forbidden',
+  'notFound',
+  'serverError',
+  'payloadTooLarge',
+  'calendarNotFound',
+  'teamNotFound',
+  'memberNotFound',
+  'invitationNotFound',
+  'invitationExpired',
+  'tooManyLoginAttempts',
+  'seriesHasDetached',
+  'selfInvite',
+  'alreadyMember',
+  'alreadyInvited',
+  'personalTeam',
+  'lastOwner',
+  'alreadyOwner',
+  'lastCalendar',
+  'tooManyColors',
+  'managedByHost',
+  'unknownTenant',
+  'originNotAllowed',
+  'invalidUserToken',
 ] as const
+
+export const isErrorCode = (value: unknown): value is ErrorCode =>
+  typeof value === 'string' && (ERROR_CODES as readonly string[]).includes(value)
 
 export type ErrorCode = (typeof ERROR_CODES)[number]
 

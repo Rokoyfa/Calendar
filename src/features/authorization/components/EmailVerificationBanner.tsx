@@ -4,8 +4,8 @@ import { ResendVerificationButton } from './ResendVerificationButton.tsx'
 
 export function EmailVerificationBanner() {
   const { m } = useI18n()
-  const { user } = useAuth()
-  if (!user || user.emailVerified) return null
+  const { method, user } = useAuth()
+  if (!user || user.emailVerified || method !== 'password') return null
 
   return (
     <div className="banner" role="region" aria-label={m.auth.verify.bannerLabel}>
