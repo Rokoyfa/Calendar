@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { HostContext, type HostOptions } from '../context/HostContext.ts'
 import { localDataSource, restDataSource, tenantDataSource } from '../data/index.ts'
 import { I18nProvider } from '../i18n/index.ts'
+import { isTimeZone } from '../utils/timeZone.ts'
 import { CalendarApp } from './CalendarApp.tsx'
 import { DEFAULT_CONFIG, type CalendarProps } from './config.ts'
 import type { EventCallbacks } from './eventCallbacks.ts'
@@ -23,6 +24,7 @@ export function CalendarWidget({
   locale,
   theme,
   initialView,
+  timeZone,
   onEventCreate,
   onEventUpdate,
   onEventDelete,
@@ -41,7 +43,11 @@ export function CalendarWidget({
           : localDataSource()),
     [providedDataSource, tenant, getUserToken, auth, storageMode, apiBaseUrl, apiTimeoutMs],
   )
-  const host = useMemo<HostOptions>(() => ({ teams, theme, initialView }), [teams, theme, initialView])
+  const viewerTimeZone = timeZone && isTimeZone(timeZone) ? timeZone : undefined
+  const host = useMemo<HostOptions>(
+    () => ({ teams, theme, initialView, timeZone: viewerTimeZone }),
+    [teams, theme, initialView, viewerTimeZone],
+  )
   const callbacks = useRef<EventCallbacks>({})
   useEffect(() => {
     callbacks.current = { onEventCreate, onEventUpdate, onEventDelete }

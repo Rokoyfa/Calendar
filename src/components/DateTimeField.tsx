@@ -7,6 +7,7 @@ type DateTimeFieldProps = {
   date: string
   time: string
   minDate?: string
+  showTime?: boolean
   dateError?: string
   timeError?: string
   onDateChange: (date: string) => void
@@ -20,6 +21,7 @@ export function DateTimeField({
   date,
   time,
   minDate,
+  showTime = true,
   dateError,
   timeError,
   onDateChange,
@@ -38,16 +40,18 @@ export function DateTimeField({
           onChange={(event) => onDateChange(event.target.value)}
         />
       </FormField>
-      <FormField label={timeLabel} error={timeError}>
-        <input
-          className="input"
-          type="time"
-          name={name}
-          value={time}
-          aria-invalid={Boolean(timeError)}
-          onChange={(event) => onTimeChange(event.target.value)}
-        />
-      </FormField>
+      {showTime && (
+        <FormField label={timeLabel} error={timeError}>
+          <input
+            className="input"
+            type="time"
+            name={name}
+            value={time}
+            aria-invalid={Boolean(timeError)}
+            onChange={(event) => onTimeChange(event.target.value)}
+          />
+        </FormField>
+      )}
     </div>
   )
 }

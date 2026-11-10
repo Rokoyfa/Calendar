@@ -5,8 +5,10 @@ import { fromISODate, getDayOfMonth } from '../../../utils/date.ts'
 import type { EventOccurrence } from '../../../utils/event.ts'
 import { HOURS } from '../constants/grid.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
+import type { AllDaySegment } from '../utils/allDay.ts'
 import { layoutEvents } from '../utils/layoutEvents.ts'
 import { EventBlock } from './EventBlock.tsx'
+import { EventChip } from './EventChip.tsx'
 import { NowIndicator } from './NowIndicator.tsx'
 
 type DayColumnProps = {
@@ -14,8 +16,10 @@ type DayColumnProps = {
   isToday: boolean
   nowMinutes: number | null
   segments: readonly EventSegment[]
+  allDaySegments: readonly AllDaySegment[]
   selection?: { fromHour: number; toHour: number; label: string | null } | null
   onSlotSelect: (date: string, hour: number) => void
+  onAllDaySelect: (date: string) => void
   onEventSelect: (event: EventOccurrence) => void
   onHeaderSelect?: (date: string) => void
 }
@@ -25,8 +29,10 @@ export function DayColumn({
   isToday,
   nowMinutes,
   segments,
+  allDaySegments,
   selection = null,
   onSlotSelect,
+  onAllDaySelect,
   onEventSelect,
   onHeaderSelect,
 }: DayColumnProps) {
@@ -61,6 +67,17 @@ export function DayColumn({
       ) : (
         <div className="columnHeader">{header}</div>
       )}
+      <div className="allDayLane" title={`${dayLabel} ${m.events.allDay}`} onClick={() => onAllDaySelect(date)}>
+        {allDaySegments.map(({ segment, row, isFirst }) => (
+          <EventChip
+            key={segment.event.occurrenceKey}
+            segment={segment}
+            row={row}
+            isContinuation={!isFirst}
+            onSelect={onEventSelect}
+          />
+        ))}
+      </div>
       <div className="slots">
         {HOURS.map((hour) => (
           <div

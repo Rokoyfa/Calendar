@@ -9,7 +9,7 @@ export const getScopeOptions = (
   if (!occurrence?.recurrence) return ['all']
   const options: EditScope[] = []
   if (isSameRecurrence(occurrence.recurrence, nextRecurrence)) options.push('single')
-  if (hasEarlierOccurrences(toSeriesRule(occurrence), occurrence.startDate)) options.push('following')
+  if (hasEarlierOccurrences(toSeriesRule(occurrence), occurrence.occurrenceDate)) options.push('following')
   options.push('all')
   return options
 }

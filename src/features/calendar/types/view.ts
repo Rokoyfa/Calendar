@@ -23,6 +23,7 @@ export type CalendarViewProps = {
   segmentsByDate: ReadonlyMap<string, readonly EventSegment[]>
   onCreate: (date: string, hour: number) => void
   onCreateRange: (range: SlotRange) => void
+  onCreateAllDay: (date: string) => void
   canCreate: boolean
   onEventSelect: (event: EventOccurrence) => void
   onShowDay: (date: string) => void

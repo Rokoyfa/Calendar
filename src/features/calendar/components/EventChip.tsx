@@ -8,21 +8,32 @@ import { EventTitle } from './EventTitle.tsx'
 
 type EventChipProps = {
   segment: EventSegment
+  row?: number
+  isContinuation?: boolean
   onSelect: (event: EventOccurrence) => void
 }
 
-export function EventChip({ segment, onSelect }: EventChipProps) {
+export function EventChip({ segment, row, isContinuation = false, onSelect }: EventChipProps) {
   const { event, start, continuesBefore } = segment
   const i18n = useI18n()
   const source = useEventSource(event)
 
+  const { style, ...attributes } = getSegmentAttributes(
+    segment,
+    source,
+    i18n,
+    'eventChip',
+    isContinuation && 'eventChipContinuation',
+  )
+
   return (
     <button
       type="button"
-      {...getSegmentAttributes(segment, source, i18n, 'eventChip')}
+      {...attributes}
+      style={row === undefined ? style : { ...style, gridRow: row + 1 }}
       onClick={withoutPropagation(() => onSelect(event))}
     >
-      {!continuesBefore && <span className="eventChipTime">{i18n.format.time(start)}</span>}
+      {!continuesBefore && !event.allDay && <span className="eventChipTime">{i18n.format.time(start)}</span>}
       <EventTitle event={event} source={source} />
     </button>
   )

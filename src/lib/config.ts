@@ -26,6 +26,7 @@ export type CalendarProps = EventCallbacks & {
   locale?: string
   theme?: HostTheme
   initialView?: CalendarView
+  timeZone?: string
   className?: string
   style?: CSSProperties
 }

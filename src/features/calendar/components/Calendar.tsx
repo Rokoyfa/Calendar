@@ -1,13 +1,15 @@
 import { useCallback, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
+import { useViewerTimeZone } from '../../../context/HostContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { useArrowKeyNavigation } from '../../../hooks/useArrowKeyNavigation.ts'
 import { MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
 import {
+  createAllDayEventInput,
   createEventInput,
   createEventInputForSlots,
   expandEvents,
-  toEventInput,
+  toOccurrenceInput,
   type EditScope,
   type EventInput,
   type EventOccurrence,
@@ -63,9 +65,10 @@ export function Calendar({
     calendarIds,
     targetCalendarId,
   })
+  const viewerTimeZone = useViewerTimeZone()
   const segmentsByDate = useMemo(
-    () => groupSegmentsByDate(expandEvents(events, range.from, range.to), range),
-    [events, range],
+    () => groupSegmentsByDate(expandEvents(events, range.from, range.to, viewerTimeZone), range),
+    [events, range, viewerTimeZone],
   )
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [eventToDelete, setEventToDelete] = useState<EventOccurrence | null>(null)
@@ -74,20 +77,27 @@ export function Calendar({
 
   const openCreate = useCallback(
     (date: string, hour: number) => {
-      if (canCreate) setEditor({ initialValue: createEventInput(date, hour), occurrence: null })
+      if (canCreate) setEditor({ initialValue: createEventInput(date, hour, viewerTimeZone), occurrence: null })
     },
-    [canCreate],
+    [canCreate, viewerTimeZone],
   )
 
   const openCreateRange = useCallback(
     ({ first, last }: SlotRange) => {
-      if (canCreate) setEditor({ initialValue: createEventInputForSlots(first, last), occurrence: null })
+      if (canCreate) setEditor({ initialValue: createEventInputForSlots(first, last, viewerTimeZone), occurrence: null })
+    },
+    [canCreate, viewerTimeZone],
+  )
+
+  const openCreateAllDay = useCallback(
+    (date: string) => {
+      if (canCreate) setEditor({ initialValue: createAllDayEventInput(date), occurrence: null })
     },
     [canCreate],
   )
 
   const openEdit = useCallback((occurrence: EventOccurrence) => {
-    setEditor({ initialValue: toEventInput(occurrence), occurrence })
+    setEditor({ initialValue: toOccurrenceInput(occurrence), occurrence })
   }, [])
 
   const handleSave = async (input: EventInput, scope: EditScope) => {
@@ -134,6 +144,7 @@ export function Calendar({
           canCreate={canCreate}
           onCreate={openCreate}
           onCreateRange={openCreateRange}
+          onCreateAllDay={openCreateAllDay}
           onEventSelect={openEdit}
           onShowDay={(date) => show('day', date)}
           onShowMonth={(date) => show('month', date)}

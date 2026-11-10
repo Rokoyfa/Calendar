@@ -1,4 +1,6 @@
 import { useState, type SubmitEventHandler } from 'react'
+import { Switch } from '../../../components/Switch.tsx'
+import { useViewerTimeZone } from '../../../context/HostContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
 import { DateTimeField } from '../../../components/DateTimeField.tsx'
@@ -8,17 +10,21 @@ import { FormField } from '../../../components/FormField.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { TextField } from '../../../components/TextField.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
-import { isISODate } from '../../../utils/date.ts'
+import { isISODate, isTime } from '../../../utils/date.ts'
 import {
+  ALL_DAY_TIME,
   EVENT_DESCRIPTION_MAX_LENGTH,
+  formatEventPeriod,
   EVENT_TITLE_MAX_LENGTH,
   hasValidationErrors,
   moveToStartDate,
   normalizeEventInput,
+  toViewerPeriod,
   validateEventInput,
   type EditScope,
   type EventInput,
   type EventOccurrence,
+  type EventPeriod,
   type EventValidationErrors,
 } from '../../../utils/event.ts'
 import { adaptRecurrenceToStart, type Recurrence } from '../../../utils/recurrence.ts'
@@ -27,6 +33,13 @@ import { getScopeOptions } from '../utils/scopeOptions.ts'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RecurrenceFields } from './RecurrenceFields.tsx'
 import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
+import { TimeZoneField } from './TimeZoneField.tsx'
+
+const DEFAULT_START = '09:00'
+const DEFAULT_END = '10:00'
+
+const isValidPeriod = ({ startDate, start, endDate, end }: EventPeriod) =>
+  isISODate(startDate) && isISODate(endDate) && isTime(start) && isTime(end)
 
 type EventModalProps = {
   initialValue: EventInput
@@ -45,6 +58,7 @@ type PendingSave = {
 export function EventModal({ initialValue, occurrence = null, notice, onSave, onDelete, onClose }: EventModalProps) {
   const i18n = useI18n()
   const { m } = i18n
+  const viewerTimeZone = useViewerTimeZone()
   const mode: EventModalMode = occurrence ? 'edit' : 'create'
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
@@ -53,11 +67,35 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
 
   const update = (changes: Partial<EventInput>, clearedErrors: readonly (keyof EventValidationErrors)[]) => {
     setValues((current) => ({ ...current, ...changes }))
-    setErrors((current) => ({ ...current, ...Object.fromEntries(clearedErrors.map((key) => [key, undefined])) }))
+    setErrors((current) => ({
+      ...current,
+      ...Object.fromEntries(clearedErrors.map((key) => [key, undefined])),
+    }))
   }
 
   const setField = <K extends Exclude<keyof EventInput, 'recurrence'>>(field: K, value: EventInput[K]) =>
     update({ [field]: value }, [field])
+
+  const [timedValues, setTimedValues] = useState(() =>
+    initialValue.allDay
+      ? { start: DEFAULT_START, end: DEFAULT_END, timeZone: viewerTimeZone }
+      : {
+          start: initialValue.start,
+          end: initialValue.end,
+          timeZone: initialValue.timeZone,
+        },
+  )
+
+  const setAllDay = (allDay: boolean) => {
+    if (allDay) {
+      setTimedValues({
+        start: values.start,
+        end: values.end,
+        timeZone: values.timeZone,
+      })
+      update({ allDay, start: ALL_DAY_TIME, end: ALL_DAY_TIME, timeZone: null }, ['start', 'end', 'endDate'])
+    } else update({ allDay, ...timedValues }, ['start', 'end', 'endDate'])
+  }
 
   const changeStartDate = (startDate: string) =>
     update(
@@ -90,6 +128,11 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
     void save(pendingSave.input, scope)
   }
 
+  const viewerHint =
+    !values.allDay && values.timeZone && values.timeZone !== viewerTimeZone && isValidPeriod(values)
+      ? m.events.inYourTimeZone(formatEventPeriod(toViewerPeriod(values, values.timeZone, viewerTimeZone), i18n))
+      : null
+
   return (
     <>
       <Modal title={mode === 'create' ? m.events.createTitle : m.events.editTitle} onClose={onClose}>
@@ -106,12 +149,15 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
             data-autofocus
           />
 
+          <Switch label={m.events.allDay} checked={values.allDay} onChange={setAllDay} />
+
           <DateTimeField
             name="start"
             dateLabel={m.events.startDate}
             timeLabel={m.events.startTime}
             date={values.startDate}
             time={values.start}
+            showTime={!values.allDay}
             dateError={errors.startDate}
             timeError={errors.start}
             onDateChange={changeStartDate}
@@ -124,12 +170,18 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
             timeLabel={m.events.endTime}
             date={values.endDate}
             time={values.end}
+            showTime={!values.allDay}
             minDate={values.startDate}
             dateError={errors.endDate}
             timeError={errors.end}
             onDateChange={(endDate) => setField('endDate', endDate)}
             onTimeChange={(end) => setField('end', end)}
           />
+
+          {!values.allDay && (
+            <TimeZoneField value={values.timeZone} onChange={(timeZone) => setField('timeZone', timeZone)} />
+          )}
+          {viewerHint && <p className="formHint">{viewerHint}</p>}
 
           <RecurrenceFields
             value={values.recurrence}

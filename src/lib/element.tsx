@@ -16,7 +16,7 @@ const FILL = { height: '100%' }
 
 const THEMES = ['light', 'dark'] as const
 
-const ATTRIBUTES = ['storage-mode', 'api-base-url', 'api-timeout-ms', 'auth', 'teams', 'initial-path', 'locale', 'tenant', 'theme', 'initial-view', 'link-param'] as const
+const ATTRIBUTES = ['storage-mode', 'api-base-url', 'api-timeout-ms', 'auth', 'teams', 'initial-path', 'locale', 'tenant', 'theme', 'initial-view', 'link-param', 'time-zone'] as const
 
 export class CalendarElement extends HTMLElement {
   static observedAttributes = ATTRIBUTES
@@ -98,6 +98,7 @@ export class CalendarElement extends HTMLElement {
       tenant: this.getAttribute('tenant') ?? undefined,
       theme: isOneOf(THEMES, theme) ? theme : undefined,
       initialView: isCalendarView(initialView) ? initialView : undefined,
+      timeZone: this.getAttribute('time-zone') ?? undefined,
       linkParam: linkParam === 'false' ? false : (linkParam ?? undefined),
       onEventCreate: this.#onEventCreate,
       onEventUpdate: this.#onEventUpdate,

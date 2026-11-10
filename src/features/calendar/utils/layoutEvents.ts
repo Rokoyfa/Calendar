@@ -2,6 +2,7 @@ import type { EventSegment, PositionedSegment } from '../types/eventLayout.ts'
 import { getVisibleEnd } from './eventGeometry.ts'
 
 const compareSegments = (a: EventSegment, b: EventSegment) =>
+  Number(b.event.allDay) - Number(a.event.allDay) ||
   a.start - b.start || b.end - b.start - (a.end - a.start) || a.event.title.localeCompare(b.event.title)
 
 export const sortSegments = (segments: readonly EventSegment[]) => segments.toSorted(compareSegments)

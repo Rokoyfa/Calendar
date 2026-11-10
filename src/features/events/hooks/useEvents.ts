@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { AppError } from '../../../utils/appError.ts'
+import { addDaysToISODate } from '../../../utils/date.ts'
 import {
   type CalendarEvent,
   type EditScope,
@@ -16,7 +17,10 @@ type UseEventsOptions = EventQuery & { targetCalendarId: string }
 
 export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEventsOptions) {
   const { events: repository, version } = useStorage()
-  const load = useCallback(() => repository.list({ from, to, calendarIds }), [repository, from, to, calendarIds])
+  const load = useCallback(
+    () => repository.list({ from: addDaysToISODate(from, -1), to: addDaysToISODate(to, 1), calendarIds }),
+    [repository, from, to, calendarIds],
+  )
   const { data: events, error, isLoading, reload } = useAsyncResource(load, NO_EVENTS, version)
 
   const findSeries = useCallback(
@@ -46,13 +50,13 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
 
   const updateEvent = useCallback(
     (occurrence: EventOccurrence, input: EventInput, scope: EditScope) =>
-      withReload(() => updateOccurrence(repository, findSeries(occurrence), occurrence.startDate, input, scope)),
+      withReload(() => updateOccurrence(repository, findSeries(occurrence), occurrence.occurrenceDate, input, scope)),
     [repository, withReload, findSeries],
   )
 
   const deleteEvent = useCallback(
     (occurrence: EventOccurrence, scope: EditScope) =>
-      withReload(() => deleteOccurrence(repository, findSeries(occurrence), occurrence.startDate, scope)),
+      withReload(() => deleteOccurrence(repository, findSeries(occurrence), occurrence.occurrenceDate, scope)),
     [repository, withReload, findSeries],
   )
 

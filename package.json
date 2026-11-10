@@ -56,7 +56,9 @@
     "preview": "vite preview",
     "build:lib": "node -e \"require('fs').rmSync('dist-lib',{recursive:true,force:true})\" && vite build -c vite.lib.config.ts && vite build -c vite.lib.config.ts --mode element && tsc -p tsconfig.lib.json && node scripts/collect-types.mjs",
     "typecheck": "tsc -b",
-    "prepublishOnly": "npm run lint && npm run typecheck && npm run build:lib"
+    "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build:lib",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -77,6 +79,7 @@
     "react-router": "^8.4.0",
     "typescript": "~6.0.0",
     "typescript-eslint": "^8.72.0",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
   }
 }

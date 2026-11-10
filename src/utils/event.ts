@@ -13,6 +13,7 @@ import type { I18n, Messages } from '../i18n/index.ts'
 import { classNames, type ClassNameValue } from './classNames.ts'
 import { getReadableTextColor, isHexColor, type HexColor } from './color.ts'
 import { isOneOf, pick } from './object.ts'
+import { convertWallTime, isTimeZone } from './timeZone.ts'
 import { hasFieldErrors } from './validation.ts'
 import {
   getOccurrenceDates,
@@ -40,6 +41,8 @@ export type CalendarEvent = {
   start: string
   endDate: string
   end: string
+  allDay: boolean
+  timeZone: string | null
   description: string
   color: EventColor
   recurrence: Recurrence | null
@@ -56,6 +59,8 @@ const EVENT_INPUT_KEYS = [
   'start',
   'endDate',
   'end',
+  'allDay',
+  'timeZone',
   'description',
   'color',
   'recurrence',
@@ -68,14 +73,16 @@ export type EventInput = Pick<CalendarEvent, (typeof EVENT_INPUT_KEYS)[number]>
 
 export const NO_SERIES_LINK = { seriesId: null, originalDate: null } as const satisfies Partial<EventInput>
 
+export type EventPeriod = Pick<CalendarEvent, 'startDate' | 'start' | 'endDate' | 'end'>
+
 export type EventOccurrence = CalendarEvent & {
   occurrenceKey: string
+  occurrenceDate: string
   seriesStartDate: string
+  source: EventPeriod
 }
 
 export type EditScope = 'single' | 'following' | 'all'
-
-export type EventPeriod = Pick<CalendarEvent, 'startDate' | 'start' | 'endDate' | 'end'>
 
 export type SeriesRule = Pick<CalendarEvent, 'startDate' | 'recurrence' | 'excludedDates'>
 
@@ -110,15 +117,18 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
   const excludedDates = Array.isArray(rest.excludedDates) ? rest.excludedDates.filter(isISODate) : []
   const seriesId = typeof rest.seriesId === 'string' ? rest.seriesId : null
   const originalDate = seriesId !== null && isISODate(rest.originalDate) ? rest.originalDate : null
+  const allDay = rest.allDay === true
+  const start = allDay && rest.start === undefined ? ALL_DAY_TIME : rest.start
+  const end = allDay && rest.end === undefined ? ALL_DAY_TIME : rest.end
 
   if (
     typeof rest.id !== 'string' ||
     typeof rest.calendarId !== 'string' ||
     typeof rest.title !== 'string' ||
     !isISODate(startDate) ||
-    !isTime(rest.start) ||
+    !isTime(start) ||
     !isISODate(endDate) ||
-    !isTime(rest.end) ||
+    !isTime(end) ||
     typeof rest.description !== 'string' ||
     !isEventColor(rest.color) ||
     (rest.recurrence != null && recurrence === null)
@@ -130,9 +140,11 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
     calendarId: rest.calendarId,
     title: rest.title,
     startDate,
-    start: rest.start,
+    start: allDay ? ALL_DAY_TIME : start,
     endDate,
-    end: rest.end,
+    end: allDay ? ALL_DAY_TIME : end,
+    allDay,
+    timeZone: !allDay && isTimeZone(rest.timeZone) ? rest.timeZone : null,
     description: rest.description,
     color: rest.color,
     recurrence,
@@ -146,7 +158,9 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
 
 export type HourSlot = { date: string; hour: number }
 
-export const createEventInputForSlots = (first: HourSlot, last: HourSlot): EventInput => {
+export const ALL_DAY_TIME = '00:00'
+
+export const createEventInputForSlots = (first: HourSlot, last: HourSlot, timeZone: string | null): EventInput => {
   const end = (last.hour + 1) * MINUTES_PER_HOUR
   const endsNextDay = end >= MINUTES_PER_DAY
   return {
@@ -155,6 +169,8 @@ export const createEventInputForSlots = (first: HourSlot, last: HourSlot): Event
     start: minutesToTime(first.hour * MINUTES_PER_HOUR),
     endDate: endsNextDay ? addDaysToISODate(last.date, 1) : last.date,
     end: minutesToTime(end % MINUTES_PER_DAY),
+    allDay: false,
+    timeZone,
     description: '',
     color: 'blue',
     recurrence: null,
@@ -163,7 +179,16 @@ export const createEventInputForSlots = (first: HourSlot, last: HourSlot): Event
   }
 }
 
-export const createEventInput = (date: string, hour: number) => createEventInputForSlots({ date, hour }, { date, hour })
+export const createEventInput = (date: string, hour: number, timeZone: string | null) =>
+  createEventInputForSlots({ date, hour }, { date, hour }, timeZone)
+
+export const createAllDayEventInput = (startDate: string, endDate = startDate): EventInput => ({
+  ...createEventInputForSlots({ date: startDate, hour: 0 }, { date: startDate, hour: 0 }, null),
+  start: ALL_DAY_TIME,
+  endDate,
+  end: ALL_DAY_TIME,
+  allDay: true,
+})
 
 export const toEventInput = (event: CalendarEvent): EventInput => pick(event, EVENT_INPUT_KEYS)
 
@@ -171,11 +196,19 @@ export const normalizeEventInput = (input: EventInput): EventInput => ({
   ...input,
   title: input.title.trim(),
   description: input.description.trim(),
+  ...(input.allDay ? { start: ALL_DAY_TIME, end: ALL_DAY_TIME, timeZone: null } : {}),
   ...(input.recurrence ? NO_SERIES_LINK : { excludedDates: [] }),
 })
 
-export const getEventDuration = (period: EventPeriod) =>
-  getSpanDays(period) * MINUTES_PER_DAY + timeToMinutes(period.end) - timeToMinutes(period.start)
+export const toOccurrenceInput = (occurrence: EventOccurrence): EventInput => ({
+  ...toEventInput(occurrence),
+  ...occurrence.source,
+})
+
+export const getEventDuration = (period: EventPeriod & { allDay?: boolean }) =>
+  period.allDay
+    ? (getSpanDays(period) + 1) * MINUTES_PER_DAY
+    : getSpanDays(period) * MINUTES_PER_DAY + timeToMinutes(period.end) - timeToMinutes(period.start)
 
 export const isMultiDayEvent = ({ startDate, endDate }: Pick<EventPeriod, 'startDate' | 'endDate'>) =>
   startDate !== endDate
@@ -210,17 +243,48 @@ export const toSeriesRule = (occurrence: EventOccurrence): SeriesRule => ({
   excludedDates: occurrence.excludedDates,
 })
 
-export const expandEvents = (events: readonly CalendarEvent[], from: string, to: string): EventOccurrence[] =>
-  events.flatMap((event) =>
-    getOccurrenceStartDates(event, from, to).map((startDate) => ({
-      ...event,
-      ...moveToStartDate(event, startDate),
-      occurrenceKey: `${event.id}:${startDate}`,
-      seriesStartDate: event.startDate,
-    })),
-  )
+export const toViewerPeriod = (period: EventPeriod, timeZone: string | null, viewerTimeZone: string | null): EventPeriod => {
+  if (!timeZone || !viewerTimeZone || timeZone === viewerTimeZone) return period
+  const start = convertWallTime({ date: period.startDate, time: period.start }, timeZone, viewerTimeZone)
+  const end = convertWallTime({ date: period.endDate, time: period.end }, timeZone, viewerTimeZone)
+  return { startDate: start.date, start: start.time, endDate: end.date, end: end.time }
+}
 
-export const formatEventPeriod = (event: EventPeriod, { format }: Pick<I18n, 'format'>) => {
+const overlapsRange = ({ startDate, endDate }: EventPeriod, from: string, to: string) =>
+  startDate <= to && endDate >= from
+
+export const expandEvents = (
+  events: readonly CalendarEvent[],
+  from: string,
+  to: string,
+  viewerTimeZone: string | null = null,
+): EventOccurrence[] =>
+  events.flatMap((event) => {
+    const shifts = event.timeZone !== null && viewerTimeZone !== null && event.timeZone !== viewerTimeZone
+    const searchFrom = shifts ? addDaysToISODate(from, -1) : from
+    const searchTo = shifts ? addDaysToISODate(to, 1) : to
+    return getOccurrenceStartDates(event, searchFrom, searchTo).flatMap((startDate) => {
+      const source = { start: event.start, end: event.end, ...moveToStartDate(event, startDate) }
+      const period = toViewerPeriod(source, event.timeZone, viewerTimeZone)
+      if (!overlapsRange(period, from, to)) return []
+      return [
+        {
+          ...event,
+          ...period,
+          occurrenceKey: `${event.id}:${startDate}`,
+          occurrenceDate: startDate,
+          seriesStartDate: event.startDate,
+          source,
+        },
+      ]
+    })
+  })
+
+export const formatEventPeriod = (event: EventPeriod & { allDay?: boolean }, { m, format }: Pick<I18n, 'm' | 'format'>) => {
+  if (event.allDay)
+    return isMultiDayEvent(event)
+      ? `${format.shortDay(event.startDate)} – ${format.shortDay(event.endDate)}`
+      : m.events.allDay
   const start = format.time(timeToMinutes(event.start))
   const end = format.time(timeToMinutes(event.end))
   return isMultiDayEvent(event)
@@ -236,9 +300,9 @@ export const validateEventInput = (input: EventInput, m: Messages): EventValidat
   else if (input.title.length > EVENT_TITLE_MAX_LENGTH) errors.title = validation.titleTooLong(EVENT_TITLE_MAX_LENGTH)
 
   if (!isISODate(input.startDate)) errors.startDate = validation.startDateInvalid
-  if (!isTime(input.start)) errors.start = validation.startTimeInvalid
+  if (!input.allDay && !isTime(input.start)) errors.start = validation.startTimeInvalid
   if (!isISODate(input.endDate)) errors.endDate = validation.endDateInvalid
-  if (!isTime(input.end)) errors.end = validation.endTimeInvalid
+  if (!input.allDay && !isTime(input.end)) errors.end = validation.endTimeInvalid
 
   if (!errors.startDate && !errors.endDate && input.endDate < input.startDate)
     errors.endDate = validation.endDateBeforeStart

@@ -54,6 +54,7 @@ document.querySelector('calendar-widget').addEventListener('event-create', (e) =
 | `locale` | `locale` | browser | `en-US`, `en-GB`, `de-DE`, … |
 | `theme` | `theme` | system | `light`, `dark` |
 | `initialView` | `initial-view` | user setting | `day`, `week`, `month`, `year` |
+| `timeZone` | `time-zone` | browser | IANA zone the calendar is shown in, e.g. `Europe/Berlin` |
 | `storageMode` | `storage-mode` | `local` | `local` or `remote` |
 | `apiBaseUrl` | `api-base-url` | `/api` | Base URL of your backend |
 | `features` | `auth`, `teams` | auth off, teams on | `teams="false"` turns team features off |
@@ -80,9 +81,11 @@ type CalendarEvent = EventInput & {
 type EventInput = {
   title: string                 // 1–100 chars
   startDate: string             // 'YYYY-MM-DD'
-  start: string                 // 'HH:mm', local time without time zone
-  endDate: string
+  start: string                 // 'HH:mm' in timeZone
+  endDate: string               // inclusive for all-day events
   end: string
+  allDay: boolean               // start and end are '00:00'
+  timeZone: string | null       // IANA zone, null = same local time everywhere (always null for all-day)
   description: string           // max 2000 chars
   color: 'blue' | 'red' | 'green' | 'yellow' | `#${string}`
   recurrence: Recurrence | null
@@ -119,7 +122,7 @@ The backend stores series as one event. The component expands occurrences itself
 | Moment | Requests |
 | --- | --- |
 | Widget loads | `GET /auth/me` (only with `auth`), then `GET /preferences`, `GET /colors`, `GET /calendars`, `GET /invitations` |
-| Visible range changes | `GET /events?from=…&to=…&calendarId=…` with the calendars shown. Return every event in the range **and** every series that can occur in it. |
+| Visible range changes | `GET /events?from=…&to=…&calendarId=…` with the calendars shown. The range is one day wider than the view to cover time zone shifts. Return every event in the range **and** every series that can occur in it. |
 | Create event | `POST /events` with `EventInput` + `calendarId` |
 | Edit event / whole series | `PUT /events/:id` with the full `EventInput` |
 | Edit only this occurrence | `PUT` the series with the date added to `excludedDates`, then `POST` a detached event with `seriesId` and `originalDate` |

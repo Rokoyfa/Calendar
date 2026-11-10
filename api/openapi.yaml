@@ -792,6 +792,14 @@ components:
         start: { $ref: '#/components/schemas/Time' }
         endDate: { $ref: '#/components/schemas/ISODate' }
         end: { $ref: '#/components/schemas/Time' }
+        allDay:
+          type: boolean
+          default: false
+          description: All-day events cover startDate to endDate inclusive. start and end are '00:00'.
+        timeZone:
+          description: IANA zone of start and end, e.g. 'Europe/Berlin'. null keeps the same local time in every zone and is always null for all-day events.
+          oneOf: [{ type: string }, { type: 'null' }]
+          default: null
         description: { type: string, maxLength: 2000 }
         color: { $ref: '#/components/schemas/EventColor' }
         recurrence: { oneOf: [{ $ref: '#/components/schemas/Recurrence' }, { type: 'null' }] }
