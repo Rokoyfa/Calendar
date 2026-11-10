@@ -145,7 +145,7 @@ Was das Backend dafür tun muss (Tenant prüfen, erlaubte Domains, Token prüfen
 
 ### REST-API (OpenAPI)
 
-Der Vertrag zwischen `restDataSource` und einem Backend liegt als **OpenAPI 3.1** in [`api/openapi.yaml`](api/openapi.yaml): alle Endpunkte mit Anfragen, Antworten, Fehlercodes und Rechten. Das Test-Backend ist die Referenz-Umsetzung, `database/` das Referenz-Schema. Geprüft wurde, dass das Test-Backend alle beschriebenen Endpunkte außer `POST /auth/token` (Tenants) hat und dass seine Antworten in einem Durchlauf über alle 40 Endpunkte (65 Aufrufe, auch Fehlerfälle) den Schemas entsprechen.
+Der Vertrag zwischen `restDataSource` und einem Backend liegt als **OpenAPI 3.1** in [`api/openapi.yaml`](api/openapi.yaml): alle Endpunkte mit Anfragen, Antworten, Fehlercodes und Rechten. Das Test-Backend ist die Referenz-Umsetzung. Geprüft wurde, dass das Test-Backend alle beschriebenen Endpunkte außer `POST /auth/token` (Tenants) hat und dass seine Antworten in einem Durchlauf über alle 40 Endpunkte (65 Aufrufe, auch Fehlerfälle) den Schemas entsprechen.
 
 Die Datei lässt sich z. B. mit Swagger UI oder Redocly ansehen und mit Generatoren für Server-Gerüste in anderen Sprachen nutzen.
 
@@ -371,8 +371,6 @@ Angemeldet zeigt `/settings` zusätzlich:
 
 ### Backend-Vertrag
 
-Das Datenbankschema für das Backend (MySQL 8 / MariaDB) liegt in [`database/`](database/README.md).
-
 Die Anmeldung läuft über ein **HttpOnly-Cookie**, das ausschließlich das Backend setzt und liest. Die App speichert keine Tokens. Alle Pfade liegen unter `VITE_API_BASE_URL`.
 
 | Aufruf | Body | Antwort |
@@ -514,7 +512,7 @@ Jeder Termin gehört genau zu einem Kalender (`calendarId`). Geladen werden nur 
 
 **Herkunft im persönlichen Kalender:** Termine aus Team-Kalendern tragen dort ein kleines Team-Symbol vor dem Titel (Woche, Tag und Monat). Ab zwei Stunden Länge steht der Name des Kalenders zusätzlich im Termin, darunter reicht der Platz nicht. Der Tooltip nennt immer „Aus dem Kalender „…““, und der Bearbeiten-Dialog zeigt oben: „Aus dem Kalender „…“. Änderungen sehen alle Mitglieder.“ Im Team-Kalender selbst entfällt das, dort zeigt die Plakette den Kalender. Umgesetzt über `eventSources`, eine Zuordnung Kalender-ID → Name und Farbe, die `CalendarPage` an `Calendar` gibt.
 
-**Rechte:** Jeder Kalender bringt die Berechtigungen der eigenen Rolle mit (`permissions`, siehe Rollen-Tabelle im Datenbank-README). Fehlt `create_entry` (Betrachter), verschwindet der Plus-Button und ein Klick ins Raster legt nichts an. Bearbeiten und Löschen prüft der Server; ohne Recht erscheint im Dialog „Dazu fehlt dir die Berechtigung.“
+**Rechte:** Jeder Kalender bringt die Berechtigungen der eigenen Rolle mit (`permissions`, siehe `Permission` in `api/openapi.yaml`). Fehlt `create_entry` (Betrachter), verschwindet der Plus-Button und ein Klick ins Raster legt nichts an. Bearbeiten und Löschen prüft der Server; ohne Recht erscheint im Dialog „Dazu fehlt dir die Berechtigung.“
 
 Neue Termine landen immer im gerade offenen Kalender. Beim Bearbeiten bleibt ein Termin in seinem Kalender, auch herausgelöste Termine und fortgesetzte Serien. Beim Abmelden oder Kontowechsel wird die Kalenderauswahl zurückgesetzt, damit nichts versehentlich in einen fremden Kalender geschrieben wird.
 
@@ -549,7 +547,7 @@ Die Erstellung läuft in Schritten, oben zeigt ein `Stepper` den Fortschritt. Er
 
 Danach ist der neue Kalender aktiv und man landet im Kalender. Der Ersteller ist Owner.
 
-Angelegt wird über `POST /calendars` mit Name, Beschreibung, Farbe und Einladungen. Der Server macht dich zum Owner und verschickt die Einladungen per E-Mail. Die Beschreibung liegt in der Datenbank in `teams.description` (Migration `003`).
+Angelegt wird über `POST /calendars` mit Name, Beschreibung, Farbe und Einladungen. Der Server macht dich zum Owner und verschickt die Einladungen per E-Mail.
 
 ### Einstellungen
 
@@ -566,7 +564,7 @@ Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, r
 - **Farbschema:** Wie System, Hell oder Dunkel. Gesetzt über `data-theme` am `<html>`, die Farben kommen weiter aus `light-dark()`.
 - **Startansicht** getrennt für Computer/Tablet und Handy
 - **Eigene Farben** ansehen und entfernen. Termine mit dieser Farbe behalten sie.
-- Gespeichert in diesem Browser unter `calendar.preferences.v1` (Farben weiter unter `calendar.colors.v1`). Beim ersten Start legt die App beide Einträge mit Standardwerten an: Farbschema `system`, Startansicht Woche bzw. Tag auf dem Handy, Sprache `auto`, keine eigenen Farben. Vorhandene Werte bleiben unverändert. **Angemeldet** liegen Einstellungen und Farben auf dem Server (`/preferences`, `/colors`, in der Datenbank `user_preferences` und `user_colors`) und gelten auf jedem Gerät.
+- Gespeichert in diesem Browser unter `calendar.preferences.v1` (Farben weiter unter `calendar.colors.v1`). Beim ersten Start legt die App beide Einträge mit Standardwerten an: Farbschema `system`, Startansicht Woche bzw. Tag auf dem Handy, Sprache `auto`, keine eigenen Farben. Vorhandene Werte bleiben unverändert. **Angemeldet** liegen Einstellungen und Farben auf dem Server (`/preferences`, `/colors`) und gelten auf jedem Gerät.
 - Angemeldet kommen die Konto-Abschnitte dazu, siehe [Konto in den Einstellungen](#konto-in-den-einstellungen).
 
 ### Farben
@@ -667,18 +665,6 @@ Ist die Anmeldung eingeschaltet, entscheidet stattdessen die Sitzung: angemeldet
 ## Projektstruktur
 
 ```
-database/
-├─ README.md                   Datenbankschema: Tabellen, Automatik, Diagramm, Abfragen
-├─ create_database.sql         Datenbank `kalender` anlegen
-└─ migrations/
-   ├─ 001_initial_schema.sql   Alle Tabellen und der Rollenkatalog (MySQL 8 / MariaDB)
-   ├─ 001_initial_schema.down.sql
-   ├─ 002_automation.sql       Trigger und Sichten user_calendars, user_team_permissions
-   ├─ 002_automation.down.sql
-   ├─ 003_calendar_settings.sql Beschreibung für Teams, Anzeige im persönlichen Kalender
-   ├─ 003_calendar_settings.down.sql
-   ├─ 004_locale.sql           Sprache und Region in user_preferences
-   └─ 004_locale.down.sql
 README.md                      Öffentliche Dokumentation (Englisch), Startseite auf npm und GitHub
 DEVELOPMENT.md                 Diese Datei: Entwicklung im Detail (Deutsch)
 CHANGELOG.md                   Änderungen je Version
@@ -859,7 +845,6 @@ src/
 - [x] Passwort vergessen / zurücksetzen, E-Mail-Bestätigung (Frontend)
 - [x] Einstellungsseite mit Konto: Name, Passwort ändern, Konto löschen (Frontend)
 - [x] `.env`-Konfiguration für API-Anbindung, Dev-Proxy und Feature-Schalter
-- [x] Datenbankschema für das Backend (`database/`)
 - [ ] Backend mit der oben beschriebenen REST-API inkl. `/auth`
 - [ ] Server-Speicherung über `RemoteEventRepository` aktivieren
 - [x] `RemoteColorRepository`, damit eigene Farben im Remote-Modus mitwandern
@@ -870,6 +855,6 @@ src/
 - [x] Phase 1: einbettbare Bibliothek (`<Calendar>`, `<calendar-widget>`, Shadow DOM, Library-Build)
 - [x] Phase 2: Daten-Adapter `CalendarDataSource` und OpenAPI-Vertrag
 - [x] Phase 3 und 4 im Frontend: `tenant`, `tenantDataSource`, Anmeldung über den Gastgeber (`getUserToken`), Vertrag in `api/openapi.yaml`
-- [ ] Backend für Tenants (Tenant-Trennung, erlaubte Domains, Rate-Limits, Token-Prüfung) und Migration für Tenants im Datenbankschema
-- [x] Einstellungen und eigene Farben im Remote-Modus übers Backend speichern (`user_preferences`, `user_colors`)
+- [ ] Backend für Tenants (Tenant-Trennung, erlaubte Domains, Rate-Limits, Token-Prüfung)
+- [x] Einstellungen und eigene Farben im Remote-Modus übers Backend speichern
 - [x] Fehlercodes vom Backend, E-Mails in der Sprache des Empfängers

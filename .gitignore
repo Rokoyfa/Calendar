@@ -23,4 +23,9 @@ dist-lib
 *.njsproj
 *.sln
 *.sw?
-.env
+.env
+# npm pack
+*.tgz
+
+# Datenbankschema (nicht öffentlich)
+database/

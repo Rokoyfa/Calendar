@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: |
     REST contract between the calendar component (`restDataSource`) and a backend.
-    The test backend (`TestBE`) is the reference implementation, `database/` the reference schema.
+    The test backend (`TestBE`) is the reference implementation.
 
     - Authentication uses an HttpOnly session cookie set by the backend. Alternatively a host can send
       `Authorization: Bearer …` (`restDataSource({ getAccessToken })`).
@@ -143,7 +143,7 @@ paths:
       tags: [Auth]
       summary: Sign in with a token issued by the host page
       description: |
-        Verifies signature, expiry and tenant, creates the user on first use (`external_id` = `sub`) and starts a session.
+        Verifies signature, expiry and tenant, creates the user on first use (linked to `sub`) and starts a session.
         `401` with `invalidUserToken`, `403` with `unknownTenant` or when token sign-in is disabled for the tenant.
       security: []
       parameters:
