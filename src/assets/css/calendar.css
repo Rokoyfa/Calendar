@@ -596,3 +596,23 @@ button.miniDay:hover {
 .isDraggingEvent .allDayLane:hover {
   background-color: transparent;
 }
+
+.calendar .columnHeader,
+.calendar .allDayLane {
+  position: sticky;
+  z-index: 4;
+  background-color: var(--color-bg);
+}
+
+.calendar .columnHeader {
+  top: 0;
+}
+
+.calendar .allDayLane {
+  top: var(--column-header-height);
+  border-bottom: 1px solid var(--color-grid);
+}
+
+.calendar .slots {
+  margin-top: -1px;
+}
