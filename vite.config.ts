@@ -1,5 +1,6 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type ProxyOptions } from 'vite'
+import { versionDefine } from './scripts/packageVersion.ts'
 import { parseEnv } from './src/config/parseEnv.ts'
 
 const createApiProxy = (apiBaseUrl: string, target: string | undefined): Record<string, ProxyOptions> | undefined => {
@@ -14,6 +15,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    define: versionDefine,
     server: { proxy },
     preview: { proxy },
   }

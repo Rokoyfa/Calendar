@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { createBrowserRouter, createMemoryRouter, Navigate, type RouteObject } from 'react-router'
 import type { CalendarRouting } from './lib/config.ts'
+import { TeamsGate } from './components/TeamsGate.tsx'
 import { ROUTES } from './config/routes.ts'
 import {
   AuthGate,
@@ -22,10 +23,12 @@ const usersOnly = (page: ReactNode) => <AuthGate access="user">{page}</AuthGate>
 
 const accountsOnly = (page: ReactNode) => <AuthGate access="account">{page}</AuthGate>
 
+const teamsOnly = (page: ReactNode) => <TeamsGate>{accountsOnly(page)}</TeamsGate>
+
 const routes: RouteObject[] = [
   { path: ROUTES.calendar, element: <CalendarPage /> },
   { path: ROUTES.settings, element: usersOnly(<SettingsPage />) },
-  { path: ROUTES.createCalendar, element: accountsOnly(<CreateCalendarPage />) },
+  { path: ROUTES.createCalendar, element: teamsOnly(<CreateCalendarPage />) },
   { path: ROUTES.calendarSettings, element: accountsOnly(<CalendarSettingsPage />) },
   { path: ROUTES.login, element: guestOnly(<LoginPage />) },
   { path: ROUTES.register, element: guestOnly(<RegisterPage />) },

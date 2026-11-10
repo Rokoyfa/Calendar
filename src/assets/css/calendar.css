@@ -403,6 +403,20 @@ button.miniDay:hover {
   background-color: var(--color-on-accent);
 }
 
+@container calendar (max-width: 900px) {
+  .day {
+    min-width: 0;
+  }
+
+  .calendar--week .dayName .compactHidden {
+    display: none;
+  }
+
+  .calendar--week .dayName .compactOnly {
+    display: inline;
+  }
+}
+
 @container calendar (max-width: 600px) {
   .dayTime {
     width: 56px;

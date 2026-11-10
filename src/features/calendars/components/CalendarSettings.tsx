@@ -14,6 +14,7 @@ import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
 import { canLeaveCalendar, canOpenSettings, getCalendarKindLabel, isPersonalCalendar } from '../utils/permissions.ts'
 import { InvitationList } from './InvitationList.tsx'
+import { useHost } from '../../../context/HostContext.ts'
 
 function LeaveCalendarModal({ calendar, onClose }: { calendar: CalendarSummary; onClose: () => void }) {
   const { m } = useI18n()
@@ -89,12 +90,13 @@ function CalendarRow({ calendar, onLeave }: { calendar: CalendarSummary; onLeave
 export function CalendarSettings() {
   const { m } = useI18n()
   const { list } = m.calendars
+  const { teams } = useHost()
   const { calendars, error } = useCalendars()
   const [calendarToLeave, setCalendarToLeave] = useState<CalendarSummary | null>(null)
 
   return (
     <>
-      <InvitationList />
+      {teams && <InvitationList />}
       <PageSection
         title={list.title}
         description={list.description}
@@ -105,12 +107,14 @@ export function CalendarSettings() {
             <CalendarRow key={calendar.id} calendar={calendar} onLeave={() => setCalendarToLeave(calendar)} />
           ))}
         </ul>
-        {calendars.every(isPersonalCalendar) && (
+        {teams && calendars.every(isPersonalCalendar) && (
           <p className="emptyHint">{list.noTeamCalendars}</p>
         )}
-        <div className="formActions">
-          <ButtonLink to={ROUTES.createCalendar}>{list.create}</ButtonLink>
-        </div>
+        {teams && (
+          <div className="formActions">
+            <ButtonLink to={ROUTES.createCalendar}>{list.create}</ButtonLink>
+          </div>
+        )}
         {calendarToLeave && <LeaveCalendarModal calendar={calendarToLeave} onClose={() => setCalendarToLeave(null)} />}
       </PageSection>
     </>

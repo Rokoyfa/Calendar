@@ -18,5 +18,5 @@ export const DEFAULT_CONFIG: CalendarConfig = {
   storageMode: 'local',
   apiBaseUrl: '/api',
   apiTimeoutMs: 10_000,
-  features: { auth: false, teams: false },
+  features: { auth: false, teams: true },
 }

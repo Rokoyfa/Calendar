@@ -1,4 +1,6 @@
 declare global {
+  const __CALENDAR_VERSION__: string
+
   interface ImportMetaEnv {
     readonly VITE_STORAGE_MODE?: string
     readonly VITE_API_BASE_URL?: string

@@ -1,6 +1,10 @@
 export { CalendarWidget as Calendar } from './CalendarWidget.tsx'
+export { VERSION } from './version.ts'
 export { CalendarElement, DEFAULT_ELEMENT_NAME, defineCalendarElement } from './element.tsx'
 export type { CalendarFeatures, CalendarProps, CalendarRouting, StorageMode } from './config.ts'
+export type { DeletedEvent, EventCallbacks } from './eventCallbacks.ts'
+export type { HostTheme } from '../context/HostContext.ts'
+export type { CalendarView } from '../utils/calendarView.ts'
 export { localDataSource, restDataSource, TENANT_HEADER, tenantDataSource } from '../data/index.ts'
 export type {
   CalendarDataSource,

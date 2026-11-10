@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
+import { useHost } from '../../../context/HostContext.ts'
 import { useRootElement } from '../../../context/RootElementContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
@@ -6,19 +7,21 @@ import { DEFAULT_PREFERENCES, type Preferences, type Theme } from '../../../util
 import { usePreferencesRepository } from '../../storage/index.ts'
 import { PreferencesContext, type PreferencesContextValue } from './PreferencesContext.ts'
 
-const applyTheme = (root: HTMLElement, theme: Theme) => {
-  if (theme === 'system') delete root.dataset.theme
+const applyTheme = (root: HTMLElement, theme: Theme | undefined) => {
+  if (!theme || theme === 'system') delete root.dataset.theme
   else root.dataset.theme = theme
 }
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const root = useRootElement()
+  const { theme: hostTheme } = useHost()
   const { setUserLocale } = useI18n()
   const repository = usePreferencesRepository()
   const load = useCallback(() => repository.get(), [repository])
   const { data: preferences, isLoading, apply } = useAsyncResource(load, DEFAULT_PREFERENCES)
 
-  useEffect(() => applyTheme(root, preferences.theme), [root, preferences.theme])
+  const theme = preferences.theme === 'system' ? hostTheme : preferences.theme
+  useEffect(() => applyTheme(root, theme), [root, theme])
 
   useEffect(() => {
     setUserLocale(preferences.locale)

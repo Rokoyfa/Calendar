@@ -101,7 +101,7 @@ export const colors: Messages['colors'] = {
 }
 
 export const themes: Messages['themes'] = {
-  system: 'Wie System',
+  system: 'Automatisch',
   light: 'Hell',
   dark: 'Dunkel',
 }

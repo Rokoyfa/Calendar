@@ -1,5 +1,6 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { versionDefine } from './scripts/packageVersion.ts'
 
 const NPM_EXTERNALS = [/^react($|\/)/, /^react-dom($|\/)/]
 
@@ -9,7 +10,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     publicDir: false,
-    define: { 'process.env.NODE_ENV': JSON.stringify('production') },
+    define: { 'process.env.NODE_ENV': JSON.stringify('production'), ...versionDefine },
     build: {
       outDir: isElementBundle ? 'dist-lib/cdn' : 'dist-lib/npm',
       emptyOutDir: true,

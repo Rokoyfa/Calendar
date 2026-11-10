@@ -1,6 +1,9 @@
 import type { CSSProperties } from 'react'
 import type { CalendarDataSource } from '../data/index.ts'
+import type { HostTheme } from '../context/HostContext.ts'
 import type { UserTokenProvider } from '../features/authorization/index.ts'
+import type { CalendarView } from '../utils/calendarView.ts'
+import type { EventCallbacks } from './eventCallbacks.ts'
 import type { CalendarFeatures, StorageMode } from './defaults.ts'
 
 export { DEFAULT_CONFIG, STORAGE_MODES } from './defaults.ts'
@@ -8,7 +11,7 @@ export type { CalendarConfig, CalendarFeatures, StorageMode } from './defaults.t
 
 export type CalendarRouting = 'memory' | 'browser'
 
-export type CalendarProps = {
+export type CalendarProps = EventCallbacks & {
   dataSource?: CalendarDataSource
   tenant?: string
   getUserToken?: UserTokenProvider
@@ -19,7 +22,10 @@ export type CalendarProps = {
   routing?: CalendarRouting
   basename?: string
   initialPath?: string
+  linkParam?: string | false
   locale?: string
+  theme?: HostTheme
+  initialView?: CalendarView
   className?: string
   style?: CSSProperties
 }

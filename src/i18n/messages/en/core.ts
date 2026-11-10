@@ -107,7 +107,7 @@ export const colors = {
 }
 
 export const themes = {
-  system: 'Match system',
+  system: 'Automatic',
   light: 'Light',
   dark: 'Dark',
 }

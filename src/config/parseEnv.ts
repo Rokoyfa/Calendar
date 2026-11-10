@@ -42,12 +42,13 @@ export function parseEnv(raw: RawEnv): AppEnv {
     return DEFAULT_API_TIMEOUT_MS
   }
 
-  const readFlag = (name: 'VITE_FEATURE_AUTH' | 'VITE_FEATURE_TEAMS') => {
+  const readFlag = (name: 'VITE_FEATURE_AUTH' | 'VITE_FEATURE_TEAMS', fallback: boolean) => {
     const value = clean(raw[name])?.toLowerCase()
-    if (value === undefined || FALSE_VALUES.includes(value)) return false
+    if (value === undefined) return fallback
+    if (FALSE_VALUES.includes(value)) return false
     if (TRUE_VALUES.includes(value)) return true
     errors.push(`${name} must be "true" or "false", but is "${value}".`)
-    return false
+    return fallback
   }
 
   const env: AppEnv = {
@@ -55,8 +56,8 @@ export function parseEnv(raw: RawEnv): AppEnv {
     apiBaseUrl: readApiBaseUrl(),
     apiTimeoutMs: readTimeout(),
     features: {
-      auth: readFlag('VITE_FEATURE_AUTH'),
-      teams: readFlag('VITE_FEATURE_TEAMS'),
+      auth: readFlag('VITE_FEATURE_AUTH', DEFAULT_CONFIG.features.auth),
+      teams: readFlag('VITE_FEATURE_TEAMS', DEFAULT_CONFIG.features.teams),
     },
   }
 

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar – published version</title>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@0.1/dist-lib/cdn/calendar-widget.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: system-ui, sans-serif;
+        background: #f4f4f5;
+        color: #18181b;
+      }
+
+      main {
+        display: grid;
+        gap: 32px;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      section {
+        display: grid;
+        gap: 8px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 16px;
+      }
+
+      calendar-widget {
+        height: 600px;
+        border: 1px solid #d4d4d8;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      #log {
+        height: 600px;
+        overflow: auto;
+        margin: 0;
+        padding: 12px;
+        background: #18181b;
+        color: #a1e3a1;
+        border-radius: 12px;
+        font-size: 12px;
+      }
+
+      code {
+        background: #e4e4e7;
+        padding: 1px 4px;
+        border-radius: 4px;
+      }
+
+      @media (max-width: 800px) {
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Calendar – published version</h1>
+        <p>Loads the published package from jsDelivr. Works as soon as <code>@rokoyfa/calendar</code> is on npm. Version: <code id="version">…</code></p>
+      </header>
+
+      <section>
+        <h2>Local mode with event log</h2>
+        <p>No backend. Data stays in this browser. Create, move or delete events and watch the log.</p>
+        <div class="row">
+          <calendar-widget id="main"></calendar-widget>
+          <pre id="log"></pre>
+        </div>
+      </section>
+
+      <section>
+        <h2>Dark, month view, German</h2>
+        <calendar-widget theme="dark" initial-view="month" locale="de-DE"></calendar-widget>
+      </section>
+
+      <section>
+        <h2>Small widget (compact layout)</h2>
+        <calendar-widget locale="en-US" style="max-width: 380px"></calendar-widget>
+      </section>
+
+      <section>
+        <h2>With your backend</h2>
+        <p>
+          Uncomment in the source and set <code>api-base-url</code>. The backend must implement
+          <code>api/openapi.yaml</code> and allow this page's origin (CORS with credentials, cookie
+          <code>SameSite=None; Secure</code>).
+        </p>
+        <!-- <calendar-widget storage-mode="remote" auth api-base-url="https://api.example.com"></calendar-widget> -->
+      </section>
+    </main>
+
+    <script type="module">
+      const log = document.getElementById('log')
+      const write = (type, detail) => {
+        const line = `${new Date().toLocaleTimeString()}  ${type}  ${detail.title ?? ''} ${detail.startDate ?? ''} ${detail.start ?? ''} (${detail.id})`
+        log.textContent = `${line}\n${log.textContent}`
+      }
+      const main = document.getElementById('main')
+      for (const type of ['event-create', 'event-update', 'event-delete'])
+        main.addEventListener(type, (event) => write(type, event.detail))
+
+      await customElements.whenDefined('calendar-widget')
+      document.getElementById('version').textContent = customElements.get('calendar-widget').version
+    </script>
+  </body>
+</html>

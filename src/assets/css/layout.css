@@ -247,6 +247,19 @@
   overflow-wrap: anywhere;
 }
 
+@container calendar (max-width: 900px) {
+  .header {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "nav actions"
+      "title title";
+  }
+
+  .headerActions {
+    justify-self: end;
+  }
+}
+
 @container calendar (max-width: 700px) {
   .header {
     grid-template-columns: 1fr auto;

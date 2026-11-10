@@ -1,9 +1,12 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { HostContext, type HostOptions } from '../context/HostContext.ts'
 import { localDataSource, restDataSource, tenantDataSource } from '../data/index.ts'
 import { I18nProvider } from '../i18n/index.ts'
 import { CalendarApp } from './CalendarApp.tsx'
 import { DEFAULT_CONFIG, type CalendarProps } from './config.ts'
+import type { EventCallbacks } from './eventCallbacks.ts'
 import { IsolatedRoot } from './IsolatedRoot.tsx'
+import { DEFAULT_LINK_PARAM, readLinkedPath } from './linkParam.ts'
 
 export function CalendarWidget({
   dataSource: providedDataSource,
@@ -16,11 +19,18 @@ export function CalendarWidget({
   routing = 'memory',
   basename,
   initialPath,
+  linkParam = DEFAULT_LINK_PARAM,
   locale,
+  theme,
+  initialView,
+  onEventCreate,
+  onEventUpdate,
+  onEventDelete,
   className,
   style,
 }: CalendarProps) {
   const auth = features?.auth ?? DEFAULT_CONFIG.features.auth
+  const teams = features?.teams ?? DEFAULT_CONFIG.features.teams
   const dataSource = useMemo(
     () =>
       providedDataSource ??
@@ -31,12 +41,26 @@ export function CalendarWidget({
           : localDataSource()),
     [providedDataSource, tenant, getUserToken, auth, storageMode, apiBaseUrl, apiTimeoutMs],
   )
+  const host = useMemo<HostOptions>(() => ({ teams, theme, initialView }), [teams, theme, initialView])
+  const callbacks = useRef<EventCallbacks>({})
+  useEffect(() => {
+    callbacks.current = { onEventCreate, onEventUpdate, onEventDelete }
+  }, [onEventCreate, onEventUpdate, onEventDelete])
+  const startPath = initialPath ?? (routing === 'memory' && linkParam ? readLinkedPath(linkParam) : undefined)
 
   return (
     <IsolatedRoot className={className} style={style} autoFocus={routing === 'browser'}>
-      <I18nProvider locale={locale}>
-        <CalendarApp dataSource={dataSource} routing={routing} basename={basename} initialPath={initialPath} />
-      </I18nProvider>
+      <HostContext value={host}>
+        <I18nProvider locale={locale}>
+          <CalendarApp
+            dataSource={dataSource}
+            eventCallbacks={callbacks}
+            routing={routing}
+            basename={basename}
+            initialPath={startPath}
+          />
+        </I18nProvider>
+      </HostContext>
     </IsolatedRoot>
   )
 }

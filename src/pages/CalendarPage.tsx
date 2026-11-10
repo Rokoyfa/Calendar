@@ -14,11 +14,13 @@ import {
 import { usePreferences } from '../features/preferences/index.ts'
 import { LocalImportPrompt } from '../features/storage/index.ts'
 import { useI18n } from '../i18n/index.ts'
+import { useHost } from '../context/HostContext.ts'
 import { useRootElement } from '../context/RootElementContext.ts'
 import { getStartView, isCompactWidth } from '../utils/preferences.ts'
 
 export function CalendarPage() {
   const root = useRootElement()
+  const host = useHost()
   const { enabled, method, user } = useAuth()
   const hasAccountMenu = enabled && (user !== null || method === 'password')
   const { preferences } = usePreferences()
@@ -28,7 +30,7 @@ export function CalendarPage() {
     () => new Map(getSharedCalendars(calendars, activeCalendar).map(({ id, name, color }) => [id, { name, color }])),
     [calendars, activeCalendar],
   )
-  const initialView = getStartView(preferences, isCompactWidth(root.clientWidth))
+  const initialView = host.initialView ?? getStartView(preferences, isCompactWidth(root.clientWidth))
 
   return (
     <div className="app">
@@ -47,7 +49,7 @@ export function CalendarPage() {
                 <SettingsIcon size={20} />
               </Link>
             )}
-            <AccountMenu menuItems={<CalendarSwitcher />} />
+            <AccountMenu menuItems={host.teams ? <CalendarSwitcher /> : undefined} />
           </>
         }
       />

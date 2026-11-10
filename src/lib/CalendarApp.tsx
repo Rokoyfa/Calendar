@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode, type RefObject } from 'react'
 import { RouterProvider } from 'react-router'
 import type { CalendarDataSource } from '../data/index.ts'
 import { AuthProvider, useAuth } from '../features/authorization/index.ts'
@@ -8,13 +8,17 @@ import { StorageProvider } from '../features/storage/index.ts'
 import { useI18n, useLocaleGetter } from '../i18n/index.ts'
 import { createCalendarRouter } from '../router.tsx'
 import type { CalendarRouting } from './config.ts'
+import { withEventCallbacks, type EventCallbacks } from './eventCallbacks.ts'
+
+type EventCallbacksRef = RefObject<EventCallbacks>
 
 type SessionProvidersProps = {
   dataSource: CalendarDataSource
+  eventCallbacks: EventCallbacksRef
   children: ReactNode
 }
 
-function SessionProviders({ dataSource, children }: SessionProvidersProps) {
+function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvidersProps) {
   const { m } = useI18n()
   const getLanguage = useLocaleGetter()
   const { status, user, expireSession } = useAuth()
@@ -26,11 +30,11 @@ function SessionProviders({ dataSource, children }: SessionProvidersProps) {
   const storage = useMemo(
     () => ({
       mode: repositories.mode,
-      events: repositories.events,
+      events: withEventCallbacks(repositories.events, () => eventCallbacks.current),
       colors: repositories.colors,
       preferences: repositories.preferences,
     }),
-    [repositories],
+    [repositories, eventCallbacks],
   )
 
   if (status === 'loading') return <p className="appLoading">{m.common.loading}</p>
@@ -47,12 +51,13 @@ function SessionProviders({ dataSource, children }: SessionProvidersProps) {
 
 type CalendarAppProps = {
   dataSource: CalendarDataSource
+  eventCallbacks: EventCallbacksRef
   routing: CalendarRouting
   basename?: string
   initialPath?: string
 }
 
-export function CalendarApp({ dataSource, routing, basename, initialPath }: CalendarAppProps) {
+export function CalendarApp({ dataSource, eventCallbacks, routing, basename, initialPath }: CalendarAppProps) {
   const getLanguage = useLocaleGetter()
   const authRepository = useMemo(
     () => dataSource.createAuthRepository?.({ getLanguage }) ?? null,
@@ -62,7 +67,7 @@ export function CalendarApp({ dataSource, routing, basename, initialPath }: Cale
 
   return (
     <AuthProvider repository={authRepository}>
-      <SessionProviders dataSource={dataSource}>
+      <SessionProviders dataSource={dataSource} eventCallbacks={eventCallbacks}>
         <RouterProvider router={router} />
       </SessionProviders>
     </AuthProvider>

@@ -1,24 +1,62 @@
 {
-  "name": "calendar",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@rokoyfa/calendar",
+  "version": "0.1.0",
+  "description": "Embeddable calendar for React and any website: day, week, month and year views, recurring events, teams and English/German, as a React component or a <calendar-widget> web component.",
+  "keywords": [
+    "calendar",
+    "react",
+    "web-component",
+    "custom-element",
+    "scheduler",
+    "events",
+    "embeddable",
+    "widget",
+    "i18n"
+  ],
+  "license": "MIT",
+  "author": "Rokoyfa",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rokoyfa/Calendar.git"
+  },
+  "homepage": "https://github.com/Rokoyfa/Calendar#readme",
+  "bugs": {
+    "url": "https://github.com/Rokoyfa/Calendar/issues"
+  },
   "type": "module",
+  "main": "./dist-lib/npm/index.js",
+  "module": "./dist-lib/npm/index.js",
+  "types": "./dist-lib/npm/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist-lib/npm/index.d.ts",
       "import": "./dist-lib/npm/index.js"
     },
-    "./cdn": "./dist-lib/cdn/calendar-widget.js"
+    "./cdn": "./dist-lib/cdn/calendar-widget.js",
+    "./openapi.yaml": "./api/openapi.yaml",
+    "./package.json": "./package.json"
   },
-  "files": [
-    "dist-lib"
+  "jsdelivr": "./dist-lib/cdn/calendar-widget.js",
+  "unpkg": "./dist-lib/cdn/calendar-widget.js",
+  "sideEffects": [
+    "./dist-lib/cdn/*"
   ],
+  "files": [
+    "dist-lib",
+    "api/openapi.yaml",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:lib": "vite build -c vite.lib.config.ts && vite build -c vite.lib.config.ts --mode element && tsc -p tsconfig.lib.json && node scripts/collect-types.mjs"
+    "build:lib": "node -e \"require('fs').rmSync('dist-lib',{recursive:true,force:true})\" && vite build -c vite.lib.config.ts && vite build -c vite.lib.config.ts --mode element && tsc -p tsconfig.lib.json && node scripts/collect-types.mjs",
+    "typecheck": "tsc -b",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm run build:lib"
   },
   "peerDependencies": {
     "react": "^19.0.0",
