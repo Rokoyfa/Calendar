@@ -50,7 +50,7 @@ import { Calendar } from '@rokoyfa/calendar'
 **Alle anderen Seiten (Script-Tag):**
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@0.1/dist-lib/cdn/calendar-widget.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@1/dist-lib/cdn/calendar-widget.js"></script>
 <calendar-widget storage-mode="remote" api-base-url="https://api.example.com" auth style="height: 700px"></calendar-widget>
 ```
 
@@ -213,27 +213,27 @@ Das Paket heißt **`@rokoyfa/calendar`** und erscheint öffentlich auf npm unter
 
 ```bash
 npm run build:lib
-npm pack                       # erzeugt rokoyfa-calendar-0.1.0.tgz
+npm pack                       # erzeugt rokoyfa-calendar-1.0.0.tgz
 ```
 
-- In einem anderen Projekt: `npm install ../Calendar/rokoyfa-calendar-0.1.0.tgz`, dann `import { Calendar } from '@rokoyfa/calendar'`.
+- In einem anderen Projekt: `npm install ../Calendar/rokoyfa-calendar-1.0.0.tgz`, dann `import { Calendar } from '@rokoyfa/calendar'`.
 - Ohne npm: `demo/local.html` über einen beliebigen statischen Server öffnen (z. B. `npx serve .` im Projektordner), sie lädt `dist-lib/cdn/calendar-widget.js`.
 
 **Veröffentlichen:**
 
-1. Version in `package.json` erhöhen (SemVer: `0.1.1` für Korrekturen, `0.2.0` für Neues) und `CHANGELOG.md` ergänzen.
-2. `npm publish`. Vorher laufen automatisch Lint, Typprüfung und `build:lib`. `publishConfig.access` ist `public`, nötig für gescopete Pakete.
-3. Commit taggen, z. B. `git tag v0.1.0 && git push --tags`.
+1. Version mit `npm version patch|minor|major --no-git-tag-version` erhöhen und `CHANGELOG.md` ergänzen. Ab 1.0 gilt SemVer streng: `1.0.1` für Korrekturen, `1.1.0` für Neues, das bestehende Einbindungen nicht bricht, `2.0.0` für alles, was Props, Attribute, DOM-Events, exportierte Typen, den Daten-Adapter oder den REST-Vertrag inkompatibel ändert.
+2. `npm publish`. Vorher laufen automatisch Lint, Typprüfung, Tests und `build:lib`. `publishConfig.access` ist `public`, nötig für gescopete Pakete.
+3. Commit taggen, z. B. `git tag v1.0.0 && git push --tags`.
 
 **Danach erreichbar** (CDN nach wenigen Minuten):
 
 | Weg | Adresse |
 | --- | --- |
 | npm | `npm install @rokoyfa/calendar` |
-| jsDelivr | `https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@0.1/dist-lib/cdn/calendar-widget.js` |
-| unpkg | `https://unpkg.com/@rokoyfa/calendar@0.1/dist-lib/cdn/calendar-widget.js` |
+| jsDelivr | `https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@1/dist-lib/cdn/calendar-widget.js` |
+| unpkg | `https://unpkg.com/@rokoyfa/calendar@1/dist-lib/cdn/calendar-widget.js` |
 
-`demo/cdn.html` bindet die veröffentlichte Version über jsDelivr ein und zeigt alle Einbindungsarten (lokal, mit Backend, Ereignisse, Theme). `@0.1` holt immer die neueste `0.1.x`, für feste Stände die volle Version angeben.
+`demo/cdn.html` bindet die veröffentlichte Version über jsDelivr ein und zeigt alle Einbindungsarten (lokal, mit Backend, Ereignisse, Theme). `@1` holt immer die neueste `1.x`, für feste Stände die volle Version angeben (z. B. `@1.0.0`).
 
 **Im Paket** stehen nur `dist-lib/` (npm-Build mit Typen, CDN-Script, Source-Maps), `api/openapi.yaml`, `CHANGELOG.md`, `README.md`, `LICENSE` und `package.json`. Die Version steht zur Laufzeit in `VERSION` (Export) bzw. `customElements.get('calendar-widget').version`.
 
@@ -487,6 +487,15 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 - **Herausgelöste Einzeltermine** gehören weiter zur Serie: Sie werden mit „Alle Termine“ bzw. „Dieser und alle folgenden“ gelöscht, und wechseln bei einer Aufteilung zur neuen Serie.
 - Wird ein Termin in eine andere Woche verschoben, springt der Kalender nach dem Speichern dorthin
 
+### Termine verschieben
+
+- Termin **mindestens 1 Sekunde gedrückt halten** (Maus oder Finger), dann ziehen. Kürzeres Drücken oder Bewegen vorher verschiebt nichts, ein normaler Klick öffnet den Dialog.
+- Tag- und Wochenansicht: in 15-Minuten-Schritten, auch auf andere Tage. Der untere Rand eines Termins ändert das Ende. Am Rand scrollt das Raster mit.
+- Monatsansicht und Ganztags-Zeile: tageweise.
+- Serien fragen nach dem Loslassen „nur dieser / dieser und folgende / alle“. Bei „folgende“ und „alle“ wandert der Wochentag wöchentlicher Serien mit.
+- Escape bricht ab. Ohne Recht zum Anlegen ist Verschieben aus.
+- Umsetzung: `features/calendar/hooks/useEventDrag.ts` (Zeiger, Touch, Scrollen), `utils/eventDrag.ts` (Rechnen, getestet)
+
 ### Darstellung von Terminen
 
 - Position und Höhe entsprechen exakt Uhrzeit und Dauer
@@ -619,6 +628,8 @@ type CalendarEvent = {
   start: string
   endDate: string
   end: string
+  allDay: boolean
+  timeZone: string | null
   description: string
   color: 'blue' | 'red' | 'green' | 'yellow' | `#${string}`
   recurrence: Recurrence | null
@@ -641,6 +652,9 @@ type Recurrence = {
 
 - `startDate` und `endDate` im Format `JJJJ-MM-TT`, `start` und `end` im Format `HH:MM`
 - Das Ende ist exklusiv: `endDate` = Folgetag mit `end` = `00:00` bedeutet „bis Mitternacht“
+- **Ganztägig** (`allDay: true`): `start` und `end` sind `00:00`, `endDate` zählt mit (inklusiv), `timeZone` ist immer `null`. Angezeigt in der Zeile „Ganztägig“ über dem Raster, mehrtägige als durchgehender Balken (`features/calendar/utils/allDay.ts`).
+- **Zeitzone** (`timeZone`): IANA-Name wie `Europe/Berlin`, in dem `start` und `end` gemeint sind. `null` heißt „überall dieselbe Ortszeit“. Neue Termine bekommen die Anzeige-Zeitzone (Prop `timeZone`, sonst Browser). Beim Anzeigen werden Vorkommen in der Zone des Termins berechnet und dann in die Anzeige-Zone umgerechnet (`expandEvents`, `utils/timeZone.ts`), dabei kann sich das Datum verschieben. `source` am Vorkommen hält die Zeiten in der Zone des Termins, `occurrenceDate` das Datum in der Serie. Bearbeitet wird in der Zone des Termins, der Dialog zeigt die Zeit in der eigenen Zone darunter.
+- Ältere Termine ohne `allDay` und `timeZone` werden als zeitgebundene Termine ohne Zeitzone gelesen
 - Ein wiederkehrender Termin wird **einmal** als Serie gespeichert. `startDate` bis `endDate` beschreibt das erste Vorkommen, die weiteren werden beim Anzeigen berechnet (`utils/recurrence.ts`).
 - `weekdays` zählt von `0` = Montag bis `6` = Sonntag und wird nur bei `weekly` ausgewertet. `until` ist das letzte mögliche Startdatum (inklusiv) oder `null`.
 - `monthlyMode` wird nur bei `monthly` ausgewertet, Tag bzw. Wochentag und dessen Position ergeben sich aus `startDate`
@@ -835,7 +849,6 @@ src/
 ## Bekannte Einschränkungen
 
 - Nur localStorage, keine Synchronisierung zwischen Geräten oder Browsern
-- Keine Ganztagstermine und keine eigene Leiste für mehrtägige Termine oberhalb des Rasters
 - Serien-Aktionen bestehen aus mehreren einzelnen Speichervorgängen. Bricht einer davon ab, kann eine Serie teilweise geändert sein.
 - Eigene Farben lassen sich noch nicht wieder entfernen
 - Datums- und Zeitfelder (`<input type="date">`, `type="time"`) zeigen das Format der Browser- bzw. Systemsprache, nicht die gewählte Sprache

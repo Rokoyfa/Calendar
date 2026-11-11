@@ -7,7 +7,7 @@ An embeddable calendar for React apps and any other website. Day, week, month an
 **Any website**, React is bundled:
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@0.1/dist-lib/cdn/calendar-widget.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@1/dist-lib/cdn/calendar-widget.js"></script>
 
 <calendar-widget style="height: 700px"></calendar-widget>
 ```

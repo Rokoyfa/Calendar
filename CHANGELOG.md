@@ -1,8 +1,13 @@
 # Changelog
 
-All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning](https://semver.org/). Until 1.0, minor versions may contain breaking changes.
+All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning](https://semver.org/). From 1.0 on, breaking changes to props, attributes, DOM events, exported types, the data adapter and the REST contract only come with a new major version.
 
-## Unreleased
+## 1.0.0 – 2026-11-11
+
+First stable release. The public API is now frozen in the sense of SemVer.
+
+**Upgrading from 0.1:** No changes are needed on the host page. Your own backend should store the new event fields `allDay` and `timeZone` and return them; events without them are read as before. `GET /events` is now called with a range one day wider on each side.
+
 
 - All-day events: `allDay` in the event format, switch in the event dialog, all-day row above the day and week grid
 - Time zones: events store an IANA `timeZone` (or `null` for the same local time everywhere), the dialog has a zone picker and shows the time in the viewer's zone, new prop `timeZone` / attribute `time-zone` sets the zone the calendar is shown in

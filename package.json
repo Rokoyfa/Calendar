@@ -1,7 +1,7 @@
 {
   "name": "@rokoyfa/calendar",
-  "version": "0.1.0",
-  "description": "Embeddable calendar for React and any website: day, week, month and year views, recurring events, teams and English/German, as a React component or a <calendar-widget> web component.",
+  "version": "1.0.0",
+  "description": "Embeddable calendar for React and any website: day, week, month and year views, recurring and all-day events, time zones, drag and drop, teams and eight languages, as a React component or a <calendar-widget> web component.",
   "keywords": [
     "calendar",
     "react",
@@ -11,7 +11,10 @@
     "events",
     "embeddable",
     "widget",
-    "i18n"
+    "i18n",
+    "timezone",
+    "drag-and-drop",
+    "recurring-events"
   ],
   "license": "MIT",
   "author": "Rokoyfa",
