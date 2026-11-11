@@ -596,7 +596,7 @@ Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, r
 | Ansicht wechseln                 | Tag / Woche / Monat / Jahr         |
 | Fenster schließen                | `Esc` oder Klick neben das Fenster |
 
-Die Pfeiltasten sind deaktiviert, solange ein Eingabefeld oder ein Fenster aktiv ist.
+Die Pfeiltasten wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt nach dem Laden oder nach dem Schließen eines Fensters). Sind mehrere Kalender auf der Seite, reagiert der zuletzt benutzte, anfangs der erste. Solange ein Eingabefeld, ein Fenster oder ein Element der Host-Seite den Fokus hat, sind sie aus (`hooks/useArrowKeyNavigation.ts`).
 
 ### Design
 
