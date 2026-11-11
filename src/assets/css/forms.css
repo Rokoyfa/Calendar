@@ -190,3 +190,70 @@ select.input {
   opacity: 0.5;
 }
 
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.button.isDisabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.attendees {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.attendeesSummary {
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.attendeeList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.attendee {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.attendeeName {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.attendeeEmail {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.attendeeStatus {
+  flex: none;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill, 999px);
+  background-color: var(--color-surface-hover);
+  font-size: var(--font-size-sm);
+}
+
+.attendeeStatus--accepted {
+  color: var(--color-green);
+}
+
+.attendeeStatus--declined {
+  color: var(--color-red);
+}

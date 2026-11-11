@@ -9,6 +9,7 @@ import {
   CalendarSwitcher,
   getSharedCalendars,
   hasPermission,
+  isPersonalCalendar,
   useCalendars,
 } from '../features/calendars/index.ts'
 import { usePreferences } from '../features/preferences/index.ts'
@@ -25,7 +26,16 @@ export function CalendarPage() {
   const hasAccountMenu = enabled && (user !== null || method === 'password')
   const { preferences } = usePreferences()
   const { m } = useI18n()
-  const { calendars, activeCalendar, visibleCalendarIds } = useCalendars()
+  const { calendars, activeCalendar, visibleCalendarIds, repository } = useCalendars()
+  const loadAttendeeCandidates = useMemo(() => {
+    if (!host.teams || !user) return undefined
+    return async (calendarId: string) => {
+      const calendar = calendars.find((entry) => entry.id === calendarId)
+      if (!calendar || isPersonalCalendar(calendar)) return []
+      const members = await repository.listMembers(calendar.teamId)
+      return members.map(({ email, name }) => ({ email, name }))
+    }
+  }, [host.teams, user, calendars, repository])
   const eventSources = useMemo(
     () => new Map(getSharedCalendars(calendars, activeCalendar).map(({ id, name, color }) => [id, { name, color }])),
     [calendars, activeCalendar],
@@ -42,6 +52,8 @@ export function CalendarPage() {
         eventSources={eventSources}
         initialView={initialView}
         headerContext={<ActiveCalendarIndicator />}
+        currentUserEmail={user?.email ?? null}
+        loadAttendeeCandidates={loadAttendeeCandidates}
         headerAccessory={
           <>
             {!hasAccountMenu && (

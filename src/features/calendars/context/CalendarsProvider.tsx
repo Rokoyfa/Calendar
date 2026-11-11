@@ -13,17 +13,20 @@ import type {
 } from '../types/calendar.ts'
 import { normalizeDraft } from '../utils/draft.ts'
 import { getVisibleCalendarIds, isPersonalCalendar } from '../utils/permissions.ts'
+import { readActiveCalendarId, writeActiveCalendarId } from '../utils/activeCalendarStorage.ts'
 import { CalendarsContext } from './CalendarsContext.ts'
 
 const INITIAL_CALENDARS: CalendarSummary[] = [PERSONAL_CALENDAR]
 const NO_INVITATIONS: PendingInvitation[] = []
+const NO_CALENDAR_IDS: string[] = []
 
 type CalendarsProviderProps = {
   repository: CalendarRepository
+  storageScope: string
   children: ReactNode
 }
 
-export function CalendarsProvider({ repository, children }: CalendarsProviderProps) {
+export function CalendarsProvider({ repository, storageScope, children }: CalendarsProviderProps) {
   const { m } = useI18n()
   const loadCalendars = useCallback(() => repository.list(), [repository])
   const loadInvitations = useCallback(() => repository.listInvitations(), [repository])
@@ -34,7 +37,7 @@ export function CalendarsProvider({ repository, children }: CalendarsProviderPro
     update: updateCalendars,
   } = useAsyncResource(loadCalendars, INITIAL_CALENDARS)
   const { data: invitations, update: updateInvitations } = useAsyncResource(loadInvitations, NO_INVITATIONS)
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeId, setActiveId] = useState(() => readActiveCalendarId(storageScope))
   const personalName = m.calendars.personalName
   const calendars = useMemo(
     () =>
@@ -46,8 +49,15 @@ export function CalendarsProvider({ repository, children }: CalendarsProviderPro
 
   const personalCalendar = calendars.find(isPersonalCalendar) ?? { ...PERSONAL_CALENDAR, name: personalName }
   const activeCalendar = calendars.find((calendar) => calendar.id === activeId) ?? personalCalendar
+  const isRestoring = isLoading && activeId !== null && activeCalendar.id !== activeId
 
-  const selectCalendar = useCallback((id: string) => setActiveId(id), [])
+  const selectCalendar = useCallback(
+    (id: string) => {
+      setActiveId(id)
+      writeActiveCalendarId(storageScope, id)
+    },
+    [storageScope],
+  )
 
   const replaceCalendar = useCallback(
     (changed: CalendarSummary) =>
@@ -137,8 +147,8 @@ export function CalendarsProvider({ repository, children }: CalendarsProviderPro
   )
 
   const visibleCalendarIds = useMemo(
-    () => getVisibleCalendarIds(calendars, activeCalendar),
-    [calendars, activeCalendar],
+    () => (isRestoring ? NO_CALENDAR_IDS : getVisibleCalendarIds(calendars, activeCalendar)),
+    [isRestoring, calendars, activeCalendar],
   )
 
   const value = useMemo<CalendarsContextValue>(

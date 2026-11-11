@@ -91,6 +91,7 @@ export const validation: Messages['validation'] = {
   weekdaysRequired: 'Bitte mindestens einen Wochentag wählen.',
   dateInvalid: 'Bitte ein gültiges Datum wählen.',
   untilBeforeStart: 'Das Ende der Wiederholung darf nicht vor dem Startdatum liegen.',
+  locationTooLong: (max) => `Der Ort darf höchstens ${max} Zeichen lang sein.`,
 }
 
 export const colors: Messages['colors'] = {

@@ -2,6 +2,16 @@
 
 All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning](https://semver.org/). From 1.0 on, breaking changes to props, attributes, DOM events, exported types, the data adapter and the REST contract only come with a new major version.
 
+## Unreleased
+
+- Locations: optional `location`, shown in the calendar and in search results
+- Reminders: choose in the event dialog how long before an event to be reminded. Shown as a browser notification or a notice in the calendar while it is open. Reminders are personal per user
+- Search over title, location and description with jump to the event. Custom adapters can implement `search`, otherwise the component searches the last and next year
+- iCalendar export and import (.ics) in the calendar settings. Importing again updates events with the same `uid`, recurring events, exceptions, reminders and attendees are kept
+- Attendees in team calendars with responses yes, maybe and no. Unanswered events are striped, declined ones crossed out
+- The calendar you were in is restored after a reload
+- New event fields `uid`, `location`, `reminders`, `attendees`, new endpoints `GET /events/search` and `POST /events/:id/response`. Older events and backends without them keep working
+
 ## 1.1.0 – 2026-11-11
 
 - Arrow keys switch to the previous or next day, week, month or year also right after loading and after closing a dialog, not only after clicking into the calendar. With several calendars on a page, the last used one reacts

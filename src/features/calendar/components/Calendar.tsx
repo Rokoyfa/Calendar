@@ -11,18 +11,16 @@ import {
   expandEvents,
   toOccurrenceInput,
   type EditScope,
+  type CalendarEvent,
   type EventInput,
   type EventOccurrence,
   type EventPeriod,
 } from '../../../utils/event.ts'
-import {
-  DeleteEventModal,
-  EventModal,
-  getScopeOptions,
-  RecurrenceScopeModal,
-  useEvents,
-} from '../../events/index.ts'
+import { DeleteEventModal, EventModal, getScopeOptions, RecurrenceScopeModal, useEvents } from '../../events/index.ts'
+import { CurrentUserEmailContext } from '../context/CurrentUserContext.ts'
 import { DraggingEventContext } from '../context/DragContext.ts'
+import { useAttendeeCandidates, type AttendeeCandidateLoader } from '../hooks/useAttendeeCandidates.ts'
+import { EventSearchModal } from './EventSearchModal.tsx'
 import { EventSourcesContext, NO_EVENT_SOURCES } from '../context/EventSourcesContext.ts'
 import { useCalendarView } from '../hooks/useCalendarView.ts'
 import { useEventDrag, type DragPreview } from '../hooks/useEventDrag.ts'
@@ -54,6 +52,8 @@ type CalendarProps = {
   initialView?: CalendarView
   headerContext?: ReactNode
   headerAccessory?: ReactNode
+  currentUserEmail?: string | null
+  loadAttendeeCandidates?: AttendeeCandidateLoader
 }
 
 type PendingDrop = { occurrence: EventOccurrence; period: EventPeriod; options: EditScope[] }
@@ -66,13 +66,15 @@ export function Calendar({
   initialView,
   headerContext,
   headerAccessory,
+  currentUserEmail = null,
+  loadAttendeeCandidates,
 }: CalendarProps) {
   const i18n = useI18n()
   const now = useNow()
   const today = toISODate(now)
   const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
     useCalendarView(initialView)
-  const { events, error, createEvent, updateEvent, deleteEvent } = useEvents({
+  const { events, error, createEvent, updateEvent, deleteEvent, respond } = useEvents({
     ...range,
     calendarIds,
     targetCalendarId,
@@ -92,7 +94,9 @@ export function Calendar({
   const segmentsByDate = useMemo(() => {
     const shown = dragPreview
       ? occurrences.map((occurrence) =>
-          occurrence.occurrenceKey === dragPreview.occurrenceKey ? { ...occurrence, ...dragPreview.period } : occurrence,
+          occurrence.occurrenceKey === dragPreview.occurrenceKey
+            ? { ...occurrence, ...dragPreview.period }
+            : occurrence,
         )
       : occurrences
     return groupSegmentsByDate(shown, range)
@@ -100,6 +104,9 @@ export function Calendar({
   const mainRef = useRef<HTMLElement>(null)
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [eventToDelete, setEventToDelete] = useState<EventOccurrence | null>(null)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const editorCalendarId = editor ? (editor.occurrence?.calendarId ?? targetCalendarId) : null
+  const attendeeCandidates = useAttendeeCandidates(loadAttendeeCandidates, editorCalendarId)
 
   useArrowKeyNavigation({ onPrevious: previous, onNext: next })
 
@@ -112,7 +119,8 @@ export function Calendar({
 
   const openCreateRange = useCallback(
     ({ first, last }: SlotRange) => {
-      if (canCreate) setEditor({ initialValue: createEventInputForSlots(first, last, viewerTimeZone), occurrence: null })
+      if (canCreate)
+        setEditor({ initialValue: createEventInputForSlots(first, last, viewerTimeZone), occurrence: null })
     },
     [canCreate, viewerTimeZone],
   )
@@ -127,6 +135,15 @@ export function Calendar({
   const openEdit = useCallback((occurrence: EventOccurrence) => {
     setEditor({ initialValue: toOccurrenceInput(occurrence), occurrence })
   }, [])
+
+  const openSearchResult = (event: CalendarEvent, date: string) => {
+    setIsSearchOpen(false)
+    goToDate(date)
+    const occurrence = expandEvents([event], date, date, viewerTimeZone).find(
+      (candidate) => candidate.occurrenceDate === date,
+    )
+    if (occurrence) openEdit(occurrence)
+  }
 
   const handleSave = async (input: EventInput, scope: EditScope) => {
     if (editor?.occurrence) await updateEvent(editor.occurrence, input, scope)
@@ -174,67 +191,88 @@ export function Calendar({
 
   return (
     <EventSourcesContext value={eventSources}>
-      <DraggingEventContext value={dragPreview?.occurrenceKey ?? null}>
-      <CalendarHeader
-        view={view}
-        title={title}
-        subtitle={subtitle}
-        onViewChange={setView}
-        onPrevious={previous}
-        onNext={next}
-        onToday={goToToday}
-        onCreateEvent={canCreate ? () => openCreate(view === 'day' ? anchor : today, now.getHours()) : undefined}
-        context={headerContext}
-        accessory={headerAccessory}
-      />
+      <CurrentUserEmailContext value={currentUserEmail}>
+        <DraggingEventContext value={dragPreview?.occurrenceKey ?? null}>
+          <CalendarHeader
+            view={view}
+            title={title}
+            subtitle={subtitle}
+            onViewChange={setView}
+            onPrevious={previous}
+            onNext={next}
+            onToday={goToToday}
+            onSearch={() => setIsSearchOpen(true)}
+            onCreateEvent={canCreate ? () => openCreate(view === 'day' ? anchor : today, now.getHours()) : undefined}
+            context={headerContext}
+            accessory={headerAccessory}
+          />
 
-      <ErrorMessage message={error} className="textCenter" />
-      <ErrorMessage message={dropError} className="textCenter" />
+          <ErrorMessage message={error} className="textCenter" />
+          <ErrorMessage message={dropError} className="textCenter" />
 
-      <main ref={mainRef} className="main scrollArea" data-view={view}>
-        <ViewComponent
-          anchor={anchor}
-          dates={dates}
-          today={today}
-          currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
-          segmentsByDate={segmentsByDate}
-          canCreate={canCreate}
-          onCreate={openCreate}
-          onCreateRange={openCreateRange}
-          onCreateAllDay={openCreateAllDay}
-          onEventSelect={openEdit}
-          onShowDay={(date) => show('day', date)}
-          onShowMonth={(date) => show('month', date)}
-        />
-      </main>
+          <main ref={mainRef} className="main scrollArea" data-view={view}>
+            <ViewComponent
+              anchor={anchor}
+              dates={dates}
+              today={today}
+              currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
+              segmentsByDate={segmentsByDate}
+              canCreate={canCreate}
+              onCreate={openCreate}
+              onCreateRange={openCreateRange}
+              onCreateAllDay={openCreateAllDay}
+              onEventSelect={openEdit}
+              onShowDay={(date) => show('day', date)}
+              onShowMonth={(date) => show('month', date)}
+            />
+          </main>
 
-      {editor && (
-        <EventModal
-          key={editor.occurrence?.occurrenceKey ?? 'new'}
-          initialValue={editor.initialValue}
-          occurrence={editor.occurrence}
-          notice={editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n))}
-          onSave={handleSave}
-          onDelete={editor.occurrence ? () => setEventToDelete(editor.occurrence) : undefined}
-          onClose={() => setEditor(null)}
-        />
-      )}
+          {editor && (
+            <EventModal
+              key={editor.occurrence?.occurrenceKey ?? 'new'}
+              initialValue={editor.initialValue}
+              occurrence={editor.occurrence}
+              attendeeOptions={{
+                candidates: attendeeCandidates,
+                ownEmail: currentUserEmail,
+                onRespond: respond && editor.occurrence ? (status) => respond(editor.occurrence!, status) : undefined,
+              }}
+              notice={editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n))}
+              onSave={handleSave}
+              onDelete={editor.occurrence ? () => setEventToDelete(editor.occurrence) : undefined}
+              onClose={() => setEditor(null)}
+            />
+          )}
 
-      {pendingDrop && (
-        <RecurrenceScopeModal
-          options={pendingDrop.options}
-          onSelect={(scope) => void saveDrop(pendingDrop.occurrence, pendingDrop.period, scope)}
-          onClose={() => {
-            setPendingDrop(null)
-            setDragPreview(null)
-          }}
-        />
-      )}
+          {isSearchOpen && (
+            <EventSearchModal
+              calendarIds={calendarIds}
+              today={today}
+              onSelect={openSearchResult}
+              onClose={() => setIsSearchOpen(false)}
+            />
+          )}
 
-      {eventToDelete && (
-        <DeleteEventModal occurrence={eventToDelete} onConfirm={handleDelete} onClose={() => setEventToDelete(null)} />
-      )}
-      </DraggingEventContext>
+          {pendingDrop && (
+            <RecurrenceScopeModal
+              options={pendingDrop.options}
+              onSelect={(scope) => void saveDrop(pendingDrop.occurrence, pendingDrop.period, scope)}
+              onClose={() => {
+                setPendingDrop(null)
+                setDragPreview(null)
+              }}
+            />
+          )}
+
+          {eventToDelete && (
+            <DeleteEventModal
+              occurrence={eventToDelete}
+              onConfirm={handleDelete}
+              onClose={() => setEventToDelete(null)}
+            />
+          )}
+        </DraggingEventContext>
+      </CurrentUserEmailContext>
     </EventSourcesContext>
   )
 }

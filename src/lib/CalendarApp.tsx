@@ -4,6 +4,7 @@ import type { CalendarDataSource } from '../data/index.ts'
 import { AuthProvider, useAuth } from '../features/authorization/index.ts'
 import { CalendarsProvider } from '../features/calendars/index.ts'
 import { PreferencesProvider } from '../features/preferences/index.ts'
+import { ReminderNotices } from '../features/reminders/ReminderNotices.tsx'
 import { StorageProvider } from '../features/storage/index.ts'
 import { useI18n, useLocaleGetter } from '../i18n/index.ts'
 import { createCalendarRouter } from '../router.tsx'
@@ -41,8 +42,13 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
   return (
     <StorageProvider repositories={storage}>
       <PreferencesProvider>
-        <CalendarsProvider key={user?.id ?? 'guest'} repository={repositories.calendars}>
+        <CalendarsProvider
+          key={user?.id ?? 'guest'}
+          storageScope={user?.id ?? 'guest'}
+          repository={repositories.calendars}
+        >
           {children}
+          <ReminderNotices />
         </CalendarsProvider>
       </PreferencesProvider>
     </StorageProvider>

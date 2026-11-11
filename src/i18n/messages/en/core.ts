@@ -97,6 +97,7 @@ export const validation = {
   weekdaysRequired: 'Please choose at least one weekday.',
   dateInvalid: 'Please choose a valid date.',
   untilBeforeStart: 'The repetition cannot end before the start date.',
+  locationTooLong: (max: number) => `The location can be at most ${max} characters long.`,
 }
 
 export const colors = {

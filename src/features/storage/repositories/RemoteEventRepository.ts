@@ -1,8 +1,18 @@
 import { encodePathSegment, type ApiClient, type QueryParams } from '../../../utils/api.ts'
-import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
-import type { EventQuery, EventRepository } from '../types/storage.ts'
+import { AppError } from '../../../utils/appError.ts'
+import { parseCalendarEvent, type AttendeeStatus, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
+import type { EventQuery, EventRepository, EventSearchQuery } from '../types/storage.ts'
 
 const EVENTS_PATH = '/events'
+
+const parseEvents = (values: unknown[]) =>
+  values.map(parseCalendarEvent).filter((event): event is CalendarEvent => event !== null)
+
+const parseEvent = (value: unknown) => {
+  const event = parseCalendarEvent(value)
+  if (!event) throw new AppError('unknown')
+  return event
+}
 
 export class RemoteEventRepository implements EventRepository {
   readonly #api: ApiClient
@@ -19,20 +29,30 @@ export class RemoteEventRepository implements EventRepository {
     return this.#query({ seriesId })
   }
 
-  create(calendarId: string, input: EventInput) {
-    return this.#api.post<CalendarEvent>(EVENTS_PATH, { ...input, calendarId })
+  async search({ text, calendarIds }: EventSearchQuery) {
+    return parseEvents(
+      await this.#api.get<unknown[]>(`${EVENTS_PATH}/search`, { query: { q: text, calendarId: calendarIds } }),
+    )
   }
 
-  update(id: string, input: EventInput) {
-    return this.#api.put<CalendarEvent>(this.#eventPath(id), input)
+  async create(calendarId: string, input: EventInput) {
+    return parseEvent(await this.#api.post<unknown>(EVENTS_PATH, { ...input, calendarId }))
+  }
+
+  async update(id: string, input: EventInput) {
+    return parseEvent(await this.#api.put<unknown>(this.#eventPath(id), input))
+  }
+
+  async respond(id: string, status: AttendeeStatus) {
+    return parseEvent(await this.#api.post<unknown>(`${this.#eventPath(id)}/response`, { status }))
   }
 
   remove(id: string) {
     return this.#api.delete(this.#eventPath(id))
   }
 
-  #query(query: QueryParams) {
-    return this.#api.get<CalendarEvent[]>(EVENTS_PATH, { query })
+  async #query(query: QueryParams) {
+    return parseEvents(await this.#api.get<unknown[]>(EVENTS_PATH, { query }))
   }
 
   #eventPath(id: string) {

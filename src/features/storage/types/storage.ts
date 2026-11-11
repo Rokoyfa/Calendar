@@ -1,9 +1,11 @@
 import type { HexColor } from '../../../utils/color.ts'
 import type { DateRange } from '../../../utils/date.ts'
-import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
+import type { AttendeeStatus, CalendarEvent, EventInput } from '../../../utils/event.ts'
 import type { Preferences } from '../../../utils/preferences.ts'
 
 export type EventQuery = DateRange & { calendarIds: readonly string[] }
+
+export type EventSearchQuery = { text: string; calendarIds: readonly string[] }
 
 export interface EventRepository {
   list(query: EventQuery): Promise<CalendarEvent[]>
@@ -11,6 +13,8 @@ export interface EventRepository {
   create(calendarId: string, input: EventInput): Promise<CalendarEvent>
   update(id: string, input: EventInput): Promise<CalendarEvent>
   remove(id: string): Promise<void>
+  search?(query: EventSearchQuery): Promise<CalendarEvent[]>
+  respond?(id: string, status: AttendeeStatus): Promise<CalendarEvent>
 }
 
 export interface ColorRepository {

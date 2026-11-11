@@ -1,5 +1,6 @@
 import { useI18n } from '../../../i18n/index.ts'
 import type { ClassNameValue } from '../../../utils/classNames.ts'
+import { useOwnAttendance } from '../context/CurrentUserContext.ts'
 import { useIsDragging } from '../context/DragContext.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import { getSegmentAttributes } from '../utils/eventLabels.ts'
@@ -9,6 +10,15 @@ export function useSegmentAttributes(segment: EventSegment, ...classNames: Class
   const i18n = useI18n()
   const source = useEventSource(segment.event)
   const isDragging = useIsDragging(segment.event.occurrenceKey)
-  const { style, ...attributes } = getSegmentAttributes(segment, source, i18n, ...classNames, isDragging && 'eventDragging')
+  const attendance = useOwnAttendance(segment.event)
+  const { style, ...attributes } = getSegmentAttributes(
+    segment,
+    source,
+    i18n,
+    ...classNames,
+    isDragging && 'eventDragging',
+    attendance === 'declined' && 'eventDeclined',
+    attendance === 'needsAction' && 'eventUnanswered',
+  )
   return { i18n, source, isDragging, style, attributes }
 }

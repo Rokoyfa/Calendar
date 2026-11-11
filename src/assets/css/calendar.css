@@ -258,12 +258,14 @@ button.columnHeader:hover {
 }
 
 .eventTime,
-.eventSource {
+.eventSource,
+.eventLocation {
   font-size: var(--font-size-sm);
   opacity: 0.9;
 }
 
-.eventSource {
+.eventSource,
+.eventLocation {
   flex: none;
   overflow: hidden;
   white-space: nowrap;
@@ -615,4 +617,78 @@ button.miniDay:hover {
 
 .calendar .slots {
   margin-top: -1px;
+}
+
+.eventNameLocation {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.eventNameLocation::before {
+  content: ' · ';
+}
+
+.eventSearch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.eventSearchResults {
+  display: flex;
+  flex-direction: column;
+  max-height: min(60vh, 480px);
+  overflow-y: auto;
+}
+
+.eventSearchResult {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
+  text-align: left;
+}
+
+.eventSearchResult:hover,
+.eventSearchResult:focus-visible {
+  background-color: var(--color-surface-hover);
+}
+
+.eventSearchColor {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background-color: var(--event-color, var(--color-blue));
+}
+
+.eventSearchText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.eventSearchTitle {
+  font-weight: 600;
+}
+
+.eventSearchMeta {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.eventDeclined {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.eventUnanswered {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 6px,
+    color-mix(in srgb, var(--color-bg) 22%, transparent) 6px 12px
+  );
 }

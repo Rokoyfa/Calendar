@@ -100,6 +100,7 @@ const validation: Messages['validation'] = {
   weekdaysRequired: 'Wybierz co najmniej jeden dzień tygodnia.',
   dateInvalid: 'Wybierz prawidłową datę.',
   untilBeforeStart: 'Powtarzanie nie może kończyć się przed datą rozpoczęcia.',
+  locationTooLong: (max) => `Miejsce może mieć maksymalnie ${max} znaków.`,
 }
 
 const colors: Messages['colors'] = { blue: 'Niebieski', red: 'Czerwony', green: 'Zielony', yellow: 'Żółty' }
@@ -142,6 +143,15 @@ const calendar: Messages['calendar'] = {
   moreEvents: (count) => `+${count} więcej`,
   fromCalendar: (name) => `Z kalendarza „${name}”`,
   sharedEventNotice: (source) => `${source}. Wszyscy członkowie widzą zmiany.`,
+  dismiss: 'Zamknij',
+  search: {
+    open: 'Szukaj',
+    title: 'Szukaj wydarzeń',
+    placeholder: 'Tytuł, miejsce lub opis',
+    hint: 'Wpisz co najmniej 2 znaki.',
+    empty: 'Nie znaleziono wydarzeń.',
+    searching: 'Wyszukiwanie …',
+  },
 }
 
 const events: Messages['events'] = {
@@ -187,6 +197,21 @@ const events: Messages['events'] = {
   lastOccurrence: 'Ostatnie wydarzenie',
   after: 'Po',
   occurrences: { one: 'wydarzeniu', many: 'wydarzeniach' },
+  location: 'Miejsce',
+  reminder: 'Przypomnienie',
+  noReminder: 'Bez przypomnienia',
+  reminderAtStart: 'Na początku',
+  reminderBefore: (duration) => `${duration} wcześniej`,
+  reminderDue: (title, time) => `${title} zaczyna się o ${time}`,
+  reminderBlocked: 'Powiadomienia są zablokowane w tej przeglądarce. Przypomnienia pojawiają się tylko, gdy kalendarz jest otwarty.',
+  attendees: 'Uczestnicy',
+  addAttendee: 'Dodaj uczestnika',
+  removeAttendee: (name) => `Usuń ${name}`,
+  allMembersInvited: 'Wszyscy członkowie są zaproszeni.',
+  attendeeStatus: { needsAction: 'Brak odpowiedzi', accepted: 'Akceptuje', tentative: 'Może', declined: 'Odmawia' },
+  yourResponse: 'Twoja odpowiedź',
+  respond: { accepted: 'Tak', tentative: 'Może', declined: 'Nie' },
+  attendeeSummary: (accepted, total) => `Zaakceptowało: ${accepted} z ${total}`,
 }
 
 const storage: Messages['storage'] = {
@@ -438,7 +463,7 @@ const calendars: Messages['calendars'] = {
     notFound: 'Ten kalendarz nie istnieje lub nie masz już do niego dostępu.',
     tabsLabel: 'Sekcje ustawień kalendarza',
     withCount: (label, count) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'Ogólne', members: 'Członkowie', invitations: 'Zaproszenia', danger: 'Strefa zagrożenia' },
+    tabs: { general: 'Ogólne', members: 'Członkowie', invitations: 'Zaproszenia', danger: 'Strefa zagrożenia', exchange: 'Import i eksport' },
     displayTitle: 'Wyświetlanie',
     displayDescription: 'Dotyczy tylko Ciebie. Inni członkowie ustawiają to sami.',
     personalTitle: 'Kalendarz osobisty',
@@ -496,6 +521,18 @@ const calendars: Messages['calendars'] = {
     deleting: 'Usuwanie …',
     deleteMessage: (team, count) =>
       `„${team}” zostanie usunięty ze wszystkimi kalendarzami, wydarzeniami i zaproszeniami, także dla wszystkich członków (${count}). Tej operacji nie można cofnąć.`,
+  },
+  ical: {
+    title: 'Import i eksport',
+    description: 'Wymieniaj wydarzenia z innymi aplikacjami kalendarza jako plik iCalendar (.ics). Ponowny import aktualizuje wcześniej zaimportowane wydarzenia.',
+    exportLabel: 'Eksportuj jako .ics',
+    exporting: 'Eksportowanie …',
+    importLabel: 'Importuj plik .ics',
+    importing: 'Importowanie …',
+    imported: (created, updated) => `Dodano: ${created}, zaktualizowano: ${updated}.`,
+    skipped: (count) => `Pominięto nieczytelne wpisy: ${count}.`,
+    importFailed: 'Plik nie jest prawidłowym plikiem iCalendar.',
+    noEvents: 'Ten kalendarz nie ma jeszcze wydarzeń.',
   },
   transfer: {
     title: 'Przekaż własność',

@@ -5,7 +5,7 @@ import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
 import { useI18n } from '../../../i18n/index.ts'
 import { getViewOptions } from '../constants/views.ts'
 import type { CalendarView } from '../types/view.ts'
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from '../../../components/Icons.tsx'
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, SearchIcon } from '../../../components/Icons.tsx'
 
 type CalendarHeaderProps = {
   view: CalendarView
@@ -16,6 +16,7 @@ type CalendarHeaderProps = {
   onNext: () => void
   onToday: () => void
   onCreateEvent?: () => void
+  onSearch?: () => void
   context?: ReactNode
   accessory?: ReactNode
 }
@@ -29,6 +30,7 @@ export function CalendarHeader({
   onNext,
   onToday,
   onCreateEvent,
+  onSearch,
   context,
   accessory,
 }: CalendarHeaderProps) {
@@ -59,6 +61,11 @@ export function CalendarHeader({
       <div className="headerActions">
         <SegmentedControl label={m.views.label} value={view} options={getViewOptions(m)} onChange={onViewChange} />
         <span className="headerCreate">
+          {onSearch && (
+            <IconButton label={m.calendar.search.open} plain onClick={onSearch}>
+              <SearchIcon size={18} />
+            </IconButton>
+          )}
           {onCreateEvent && (
             <IconButton label={m.calendar.newEvent} onClick={onCreateEvent}>
               <PlusIcon size={16} />

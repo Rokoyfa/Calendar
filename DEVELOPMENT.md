@@ -487,6 +487,24 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 - **Herausgelöste Einzeltermine** gehören weiter zur Serie: Sie werden mit „Alle Termine“ bzw. „Dieser und alle folgenden“ gelöscht, und wechseln bei einer Aufteilung zur neuen Serie.
 - Wird ein Termin in eine andere Woche verschoben, springt der Kalender nach dem Speichern dorthin
 
+### Ort, Erinnerungen, Teilnehmer
+
+- **Ort** (`location`, bis 200 Zeichen): im Dialog unter dem Titel. Im Raster ab 90 Minuten in eigener Zeile, darunter hinter dem Titel, in der Monatsansicht hinter dem Titel, im Tooltip und in der Suche.
+- **Erinnerung** (`reminders`, Minuten vor Beginn, bis zu 5, im Dialog wird eine eingestellt): Auswahl von „Zum Beginn“ bis „1 Woche vorher“, Texte über `format.duration` (Intl, je Sprache richtig gebeugt). Erinnerungen sind persönlich: das Test-Backend speichert sie je Nutzer (`remindersByUser`) und liefert nur die eigenen. Solange das Widget offen ist, lädt `features/reminders/useReminders.ts` alle fünf Minuten die nächsten vier Wochen aller Kalender und plant die fälligen Erinnerungen. Gezeigt wird eine Browser-Benachrichtigung (Erlaubnis wird beim Wählen einer Erinnerung angefragt) oder sonst ein Hinweis unten rechts. Bereits gezeigte Erinnerungen merkt sich der Browser zwei Tage lang, damit mehrere Tabs nicht doppelt erinnern. E-Mails bei geschlossenem Kalender sind Sache des Backends.
+- **Teilnehmer** (`attendees`, nur in Teamkalendern): im Dialog aus den Mitgliedern des Kalenders hinzufügen und entfernen. Wer selbst Teilnehmer ist, antwortet mit Ja, Vielleicht oder Nein (`POST /events/:id/response`, sofort gespeichert, auch mit Leserechten). Unbeantwortete Termine sind schraffiert, abgesagte durchgestrichen.
+
+### Suche
+
+Die Lupe im Kopf öffnet die Suche über Titel, Ort und Beschreibung der angezeigten Kalender (ab 2 Zeichen, 250 ms Verzögerung). Treffer stehen nach dem nächsten Vorkommen sortiert, vergangene danach. Ein Klick springt zum Datum und öffnet den Termin. Das Backend sucht über `GET /events/search`. Adapter ohne `search` werden über das letzte und nächste Jahr aus `GET /events` durchsucht (`features/calendar/utils/search.ts`).
+
+### Import und Export (iCalendar)
+
+In den Kalender-Einstellungen (Tab „Import & Export“, beim persönlichen Kalender als Abschnitt). Export lädt alle Termine des Kalenders als `.ics`, Import braucht das Recht zum Anlegen. `utils/ical.ts` schreibt und liest iCalendar: Ganztägig, Zeitzonen (`TZID`, UTC), Serien (`RRULE` mit FREQ, INTERVAL, BYDAY, UNTIL, COUNT), Ausnahmen (`EXDATE`, abgelöste Termine über `RECURRENCE-ID`), Ort, Beschreibung, Erinnerungen (`VALARM`) und Teilnehmer. Nicht unterstützte Regeln werden als einzelner Termin übernommen. Beim Import werden Termine mit bekannter `uid` aktualisiert (Farbe bleibt), neue angelegt, ungültige übersprungen (`features/events/utils/icalExchange.ts`).
+
+### Zuletzt gewählter Kalender
+
+Der aktive Kalender wird je Nutzer im Browser gespeichert (`calendar.activeCalendar.v1.<userId>`) und nach dem Neuladen wiederhergestellt. Bis die Kalender geladen sind, werden keine Termine des persönlichen Kalenders angezeigt. Gibt es den Kalender nicht mehr, gilt wieder der persönliche.
+
 ### Termine verschieben
 
 - Termin **mindestens 1 Sekunde gedrückt halten** (Maus oder Finger), dann ziehen. Kürzeres Drücken oder Bewegen vorher verschiebt nichts, ein normaler Klick öffnet den Dialog.
@@ -623,7 +641,9 @@ Standardmäßig wird **nur der localStorage** des Browsers verwendet. Die Daten 
 type CalendarEvent = {
   id: string
   calendarId: string
+  uid: string
   title: string
+  location: string
   startDate: string
   start: string
   endDate: string
@@ -636,6 +656,8 @@ type CalendarEvent = {
   excludedDates: string[]
   seriesId: string | null
   originalDate: string | null
+  reminders: number[]
+  attendees: Attendee[]
   createdAt: string
   updatedAt: string
 }
@@ -772,6 +794,9 @@ src/
 │  ├─ color.ts                 Hex-Farben, lesbare Schriftfarbe
 │  ├─ date.ts                  Datums- und Zeitfunktionen, Prüfung und Formatierung
 │  ├─ error.ts                 Fehlermeldungen
+│  ├─ ical.ts                  iCalendar (.ics) schreiben und lesen
+│  ├─ notifications.ts         Erlaubnis für Browser-Benachrichtigungen
+│  ├─ reminders.ts             fällige Erinnerungen aus Terminen berechnen
 │  ├─ event.ts                 Termin-Typen, Farben (Klasse/Style samt weiterer Klassen), Validierung, Vorkommen eines Termins
 │  ├─ number.ts                Ganzzahl-Prüfung mit Bereich
 │  ├─ object.ts                Felder übernehmen, Wert aus fester Liste prüfen (isOneOf)
@@ -791,22 +816,24 @@ src/
    │                           gemeinsame Attribute von Terminblock und Termin-Chip
    │                           (components/MiniMonth: kleiner Monat für Jahresansicht und Kalender-Vorschau)
    ├─ events/                  Termine anlegen, bearbeiten, löschen
-   │  ├─ components/           EventModal, DeleteEventModal, ColorPicker, RecurrenceFields, RecurrenceScopeModal, ScopeButtons, CustomColorSettings
+   │  ├─ components/           EventModal, DeleteEventModal, ColorPicker, RecurrenceFields, RecurrenceScopeModal, ScopeButtons, CustomColorSettings,
+   │  │                        TimeZoneField, ReminderField, AttendeesField
    │  ├─ constants/            Farben, Bezeichnungen der Bearbeitungsbereiche
    │  ├─ hooks/                useEvents, useCustomColors
    │  ├─ types/
-   │  └─ utils/                Serien-Aktionen gegen das Repository, Auswahl der Bereiche
+   │  └─ utils/                Serien-Aktionen gegen das Repository, Auswahl der Bereiche, iCalendar-Import (icalExchange)
+   ├─ reminders/               Erinnerungen planen und anzeigen, solange das Widget offen ist (useReminders, ReminderNotices)
    ├─ storage/                 Datenspeicherung
    │  ├─ components/           LocalImportPrompt: lokale Termine ins Konto übernehmen
    │  ├─ context/              StorageContext, StorageProvider (inkl. version/invalidate zum Neuladen)
-   │  ├─ hooks/                useStorage, useEventRepository, useColorRepository, usePreferencesRepository
+   │  ├─ hooks/                useStorage, useColorRepository, usePreferencesRepository
    │  ├─ repositories/         Local- und Remote-Umsetzungen für Termine, Einstellungen und Farben; createRepositories wählt je nach Modus
    │  ├─ types/
    │  └─ utils/                LocalStorageValue/LocalStorageList (localStorage lesen/schreiben), copyEvents (Termine samt Serien-Verknüpfung kopieren), createRemoteApi
    ├─ calendars/               Kalenderauswahl (persönlich und Teams), vorbereitet für den Team-Modus
    │  ├─ components/           CalendarSwitcher (Button und Fenster), ActiveCalendarIndicator (Plakette im Kopf),
    │  │                        CalendarPreview (Monatsvorschau), InvitationList (offene Einladungen),
-   │  │  ├─ settings/          CalendarSettingsPage mit Allgemein, Mitglieder, Einladungen, Gefahrenbereich
+   │  │  ├─ settings/          CalendarSettingsPage mit Allgemein, Mitglieder, Einladungen, Import & Export, Gefahrenbereich
    │  │                        CalendarSettings (Liste in den Einstellungen, Verlassen)
    │  │  └─ create/            CreateCalendarPage mit den Schritten Details, Farbe, Mitglieder, Überprüfen
    │  ├─ constants/            Persönlicher Kalender, Rangfolge der Rollen (Bezeichnungen in i18n)

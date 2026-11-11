@@ -91,6 +91,7 @@ const validation: Messages['validation'] = {
   weekdaysRequired: 'Kies minstens één dag van de week.',
   dateInvalid: 'Kies een geldige datum.',
   untilBeforeStart: 'De herhaling kan niet eindigen voor de begindatum.',
+  locationTooLong: (max) => `De locatie mag maximaal ${max} tekens lang zijn.`,
 }
 
 const colors: Messages['colors'] = { blue: 'Blauw', red: 'Rood', green: 'Groen', yellow: 'Geel' }
@@ -134,6 +135,15 @@ const calendar: Messages['calendar'] = {
   moreEvents: (count) => `nog ${count}`,
   fromCalendar: (name) => `Uit de agenda ‘${name}’`,
   sharedEventNotice: (source) => `${source}. Alle leden zien wijzigingen.`,
+  dismiss: 'Sluiten',
+  search: {
+    open: 'Zoeken',
+    title: 'Afspraken zoeken',
+    placeholder: 'Titel, locatie of beschrijving',
+    hint: 'Typ minstens 2 tekens.',
+    empty: 'Geen afspraken gevonden.',
+    searching: 'Zoeken …',
+  },
 }
 
 const events: Messages['events'] = {
@@ -180,6 +190,21 @@ const events: Messages['events'] = {
   lastOccurrence: 'Laatste afspraak',
   after: 'Na',
   occurrences: { one: 'afspraak', many: 'afspraken' },
+  location: 'Locatie',
+  reminder: 'Herinnering',
+  noReminder: 'Geen herinnering',
+  reminderAtStart: 'Bij aanvang',
+  reminderBefore: (duration) => `${duration} van tevoren`,
+  reminderDue: (title, time) => `${title} begint om ${time}`,
+  reminderBlocked: 'Meldingen zijn in deze browser geblokkeerd. Herinneringen verschijnen alleen zolang de agenda open is.',
+  attendees: 'Deelnemers',
+  addAttendee: 'Deelnemer toevoegen',
+  removeAttendee: (name) => `${name} verwijderen`,
+  allMembersInvited: 'Alle leden zijn uitgenodigd.',
+  attendeeStatus: { needsAction: 'Geen antwoord', accepted: 'Geaccepteerd', tentative: 'Misschien', declined: 'Afgewezen' },
+  yourResponse: 'Jouw antwoord',
+  respond: { accepted: 'Ja', tentative: 'Misschien', declined: 'Nee' },
+  attendeeSummary: (accepted, total) => `${accepted} van ${total} geaccepteerd`,
 }
 
 const storage: Messages['storage'] = {
@@ -429,7 +454,7 @@ const calendars: Messages['calendars'] = {
     notFound: 'Deze agenda bestaat niet, of je hebt er geen toegang meer toe.',
     tabsLabel: 'Onderdelen van de agenda-instellingen',
     withCount: (label, count) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'Algemeen', members: 'Leden', invitations: 'Uitnodigingen', danger: 'Gevarenzone' },
+    tabs: { general: 'Algemeen', members: 'Leden', invitations: 'Uitnodigingen', danger: 'Gevarenzone', exchange: 'Import en export' },
     displayTitle: 'Weergave',
     displayDescription: 'Geldt alleen voor jou. Andere leden stellen dit zelf in.',
     personalTitle: 'Persoonlijke agenda',
@@ -486,6 +511,18 @@ const calendars: Messages['calendars'] = {
     deleting: 'Verwijderen …',
     deleteMessage: (team, count) =>
       `‘${team}’ wordt verwijderd met alle agenda’s, afspraken en uitnodigingen, ook voor alle ${count} leden. Dit kan niet ongedaan worden gemaakt.`,
+  },
+  ical: {
+    title: 'Import en export',
+    description: 'Wissel afspraken uit met andere agenda-apps als iCalendar-bestand (.ics). Opnieuw importeren werkt eerder geïmporteerde afspraken bij.',
+    exportLabel: 'Exporteren als .ics',
+    exporting: 'Exporteren …',
+    importLabel: '.ics-bestand importeren',
+    importing: 'Importeren …',
+    imported: (created, updated) => `${created} toegevoegd, ${updated} bijgewerkt.`,
+    skipped: (count) => `${count} items konden niet worden gelezen en zijn overgeslagen.`,
+    importFailed: 'Het bestand is geen geldig iCalendar-bestand.',
+    noEvents: 'Deze agenda heeft nog geen afspraken.',
   },
   transfer: {
     title: 'Eigendom overdragen',

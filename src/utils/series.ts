@@ -1,5 +1,6 @@
 import { addDaysToISODate, daysBetween, minISODate } from './date.ts'
 import {
+  createEventUid,
   getActiveOccurrenceDates,
   moveToStartDate,
   NO_SERIES_LINK,
@@ -70,7 +71,7 @@ export const truncateSeries = (series: CalendarEvent, occurrenceDate: string): E
 }
 
 export const continueSeries = (series: CalendarEvent, occurrenceDate: string, input: EventInput): EventInput => {
-  if (input.recurrence === null) return asSingleEvent(input)
+  if (input.recurrence === null) return { ...asSingleEvent(input), uid: createEventUid() }
 
   const shift = getShift(occurrenceDate, input)
   const keepsRule = isSameRecurrence(series.recurrence, input.recurrence)
@@ -82,6 +83,7 @@ export const continueSeries = (series: CalendarEvent, occurrenceDate: string, in
 
   return {
     ...input,
+    uid: createEventUid(),
     recurrence: { ...followShift(series.recurrence, input.recurrence, shift), count: remaining },
     excludedDates: keepsRule
       ? shiftDates(

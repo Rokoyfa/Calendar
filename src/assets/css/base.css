@@ -12,6 +12,7 @@
 }
 
 .calendarRoot {
+  position: relative;
   container: calendar / inline-size;
   height: 100%;
   overflow: auto;

@@ -29,7 +29,7 @@ const routes: RouteObject[] = [
   { path: ROUTES.calendar, element: <CalendarPage /> },
   { path: ROUTES.settings, element: usersOnly(<SettingsPage />) },
   { path: ROUTES.createCalendar, element: teamsOnly(<CreateCalendarPage />) },
-  { path: ROUTES.calendarSettings, element: accountsOnly(<CalendarSettingsPage />) },
+  { path: ROUTES.calendarSettings, element: usersOnly(<CalendarSettingsPage />) },
   { path: ROUTES.login, element: guestOnly(<LoginPage />) },
   { path: ROUTES.register, element: guestOnly(<RegisterPage />) },
   { path: ROUTES.forgotPassword, element: guestOnly(<ForgotPasswordPage />) },

@@ -91,7 +91,9 @@ type CalendarEvent = EventInput & {
 }
 
 type EventInput = {
+  uid: string                   // stable id for iCalendar, shared by a series and its detached events
   title: string                 // 1–100 chars
+  location: string              // max 200 chars, '' if none
   startDate: string             // 'YYYY-MM-DD'
   start: string                 // 'HH:mm' in timeZone
   endDate: string               // inclusive for all-day events
@@ -104,7 +106,11 @@ type EventInput = {
   excludedDates: string[]       // occurrences removed from a series
   seriesId: string | null       // set on an occurrence detached from a series
   originalDate: string | null   // its original date in that series
+  reminders: number[]           // minutes before the start, per user (see below)
+  attendees: Attendee[]
 }
+
+type Attendee = { email: string; name: string; status: 'needsAction' | 'accepted' | 'tentative' | 'declined' }
 
 type Recurrence = {
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
@@ -129,6 +135,8 @@ type Problem = { code: string; message: string }   // every error response
 
 The backend stores series as one event. The component expands occurrences itself.
 
+**Reminders are personal.** Store them per user and event, return only the caller's own `reminders`, and keep other members' reminders when someone saves the event. The component shows reminders while it is open (browser notification or a notice in the calendar). Emails or push messages when it is closed are up to your backend.
+
 ### When the component calls your backend
 
 | Moment | Requests |
@@ -140,6 +148,10 @@ The backend stores series as one event. The component expands occurrences itself
 | Edit only this occurrence | `PUT` the series with the date added to `excludedDates`, then `POST` a detached event with `seriesId` and `originalDate` |
 | Edit this and following | `PUT` the series with `until` set to the day before (and `count: null`), `POST` a new series, `PUT` later detached events to relink them |
 | Delete | single: `PUT` with `excludedDates` · following: `PUT` with `until`, `DELETE` its later detached events · all: `DELETE` detached events, then the series · plain: `DELETE /events/:id` |
+| Search | `GET /events/search?q=…&calendarId=…` (optional: without it the component searches the last and next year via `GET /events`) |
+| Answer as attendee | `POST /events/:id/response` with `{ status }` |
+| Reminders | `GET /events` for the next four weeks of all calendars, every five minutes while the widget is open |
+| Import .ics | `GET /events` for the whole calendar, then `PUT` for known `uid`s and `POST` for new ones |
 | Settings, colors | `PATCH /preferences`, `POST /colors`, `DELETE /colors/:rrggbb` |
 | Sign-in, teams, invitations | `/auth/*`, `/calendars`, `/teams/*`, `/invitations/*`, see the OpenAPI file |
 

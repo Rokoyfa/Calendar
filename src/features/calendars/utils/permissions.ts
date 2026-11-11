@@ -28,16 +28,6 @@ export const getAssignableRoles = (actor: TeamRole) =>
 
 export const getInvitableRoles = (actor: TeamRole) => INVITABLE_ROLES.filter((role) => outranks(actor, role))
 
-const SETTINGS_PERMISSIONS: readonly Permission[] = [
-  'manage_calendars',
-  'manage_team',
-  'invite_members',
-  'manage_members',
-  'delete_team',
-]
-
-export const canOpenSettings = (calendar: CalendarSummary) =>
-  SETTINGS_PERMISSIONS.some((permission) => hasPermission(calendar, permission))
 
 export const getDistinctTeamName = ({ name, teamName }: CalendarSummary) =>
   teamName && teamName !== name ? teamName : null

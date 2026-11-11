@@ -5,6 +5,13 @@ const atMinutes = (minutes: number) =>
 
 const REFERENCE_MONDAY = new Date(2000, 0, 3)
 
+const DURATION_UNITS = [
+  ['week', 7 * 24 * MINUTES_PER_HOUR],
+  ['day', 24 * MINUTES_PER_HOUR],
+  ['hour', MINUTES_PER_HOUR],
+  ['minute', 1],
+] as const
+
 const stripTrailingDot = (label: string) => label.replace(/\.$/, '')
 
 export type Formatter = ReturnType<typeof createFormatter>
@@ -24,6 +31,9 @@ export function createFormatter(locale: string, firstDay: number) {
   const time = format(uses12Hours ? { hour: 'numeric', minute: '2-digit' } : { hour: '2-digit', minute: '2-digit' })
   const hourOnly = format(uses12Hours ? { hour: 'numeric' } : { hour: '2-digit', minute: '2-digit' })
   const list = new Intl.ListFormat(locale, { type: 'conjunction' })
+  const durations = new Map(
+    DURATION_UNITS.map(([unit]) => [unit, new Intl.NumberFormat(locale, { style: 'unit', unit, unitDisplay: 'long' })]),
+  )
   const mondayBasedOrder = Array.from(
     { length: DAYS_PER_WEEK },
     (_, offset) => (firstDay - 1 + offset + DAYS_PER_WEEK) % DAYS_PER_WEEK,
@@ -53,6 +63,10 @@ export function createFormatter(locale: string, firstDay: number) {
     hour: (hour: number) => hourOnly.format(atMinutes(hour * MINUTES_PER_HOUR)),
     compactHour: (hour: number) => (uses12Hours ? `${hour % 12 || 12}${hour < 12 ? 'a' : 'p'}` : String(hour)),
     list: (items: readonly string[]) => list.format(items),
+    duration: (minutes: number) => {
+      const [unit, size] = DURATION_UNITS.find(([, size]) => minutes % size === 0) ?? DURATION_UNITS[3]
+      return durations.get(unit)?.format(minutes / size) ?? String(minutes)
+    },
     shortWeekdays: weekdayLabels(shortWeekday),
     longWeekdays: weekdayLabels(weekday),
     weekdayName: (mondayBasedIndex: number) => weekday.format(addDays(REFERENCE_MONDAY, mondayBasedIndex)),

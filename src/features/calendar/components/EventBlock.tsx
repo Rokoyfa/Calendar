@@ -28,7 +28,8 @@ export function EventBlock({ segment, column, columns, onSelect }: EventBlockPro
 
   return (
     <button type="button" {...attributes} style={blockStyle} onClick={() => onSelect(event)}>
-      <EventTitle event={event} source={source} />
+      <EventTitle event={event} source={source} withLocation={duration < 90} />
+      {event.location && duration >= 90 && <span className="eventLocation">{event.location}</span>}
       {source && duration >= 120 && <span className="eventSource">{source.name}</span>}
       {(duration >= 90 || isDragging) && <span className="eventTime">{formatEventPeriod(event, i18n)}</span>}
       {!segment.continuesAfter && <span className="eventResizeHandle" aria-hidden="true" />}

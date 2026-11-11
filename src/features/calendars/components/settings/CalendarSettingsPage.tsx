@@ -12,6 +12,7 @@ import type { CalendarSummary } from '../../types/calendar.ts'
 import { ShowInPersonalSwitch } from '../ShowInPersonalSwitch.tsx'
 import { hasPermission, isPersonalCalendar } from '../../utils/permissions.ts'
 import { DangerSection } from './DangerSection.tsx'
+import { ExchangeSection } from './ExchangeSection.tsx'
 import { GeneralSection } from './GeneralSection.tsx'
 import { MembersSection } from './MembersSection.tsx'
 import { TeamInvitationsSection } from './TeamInvitationsSection.tsx'
@@ -25,7 +26,7 @@ function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
   )
 }
 
-type TeamTab = 'general' | 'members' | 'invitations' | 'danger'
+type TeamTab = 'general' | 'members' | 'invitations' | 'exchange' | 'danger'
 
 function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
@@ -77,6 +78,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
           },
         ]
       : []),
+    { value: 'exchange', label: settings.tabs.exchange, content: <ExchangeSection calendar={calendar} /> },
     {
       value: 'danger',
       label: settings.tabs.danger,
@@ -114,7 +116,8 @@ export function CalendarSettingsPage() {
     <PageLayout title={settings.pageTitle(calendar.name)} back={back} variant="full">
       {isPersonalCalendar(calendar) ? (
         <>
-          <GeneralSection calendar={calendar} />
+          {hasPermission(calendar, 'manage_calendars') && <GeneralSection calendar={calendar} />}
+          <ExchangeSection calendar={calendar} />
           <PageSection title={settings.personalTitle}>
             <p className="formHint">{settings.personalHint}</p>
           </PageSection>

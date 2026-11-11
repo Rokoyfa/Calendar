@@ -32,9 +32,10 @@ export type {
   ColorRepository,
   EventQuery,
   EventRepository,
+  EventSearchQuery,
   PreferencesRepository,
 } from '../features/storage/index.ts'
-export type { CalendarEvent, EventInput } from '../utils/event.ts'
+export type { Attendee, AttendeeStatus, CalendarEvent, EventInput } from '../utils/event.ts'
 export type { Preferences } from '../utils/preferences.ts'
 export type { Recurrence } from '../utils/recurrence.ts'
 export type { HexColor } from '../utils/color.ts'

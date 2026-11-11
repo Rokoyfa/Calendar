@@ -6,7 +6,7 @@ export { CalendarSettingsPage } from './components/settings/CalendarSettingsPage
 export { CreateCalendarPage } from './components/create/CreateCalendarPage.tsx'
 export { CalendarSwitcher } from './components/CalendarSwitcher.tsx'
 export { ActiveCalendarIndicator } from './components/ActiveCalendarIndicator.tsx'
-export { getSharedCalendars, hasPermission } from './utils/permissions.ts'
+export { getSharedCalendars, hasPermission, isPersonalCalendar } from './utils/permissions.ts'
 export { LocalCalendarRepository } from './repositories/LocalCalendarRepository.ts'
 export { RemoteCalendarRepository } from './repositories/RemoteCalendarRepository.ts'
 export type {

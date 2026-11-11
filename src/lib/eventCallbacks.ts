@@ -15,6 +15,14 @@ export const withEventCallbacks = (
 ): EventRepository => ({
   list: (query) => repository.list(query),
   listSeries: (seriesId) => repository.listSeries(seriesId),
+  search: repository.search && ((query) => repository.search!(query)),
+  respond:
+    repository.respond &&
+    (async (id, status) => {
+      const event = await repository.respond!(id, status)
+      getCallbacks().onEventUpdate?.(event)
+      return event
+    }),
   async create(calendarId, input) {
     const event = await repository.create(calendarId, input)
     getCallbacks().onEventCreate?.(event)

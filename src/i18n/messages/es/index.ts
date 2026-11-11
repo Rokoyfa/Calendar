@@ -91,6 +91,7 @@ const validation: Messages['validation'] = {
   weekdaysRequired: 'Elige al menos un día de la semana.',
   dateInvalid: 'Elige una fecha válida.',
   untilBeforeStart: 'La repetición no puede terminar antes de la fecha de inicio.',
+  locationTooLong: (max) => `La ubicación puede tener como máximo ${max} caracteres.`,
 }
 
 const colors: Messages['colors'] = { blue: 'Azul', red: 'Rojo', green: 'Verde', yellow: 'Amarillo' }
@@ -134,6 +135,15 @@ const calendar: Messages['calendar'] = {
   moreEvents: (count) => `${count} más`,
   fromCalendar: (name) => `Del calendario «${name}»`,
   sharedEventNotice: (source) => `${source}. Todos los miembros ven los cambios.`,
+  dismiss: 'Cerrar',
+  search: {
+    open: 'Buscar',
+    title: 'Buscar eventos',
+    placeholder: 'Título, ubicación o descripción',
+    hint: 'Escribe al menos 2 caracteres.',
+    empty: 'No se han encontrado eventos.',
+    searching: 'Buscando …',
+  },
 }
 
 const events: Messages['events'] = {
@@ -179,6 +189,21 @@ const events: Messages['events'] = {
   lastOccurrence: 'Último evento',
   after: 'Tras',
   occurrences: { one: 'evento', many: 'eventos' },
+  location: 'Ubicación',
+  reminder: 'Recordatorio',
+  noReminder: 'Sin recordatorio',
+  reminderAtStart: 'Al empezar',
+  reminderBefore: (duration) => `${duration} antes`,
+  reminderDue: (title, time) => `${title} empieza a las ${time}`,
+  reminderBlocked: 'Las notificaciones están bloqueadas en este navegador. Los recordatorios solo aparecen mientras el calendario está abierto.',
+  attendees: 'Participantes',
+  addAttendee: 'Añadir participante',
+  removeAttendee: (name) => `Quitar a ${name}`,
+  allMembersInvited: 'Todos los miembros están invitados.',
+  attendeeStatus: { needsAction: 'Sin respuesta', accepted: 'Aceptado', tentative: 'Quizás', declined: 'Rechazado' },
+  yourResponse: 'Tu respuesta',
+  respond: { accepted: 'Sí', tentative: 'Quizás', declined: 'No' },
+  attendeeSummary: (accepted, total) => `${accepted} de ${total} han aceptado`,
 }
 
 const storage: Messages['storage'] = {
@@ -428,7 +453,7 @@ const calendars: Messages['calendars'] = {
     notFound: 'Este calendario no existe o ya no tienes acceso.',
     tabsLabel: 'Secciones de la configuración del calendario',
     withCount: (label, count) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'General', members: 'Miembros', invitations: 'Invitaciones', danger: 'Zona de peligro' },
+    tabs: { general: 'General', members: 'Miembros', invitations: 'Invitaciones', danger: 'Zona de peligro', exchange: 'Importar y exportar' },
     displayTitle: 'Visualización',
     displayDescription: 'Solo se aplica a ti. Los demás miembros lo configuran ellos mismos.',
     personalTitle: 'Calendario personal',
@@ -486,6 +511,18 @@ const calendars: Messages['calendars'] = {
     deleting: 'Eliminando …',
     deleteMessage: (team, count) =>
       `«${team}» se eliminará con todos los calendarios, eventos e invitaciones, también para los ${count} miembros. No se puede deshacer.`,
+  },
+  ical: {
+    title: 'Importar y exportar',
+    description: 'Intercambia eventos con otras aplicaciones de calendario como archivo iCalendar (.ics). Si vuelves a importar, se actualizan los eventos ya importados.',
+    exportLabel: 'Exportar como .ics',
+    exporting: 'Exportando …',
+    importLabel: 'Importar archivo .ics',
+    importing: 'Importando …',
+    imported: (created, updated) => `${created} añadidos, ${updated} actualizados.`,
+    skipped: (count) => `${count} entradas no se han podido leer y se han omitido.`,
+    importFailed: 'El archivo no es un archivo iCalendar válido.',
+    noEvents: 'Este calendario aún no tiene eventos.',
   },
   transfer: {
     title: 'Transferir propiedad',

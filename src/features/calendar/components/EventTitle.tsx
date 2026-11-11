@@ -5,14 +5,16 @@ import type { EventSource } from '../types/eventSource.ts'
 type EventTitleProps = {
   event: EventOccurrence
   source?: EventSource
+  withLocation?: boolean
 }
 
-export function EventTitle({ event, source }: EventTitleProps) {
+export function EventTitle({ event, source, withLocation = false }: EventTitleProps) {
   return (
     <span className="eventName">
       {source && <TeamIcon size={11} />}
       {event.recurrence && <RepeatIcon size={11} />}
       {event.title}
+      {withLocation && event.location && <span className="eventNameLocation">{event.location}</span>}
     </span>
   )
 }

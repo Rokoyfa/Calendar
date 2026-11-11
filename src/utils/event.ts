@@ -32,11 +32,23 @@ export type EventColor = PresetEventColor | HexColor
 
 export const EVENT_TITLE_MAX_LENGTH = 100
 export const EVENT_DESCRIPTION_MAX_LENGTH = 2000
+export const EVENT_LOCATION_MAX_LENGTH = 200
+export const MAX_REMINDERS = 5
+export const MAX_REMINDER_MINUTES = 4 * 7 * MINUTES_PER_DAY
+export const MAX_ATTENDEES = 100
+
+export const ATTENDEE_STATUSES = ['needsAction', 'accepted', 'tentative', 'declined'] as const
+
+export type AttendeeStatus = (typeof ATTENDEE_STATUSES)[number]
+
+export type Attendee = { email: string; name: string; status: AttendeeStatus }
 
 export type CalendarEvent = {
   id: string
   calendarId: string
+  uid: string
   title: string
+  location: string
   startDate: string
   start: string
   endDate: string
@@ -49,12 +61,16 @@ export type CalendarEvent = {
   excludedDates: string[]
   seriesId: string | null
   originalDate: string | null
+  reminders: number[]
+  attendees: Attendee[]
   createdAt: string
   updatedAt: string
 }
 
 const EVENT_INPUT_KEYS = [
+  'uid',
   'title',
+  'location',
   'startDate',
   'start',
   'endDate',
@@ -67,6 +83,8 @@ const EVENT_INPUT_KEYS = [
   'excludedDates',
   'seriesId',
   'originalDate',
+  'reminders',
+  'attendees',
 ] as const satisfies readonly (keyof CalendarEvent)[]
 
 export type EventInput = Pick<CalendarEvent, (typeof EVENT_INPUT_KEYS)[number]>
@@ -108,6 +126,33 @@ export const getEventColorAttributes = (
         style: { '--event-color': color, '--event-text': getReadableTextColor(color) } as CSSProperties,
       }
 
+const isReminder = (value: unknown): value is number =>
+  Number.isInteger(value) && (value as number) >= 0 && (value as number) <= MAX_REMINDER_MINUTES
+
+const parseReminders = (value: unknown) =>
+  Array.isArray(value) ? [...new Set(value.filter(isReminder))].sort((a, b) => a - b).slice(0, MAX_REMINDERS) : []
+
+const parseAttendee = (value: unknown): Attendee | null => {
+  if (typeof value !== 'object' || value === null) return null
+  const { email, name, status } = value as Record<string, unknown>
+  if (typeof email !== 'string' || email === '') return null
+  return {
+    email: email.toLowerCase(),
+    name: typeof name === 'string' ? name : '',
+    status: isOneOf(ATTENDEE_STATUSES, status) ? status : 'needsAction',
+  }
+}
+
+const parseAttendees = (value: unknown) =>
+  Array.isArray(value)
+    ? value
+        .map(parseAttendee)
+        .filter((attendee): attendee is Attendee => attendee !== null)
+        .slice(0, MAX_ATTENDEES)
+    : []
+
+export const createEventUid = () => crypto.randomUUID()
+
 export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
   if (typeof value !== 'object' || value === null) return null
   const { date, ...rest } = value as Record<string, unknown>
@@ -138,7 +183,9 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
   return {
     id: rest.id,
     calendarId: rest.calendarId,
+    uid: typeof rest.uid === 'string' && rest.uid !== '' ? rest.uid : rest.id,
     title: rest.title,
+    location: typeof rest.location === 'string' ? rest.location : '',
     startDate,
     start: allDay ? ALL_DAY_TIME : start,
     endDate,
@@ -151,6 +198,8 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
     excludedDates,
     seriesId: originalDate === null ? null : seriesId,
     originalDate,
+    reminders: parseReminders(rest.reminders),
+    attendees: parseAttendees(rest.attendees),
     createdAt: typeof rest.createdAt === 'string' ? rest.createdAt : '',
     updatedAt: typeof rest.updatedAt === 'string' ? rest.updatedAt : '',
   }
@@ -164,7 +213,9 @@ export const createEventInputForSlots = (first: HourSlot, last: HourSlot, timeZo
   const end = (last.hour + 1) * MINUTES_PER_HOUR
   const endsNextDay = end >= MINUTES_PER_DAY
   return {
+    uid: createEventUid(),
     title: '',
+    location: '',
     startDate: first.date,
     start: minutesToTime(first.hour * MINUTES_PER_HOUR),
     endDate: endsNextDay ? addDaysToISODate(last.date, 1) : last.date,
@@ -176,6 +227,8 @@ export const createEventInputForSlots = (first: HourSlot, last: HourSlot, timeZo
     recurrence: null,
     excludedDates: [],
     ...NO_SERIES_LINK,
+    reminders: [],
+    attendees: [],
   }
 }
 
@@ -195,7 +248,9 @@ export const toEventInput = (event: CalendarEvent): EventInput => pick(event, EV
 export const normalizeEventInput = (input: EventInput): EventInput => ({
   ...input,
   title: input.title.trim(),
+  location: input.location.trim(),
   description: input.description.trim(),
+  reminders: parseReminders(input.reminders),
   ...(input.allDay ? { start: ALL_DAY_TIME, end: ALL_DAY_TIME, timeZone: null } : {}),
   ...(input.recurrence ? NO_SERIES_LINK : { excludedDates: [] }),
 })
@@ -313,6 +368,9 @@ export const validateEventInput = (input: EventInput, m: Messages): EventValidat
     const recurrenceErrors = validateRecurrence(input.recurrence, input.startDate, m)
     if (hasRecurrenceErrors(recurrenceErrors)) errors.recurrence = recurrenceErrors
   }
+
+  if (input.location.length > EVENT_LOCATION_MAX_LENGTH)
+    errors.location = validation.locationTooLong(EVENT_LOCATION_MAX_LENGTH)
 
   if (input.description.length > EVENT_DESCRIPTION_MAX_LENGTH)
     errors.description = validation.descriptionTooLong(EVENT_DESCRIPTION_MAX_LENGTH)

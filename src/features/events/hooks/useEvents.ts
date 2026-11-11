@@ -1,8 +1,9 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { AppError } from '../../../utils/appError.ts'
 import { addDaysToISODate } from '../../../utils/date.ts'
 import {
+  type AttendeeStatus,
   type CalendarEvent,
   type EditScope,
   type EventInput,
@@ -16,12 +17,12 @@ const NO_EVENTS: CalendarEvent[] = []
 type UseEventsOptions = EventQuery & { targetCalendarId: string }
 
 export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEventsOptions) {
-  const { events: repository, version } = useStorage()
+  const { events: repository, version, invalidate } = useStorage()
   const load = useCallback(
     () => repository.list({ from: addDaysToISODate(from, -1), to: addDaysToISODate(to, 1), calendarIds }),
     [repository, from, to, calendarIds],
   )
-  const { data: events, error, isLoading, reload } = useAsyncResource(load, NO_EVENTS, version)
+  const { data: events, error, isLoading } = useAsyncResource(load, NO_EVENTS, version)
 
   const findSeries = useCallback(
     (occurrence: EventOccurrence) => {
@@ -37,10 +38,10 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
       try {
         return await operation()
       } finally {
-        reload()
+        invalidate()
       }
     },
-    [reload],
+    [invalidate],
   )
 
   const createEvent = useCallback(
@@ -60,5 +61,15 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
     [repository, withReload, findSeries],
   )
 
-  return { events, error, isLoading, reload, createEvent, updateEvent, deleteEvent }
+  const respond = useMemo(
+    () =>
+      repository.respond &&
+      ((occurrence: EventOccurrence, status: AttendeeStatus) =>
+        withReload(async () => {
+          await repository.respond!(occurrence.id, status)
+        })),
+    [repository, withReload],
+  )
+
+  return { events, error, isLoading, reload: invalidate, createEvent, updateEvent, deleteEvent, respond }
 }

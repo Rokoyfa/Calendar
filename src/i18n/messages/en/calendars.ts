@@ -123,7 +123,7 @@ export const calendars = {
     notFound: 'This calendar does not exist, or you no longer have access to it.',
     tabsLabel: 'Calendar settings sections',
     withCount: (label: string, count: number) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'General', members: 'Members', invitations: 'Invitations', danger: 'Danger zone' },
+    tabs: { general: 'General', members: 'Members', invitations: 'Invitations', danger: 'Danger zone', exchange: 'Import & export' },
     displayTitle: 'Display',
     displayDescription: 'Applies only to you. Other members set this themselves.',
     personalTitle: 'Personal calendar',
@@ -180,6 +180,18 @@ export const calendars = {
     deleting: 'Deleting …',
     deleteMessage: (team: string, count: number) =>
       `“${team}” will be deleted with all calendars, events and invitations, for all ${count} members as well. This cannot be undone.`,
+  },
+  ical: {
+    title: 'Import and export',
+    description: 'Exchange events with other calendar apps as an iCalendar file (.ics). Importing again updates events that were imported before.',
+    exportLabel: 'Export as .ics',
+    exporting: 'Exporting …',
+    importLabel: 'Import .ics file',
+    importing: 'Importing …',
+    imported: (created: number, updated: number) => `${created} added, ${updated} updated.`,
+    skipped: (count: number) => `${count} entries could not be read and were skipped.`,
+    importFailed: 'The file is not a valid iCalendar file.',
+    noEvents: 'This calendar has no events yet.',
   },
   transfer: {
     title: 'Transfer ownership',

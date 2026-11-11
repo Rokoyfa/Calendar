@@ -18,4 +18,13 @@ export const calendar: Messages['calendar'] = {
   moreEvents: (count) => `+${count} weitere`,
   fromCalendar: (name) => `Aus dem Kalender „${name}“`,
   sharedEventNotice: (source) => `${source}. Änderungen sehen alle Mitglieder.`,
+  dismiss: 'Schließen',
+  search: {
+    open: 'Suchen',
+    title: 'Termine suchen',
+    placeholder: 'Titel, Ort oder Beschreibung',
+    hint: 'Mindestens 2 Zeichen eingeben.',
+    empty: 'Keine Termine gefunden.',
+    searching: 'Suche läuft …',
+  },
 }

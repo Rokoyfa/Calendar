@@ -37,9 +37,9 @@ export const RECURRENCE_COUNT_MAX = 999
 
 const MAX_EMPTY_PERIODS = 1000
 
-const getISODateWeekday = (isoDate: string) => getWeekdayIndex(fromISODate(isoDate))
+export const getISODateWeekday = (isoDate: string) => getWeekdayIndex(fromISODate(isoDate))
 
-const getWeekdayOrdinal = (isoDate: string) => Math.ceil(fromISODate(isoDate).getDate() / DAYS_PER_WEEK)
+export const getWeekdayOrdinal = (isoDate: string) => Math.ceil(fromISODate(isoDate).getDate() / DAYS_PER_WEEK)
 
 const isInLastWeekOfMonth = (isoDate: string) => {
   const date = fromISODate(isoDate)

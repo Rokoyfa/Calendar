@@ -27,7 +27,7 @@ export function EventChip({ segment, row, isContinuation = false, onSelect }: Ev
       onClick={withoutPropagation(() => onSelect(event))}
     >
       {!continuesBefore && !event.allDay && <span className="eventChipTime">{i18n.format.time(start)}</span>}
-      <EventTitle event={event} source={source} />
+      <EventTitle event={event} source={source} withLocation />
     </button>
   )
 }

@@ -15,6 +15,7 @@ export const getSourceText = (source: EventSource, { m }: LabelI18n) => m.calend
 const getEventTooltip = (event: EventOccurrence, source: EventSource | undefined, i18n: LabelI18n) =>
   [
     `${formatEventPeriod(event, i18n)}: ${event.title}`,
+    event.location,
     getRecurrenceText(event, i18n),
     source && getSourceText(source, i18n),
   ]

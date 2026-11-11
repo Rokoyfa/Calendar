@@ -6,7 +6,7 @@ import {
   type CalendarEvent,
   type EventInput,
 } from '../../../utils/event.ts'
-import type { EventQuery, EventRepository } from '../types/storage.ts'
+import type { EventQuery, EventRepository, EventSearchQuery } from '../types/storage.ts'
 import { LocalStorageList } from '../utils/localStorageList.ts'
 
 const DEFAULT_STORAGE_KEY = 'calendar.events.v1'
@@ -32,6 +32,17 @@ export class LocalEventRepository implements EventRepository {
     return this.#events
       .read()
       .filter((event) => calendarIds.includes(event.calendarId) && eventOccursInRange(event, from, to))
+  }
+
+  async search({ text, calendarIds }: EventSearchQuery) {
+    const needle = text.trim().toLocaleLowerCase()
+    return this.#events
+      .read()
+      .filter(
+        (event) =>
+          calendarIds.includes(event.calendarId) &&
+          [event.title, event.location, event.description].some((field) => field.toLocaleLowerCase().includes(needle)),
+      )
   }
 
   async listAll() {

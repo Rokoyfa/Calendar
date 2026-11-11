@@ -14,6 +14,7 @@ import { isISODate, isTime } from '../../../utils/date.ts'
 import {
   ALL_DAY_TIME,
   EVENT_DESCRIPTION_MAX_LENGTH,
+  EVENT_LOCATION_MAX_LENGTH,
   formatEventPeriod,
   EVENT_TITLE_MAX_LENGTH,
   hasValidationErrors,
@@ -24,6 +25,7 @@ import {
   type EditScope,
   type EventInput,
   type EventOccurrence,
+  type AttendeeStatus,
   type EventPeriod,
   type EventValidationErrors,
 } from '../../../utils/event.ts'
@@ -33,6 +35,8 @@ import { getScopeOptions } from '../utils/scopeOptions.ts'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RecurrenceFields } from './RecurrenceFields.tsx'
 import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
+import { AttendeesField, type AttendeeCandidate } from './AttendeesField.tsx'
+import { ReminderField } from './ReminderField.tsx'
 import { TimeZoneField } from './TimeZoneField.tsx'
 
 const DEFAULT_START = '09:00'
@@ -41,8 +45,15 @@ const DEFAULT_END = '10:00'
 const isValidPeriod = ({ startDate, start, endDate, end }: EventPeriod) =>
   isISODate(startDate) && isISODate(endDate) && isTime(start) && isTime(end)
 
+export type AttendeeOptions = {
+  candidates: readonly AttendeeCandidate[]
+  ownEmail: string | null
+  onRespond?: (status: Exclude<AttendeeStatus, 'needsAction'>) => Promise<void>
+}
+
 type EventModalProps = {
   initialValue: EventInput
+  attendeeOptions?: AttendeeOptions
   occurrence?: EventOccurrence | null
   notice?: string
   onSave: (input: EventInput, scope: EditScope) => Promise<void>
@@ -55,7 +66,15 @@ type PendingSave = {
   options: EditScope[]
 }
 
-export function EventModal({ initialValue, occurrence = null, notice, onSave, onDelete, onClose }: EventModalProps) {
+export function EventModal({
+  initialValue,
+  attendeeOptions,
+  occurrence = null,
+  notice,
+  onSave,
+  onDelete,
+  onClose,
+}: EventModalProps) {
   const i18n = useI18n()
   const { m } = i18n
   const viewerTimeZone = useViewerTimeZone()
@@ -149,6 +168,16 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
             data-autofocus
           />
 
+          <TextField
+            label={m.events.location}
+            name="location"
+            autoComplete="off"
+            maxLength={EVENT_LOCATION_MAX_LENGTH}
+            value={values.location}
+            error={errors.location}
+            onChange={(location) => setField('location', location)}
+          />
+
           <Switch label={m.events.allDay} checked={values.allDay} onChange={setAllDay} />
 
           <DateTimeField
@@ -182,6 +211,18 @@ export function EventModal({ initialValue, occurrence = null, notice, onSave, on
             <TimeZoneField value={values.timeZone} onChange={(timeZone) => setField('timeZone', timeZone)} />
           )}
           {viewerHint && <p className="formHint">{viewerHint}</p>}
+
+          {attendeeOptions && (attendeeOptions.candidates.length > 0 || values.attendees.length > 0) && (
+            <AttendeesField
+              attendees={values.attendees}
+              candidates={attendeeOptions.candidates}
+              ownEmail={attendeeOptions.ownEmail}
+              onChange={(attendees) => setField('attendees', attendees)}
+              onRespond={occurrence ? attendeeOptions.onRespond : undefined}
+            />
+          )}
+
+          <ReminderField value={values.reminders} onChange={(reminders) => setField('reminders', reminders)} />
 
           <RecurrenceFields
             value={values.recurrence}

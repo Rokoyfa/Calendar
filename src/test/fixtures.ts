@@ -12,7 +12,9 @@ export const recurrence = (overrides: Partial<Recurrence> = {}): Recurrence => (
 })
 
 export const eventInput = (overrides: Partial<EventInput> = {}): EventInput => ({
+  uid: 'event-uid',
   title: 'Event',
+  location: '',
   startDate: '2026-11-02',
   start: '09:00',
   endDate: '2026-11-02',
@@ -24,6 +26,8 @@ export const eventInput = (overrides: Partial<EventInput> = {}): EventInput => (
   recurrence: null,
   excludedDates: [],
   ...NO_SERIES_LINK,
+  reminders: [],
+  attendees: [],
   ...overrides,
 })
 

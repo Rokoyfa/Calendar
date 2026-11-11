@@ -11,8 +11,9 @@ import { useI18n } from '../../../i18n/index.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
 import { ShowInPersonalSwitch } from './ShowInPersonalSwitch.tsx'
-import { canLeaveCalendar, canOpenSettings, getCalendarKindLabel, isPersonalCalendar } from '../utils/permissions.ts'
+import { canLeaveCalendar, getCalendarKindLabel, isPersonalCalendar } from '../utils/permissions.ts'
 import { useHost } from '../../../context/HostContext.ts'
+import { useAuth } from '../../authorization/index.ts'
 
 function LeaveCalendarModal({ calendar, onClose }: { calendar: CalendarSummary; onClose: () => void }) {
   const { m } = useI18n()
@@ -47,16 +48,14 @@ function CalendarRow({ calendar, onLeave }: { calendar: CalendarSummary; onLeave
           {calendar.description && <span className="itemRowMeta">{calendar.description}</span>}
         </span>
         <span className="badge">{roles[calendar.role]}</span>
-        {canOpenSettings(calendar) && (
-          <Link
-            to={calendarSettingsPath(calendar.id)}
-            className="iconLink"
-            aria-label={list.settingsFor(calendar.name)}
-            title={m.common.settings}
-          >
-            <SettingsIcon size={20} />
-          </Link>
-        )}
+        <Link
+          to={calendarSettingsPath(calendar.id)}
+          className="iconLink"
+          aria-label={list.settingsFor(calendar.name)}
+          title={m.common.settings}
+        >
+          <SettingsIcon size={20} />
+        </Link>
       </div>
       {isPersonalCalendar(calendar) ? (
         <p className="formHint">{list.personalHint}</p>
@@ -83,6 +82,8 @@ export function CalendarSettings() {
   const { list } = m.calendars
   const { teams } = useHost()
   const { calendars, error } = useCalendars()
+  const { user } = useAuth()
+  const canUseTeams = teams && user !== null
   const [calendarToLeave, setCalendarToLeave] = useState<CalendarSummary | null>(null)
 
   return (
@@ -96,10 +97,10 @@ export function CalendarSettings() {
           <CalendarRow key={calendar.id} calendar={calendar} onLeave={() => setCalendarToLeave(calendar)} />
         ))}
       </ul>
-      {teams && calendars.every(isPersonalCalendar) && (
+      {canUseTeams && calendars.every(isPersonalCalendar) && (
         <p className="emptyHint">{list.noTeamCalendars}</p>
       )}
-      {teams && (
+      {canUseTeams && (
         <div className="formActions">
           <ButtonLink to={ROUTES.createCalendar}>{list.create}</ButtonLink>
         </div>

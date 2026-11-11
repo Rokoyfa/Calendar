@@ -73,7 +73,7 @@ paths:
               properties:
                 password: { type: string }
       responses:
-        '204': { description: Deleted, session cookie cleared }
+        '204': { description: 'Deleted, session cookie cleared' }
         '403': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
   /auth/me/password:
@@ -167,7 +167,7 @@ paths:
       summary: Sign out
       security: []
       responses:
-        '204': { description: Session ended, cookie cleared }
+        '204': { description: 'Session ended, cookie cleared' }
   /auth/password-reset:
     post:
       tags: [Auth]
@@ -271,6 +271,49 @@ paths:
                     calendarId: { type: string }
       responses:
         '201': { $ref: '#/components/responses/Event' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /events/search:
+    get:
+      tags: [Events]
+      summary: Search events
+      description: |
+        Events and series whose title, location or description contain `q` (case-insensitive), in the given calendars.
+        Optional for custom backends: without it the component searches the events of the last and next year itself.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2 } }
+        - name: calendarId
+          in: query
+          required: true
+          schema: { type: array, items: { type: string } }
+          style: form
+          explode: true
+      responses:
+        '200':
+          description: Matching events, at most 50
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CalendarEvent' } }
+        '400': { $ref: '#/components/responses/Problem' }
+  /events/{id}/response:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Events]
+      summary: Answer an event invitation
+      description: Sets the status of the attendee whose email is the signed-in user's. Allowed for every attendee with read access. `403` if the user is not an attendee.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: '#/components/schemas/AttendeeStatus' }
+      responses:
+        '200': { $ref: '#/components/responses/Event' }
         '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -787,7 +830,12 @@ components:
       type: object
       required: [title, startDate, start, endDate, end, description, color, recurrence, excludedDates, seriesId, originalDate]
       properties:
+        uid:
+          type: string
+          maxLength: 255
+          description: Stable id for iCalendar exchange. Kept when importing again; the backend creates one if missing. Detached occurrences share the uid of their series.
         title: { type: string, minLength: 1, maxLength: 100 }
+        location: { type: string, maxLength: 200, default: '' }
         startDate: { $ref: '#/components/schemas/ISODate' }
         start: { $ref: '#/components/schemas/Time' }
         endDate: { $ref: '#/components/schemas/ISODate' }
@@ -810,6 +858,29 @@ components:
         originalDate:
           description: For a detached occurrence, its original date in the series
           oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }]
+        reminders:
+          type: array
+          maxItems: 5
+          default: []
+          items: { type: integer, minimum: 0, maximum: 40320 }
+          description: |
+            Minutes before the start (for all-day events before 00:00 of the first day) at which the signed-in user wants to be reminded.
+            Personal: store them per user and return only the caller's own reminders. Changing them never affects other members.
+        attendees:
+          type: array
+          maxItems: 100
+          default: []
+          items: { $ref: '#/components/schemas/Attendee' }
+    AttendeeStatus:
+      type: string
+      enum: [needsAction, accepted, tentative, declined]
+    Attendee:
+      type: object
+      required: [email, name, status]
+      properties:
+        email: { type: string, format: email }
+        name: { type: string }
+        status: { $ref: '#/components/schemas/AttendeeStatus' }
     CalendarEvent:
       allOf:
         - $ref: '#/components/schemas/EventInput'

@@ -11,6 +11,7 @@ export type {
   ColorRepository,
   EventQuery,
   EventRepository,
+  EventSearchQuery,
   PreferencesRepository,
   StorageMode,
 } from './types/storage.ts'

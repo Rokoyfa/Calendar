@@ -16,4 +16,13 @@ export const calendar = {
   moreEvents: (count: number) => `+${count} more`,
   fromCalendar: (name: string) => `From the calendar “${name}”`,
   sharedEventNotice: (source: string) => `${source}. All members see changes.`,
+  dismiss: 'Dismiss',
+  search: {
+    open: 'Search',
+    title: 'Search events',
+    placeholder: 'Title, location or description',
+    hint: 'Type at least 2 characters.',
+    empty: 'No events found.',
+    searching: 'Searching …',
+  },
 }

@@ -123,7 +123,7 @@ export const calendars: Messages['calendars'] = {
     notFound: 'Diesen Kalender gibt es nicht, oder du hast keinen Zugriff mehr.',
     tabsLabel: 'Bereiche der Kalender-Einstellungen',
     withCount: (label, count) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'Allgemein', members: 'Mitglieder', invitations: 'Einladungen', danger: 'Gefahrenbereich' },
+    tabs: { general: 'Allgemein', members: 'Mitglieder', invitations: 'Einladungen', danger: 'Gefahrenbereich', exchange: 'Import & Export' },
     displayTitle: 'Anzeige',
     displayDescription: 'Gilt nur für dich. Andere Mitglieder stellen das selbst ein.',
     personalTitle: 'Persönlicher Kalender',
@@ -180,6 +180,18 @@ export const calendars: Messages['calendars'] = {
     deleting: 'Wird gelöscht …',
     deleteMessage: (team, count) =>
       `„${team}“ wird mit allen Kalendern, Terminen und Einladungen gelöscht, auch für alle ${count} Mitglieder. Das kann nicht rückgängig gemacht werden.`,
+  },
+  ical: {
+    title: 'Import und Export',
+    description: 'Termine mit anderen Kalender-Apps als iCalendar-Datei (.ics) austauschen. Ein erneuter Import aktualisiert bereits importierte Termine.',
+    exportLabel: 'Als .ics exportieren',
+    exporting: 'Exportiere …',
+    importLabel: '.ics-Datei importieren',
+    importing: 'Importiere …',
+    imported: (created, updated) => `${created} hinzugefügt, ${updated} aktualisiert.`,
+    skipped: (count) => `${count} Einträge konnten nicht gelesen werden und wurden übersprungen.`,
+    importFailed: 'Die Datei ist keine gültige iCalendar-Datei.',
+    noEvents: 'Dieser Kalender hat noch keine Termine.',
   },
   transfer: {
     title: 'Leitung übertragen',

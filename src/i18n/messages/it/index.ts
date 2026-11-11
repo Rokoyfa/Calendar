@@ -91,6 +91,7 @@ const validation: Messages['validation'] = {
   weekdaysRequired: 'Scegli almeno un giorno della settimana.',
   dateInvalid: 'Scegli una data valida.',
   untilBeforeStart: 'La ripetizione non può terminare prima della data di inizio.',
+  locationTooLong: (max) => `Il luogo può contenere al massimo ${max} caratteri.`,
 }
 
 const colors: Messages['colors'] = { blue: 'Blu', red: 'Rosso', green: 'Verde', yellow: 'Giallo' }
@@ -136,6 +137,15 @@ const calendar: Messages['calendar'] = {
   moreEvents: (count) => `altri ${count}`,
   fromCalendar: (name) => `Dal calendario «${name}»`,
   sharedEventNotice: (source) => `${source}. Tutti i membri vedono le modifiche.`,
+  dismiss: 'Chiudi',
+  search: {
+    open: 'Cerca',
+    title: 'Cerca eventi',
+    placeholder: 'Titolo, luogo o descrizione',
+    hint: 'Digita almeno 2 caratteri.',
+    empty: 'Nessun evento trovato.',
+    searching: 'Ricerca …',
+  },
 }
 
 const events: Messages['events'] = {
@@ -181,6 +191,21 @@ const events: Messages['events'] = {
   lastOccurrence: 'Ultimo evento',
   after: 'Dopo',
   occurrences: { one: 'evento', many: 'eventi' },
+  location: 'Luogo',
+  reminder: 'Promemoria',
+  noReminder: 'Nessun promemoria',
+  reminderAtStart: 'All’inizio',
+  reminderBefore: (duration) => `${duration} prima`,
+  reminderDue: (title, time) => `${title} inizia alle ${time}`,
+  reminderBlocked: 'Le notifiche sono bloccate in questo browser. I promemoria compaiono solo mentre il calendario è aperto.',
+  attendees: 'Partecipanti',
+  addAttendee: 'Aggiungi partecipante',
+  removeAttendee: (name) => `Rimuovi ${name}`,
+  allMembersInvited: 'Tutti i membri sono invitati.',
+  attendeeStatus: { needsAction: 'Nessuna risposta', accepted: 'Accettato', tentative: 'Forse', declined: 'Rifiutato' },
+  yourResponse: 'La tua risposta',
+  respond: { accepted: 'Sì', tentative: 'Forse', declined: 'No' },
+  attendeeSummary: (accepted, total) => `${accepted} su ${total} hanno accettato`,
 }
 
 const storage: Messages['storage'] = {
@@ -429,7 +454,7 @@ const calendars: Messages['calendars'] = {
     notFound: 'Questo calendario non esiste oppure non hai più accesso.',
     tabsLabel: 'Sezioni delle impostazioni del calendario',
     withCount: (label, count) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'Generale', members: 'Membri', invitations: 'Inviti', danger: 'Zona pericolosa' },
+    tabs: { general: 'Generale', members: 'Membri', invitations: 'Inviti', danger: 'Zona pericolosa', exchange: 'Importa ed esporta' },
     displayTitle: 'Visualizzazione',
     displayDescription: 'Vale solo per te. Gli altri membri lo impostano da soli.',
     personalTitle: 'Calendario personale',
@@ -486,6 +511,18 @@ const calendars: Messages['calendars'] = {
     deleting: 'Eliminazione …',
     deleteMessage: (team, count) =>
       `«${team}» verrà eliminato con tutti i calendari, eventi e inviti, anche per tutti i ${count} membri. L’operazione è irreversibile.`,
+  },
+  ical: {
+    title: 'Importa ed esporta',
+    description: 'Scambia eventi con altre app di calendario come file iCalendar (.ics). Importando di nuovo, gli eventi già importati vengono aggiornati.',
+    exportLabel: 'Esporta come .ics',
+    exporting: 'Esportazione …',
+    importLabel: 'Importa file .ics',
+    importing: 'Importazione …',
+    imported: (created, updated) => `${created} aggiunti, ${updated} aggiornati.`,
+    skipped: (count) => `${count} voci non leggibili sono state saltate.`,
+    importFailed: 'Il file non è un file iCalendar valido.',
+    noEvents: 'Questo calendario non ha ancora eventi.',
   },
   transfer: {
     title: 'Trasferisci proprietà',
