@@ -1,10 +1,7 @@
-import { useI18n } from '../../../i18n/index.ts'
 import { withoutPropagation } from '../../../utils/dom.ts'
 import type { EventOccurrence } from '../../../utils/event.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
-import { useIsDragging } from '../context/DragContext.ts'
-import { useEventSource } from '../hooks/useEventSource.ts'
-import { getSegmentAttributes } from '../utils/eventLabels.ts'
+import { useSegmentAttributes } from '../hooks/useSegmentAttributes.ts'
 import { EventTitle } from './EventTitle.tsx'
 
 type EventChipProps = {
@@ -16,17 +13,10 @@ type EventChipProps = {
 
 export function EventChip({ segment, row, isContinuation = false, onSelect }: EventChipProps) {
   const { event, start, continuesBefore } = segment
-  const i18n = useI18n()
-  const source = useEventSource(event)
-  const isDragging = useIsDragging(event.occurrenceKey)
-
-  const { style, ...attributes } = getSegmentAttributes(
+  const { i18n, source, style, attributes } = useSegmentAttributes(
     segment,
-    source,
-    i18n,
     'eventChip',
     isContinuation && 'eventChipContinuation',
-    isDragging && 'eventDragging',
   )
 
   return (

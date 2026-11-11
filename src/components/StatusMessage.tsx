@@ -6,7 +6,7 @@ type StatusMessageProps = {
   className?: string
 }
 
-export function StatusMessage({ message, tone = 'error', className }: StatusMessageProps) {
+function StatusMessage({ message, tone = 'error', className }: StatusMessageProps) {
   if (!message) return null
   return (
     <p

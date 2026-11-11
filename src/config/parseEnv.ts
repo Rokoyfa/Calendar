@@ -1,10 +1,6 @@
 import { DEFAULT_CONFIG, STORAGE_MODES, type CalendarConfig, type StorageMode } from '../lib/defaults.ts'
 import { isOneOf } from '../utils/object.ts'
 
-export type AppStorageMode = StorageMode
-
-export type AppEnv = CalendarConfig
-
 const DEFAULT_API_BASE_URL = DEFAULT_CONFIG.apiBaseUrl
 const DEFAULT_API_TIMEOUT_MS = DEFAULT_CONFIG.apiTimeoutMs
 const TRUE_VALUES = ['true', '1', 'yes', 'on']
@@ -14,10 +10,10 @@ type RawEnv = Record<string, string | undefined>
 
 const clean = (value: string | undefined) => value?.trim() || undefined
 
-export function parseEnv(raw: RawEnv): AppEnv {
+export function parseEnv(raw: RawEnv): CalendarConfig {
   const errors: string[] = []
 
-  const readStorageMode = (): AppStorageMode => {
+  const readStorageMode = (): StorageMode => {
     const value = clean(raw.VITE_STORAGE_MODE)?.toLowerCase() ?? 'local'
     if (isOneOf(STORAGE_MODES, value)) return value
     errors.push(`VITE_STORAGE_MODE must be "local" or "remote", but is "${value}".`)
@@ -51,7 +47,7 @@ export function parseEnv(raw: RawEnv): AppEnv {
     return fallback
   }
 
-  const env: AppEnv = {
+  const env: CalendarConfig = {
     storageMode: readStorageMode(),
     apiBaseUrl: readApiBaseUrl(),
     apiTimeoutMs: readTimeout(),

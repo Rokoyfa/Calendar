@@ -6,11 +6,11 @@ export type Language = string
 
 export const DEFAULT_LANGUAGE: BuiltInLanguage = 'en'
 
-export const DEFAULT_LOCALE = 'en-US'
+const DEFAULT_LOCALE = 'en-US'
 
 export const AUTO_LOCALE = 'auto'
 
-export const BUILT_IN_LOCALES = [
+const BUILT_IN_LOCALES = [
   'en-US',
   'en-GB',
   'de-DE',

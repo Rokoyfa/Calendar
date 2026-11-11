@@ -1,14 +1,7 @@
 import { FormField } from './FormField.tsx'
-import { SegmentedControl } from './SegmentedControl.tsx'
+import { SegmentedControl, type SegmentedControlProps } from './SegmentedControl.tsx'
 
-type SegmentedFieldProps<T extends string> = {
-  label: string
-  value: T
-  options: readonly { value: T; label: string }[]
-  onChange: (value: T) => void
-}
-
-export function SegmentedField<T extends string>({ label, ...controlProps }: SegmentedFieldProps<T>) {
+export function SegmentedField<T extends string>({ label, ...controlProps }: SegmentedControlProps<T>) {
   return (
     <FormField as="fieldset" label={label}>
       <SegmentedControl label={label} {...controlProps} />

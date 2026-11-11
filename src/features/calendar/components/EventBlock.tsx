@@ -1,11 +1,8 @@
 import type { CSSProperties } from 'react'
-import { useI18n } from '../../../i18n/index.ts'
 import { formatEventPeriod, type EventOccurrence } from '../../../utils/event.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
-import { useIsDragging } from '../context/DragContext.ts'
-import { useEventSource } from '../hooks/useEventSource.ts'
+import { useSegmentAttributes } from '../hooks/useSegmentAttributes.ts'
 import { getVisibleDuration } from '../utils/eventGeometry.ts'
-import { getSegmentAttributes } from '../utils/eventLabels.ts'
 import { EventTitle } from './EventTitle.tsx'
 
 type EventBlockProps = {
@@ -19,28 +16,18 @@ const getSizeClass = (duration: number) => (duration <= 30 ? 'veryShortEvent' : 
 
 export function EventBlock({ segment, column, columns, onSelect }: EventBlockProps) {
   const { event, start } = segment
-  const i18n = useI18n()
-  const source = useEventSource(event)
-  const isDragging = useIsDragging(event.occurrenceKey)
   const duration = getVisibleDuration(segment)
-  const { style: colorStyle, ...attributes } = getSegmentAttributes(
-    segment,
-    source,
-    i18n,
-    'event',
-    getSizeClass(duration),
-    isDragging && 'eventDragging',
-  )
-  const style = {
+  const { i18n, source, isDragging, style, attributes } = useSegmentAttributes(segment, 'event', getSizeClass(duration))
+  const blockStyle = {
     '--event-start': start,
     '--event-duration': duration,
     '--event-column': column,
     '--event-columns': columns,
-    ...colorStyle,
+    ...style,
   } as CSSProperties
 
   return (
-    <button type="button" {...attributes} style={style} onClick={() => onSelect(event)}>
+    <button type="button" {...attributes} style={blockStyle} onClick={() => onSelect(event)}>
       <EventTitle event={event} source={source} />
       {source && duration >= 120 && <span className="eventSource">{source.name}</span>}
       {(duration >= 90 || isDragging) && <span className="eventTime">{formatEventPeriod(event, i18n)}</span>}

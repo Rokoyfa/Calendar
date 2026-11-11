@@ -16,7 +16,7 @@ const EMPTY_REQUEST: PasswordResetRequestInput = { email: '' }
 export function ForgotPasswordPage() {
   const { m } = useI18n()
   const { requestPasswordReset } = useAuth()
-  const { values, errors, setField, handleSubmit, isPending, isSuccess, error } = useForm({
+  const { values, bind, handleSubmit, isPending, isSuccess, error } = useForm({
     initialValues: EMPTY_REQUEST,
     validate: (input) => validatePasswordResetRequest(input, m),
     prepare: ({ email }) => ({ email: normalizeEmail(email) }),
@@ -41,9 +41,7 @@ export function ForgotPasswordPage() {
         <Form onSubmit={handleSubmit}>
           <p className="formHint">{m.auth.forgot.hint}</p>
           <EmailField
-            value={values.email}
-            error={errors.email}
-            onChange={(email) => setField('email', email)}
+            {...bind('email')}
             autoFocus
           />
           <ActionFeedback error={error} />

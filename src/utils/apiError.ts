@@ -10,13 +10,13 @@ type ApiErrorOptions = {
   cause?: unknown
 }
 
-export const getServerMessage = (body: unknown) => {
+const getServerMessage = (body: unknown) => {
   if (typeof body !== 'object' || body === null) return null
   const message = (body as Record<string, unknown>).message
   return typeof message === 'string' && message.trim() ? message.trim() : null
 }
 
-export const getServerCode = (body: unknown) => {
+const getServerCode = (body: unknown) => {
   if (typeof body !== 'object' || body === null) return undefined
   const code = (body as Record<string, unknown>).code
   return isErrorCode(code) ? code : undefined

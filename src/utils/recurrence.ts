@@ -19,7 +19,7 @@ export const RECURRENCE_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly'] a
 
 export type RecurrenceFrequency = (typeof RECURRENCE_FREQUENCIES)[number]
 
-export const MONTHLY_MODES = ['dayOfMonth', 'weekdayOfMonth', 'lastWeekdayOfMonth'] as const
+const MONTHLY_MODES = ['dayOfMonth', 'weekdayOfMonth', 'lastWeekdayOfMonth'] as const
 
 export type MonthlyMode = (typeof MONTHLY_MODES)[number]
 
@@ -37,19 +37,19 @@ export const RECURRENCE_COUNT_MAX = 999
 
 const MAX_EMPTY_PERIODS = 1000
 
-export const getISODateWeekday = (isoDate: string) => getWeekdayIndex(fromISODate(isoDate))
+const getISODateWeekday = (isoDate: string) => getWeekdayIndex(fromISODate(isoDate))
 
 const getWeekdayOrdinal = (isoDate: string) => Math.ceil(fromISODate(isoDate).getDate() / DAYS_PER_WEEK)
 
-export const isInLastWeekOfMonth = (isoDate: string) => {
+const isInLastWeekOfMonth = (isoDate: string) => {
   const date = fromISODate(isoDate)
   return date.getDate() + DAYS_PER_WEEK > daysInMonth(date.getFullYear(), date.getMonth())
 }
 
-export const isRecurrenceFrequency = (value: unknown): value is RecurrenceFrequency =>
+const isRecurrenceFrequency = (value: unknown): value is RecurrenceFrequency =>
   isOneOf(RECURRENCE_FREQUENCIES, value)
 
-export const isMonthlyMode = (value: unknown): value is MonthlyMode => isOneOf(MONTHLY_MODES, value)
+const isMonthlyMode = (value: unknown): value is MonthlyMode => isOneOf(MONTHLY_MODES, value)
 
 export const createRecurrence = (frequency: RecurrenceFrequency, startDate: string): Recurrence => ({
   frequency,

@@ -494,7 +494,7 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 - Monatsansicht und Ganztags-Zeile: tageweise.
 - Serien fragen nach dem Loslassen „nur dieser / dieser und folgende / alle“. Bei „folgende“ und „alle“ wandert der Wochentag wöchentlicher Serien mit.
 - Escape bricht ab. Ohne Recht zum Anlegen ist Verschieben aus.
-- Umsetzung: `features/calendar/hooks/useEventDrag.ts` (Zeiger, Touch, Scrollen), `utils/eventDrag.ts` (Rechnen, getestet)
+- Umsetzung: `features/calendar/hooks/useEventDrag.ts` (was gezogen wird), `utils/eventDrag.ts` (Rechnen, getestet). Gedrückt halten, Maus und Touch, Mitscrollen am Rand, Escape und das Unterdrücken des Klicks danach stecken in `hooks/usePressDrag.ts`, das auch das Aufziehen eines Zeitraums nutzt.
 
 ### Darstellung von Terminen
 
@@ -513,7 +513,7 @@ In der Tages- und Wochenansicht lässt sich ein Zeitraum direkt im Raster auswä
 - Während des Ziehens ist der Bereich blau hinterlegt, in der ersten Spalte steht der Zeitraum. Am oberen und unteren Rand scrollt das Raster mit.
 - Ohne Recht zum Anlegen (Betrachter) ist die Auswahl aus.
 
-Die Logik steckt in `useSlotSelection` (Maus über Pointer-Events, Touch über Touch-Events, damit das Scrollen erst nach dem langen Drücken gesperrt wird) und `utils/slotSelection.ts`. Den Termin baut `createEventInputForSlots` aus erster und letzter Stunde.
+Die Logik steckt in `useSlotSelection` und `utils/slotSelection.ts`, die Gesten selbst in `usePressDrag` (Maus über Pointer-Events sofort, Touch über Touch-Events nach langem Drücken, damit das Scrollen erst dann gesperrt wird). Den Termin baut `createEventInputForSlots` aus erster und letzter Stunde.
 
 ### Termine und Kalender
 
@@ -761,7 +761,7 @@ src/
 │  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand, Erfolg und Fehlermeldung
 │  ├─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel, apply() übernimmt das Ergebnis einer Änderung
 │  ├─ useForm.ts               Ganzes Formular: Werte, Prüfung, Vorbereiten, Absenden mit Lade-, Erfolgs- und Fehlerzustand
-│  ├─ useFormState.ts          Formularwerte, Fehler je Feld, Prüfung beim Absenden, Zurücksetzen
+│  ├─ useFormState.ts          Formularwerte, Fehler je Feld, `bind(name)` für value/error/onChange, Prüfung beim Absenden, Zurücksetzen
 │  └─ useRequiredContext.ts    Context lesen und Fehler werfen, wenn der Provider fehlt
 ├─ utils/
 │  ├─ api.ts                   API-Client (fetch mit JSON, Query, Token, Timeout, Abbruch)

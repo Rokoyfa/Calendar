@@ -27,7 +27,7 @@ export function TimeGridView({
 }: CalendarViewProps) {
   const i18n = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
-  const { selection, isClickSuppressed } = useSlotSelection(containerRef, canCreate, onCreateRange)
+  const selection = useSlotSelection(containerRef, canCreate, onCreateRange)
   const range = useMemo(() => (selection ? toSlotRange(selection) : null), [selection])
   const rangeLabel = range ? formatEventPeriod(createEventInputForSlots(range.first, range.last, null), i18n) : null
   const isSingleDay = dates.length === 1
@@ -52,9 +52,7 @@ export function TimeGridView({
             segments={lanes.timed.get(date) ?? NO_SEGMENTS}
             allDaySegments={lanes.allDay.get(date) ?? NO_ALL_DAY}
             selection={hours && { ...hours, label: date === range.first.date ? rangeLabel : null }}
-            onSlotSelect={(slotDate, hour) => {
-              if (!isClickSuppressed()) onCreate(slotDate, hour)
-            }}
+            onSlotSelect={onCreate}
             onAllDaySelect={(allDayDate) => {
               if (canCreate) onCreateAllDay(allDayDate)
             }}

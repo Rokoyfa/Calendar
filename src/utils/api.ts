@@ -1,12 +1,12 @@
 import { ApiError } from './apiError.ts'
 
-export type QueryValue = string | number | boolean | null | undefined
+type QueryValue = string | number | boolean | null | undefined
 
 export type QueryParams = Record<string, QueryValue | readonly QueryValue[]>
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-export type ApiRequestOptions = {
+type ApiRequestOptions = {
   query?: QueryParams
   body?: unknown
   headers?: HeadersInit
@@ -43,7 +43,7 @@ const isRawBody = (body: unknown): body is BodyInit =>
   body instanceof ArrayBuffer ||
   typeof body === 'string'
 
-export const buildQueryString = (query: QueryParams = {}) => {
+const buildQueryString = (query: QueryParams = {}) => {
   const params = new URLSearchParams()
   for (const [key, raw] of Object.entries(query)) {
     const values: readonly QueryValue[] = Array.isArray(raw) ? raw : [raw as QueryValue]
@@ -53,7 +53,7 @@ export const buildQueryString = (query: QueryParams = {}) => {
   return queryString ? `?${queryString}` : ''
 }
 
-export const joinUrl = (baseUrl: string, path: string) =>
+const joinUrl = (baseUrl: string, path: string) =>
   `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 
 export const encodePathSegment = (value: string | number) => encodeURIComponent(String(value))

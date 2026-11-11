@@ -90,9 +90,9 @@ export type EventValidationErrors = Partial<Record<Exclude<keyof EventInput, 're
   recurrence?: RecurrenceValidationErrors
 }
 
-export const isPresetEventColor = (value: unknown): value is PresetEventColor => isOneOf(PRESET_EVENT_COLORS, value)
+const isPresetEventColor = (value: unknown): value is PresetEventColor => isOneOf(PRESET_EVENT_COLORS, value)
 
-export const isEventColor = (value: unknown): value is EventColor => isPresetEventColor(value) || isHexColor(value)
+const isEventColor = (value: unknown): value is EventColor => isPresetEventColor(value) || isHexColor(value)
 
 export const getEventColorLabel = (color: EventColor, m: Messages) =>
   isPresetEventColor(color) ? m.colors[color] : color.toUpperCase()
@@ -210,10 +210,10 @@ export const getEventDuration = (period: EventPeriod & { allDay?: boolean }) =>
     ? (getSpanDays(period) + 1) * MINUTES_PER_DAY
     : getSpanDays(period) * MINUTES_PER_DAY + timeToMinutes(period.end) - timeToMinutes(period.start)
 
-export const isMultiDayEvent = ({ startDate, endDate }: Pick<EventPeriod, 'startDate' | 'endDate'>) =>
+const isMultiDayEvent = ({ startDate, endDate }: Pick<EventPeriod, 'startDate' | 'endDate'>) =>
   startDate !== endDate
 
-export const getSpanDays = ({ startDate, endDate }: Pick<EventPeriod, 'startDate' | 'endDate'>) =>
+const getSpanDays = ({ startDate, endDate }: Pick<EventPeriod, 'startDate' | 'endDate'>) =>
   daysBetween(startDate, endDate)
 
 export const moveToStartDate = (period: Pick<EventPeriod, 'startDate' | 'endDate'>, startDate: string) => ({

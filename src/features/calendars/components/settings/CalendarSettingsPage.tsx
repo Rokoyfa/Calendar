@@ -2,16 +2,14 @@ import { useParams } from 'react-router'
 import { useI18n } from '../../../../i18n/index.ts'
 import { PageLayout } from '../../../../components/PageLayout.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
-import { Switch } from '../../../../components/Switch.tsx'
 import { Tabs, type TabDefinition } from '../../../../components/Tabs.tsx'
-import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
 import { SETTINGS_CALENDARS_PATH } from '../../../../config/routes.ts'
-import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
 import { useTabParam } from '../../../../hooks/useTabParam.ts'
 import { useAuth } from '../../../authorization/index.ts'
 import { useCalendars } from '../../hooks/useCalendars.ts'
 import { useTeam } from '../../hooks/useTeam.ts'
 import type { CalendarSummary } from '../../types/calendar.ts'
+import { ShowInPersonalSwitch } from '../ShowInPersonalSwitch.tsx'
 import { hasPermission, isPersonalCalendar } from '../../utils/permissions.ts'
 import { DangerSection } from './DangerSection.tsx'
 import { GeneralSection } from './GeneralSection.tsx'
@@ -20,16 +18,9 @@ import { TeamInvitationsSection } from './TeamInvitationsSection.tsx'
 
 function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
-  const { setShowInPersonal } = useCalendars()
-  const { run, error } = useAsyncAction(setShowInPersonal)
   return (
     <PageSection title={m.calendars.settings.displayTitle} description={m.calendars.settings.displayDescription}>
-      <Switch
-        label={m.calendars.list.showInPersonal}
-        checked={calendar.showInPersonal}
-        onChange={(checked) => void run(calendar.id, checked)}
-      />
-      <ActionFeedback error={error} />
+      <ShowInPersonalSwitch calendar={calendar} />
     </PageSection>
   )
 }

@@ -12,7 +12,7 @@ import { NameField } from '../AuthFields.tsx'
 export function ProfileSection({ user }: { user: User }) {
   const { m } = useI18n()
   const { updateProfile } = useAuth()
-  const { values, errors, setField, handleSubmit, isPending, isSuccess, error } = useForm({
+  const { values, bind, handleSubmit, isPending, isSuccess, error } = useForm({
     initialValues: { name: user.name },
     validate: (input) => validateProfile(input, m),
     prepare: ({ name }) => ({ name: name.trim() }),
@@ -24,7 +24,7 @@ export function ProfileSection({ user }: { user: User }) {
   return (
     <PageSection title={m.auth.account.profile}>
       <Form onSubmit={handleSubmit}>
-        <NameField value={values.name} error={errors.name} onChange={(name) => setField('name', name)} />
+        <NameField {...bind('name')} />
         <ActionFeedback error={error} success={isSuccess && m.common.saved} />
         <div className="formActions">
           <Button

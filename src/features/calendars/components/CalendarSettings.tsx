@@ -5,13 +5,12 @@ import { calendarSettingsPath, ROUTES } from '../../../config/routes.ts'
 import { ConfirmModal } from '../../../components/ConfirmModal.tsx'
 import { SettingsIcon } from '../../../components/Icons.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
-import { Switch } from '../../../components/Switch.tsx'
-import { ActionFeedback, ErrorMessage } from '../../../components/StatusMessage.tsx'
-import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
+import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { getEventColorAttributes } from '../../../utils/event.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
+import { ShowInPersonalSwitch } from './ShowInPersonalSwitch.tsx'
 import { canLeaveCalendar, canOpenSettings, getCalendarKindLabel, isPersonalCalendar } from '../utils/permissions.ts'
 import { useHost } from '../../../context/HostContext.ts'
 
@@ -37,8 +36,6 @@ function LeaveCalendarModal({ calendar, onClose }: { calendar: CalendarSummary; 
 function CalendarRow({ calendar, onLeave }: { calendar: CalendarSummary; onLeave: () => void }) {
   const { m } = useI18n()
   const { list, roles } = m.calendars
-  const { setShowInPersonal } = useCalendars()
-  const { run, error } = useAsyncAction(setShowInPersonal)
 
   return (
     <li className="calendarSettingCard">
@@ -65,12 +62,7 @@ function CalendarRow({ calendar, onLeave }: { calendar: CalendarSummary; onLeave
         <p className="formHint">{list.personalHint}</p>
       ) : (
         <div className="calendarSettingBody">
-          <Switch
-            label={list.showInPersonal}
-            checked={calendar.showInPersonal}
-            onChange={(checked) => void run(calendar.id, checked)}
-          />
-          <ActionFeedback error={error} />
+          <ShowInPersonalSwitch calendar={calendar} />
           {canLeaveCalendar(calendar) ? (
             <div className="formActions">
               <Button variant="outline" onClick={onLeave}>

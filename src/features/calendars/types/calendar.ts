@@ -1,6 +1,6 @@
 import type { EventColor } from '../../../utils/event.ts'
 
-export type CalendarKind = 'personal' | 'team'
+type CalendarKind = 'personal' | 'team'
 
 export const TEAM_ROLES = ['owner', 'admin', 'manager', 'editor', 'member', 'contributor', 'viewer'] as const
 

@@ -16,7 +16,7 @@ const EMPTY_DELETION: AccountDeletionInput = { password: '' }
 function DeleteAccountModal({ onClose }: { onClose: () => void }) {
   const { m } = useI18n()
   const { deleteAccount } = useAuth()
-  const { values, errors, setField, handleSubmit, isPending, error } = useForm({
+  const { bind, handleSubmit, isPending, error } = useForm({
     initialValues: EMPTY_DELETION,
     validate: (input) => validateAccountDeletion(input, m),
     onSubmit: deleteAccount,
@@ -32,9 +32,7 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
         </p>
         <CurrentPasswordField
           label={m.auth.account.deletePassword}
-          value={values.password}
-          error={errors.password}
-          onChange={(password) => setField('password', password)}
+          {...bind('password')}
           data-autofocus
         />
         <ActionFeedback error={error} />

@@ -6,7 +6,7 @@ import type { EventSegment } from './eventLayout.ts'
 
 export { CALENDAR_VIEWS, type CalendarView } from '../../../utils/calendarView.ts'
 
-export type ViewI18n = Pick<I18n, 'm' | 'format' | 'weekInfo'>
+type ViewI18n = Pick<I18n, 'm' | 'format' | 'weekInfo'>
 
 export type ViewDefinition = {
   getRange: (anchor: string, firstDay: number) => DateRange

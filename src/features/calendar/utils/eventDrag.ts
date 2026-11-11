@@ -16,7 +16,7 @@ export type DragUnit = 'minutes' | 'days'
 
 export type DragPoint = { date: string; minutes: number }
 
-export const DRAG_STEP_MINUTES = 15
+const DRAG_STEP_MINUTES = 15
 
 const toAbsolute = (reference: string, date: string, minutes: number) =>
   daysBetween(reference, date) * MINUTES_PER_DAY + minutes

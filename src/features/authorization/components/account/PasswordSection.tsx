@@ -13,7 +13,7 @@ const EMPTY_PASSWORD_CHANGE: PasswordChangeFormValues = { currentPassword: '', p
 export function PasswordSection() {
   const { m } = useI18n()
   const { changePassword } = useAuth()
-  const { values, errors, setField, handleSubmit, reset, isPending, isSuccess, error } = useForm({
+  const { values, errors, setField, bind, handleSubmit, reset, isPending, isSuccess, error } = useForm({
     initialValues: EMPTY_PASSWORD_CHANGE,
     validate: (input) => validatePasswordChange(input, m),
     onSubmit: async ({ currentPassword, password }) => {
@@ -28,9 +28,7 @@ export function PasswordSection() {
         <CurrentPasswordField
           label={m.auth.account.currentPassword}
           name="currentPassword"
-          value={values.currentPassword}
-          error={errors.currentPassword}
-          onChange={(currentPassword) => setField('currentPassword', currentPassword)}
+          {...bind('currentPassword')}
         />
         <NewPasswordFields label={m.auth.account.newPassword} values={values} errors={errors} onChange={setField} />
         <ActionFeedback error={error} success={isSuccess && m.auth.account.passwordChanged} />

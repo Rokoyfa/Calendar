@@ -9,8 +9,8 @@ export type DateRange = {
   to: string
 }
 
-export const ISO_DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
-export const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
+const ISO_DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
 
 export const isISODate = (value: unknown): value is string => typeof value === 'string' && ISO_DATE_PATTERN.test(value)
 
@@ -84,9 +84,9 @@ export const daysInMonth = (year: number, monthIndex: number) => new Date(year, 
 
 export const getWeekdayIndex = (date: Date) => (date.getDay() + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK
 
-export const MONDAY = 1
+const MONDAY = 1
 
-export const startOfWeek = (date: Date, firstDay = MONDAY) =>
+const startOfWeek = (date: Date, firstDay = MONDAY) =>
   addDays(date, -((date.getDay() - firstDay + DAYS_PER_WEEK) % DAYS_PER_WEEK))
 
 export const startOfWeekISO = (isoDate: string, firstDay = MONDAY) =>
@@ -104,11 +104,6 @@ export const getMonthWeeks = (isoDate: string, firstDay = MONDAY) => {
     dates.slice(week * DAYS_PER_WEEK, (week + 1) * DAYS_PER_WEEK),
   )
 }
-
-export const isSameDay = (a: Date, b: Date) => toISODate(a) === toISODate(b)
-
-export const getWeekDays = (weekStart: Date) =>
-  Array.from({ length: DAYS_PER_WEEK }, (_, index) => addDays(weekStart, index))
 
 type WeekRule = { firstDay: number; minimalDays: number }
 

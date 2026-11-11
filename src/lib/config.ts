@@ -8,7 +8,7 @@ import type { EventCallbacks } from './eventCallbacks.ts'
 import type { CalendarFeatures, StorageMode } from './defaults.ts'
 
 export { DEFAULT_CONFIG, STORAGE_MODES } from './defaults.ts'
-export type { CalendarConfig, CalendarFeatures, StorageMode } from './defaults.ts'
+export type { CalendarFeatures, StorageMode } from './defaults.ts'
 
 export type CalendarRouting = 'memory' | 'browser'
 

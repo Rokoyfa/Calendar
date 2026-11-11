@@ -20,7 +20,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   locale: 'auto',
 }
 
-export const COMPACT_MAX_WIDTH = 700
+const COMPACT_MAX_WIDTH = 700
 
 export const isCompactWidth = (width: number) => width <= COMPACT_MAX_WIDTH
 

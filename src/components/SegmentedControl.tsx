@@ -1,6 +1,6 @@
 import { classNames } from '../utils/classNames.ts'
 
-type SegmentedControlProps<T extends string> = {
+export type SegmentedControlProps<T extends string> = {
   label: string
   value: T
   options: readonly { value: T; label: string }[]

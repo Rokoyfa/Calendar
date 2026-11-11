@@ -13,7 +13,7 @@ export const normalizeHexColor = (value: HexColor) => value.toLowerCase() as Hex
 const toLinear = (channel: number) =>
   channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
 
-export const getRelativeLuminance = (color: HexColor) => {
+const getRelativeLuminance = (color: HexColor) => {
   const [red, green, blue] = [1, 3, 5].map((index) => toLinear(parseInt(color.slice(index, index + 2), 16) / 255))
   return 0.2126 * red + 0.7152 * green + 0.0722 * blue
 }

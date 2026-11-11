@@ -3,8 +3,6 @@ import type { DateRange } from '../../../utils/date.ts'
 import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
 import type { Preferences } from '../../../utils/preferences.ts'
 
-export type { DateRange }
-
 export type EventQuery = DateRange & { calendarIds: readonly string[] }
 
 export interface EventRepository {

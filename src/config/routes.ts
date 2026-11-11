@@ -20,7 +20,7 @@ export const TOKEN_PARAM = 'token'
 
 const REDIRECT_PARAM = 'redirect'
 
-export const isSafeRedirect = (path: string | null): path is string =>
+const isSafeRedirect = (path: string | null): path is string =>
   path !== null && path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\')
 
 export const getRedirectTarget = (searchParams: URLSearchParams) => {

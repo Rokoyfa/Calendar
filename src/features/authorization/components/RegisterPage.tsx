@@ -1,12 +1,13 @@
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Link } from 'react-router'
 import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
 import { Form } from '../../../components/Form.tsx'
 import { PageLayout } from '../../../components/PageLayout.tsx'
 import { ActionFeedback } from '../../../components/StatusMessage.tsx'
-import { getRedirectTarget, ROUTES, withRedirect } from '../../../config/routes.ts'
+import { ROUTES, withRedirect } from '../../../config/routes.ts'
 import { useForm } from '../../../hooks/useForm.ts'
 import { useAuth } from '../hooks/useAuth.ts'
+import { useRedirectTarget } from '../hooks/useRedirectTarget.ts'
 import { normalizeEmail, validateRegister, type RegisterFormValues } from '../utils/validation.ts'
 import { EmailField, NameField, NewPasswordFields } from './AuthFields.tsx'
 
@@ -15,16 +16,14 @@ const EMPTY_REGISTRATION: RegisterFormValues = { name: '', email: '', password: 
 export function RegisterPage() {
   const { m } = useI18n()
   const { register } = useAuth()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const redirectTo = getRedirectTarget(searchParams)
-  const { values, errors, setField, handleSubmit, isPending, error } = useForm({
+  const { redirectTo, continueToTarget } = useRedirectTarget()
+  const { values, errors, setField, bind, handleSubmit, isPending, error } = useForm({
     initialValues: EMPTY_REGISTRATION,
     validate: (input) => validateRegister(input, m),
     prepare: (input) => ({ ...input, name: input.name.trim(), email: normalizeEmail(input.email) }),
     onSubmit: async ({ name, email, password }) => {
       await register({ name, email, password })
-      await navigate(redirectTo, { replace: true })
+      await continueToTarget()
     },
   })
 
@@ -38,12 +37,10 @@ export function RegisterPage() {
       }
     >
       <Form onSubmit={handleSubmit}>
-        <NameField value={values.name} error={errors.name} onChange={(name) => setField('name', name)} autoFocus />
+        <NameField {...bind('name')} autoFocus />
         <EmailField
           isNewAccount
-          value={values.email}
-          error={errors.email}
-          onChange={(email) => setField('email', email)}
+          {...bind('email')}
         />
         <NewPasswordFields values={values} errors={errors} onChange={setField} />
         <ActionFeedback error={error} />

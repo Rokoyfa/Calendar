@@ -10,6 +10,12 @@ export function useFormState<T extends object>(initialValues: T, validate: (valu
     setErrors((current) => (current[field] ? { ...current, [field]: undefined } : current))
   }, [])
 
+  const bind = <K extends keyof T>(field: K) => ({
+    value: values[field],
+    error: errors[field],
+    onChange: (value: T[K]) => setField(field, value),
+  })
+
   const validateAll = (prepared: T = values) => {
     const nextErrors = validate(prepared)
     setErrors(nextErrors)
@@ -21,5 +27,5 @@ export function useFormState<T extends object>(initialValues: T, validate: (valu
     setErrors({})
   }, [initialValues])
 
-  return { values, errors, setField, validateAll, reset }
+  return { values, errors, setField, bind, validateAll, reset }
 }

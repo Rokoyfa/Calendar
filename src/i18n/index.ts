@@ -1,5 +1,4 @@
 export { getErrorMessage } from './errorMessage.ts'
-export type { Formatter } from './format.ts'
 export type { I18n } from './I18nContext.ts'
 export { I18nProvider } from './I18nProvider.tsx'
 export { getLocaleChoices, getLocaleName } from './locale.ts'
