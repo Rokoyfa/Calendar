@@ -9,6 +9,8 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - Move events by pressing and holding them for one second, then dragging (mouse and touch). In the day and week view the lower edge changes the end time. Recurring events ask whether to change this, the following or all events
 - Events without `allDay`/`timeZone` keep working as floating timed events
 - The visible range sent to the backend is one day wider on each side
+- French, Spanish, Italian, Dutch, Polish and Portuguese, loaded on demand. Language names in the settings appear in their own language
+- `messages` prop and property to override texts or add languages
 - Automated tests with Vitest (`npm test`), run before every publish
 
 ## 0.1.0 – 2026-11-10

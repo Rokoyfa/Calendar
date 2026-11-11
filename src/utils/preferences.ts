@@ -1,4 +1,4 @@
-import { LOCALE_CHOICES, type LocaleChoice } from '../i18n/locale.ts'
+import { AUTO_LOCALE, canonicalizeLocale } from '../i18n/locale.ts'
 import { isCalendarView, type CalendarView } from './calendarView.ts'
 import { asRecord, isOneOf } from './object.ts'
 
@@ -10,7 +10,7 @@ export type Preferences = {
   theme: Theme
   defaultView: CalendarView
   mobileDefaultView: CalendarView
-  locale: LocaleChoice
+  locale: string
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -30,7 +30,7 @@ export const parsePreferences = (value: unknown): Preferences => {
     theme: isOneOf(THEMES, theme) ? theme : DEFAULT_PREFERENCES.theme,
     defaultView: isCalendarView(defaultView) ? defaultView : DEFAULT_PREFERENCES.defaultView,
     mobileDefaultView: isCalendarView(mobileDefaultView) ? mobileDefaultView : DEFAULT_PREFERENCES.mobileDefaultView,
-    locale: isOneOf(LOCALE_CHOICES, locale) ? locale : DEFAULT_PREFERENCES.locale,
+    locale: locale === AUTO_LOCALE ? AUTO_LOCALE : (canonicalizeLocale(locale) ?? DEFAULT_PREFERENCES.locale),
   }
 }
 

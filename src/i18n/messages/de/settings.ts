@@ -6,12 +6,7 @@ export const settings: Messages['settings'] = {
   languageTitle: 'Sprache und Region',
   languageDescription: 'Bestimmt Sprache, Datums- und Zeitformate und den ersten Tag der Woche.',
   languageLabel: 'Sprache',
-  languages: {
-    auto: 'Automatisch (Browser)',
-    'en-US': 'English (US)',
-    'en-GB': 'English (UK)',
-    'de-DE': 'Deutsch',
-  },
+  languageAuto: 'Automatisch (Browser)',
   themeTitle: 'Farbschema',
   themeLabel: 'Hell oder dunkel',
   startViewTitle: 'Startansicht',

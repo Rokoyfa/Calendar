@@ -7,6 +7,7 @@ import type { WeekInfo } from './weekInfo.ts'
 export type I18n = {
   locale: string
   language: Language
+  languages: ReadonlySet<string>
   m: Messages
   format: Formatter
   weekInfo: WeekInfo

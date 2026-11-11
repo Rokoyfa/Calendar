@@ -1,6 +1,6 @@
 # @rokoyfa/calendar
 
-An embeddable calendar for React apps and any other website. Day, week, month and year views, recurring events, team calendars with roles and invitations, English and German. Runs without a backend (data stays in the browser) or against your own REST backend. Styles are isolated in a Shadow DOM, so the host page and the calendar never affect each other.
+An embeddable calendar for React apps and any other website. Day, week, month and year views, recurring events, team calendars with roles and invitations. English, German, French, Spanish, Italian, Dutch, Polish and Portuguese built in, more through your own texts. Runs without a backend (data stays in the browser) or against your own REST backend. Styles are isolated in a Shadow DOM, so the host page and the calendar never affect each other.
 
 ## Setup
 
@@ -51,7 +51,8 @@ document.querySelector('calendar-widget').addEventListener('event-create', (e) =
 
 | Prop | Attribute | Default | |
 | --- | --- | --- | --- |
-| `locale` | `locale` | browser | `en-US`, `en-GB`, `de-DE`, … |
+| `locale` | `locale` | browser | `en-US`, `de-DE`, `fr-FR`, `pt-BR`, … Formats follow the region |
+| `messages` | property | – | Own texts per language, see below |
 | `theme` | `theme` | system | `light`, `dark` |
 | `initialView` | `initial-view` | user setting | `day`, `week`, `month`, `year` |
 | `timeZone` | `time-zone` | browser | IANA zone the calendar is shown in, e.g. `Europe/Berlin` |
@@ -61,6 +62,17 @@ document.querySelector('calendar-widget').addEventListener('event-create', (e) =
 | `tenant`, `getUserToken` | `tenant`, property | – | Multi-tenant backend, sign-in through your own page |
 | `dataSource` | property | – | Custom data adapter instead of REST |
 | `onEventCreate` / `Update` / `Delete` | `event-create` / `-update` / `-delete` | – | After every stored change |
+
+**Own texts and languages.** Override single texts or add a language. Missing texts fall back to the built-in language, or to English for a new one. The full list of keys is the `Messages` type.
+
+```js
+document.querySelector('calendar-widget').messages = {
+  de: { calendar: { newEvent: 'Neuer Eintrag' } },
+  sv: { calendar: { today: 'Idag', newEvent: 'Ny händelse' }, views: { weekNumber: (week) => `V. ${week}` } },
+}
+```
+
+The CDN build loads languages other than English on demand from files next to `calendar-widget.js`. When hosting it yourself, copy the whole `dist-lib/cdn` folder.
 
 **Demo:** [`demo/cdn.html`](demo/cdn.html) shows local mode with an event log, a dark German month view and a compact widget. Download it and open it in a browser, it loads the published package from jsDelivr.
 

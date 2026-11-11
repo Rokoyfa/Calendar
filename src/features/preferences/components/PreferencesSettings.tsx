@@ -3,17 +3,22 @@ import { SegmentedField } from '../../../components/SegmentedField.tsx'
 import { SelectField } from '../../../components/SelectField.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
-import { LOCALE_CHOICES, useI18n } from '../../../i18n/index.ts'
+import { getLocaleChoices, getLocaleName, useI18n } from '../../../i18n/index.ts'
 import { THEMES } from '../../../utils/preferences.ts'
 import { getViewOptions } from '../../calendar/index.ts'
 import { usePreferences } from '../hooks/usePreferences.ts'
 
 export function PreferencesSettings() {
-  const { m } = useI18n()
+  const { m, languages } = useI18n()
   const { preferences, updatePreferences } = usePreferences()
   const { run, error } = useAsyncAction(updatePreferences)
   const themeOptions = THEMES.map((theme) => ({ value: theme, label: m.themes[theme] }))
-  const languageOptions = LOCALE_CHOICES.map((choice) => ({ value: choice, label: m.settings.languages[choice] }))
+  const choices = getLocaleChoices(languages)
+  if (!choices.includes(preferences.locale)) choices.push(preferences.locale)
+  const languageOptions = choices.map((choice) => ({
+    value: choice,
+    label: choice === 'auto' ? m.settings.languageAuto : getLocaleName(choice),
+  }))
   const viewOptions = getViewOptions(m)
 
   return (

@@ -5,6 +5,7 @@ export type { CalendarFeatures, CalendarProps, CalendarRouting, StorageMode } fr
 export type { DeletedEvent, EventCallbacks } from './eventCallbacks.ts'
 export type { HostTheme } from '../context/HostContext.ts'
 export type { CalendarView } from '../utils/calendarView.ts'
+export type { DeepPartial, MessageOverrides, Messages, PartialMessages } from '../i18n/index.ts'
 export { localDataSource, restDataSource, TENANT_HEADER, tenantDataSource } from '../data/index.ts'
 export type {
   CalendarDataSource,

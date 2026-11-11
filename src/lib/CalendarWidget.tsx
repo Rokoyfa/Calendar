@@ -22,6 +22,7 @@ export function CalendarWidget({
   initialPath,
   linkParam = DEFAULT_LINK_PARAM,
   locale,
+  messages,
   theme,
   initialView,
   timeZone,
@@ -57,7 +58,7 @@ export function CalendarWidget({
   return (
     <IsolatedRoot className={className} style={style} autoFocus={routing === 'browser'}>
       <HostContext value={host}>
-        <I18nProvider locale={locale}>
+        <I18nProvider locale={locale} messages={messages}>
           <CalendarApp
             dataSource={dataSource}
             eventCallbacks={callbacks}

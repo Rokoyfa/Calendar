@@ -168,14 +168,14 @@ Getestet mit einer statischen HTML-Seite (nur die Script-Datei) und einem frisch
 
 ### Sprache und Region
 
-Standardsprache ist **Englisch**, dazu gibt es **Deutsch**. Welche gilt, entscheidet in dieser Reihenfolge:
+Standardsprache ist **Englisch**. Mitgeliefert werden außerdem **Deutsch, Französisch, Spanisch, Italienisch, Niederländisch, Polnisch und Portugiesisch** (brasilianische Schreibweise). Weitere Sprachen oder eigene Begriffe gibt der Gastgeber über `messages` mit (siehe unten). Welche Sprache gilt, entscheidet in dieser Reihenfolge:
 
-1. **Einstellung des Nutzers** unter Einstellungen → Darstellung → Sprache und Region (`Automatisch`, `English (US)`, `English (UK)`, `Deutsch`). Gespeichert in den Einstellungen (`locale`, Standard `auto`).
+1. **Einstellung des Nutzers** unter Einstellungen → Darstellung → Sprache und Region (`Automatisch` und jede mitgelieferte Sprache mit Region, Namen jeweils in der eigenen Sprache über `Intl.DisplayNames`, dazu Sprachen aus `messages`). Gespeichert in den Einstellungen (`locale`, Standard `auto`).
 2. **Prop `locale` bzw. Attribut `locale`** des Gastgebers
 3. **Browser** (`navigator.languages`)
 4. Sonst `en-US`
 
-Eine Sprache, die es nicht gibt, fällt auf Englisch **mit der Region des Nutzers** zurück: `fr-FR` wird `en-FR`, also englische Texte mit Montag als Wochenbeginn und 24-Stunden-Uhr.
+Eine Sprache, die es nicht gibt, fällt auf Englisch **mit der Region des Nutzers** zurück: `sv-SE` wird `en-SE`, also englische Texte mit Montag als Wochenbeginn und 24-Stunden-Uhr.
 
 **Formate kommen aus der Region, nicht aus der Sprache** (über `Intl`):
 
@@ -192,7 +192,10 @@ Wochenbeginn und Zählweise liefert `Intl.Locale#getWeekInfo`, wo es fehlt, eine
 
 **Aufbau (`src/i18n/`):**
 
-- `messages/en/*.ts` sind die Quelle der Texte, je Bereich eine Datei (`core`, `calendar`, `events`, `calendars`, `auth`, `settings`, `storage`). Der Typ `Messages` wird aus Englisch abgeleitet. `messages/de/*.ts` muss genau dieselben Schlüssel haben, sonst schlägt die Typprüfung fehl.
+- `messages/en/*.ts` sind die Quelle der Texte, je Bereich eine Datei (`core`, `calendar`, `events`, `calendars`, `auth`, `settings`, `storage`). Der Typ `Messages` wird aus Englisch abgeleitet. Jede andere Sprache (`messages/de/*.ts`, `messages/fr/index.ts` usw.) muss genau dieselben Schlüssel haben, sonst schlägt die Typprüfung fehl. Ein Test vergleicht zusätzlich den Aufbau aller Sprachen mit Englisch.
+- Englisch ist fest im Paket, alle anderen Sprachen werden erst bei Bedarf nachgeladen (`loadMessages` in `messages/index.ts`, je Sprache eine eigene Datei von etwa 7 KB gzip, auch im CDN-Build). Bis die Sprache da ist, zeigt das Widget nichts, beim Wechsel in den Einstellungen bleibt bis dahin die alte Sprache stehen.
+- **Neue Sprache einbauen:** Ordner `messages/<code>/` mit `index.ts` anlegen (am einfachsten eine bestehende Sprache kopieren), in `BUILT_IN_LANGUAGES` und `BUILT_IN_LOCALES` (`locale.ts`) sowie in den Ladern in `messages/index.ts` eintragen. Grammatik wie Mehrzahl oder Geschlecht steckt in den Funktionen der jeweiligen Sprache (Beispiel Polnisch: `plural`).
+- **`messages` des Gastgebers** (Prop bzw. Property am Web Component): `{ [Sprachcode]: Teil-Texte }`. Für eine mitgelieferte Sprache werden einzelne Texte überschrieben, eine neue Sprache (z. B. `sv`) baut auf Englisch auf und ist danach wählbar. Zusammengeführt wird tief (`mergeMessages`), fehlende Texte kommen aus der Basis.
 - Texte mit Werten sind Funktionen, z. B. `views.weekNumber(45)` → `Wk 45` bzw. `KW 45`. Abkürzungen und Mehrzahl stehen so je Sprache an einer Stelle.
 - `useI18n()` liefert `m` (Texte), `format` (Datum, Uhrzeit, Wochentage, Listen), `weekInfo` und `locale`.
 - Fehler tragen einen **Code** statt eines Textes (`AppError`, `ApiError.code`) und werden erst beim Anzeigen übersetzt (`getErrorMessage(error, m)`). Meldungen, die der Server ohne bekannten Code schickt, werden unverändert angezeigt.
@@ -560,7 +563,7 @@ Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, r
 - **Kalender:** alle Kalender, auf die man Zugriff hat (persönlich und Teams), mit Farbe, Team und eigener Rolle. Bei Team-Kalendern legt ein Schalter fest, ob ihre Termine **auch im persönlichen Kalender** erscheinen (`showInPersonal`, Standard an). Team-Kalender lassen sich mit Bestätigung **verlassen**, außer man ist Owner. Der persönliche Kalender lässt sich nicht entfernen. Schalter und Verlassen werden sofort auf dem Server gespeichert.
 - **Zahnrad an der Kachel** führt zur Einstellungsseite des Kalenders (siehe [Kalender-Einstellungen](#kalender-einstellungen)). Es erscheint beim persönlichen Kalender immer und bei Team-Kalendern nur mit einer Rolle, die dort etwas verwalten darf (Owner, Administrator, Verwalter).
 - **Einladungen:** Offene Einladungen an die eigene E-Mail-Adresse stehen oben mit Team, Beschreibung, Rolle, Absender und Ablaufdatum. **Annehmen** nimmt den Kalender sofort in die Liste und in „Kalender wechseln“ auf, **Ablehnen** entfernt die Einladung.
-- **Sprache und Region:** Automatisch (Browser bzw. Vorgabe des Gastgebers), English (US), English (UK) oder Deutsch. Wirkt sofort, siehe [Sprache und Region](#sprache-und-region).
+- **Sprache und Region:** Automatisch (Browser bzw. Vorgabe des Gastgebers) oder eine der mitgelieferten Sprachen mit Region. Wirkt sofort, siehe [Sprache und Region](#sprache-und-region).
 - **Farbschema:** Wie System, Hell oder Dunkel. Gesetzt über `data-theme` am `<html>`, die Farben kommen weiter aus `light-dark()`.
 - **Startansicht** getrennt für Computer/Tablet und Handy
 - **Eigene Farben** ansehen und entfernen. Termine mit dieser Farbe behalten sie.
@@ -692,7 +695,7 @@ src/
 │  ├─ config.ts                CalendarProps
 │  └─ defaults.ts              CalendarConfig und Standardwerte (auch für vite.config.ts)
 ├─ i18n/                       Sprache und Region
-│  ├─ messages/en/, de/        Texte je Bereich, Englisch definiert den Typ
+│  ├─ messages/                en/ und de/ je Bereich, fr, es, it, nl, pl, pt je eine Datei; Englisch definiert den Typ, index.ts lädt nach und führt zusammen
 │  ├─ I18nProvider.tsx         Wählt die Sprache (Nutzer > Gastgeber > Browser > en-US), setzt lang an der Wurzel
 │  ├─ useI18n.ts               m, format, weekInfo, locale
 │  ├─ format.ts                Datum, Uhrzeit, Wochentage und Listen je Locale (Intl)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MESSAGES } from '../i18n/messages/index.ts'
+import { en } from '../i18n/messages/en/index.ts'
 import { calendarEvent, eventInput, recurrence } from '../test/fixtures.ts'
 import {
   createAllDayEventInput,
@@ -14,7 +14,7 @@ import {
   validateEventInput,
 } from './event.ts'
 
-const m = MESSAGES.en
+const m = en
 
 describe('event', () => {
   it('measures durations across days', () => {

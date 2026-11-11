@@ -1,3 +1,4 @@
+import type { MessageOverrides } from '../i18n/index.ts'
 import type { CSSProperties } from 'react'
 import type { CalendarDataSource } from '../data/index.ts'
 import type { HostTheme } from '../context/HostContext.ts'
@@ -24,6 +25,7 @@ export type CalendarProps = EventCallbacks & {
   initialPath?: string
   linkParam?: string | false
   locale?: string
+  messages?: MessageOverrides
   theme?: HostTheme
   initialView?: CalendarView
   timeZone?: string

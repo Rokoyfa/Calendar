@@ -8,6 +8,7 @@ import { isOneOf } from '../utils/object.ts'
 import { CalendarWidget } from './CalendarWidget.tsx'
 import { STORAGE_MODES, type CalendarProps } from './config.ts'
 import type { DeletedEvent } from './eventCallbacks.ts'
+import type { MessageOverrides } from '../i18n/index.ts'
 import { VERSION } from './version.ts'
 
 export const DEFAULT_ELEMENT_NAME = 'calendar-widget'
@@ -25,6 +26,7 @@ export class CalendarElement extends HTMLElement {
   #root: Root | null = null
   #dataSource: CalendarDataSource | undefined
   #getUserToken: UserTokenProvider | undefined
+  #messages: MessageOverrides | undefined
 
   get dataSource() {
     return this.#dataSource
@@ -44,15 +46,25 @@ export class CalendarElement extends HTMLElement {
     if (this.#root) this.#render()
   }
 
+  get messages() {
+    return this.#messages
+  }
+
+  set messages(value: MessageOverrides | undefined) {
+    this.#messages = value
+    if (this.#root) this.#render()
+  }
+
   connectedCallback() {
     this.#adoptEarlyProperty('dataSource')
     this.#adoptEarlyProperty('getUserToken')
+    this.#adoptEarlyProperty('messages')
     if (!this.style.display) this.style.display = 'block'
     this.#root ??= createRoot(this)
     this.#render()
   }
 
-  #adoptEarlyProperty(name: 'dataSource' | 'getUserToken') {
+  #adoptEarlyProperty(name: 'dataSource' | 'getUserToken' | 'messages') {
     if (!Object.hasOwn(this, name)) return
     const value = this[name]
     delete (this as Partial<Record<typeof name, unknown>>)[name]
@@ -105,6 +117,7 @@ export class CalendarElement extends HTMLElement {
       onEventDelete: this.#onEventDelete,
       dataSource: this.#dataSource,
       getUserToken: this.#getUserToken,
+      messages: this.#messages,
     }
   }
 
