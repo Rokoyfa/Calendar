@@ -20,6 +20,7 @@ export const calendars = {
     contributor: 'Creates events and edits their own, but deletes nothing.',
     viewer: 'Sees the calendar but changes nothing.',
   } satisfies Record<TeamRole, string>,
+  roleOverview: 'What each role can do',
   roleHint: (role: string, description: string) => `${role}: ${description}`,
   kind: {
     personal: 'Personal calendar',
@@ -45,7 +46,8 @@ export const calendars = {
   },
   invitations: {
     title: 'Invitations',
-    description: 'You have been invited to these calendars. Once accepted, they appear below and in “Switch calendar”.',
+    description: 'You have been invited to these calendars. Once accepted, they appear under Calendars and in “Switch calendar”.',
+    empty: 'No open invitations. When someone invites you to a calendar, it shows up here.',
     invitedBy: (name: string) => `${name} invited you`,
     invited: 'You are invited',
     validUntil: (date: string) => `valid until ${date}`,

@@ -20,6 +20,7 @@ export const calendars: Messages['calendars'] = {
     contributor: 'Legt Termine an und bearbeitet die eigenen, löscht aber nichts.',
     viewer: 'Sieht den Kalender, ändert aber nichts.',
   },
+  roleOverview: 'Was die Rollen dürfen',
   roleHint: (role, description) => `${role}: ${description}`,
   kind: {
     personal: 'Persönlicher Kalender',
@@ -45,7 +46,8 @@ export const calendars: Messages['calendars'] = {
   invitations: {
     title: 'Einladungen',
     description:
-      'Du wurdest in diese Kalender eingeladen. Nach dem Annehmen erscheinen sie unten und in „Kalender wechseln“.',
+      'Du wurdest in diese Kalender eingeladen. Nach dem Annehmen findest du sie unter Kalender und in „Kalender wechseln“.',
+    empty: 'Keine offenen Einladungen. Wenn dich jemand in einen Kalender einlädt, erscheint die Einladung hier.',
     invitedBy: (name) => `${name} lädt dich ein`,
     invited: 'Du bist eingeladen',
     validUntil: (date) => `gültig bis ${date}`,

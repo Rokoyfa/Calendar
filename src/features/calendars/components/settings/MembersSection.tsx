@@ -5,6 +5,7 @@ import { PageSection } from '../../../../components/PageSection.tsx'
 import { ActionFeedback, ErrorMessage } from '../../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
 import { useI18n } from '../../../../i18n/index.ts'
+import { RoleOverview } from './RoleOverview.tsx'
 import type { CalendarSummary, TeamMember, TeamRole } from '../../types/calendar.ts'
 import { getAssignableRoles, hasPermission, outranks } from '../../utils/permissions.ts'
 
@@ -86,6 +87,7 @@ export function MembersSection({
     <PageSection
       title={text.title}
       description={text.description}
+      aside={<RoleOverview />}
     >
       <ErrorMessage message={error} />
       <ul className="itemList">

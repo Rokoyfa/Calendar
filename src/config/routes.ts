@@ -14,6 +14,7 @@ export const calendarSettingsPath = (calendarId: string) =>
   ROUTES.calendarSettings.replace(':calendarId', encodeURIComponent(calendarId))
 
 export const SETTINGS_CALENDARS_PATH = `${ROUTES.settings}?tab=calendars`
+export const SETTINGS_INVITATIONS_PATH = `${ROUTES.settings}?tab=invitations`
 
 export const TOKEN_PARAM = 'token'
 

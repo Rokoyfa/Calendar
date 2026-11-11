@@ -553,7 +553,7 @@ Angelegt wird über `POST /calendars` mit Name, Beschreibung, Farbe und Einladun
 
 Seite `/settings`, erreichbar über **Einstellungen** im Kontomenü (runder Button mit dem Anfangsbuchstaben). Mit `VITE_FEATURE_AUTH=true` nur für Angemeldete: `/settings` leitet sonst zum Kalender um, auch direkt nach dem Löschen des Kontos. Ohne Anmeldefunktion gibt es kein Kontomenü, dann führt ein Zahnrad in der Kopfzeile zu den Einstellungen.
 
-Oben wechseln Tabs zwischen **Kalender**, **Darstellung** (Sprache und Region, Farbschema, Startansicht, eigene Farben) und **Konto** (nur angemeldet). Der gewählte Tab steht in der Adresse (`/settings?tab=appearance`), bleibt also beim Neuladen erhalten und lässt sich verlinken. Pfeiltasten links/rechts wechseln den Tab.
+Oben wechseln Tabs zwischen **Kalender**, **Einladungen** (nur mit bestätigter E-Mail und Team-Funktionen, Anzahl offener Einladungen im Tab), **Darstellung** (Sprache und Region, Farbschema, Startansicht, eigene Farben) und **Konto** (nur angemeldet). Der gewählte Tab steht in der Adresse (`/settings?tab=appearance`), bleibt also beim Neuladen erhalten und lässt sich verlinken. Pfeiltasten links/rechts wechseln den Tab.
 
 Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, rechts die Einstellungen. Auf dem Handy untereinander.
 
@@ -705,7 +705,7 @@ src/
 ├─ router.tsx                  Routen und createCalendarRouter (memory oder browser): /, /settings, /calendars/new, /login, …
 ├─ pages/
 │  ├─ CalendarPage.tsx         Kalender mit Startansicht, Kontomenü (Zahnrad nur ohne Anmeldefunktion), Bestätigungsleiste und Übernahme-Abfrage
-│  └─ SettingsPage.tsx         Einstellungen in Tabs: Kalender, Darstellung, Konto
+│  └─ SettingsPage.tsx         Einstellungen in Tabs: Kalender, Einladungen, Darstellung, Konto
 ├─ main.tsx                    Einstieg der Website: <Calendar routing="browser" /> mit Werten aus der .env
 ├─ env.d.ts                    Typen der Umgebungsvariablen
 ├─ config/

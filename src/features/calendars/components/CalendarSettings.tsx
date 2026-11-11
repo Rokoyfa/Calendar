@@ -13,7 +13,6 @@ import { useI18n } from '../../../i18n/index.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
 import { canLeaveCalendar, canOpenSettings, getCalendarKindLabel, isPersonalCalendar } from '../utils/permissions.ts'
-import { InvitationList } from './InvitationList.tsx'
 import { useHost } from '../../../context/HostContext.ts'
 
 function LeaveCalendarModal({ calendar, onClose }: { calendar: CalendarSummary; onClose: () => void }) {
@@ -95,28 +94,25 @@ export function CalendarSettings() {
   const [calendarToLeave, setCalendarToLeave] = useState<CalendarSummary | null>(null)
 
   return (
-    <>
-      {teams && <InvitationList />}
-      <PageSection
-        title={list.title}
-        description={list.description}
-      >
-        <ErrorMessage message={error} />
-        <ul className="calendarSettingList">
-          {calendars.map((calendar) => (
-            <CalendarRow key={calendar.id} calendar={calendar} onLeave={() => setCalendarToLeave(calendar)} />
-          ))}
-        </ul>
-        {teams && calendars.every(isPersonalCalendar) && (
-          <p className="emptyHint">{list.noTeamCalendars}</p>
-        )}
-        {teams && (
-          <div className="formActions">
-            <ButtonLink to={ROUTES.createCalendar}>{list.create}</ButtonLink>
-          </div>
-        )}
-        {calendarToLeave && <LeaveCalendarModal calendar={calendarToLeave} onClose={() => setCalendarToLeave(null)} />}
-      </PageSection>
-    </>
+    <PageSection
+      title={list.title}
+      description={list.description}
+    >
+      <ErrorMessage message={error} />
+      <ul className="calendarSettingList">
+        {calendars.map((calendar) => (
+          <CalendarRow key={calendar.id} calendar={calendar} onLeave={() => setCalendarToLeave(calendar)} />
+        ))}
+      </ul>
+      {teams && calendars.every(isPersonalCalendar) && (
+        <p className="emptyHint">{list.noTeamCalendars}</p>
+      )}
+      {teams && (
+        <div className="formActions">
+          <ButtonLink to={ROUTES.createCalendar}>{list.create}</ButtonLink>
+        </div>
+      )}
+      {calendarToLeave && <LeaveCalendarModal calendar={calendarToLeave} onClose={() => setCalendarToLeave(null)} />}
+    </PageSection>
   )
 }

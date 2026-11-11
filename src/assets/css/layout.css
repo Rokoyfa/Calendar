@@ -140,6 +140,38 @@
   gap: var(--space-3);
 }
 
+.roleOverview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.roleOverviewTitle {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.roleOverviewList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: 1.1em;
+  font-size: var(--font-size-md);
+  color: var(--color-muted);
+}
+
+.roleOverviewName {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.roleOverviewName::after {
+  content: ': ';
+}
+
 .pageSectionBody {
   max-width: 720px;
 }

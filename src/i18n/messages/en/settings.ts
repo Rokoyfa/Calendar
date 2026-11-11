@@ -1,6 +1,6 @@
 export const settings = {
   tabsLabel: 'Settings sections',
-  tabs: { calendars: 'Calendars', appearance: 'Appearance', account: 'Account' },
+  tabs: { calendars: 'Calendars', invitations: 'Invitations', appearance: 'Appearance', account: 'Account' },
   languageTitle: 'Language and region',
   languageDescription: 'Controls the language, date and time formats and the first day of the week.',
   languageLabel: 'Language',

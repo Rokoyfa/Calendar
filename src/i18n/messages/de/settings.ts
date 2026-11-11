@@ -2,7 +2,7 @@ import type { Messages } from '../types.ts'
 
 export const settings: Messages['settings'] = {
   tabsLabel: 'Bereiche der Einstellungen',
-  tabs: { calendars: 'Kalender', appearance: 'Darstellung', account: 'Konto' },
+  tabs: { calendars: 'Kalender', invitations: 'Einladungen', appearance: 'Darstellung', account: 'Konto' },
   languageTitle: 'Sprache und Region',
   languageDescription: 'Bestimmt Sprache, Datums- und Zeitformate und den ersten Tag der Woche.',
   languageLabel: 'Sprache',

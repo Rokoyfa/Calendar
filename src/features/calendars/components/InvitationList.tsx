@@ -57,18 +57,21 @@ function InvitationRow({ invitation }: { invitation: PendingInvitation }) {
 export function InvitationList() {
   const { m } = useI18n()
   const { invitations } = useCalendars()
-  if (invitations.length === 0) return null
 
   return (
     <PageSection
       title={m.calendars.invitations.title}
       description={m.calendars.invitations.description}
     >
-      <ul className="calendarSettingList">
-        {invitations.map((invitation) => (
-          <InvitationRow key={invitation.id} invitation={invitation} />
-        ))}
-      </ul>
+      {invitations.length === 0 ? (
+        <p className="emptyHint">{m.calendars.invitations.empty}</p>
+      ) : (
+        <ul className="calendarSettingList">
+          {invitations.map((invitation) => (
+            <InvitationRow key={invitation.id} invitation={invitation} />
+          ))}
+        </ul>
+      )}
     </PageSection>
   )
 }

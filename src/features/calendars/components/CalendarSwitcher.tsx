@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { PlusIcon } from '../../../components/Icons.tsx'
-import { ROUTES, SETTINGS_CALENDARS_PATH } from '../../../config/routes.ts'
+import { ROUTES, SETTINGS_INVITATIONS_PATH } from '../../../config/routes.ts'
 import { getDistinctTeamName, isPersonalCalendar } from '../utils/permissions.ts'
 import { Button } from '../../../components/Button.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { classNames } from '../../../utils/classNames.ts'
 import { useI18n } from '../../../i18n/index.ts'
+import { useAuth } from '../../authorization/index.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
 import { CalendarPreview } from './CalendarPreview.tsx'
@@ -48,6 +49,7 @@ function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
   const { m } = useI18n()
   const { switcher } = m.calendars
   const { calendars, invitations, activeCalendar, selectCalendar } = useCalendars()
+  const { user } = useAuth()
   const personal = calendars.filter(isPersonalCalendar)
   const teams = calendars.filter((calendar) => !isPersonalCalendar(calendar))
 
@@ -75,10 +77,10 @@ function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
           <h3 className="calendarGroupTitle">{switcher.personal}</h3>
           {renderCards(personal)}
         </section>
-        {invitations.length > 0 && (
+        {user?.emailVerified && invitations.length > 0 && (
           <p className="formHint">
             {switcher.openInvitations(invitations.length)}{' '}
-            <Link to={SETTINGS_CALENDARS_PATH} onClick={onClose}>
+            <Link to={SETTINGS_INVITATIONS_PATH} onClick={onClose}>
               {switcher.view}
             </Link>
           </p>
