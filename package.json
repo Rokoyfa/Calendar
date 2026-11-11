@@ -1,6 +1,6 @@
 {
   "name": "@rokoyfa/calendar",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Embeddable calendar for React and any website: day, week, month and year views, recurring and all-day events, time zones, drag and drop, teams and eight languages, as a React component or a <calendar-widget> web component.",
   "keywords": [
     "calendar",
