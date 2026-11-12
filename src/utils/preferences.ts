@@ -20,6 +20,7 @@ export type Preferences = {
   emailInvites: boolean
   emailChanges: boolean
   emailReminders: boolean
+  emailChat: boolean
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -32,6 +33,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   emailInvites: true,
   emailChanges: true,
   emailReminders: false,
+  emailChat: true,
 }
 
 const COMPACT_MAX_WIDTH = 700
@@ -49,6 +51,7 @@ export const parsePreferences = (value: unknown): Preferences => {
     emailInvites,
     emailChanges,
     emailReminders,
+    emailChat,
   } = asRecord(value)
   return {
     theme: isOneOf(THEMES, theme) ? theme : DEFAULT_PREFERENCES.theme,
@@ -60,6 +63,7 @@ export const parsePreferences = (value: unknown): Preferences => {
     emailInvites: typeof emailInvites === 'boolean' ? emailInvites : DEFAULT_PREFERENCES.emailInvites,
     emailChanges: typeof emailChanges === 'boolean' ? emailChanges : DEFAULT_PREFERENCES.emailChanges,
     emailReminders: typeof emailReminders === 'boolean' ? emailReminders : DEFAULT_PREFERENCES.emailReminders,
+    emailChat: typeof emailChat === 'boolean' ? emailChat : DEFAULT_PREFERENCES.emailChat,
   }
 }
 

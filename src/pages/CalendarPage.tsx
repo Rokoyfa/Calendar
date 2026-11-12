@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
-import { Link } from 'react-router'
+import { useEffect, useMemo } from 'react'
+import { Link, useSearchParams } from 'react-router'
 import { SettingsIcon } from '../components/Icons.tsx'
 import { ROUTES } from '../config/routes.ts'
 import { AccountMenu, EmailVerificationBanner, useAuth } from '../features/authorization/index.ts'
-import { Calendar } from '../features/calendar/index.ts'
+import { Calendar, type OpenEventRequest } from '../features/calendar/index.ts'
+import type { ChatAccess } from '../features/chat/index.ts'
+import { isISODate } from '../utils/date.ts'
 import {
   ActiveCalendarIndicator,
   CalendarSwitcher,
@@ -19,6 +21,8 @@ import { useHost } from '../context/HostContext.ts'
 import { useRootElement } from '../context/RootElementContext.ts'
 import { getStartView, isCompactWidth } from '../utils/preferences.ts'
 
+const LINK_PARAMS = { calendar: 'calendar', event: 'event', date: 'date', tab: 'tab' } as const
+
 export function CalendarPage() {
   const root = useRootElement()
   const host = useHost()
@@ -26,7 +30,50 @@ export function CalendarPage() {
   const hasAccountMenu = enabled && (user !== null || method === 'password')
   const { preferences } = usePreferences()
   const { m } = useI18n()
-  const { calendars, activeCalendar, visibleCalendarIds, repository } = useCalendars()
+  const { calendars, activeCalendar, visibleCalendarIds, repository, selectCalendar } = useCalendars()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const linkedCalendarId = searchParams.get(LINK_PARAMS.calendar)
+  const linkedEventId = searchParams.get(LINK_PARAMS.event)
+  const linkedDate = searchParams.get(LINK_PARAMS.date)
+  const linkedTab = searchParams.get(LINK_PARAMS.tab)
+  const openEvent = useMemo<OpenEventRequest | undefined>(
+    () =>
+      linkedEventId && isISODate(linkedDate)
+        ? { eventId: linkedEventId, date: linkedDate, tab: linkedTab === 'chat' ? 'chat' : undefined }
+        : undefined,
+    [linkedEventId, linkedDate, linkedTab],
+  )
+  const linkedCalendarExists = calendars.some((calendar) => calendar.id === linkedCalendarId)
+
+  useEffect(() => {
+    if (linkedCalendarId && linkedCalendarExists) selectCalendar(linkedCalendarId)
+  }, [linkedCalendarId, linkedCalendarExists, selectCalendar])
+
+  const clearLink = () =>
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        for (const param of Object.values(LINK_PARAMS)) next.delete(param)
+        return next
+      },
+      { replace: true },
+    )
+
+  const chatAccess = useMemo<ChatAccess | undefined>(() => {
+    if (!host.teams || !user) return undefined
+    const find = (calendarId: string) => calendars.find((calendar) => calendar.id === calendarId)
+    return {
+      currentUserId: user.id,
+      isAvailable: (calendarId) => {
+        const calendar = find(calendarId)
+        return Boolean(calendar && !isPersonalCalendar(calendar))
+      },
+      canModerate: (calendarId) => {
+        const calendar = find(calendarId)
+        return Boolean(calendar && hasPermission(calendar, 'manage_calendars'))
+      },
+    }
+  }, [host.teams, user, calendars])
   const loadAttendeeCandidates = useMemo(() => {
     if (!host.teams || !user) return undefined
     return async (calendarId: string) => {
@@ -54,6 +101,9 @@ export function CalendarPage() {
         headerContext={<ActiveCalendarIndicator />}
         currentUserEmail={user?.email ?? null}
         loadAttendeeCandidates={loadAttendeeCandidates}
+        chat={chatAccess}
+        openEvent={openEvent}
+        onOpenEventDone={clearLink}
         headerAccessory={
           <>
             {!hasAccountMenu && (

@@ -3,6 +3,8 @@ import type { EventOccurrence } from '../../../utils/event.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import { useSegmentAttributes } from '../hooks/useSegmentAttributes.ts'
 import { EventTitle } from './EventTitle.tsx'
+import { UnreadBadge } from '../../chat/index.ts'
+import { getChatKey } from '../../../utils/chat.ts'
 
 type EventChipProps = {
   segment: EventSegment
@@ -28,6 +30,7 @@ export function EventChip({ segment, row, isContinuation = false, onSelect }: Ev
     >
       {!continuesBefore && !event.allDay && <span className="eventChipTime">{i18n.format.time(start)}</span>}
       <EventTitle event={event} source={source} withLocation />
+      {!continuesBefore && <UnreadBadge chatKey={getChatKey(event)} />}
     </button>
   )
 }

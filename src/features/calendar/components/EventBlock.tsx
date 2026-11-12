@@ -6,6 +6,8 @@ import { getVisibleDuration } from '../utils/eventGeometry.ts'
 import { EventLinks } from './EventLinks.tsx'
 import { EventLocation } from './EventLocation.tsx'
 import { EventTitle } from './EventTitle.tsx'
+import { UnreadBadge } from '../../chat/index.ts'
+import { getChatKey } from '../../../utils/chat.ts'
 
 type EventBlockProps = {
   segment: EventSegment
@@ -40,6 +42,7 @@ export function EventBlock({ segment, column, columns, onSelect }: EventBlockPro
 
   return (
     <div {...attributes} style={blockStyle}>
+      <UnreadBadge chatKey={getChatKey(event)} />
       <button type="button" className="eventOpen" aria-label={attributes.title} onClick={() => onSelect(event)} />
       <EventTitle event={event} source={source} withLocation={!showDetails} />
       {event.location && showDetails && <EventLocation location={event.location} />}

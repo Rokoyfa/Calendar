@@ -34,6 +34,10 @@ tags:
   - name: Teams
   - name: Invitations
   - name: Preferences
+  - name: Chat
+    description: |
+      One chat per event in team calendars, for recurring events one per occurrence (`date` = original date of the occurrence).
+      Live updates come over a WebSocket at `{base}/chat/socket`, see the README section “Event chat”.
   - name: Holidays
 paths:
   /auth/me:
@@ -419,6 +423,96 @@ paths:
       responses:
         '201': { $ref: '#/components/responses/CalendarSummary' }
         '400': { $ref: '#/components/responses/Problem' }
+  /events/{id}/chat:
+    parameters:
+      - { name: id, in: path, required: true, description: 'Event id, for detached occurrences the id of their series', schema: { type: string } }
+      - { name: date, in: query, required: false, description: 'Required for recurring events: the original date of the occurrence. Not allowed for single events.', schema: { $ref: '#/components/schemas/ISODate' } }
+    get:
+      tags: [Chat]
+      summary: Messages of an event chat
+      description: Oldest first. Without `before` the newest page. Every member of the team calendar may read. `400` with `personalTeam` in personal calendars.
+      parameters:
+        - { name: before, in: query, required: false, description: 'Message id, returns messages older than this one', schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: Page of messages
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatPage' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Chat]
+      summary: Write a message
+      description: Every member of the team calendar may write. Marks the chat as read for the author, sends `message.created` over the socket to all members and an email to attendees who want it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [text], properties: { text: { type: string, minLength: 1, maxLength: 2000 } } }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatMessage' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /events/{id}/chat/read:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: date, in: query, required: false, schema: { $ref: '#/components/schemas/ISODate' } }
+    post:
+      tags: [Chat]
+      summary: Mark the chat as read
+      responses:
+        '204': { description: Marked }
+  /chat/messages/{messageId}:
+    parameters:
+      - { name: messageId, in: path, required: true, schema: { type: string } }
+    patch:
+      tags: [Chat]
+      summary: Edit an own message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [text], properties: { text: { type: string, minLength: 1, maxLength: 2000 } } }
+      responses:
+        '200':
+          description: Edited, `editedAt` is set. Sends `message.updated` over the socket.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatMessage' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Chat]
+      summary: Delete a message
+      description: Own messages, or any message with `manage_calendars` (owner, admin, manager). Sends `message.deleted` over the socket.
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /chat/unread:
+    get:
+      tags: [Chat]
+      summary: Unread messages per chat
+      description: Messages of others newer than the user's last read time, only chats with at least one.
+      parameters:
+        - name: calendarId
+          in: query
+          required: true
+          style: form
+          explode: true
+          schema: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Counts
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/ChatUnread' } }
   /calendars/{calendarId}/feed:
     parameters:
       - { $ref: '#/components/parameters/CalendarId' }
@@ -777,6 +871,7 @@ paths:
                 emailInvites: { type: boolean }
                 emailChanges: { type: boolean }
                 emailReminders: { type: boolean }
+                emailChat: { type: boolean }
       responses:
         '200': { $ref: '#/components/responses/Preferences' }
         '400': { $ref: '#/components/responses/Problem' }
@@ -1113,6 +1208,33 @@ components:
       default: auto
       description: '`auto` (region given by the host, otherwise from the language), `off`, or a region such as `DE-NW`.'
       pattern: '^(auto|off|[A-Z]{2}(-[A-Z0-9]{1,6})?)$'
+    ChatMessage:
+      type: object
+      required: [id, calendarId, eventId, occurrenceDate, author, text, createdAt, editedAt]
+      properties:
+        id: { type: string }
+        calendarId: { type: string }
+        eventId: { type: string }
+        occurrenceDate: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
+        author:
+          description: null when the account was deleted
+          oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
+        text: { type: string }
+        createdAt: { type: string, format: date-time }
+        editedAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }
+    ChatPage:
+      type: object
+      required: [messages, hasMore]
+      properties:
+        messages: { type: array, items: { $ref: '#/components/schemas/ChatMessage' } }
+        hasMore: { type: boolean }
+    ChatUnread:
+      type: object
+      required: [eventId, occurrenceDate, count]
+      properties:
+        eventId: { type: string }
+        occurrenceDate: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
+        count: { type: integer, minimum: 1 }
     EventResponse:
       type: object
       required: [title, location, startDate, start, endDate, end, allDay, timeZone, recurring, status]
@@ -1139,7 +1261,7 @@ components:
       description: '`auto` (zone given by the host, otherwise the system zone) or an IANA zone such as `Europe/Berlin`. Events are shown in this zone.'
     Preferences:
       type: object
-      required: [theme, defaultView, mobileDefaultView, locale, timeZone, holidays, emailInvites, emailChanges, emailReminders]
+      required: [theme, defaultView, mobileDefaultView, locale, timeZone, holidays, emailInvites, emailChanges, emailReminders, emailChat]
       properties:
         theme: { $ref: '#/components/schemas/Theme' }
         defaultView: { $ref: '#/components/schemas/CalendarView' }
@@ -1150,3 +1272,4 @@ components:
         emailInvites: { type: boolean, default: true, description: Email when someone invites the user to an event }
         emailChanges: { type: boolean, default: true, description: Email when an event the user is invited to changes or is cancelled }
         emailReminders: { type: boolean, default: false, description: Emails at the user's own reminder times }
+        emailChat: { type: boolean, default: true, description: Email about new chat messages of events the user is invited to }

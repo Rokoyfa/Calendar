@@ -6,9 +6,9 @@ import { useI18n } from '../../../i18n/index.ts'
 import type { Preferences } from '../../../utils/preferences.ts'
 import { usePreferences } from '../hooks/usePreferences.ts'
 
-type EmailSetting = keyof Pick<Preferences, 'emailInvites' | 'emailChanges' | 'emailReminders'>
+type EmailSetting = keyof Pick<Preferences, 'emailInvites' | 'emailChanges' | 'emailReminders' | 'emailChat'>
 
-const EMAIL_SETTINGS: readonly EmailSetting[] = ['emailInvites', 'emailChanges', 'emailReminders']
+const EMAIL_SETTINGS: readonly EmailSetting[] = ['emailInvites', 'emailChanges', 'emailReminders', 'emailChat']
 
 export function NotificationSettings({ emailVerified }: { emailVerified: boolean }) {
   const { m } = useI18n()

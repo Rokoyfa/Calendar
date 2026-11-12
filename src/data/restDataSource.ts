@@ -6,12 +6,14 @@ import {
 import { RemoteCalendarRepository } from '../features/calendars/index.ts'
 import {
   RemoteColorRepository,
+  RemoteChatRepository,
   RemoteEventRepository,
   RemoteHolidayRepository,
   RemotePreferencesRepository,
 } from '../features/storage/index.ts'
 import type { HolidaySource } from '../lib/defaults.ts'
 import { createApiClient } from '../utils/api.ts'
+import { toSocketUrl } from '../utils/chat.ts'
 import { createLocalRepositories } from './localDataSource.ts'
 import type { CalendarDataSource, DataRepositories, DataSourceContext } from './types.ts'
 
@@ -23,6 +25,7 @@ export type RestDataSourceOptions = {
   getAccessToken?: () => string | null
   getUserToken?: UserTokenProvider
   holidaySource?: HolidaySource
+  chatSocketUrl?: string
 }
 
 export function restDataSource({
@@ -33,10 +36,19 @@ export function restDataSource({
   getAccessToken,
   getUserToken,
   holidaySource = 'library',
+  chatSocketUrl,
 }: RestDataSourceOptions): CalendarDataSource {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
   const createApi = ({ getLanguage, onUnauthorized }: Partial<DataSourceContext>) =>
     createApiClient({ baseUrl: normalizedBaseUrl, timeoutMs, headers, getAccessToken, getLanguage, onUnauthorized })
+
+  const getSocketUrl = () => {
+    if (chatSocketUrl) return chatSocketUrl
+    const url = new URL(toSocketUrl(normalizedBaseUrl, '/chat/socket'))
+    const tenant = new Headers(headers).get('X-Calendar-Tenant')
+    if (tenant) url.searchParams.set('tenant', tenant)
+    return url.toString()
+  }
 
   const createRemoteRepositories = (context: DataSourceContext): DataRepositories => {
     const api = createApi(context)
@@ -47,6 +59,7 @@ export function restDataSource({
       colors: new RemoteColorRepository(api),
       preferences: new RemotePreferencesRepository(api),
       holidays: holidaySource === 'backend' ? new RemoteHolidayRepository(api) : undefined,
+      chat: new RemoteChatRepository(api, getSocketUrl()),
     }
   }
 

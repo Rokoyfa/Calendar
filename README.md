@@ -114,6 +114,20 @@ A subscription is not live: the app downloads the whole calendar again at interv
 
 The feed asks clients to reload every hour (`REFRESH-INTERVAL` and `X-PUBLISHED-TTL`), but most apps follow their own settings. For changes that must show up immediately, users should open this calendar directly. Two-way sync with near-instant updates would need a CalDAV server, which this component does not cover.
 
+## Event chat
+
+Events in team calendars have a **Chat** tab: every member can read and write, edit and delete their own messages, and owners, admins and managers (`manage_calendars`) can delete any message. Recurring events have one chat per occurrence. A detached occurrence keeps the chat of its original date. The calendar shows unread messages as a red badge on the event and in the tab title, and attendees can get an email about new messages (`emailChat`, on by default, at most one email per chat every few minutes).
+
+Messages go over REST (see the OpenAPI file, tag *Chat*). New, edited and deleted messages arrive live over a WebSocket:
+
+- **Address:** `{apiBaseUrl}/chat/socket` with `ws://` or `wss://`, derived from `apiBaseUrl` (relative addresses use the page's host). With `tenant` the tenant is added as `?tenant=…`, because browsers cannot set headers on WebSockets. Custom data sources can pass `chatSocketUrl` to `restDataSource`.
+- **Sign-in:** the session cookie is sent with the handshake. Check the `Origin` header against the allowed origins and answer `401` without a session.
+- **Server → client** (JSON text frames): `{ "type": "message.created" | "message.updated", "message": ChatMessage }` and `{ "type": "message.deleted", "id", "calendarId", "eventId", "occurrenceDate" }`, sent to every connected member of the calendar's team.
+- **Client → server:** only `{ "type": "ping" }` every 25 seconds, answer with `{ "type": "pong" }` or ignore it.
+- The component reconnects with growing pauses (1 to 30 seconds) and reloads the open chat and the unread counts after reconnecting, so a lost connection only delays messages.
+
+Emails link to the host page with `?calendar=…&event=…&date=…&tab=chat`, which opens the event with the chat.
+
 ## Building your own backend
 
 The full contract is [`api/openapi.yaml`](api/openapi.yaml) (OpenAPI 3.1, also shipped as `@rokoyfa/calendar/openapi.yaml`). The essentials:
@@ -176,7 +190,7 @@ type Preferences = {
   holidays: string              // 'auto', 'off' or a region such as 'DE-NW'
 }
 type PublicHoliday = { date: string; name: string } // GET /holidays, only with holiday-source="backend"
-// Preferences also carry emailInvites, emailChanges, emailReminders: booleans for the emails below
+// Preferences also carry emailInvites, emailChanges, emailReminders, emailChat: booleans for the emails below
 type Problem = { code: string; message: string }   // every error response
 ```
 
@@ -199,6 +213,7 @@ The backend stores series as one event. The component expands occurrences itself
 | Answer as attendee | `POST /events/:id/response` with `{ status }` |
 | Change only own reminders | `PUT /events/:id/reminders` with `{ reminders }` (also for members without edit rights) |
 | Answer from an email link | `POST /events/respond` with `{ token, status }`, no session needed |
+| Event chat | `GET`/`POST /events/:id/chat?date=…`, `POST /events/:id/chat/read`, `PATCH`/`DELETE /chat/messages/:id`, `GET /chat/unread?calendarId=…`, WebSocket `/chat/socket` |
 | Subscription link | `GET`, `POST` (new link), `DELETE /calendars/:id/feed`. The link points at your `GET /feeds/:token.ics` |
 | Reminders | `GET /events` for the next four weeks of all calendars, every five minutes while the widget is open |
 | Import .ics | `GET /events` for the whole calendar, then `PUT` for known `uid`s and `POST` for new ones |

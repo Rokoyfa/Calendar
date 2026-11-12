@@ -11,6 +11,7 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - iCalendar export and import (.ics) in the calendar settings. Importing again updates events with the same `uid`, recurring events, exceptions, reminders and attendees are kept
 - Attendees in team calendars with responses yes, maybe and no, plus a button to invite all members at once. Unanswered events are striped, declined ones crossed out
 - The calendar you were in is restored after a reload
+- Chat per event in team calendars (one per occurrence for recurring events) with live updates over a WebSocket, unread badges, edit and delete, moderation for owners, admins and managers, and optional emails to attendees with a link straight into the chat
 - Public holidays for over 200 countries and their regions, computed in the browser with date-holidays (loaded only when shown) or delivered by your backend (`holiday-source="backend"`, `GET /holidays`). Region from the new `holidays` attribute, the language, or the user's setting
 - Calendar subscriptions: a secret link per user and calendar for Google Calendar, Outlook or Apple Calendar (`/calendars/:id/feed`, `/feeds/:token.ics`)
 - Email settings (invitations, changes, reminders) in a new Notifications tab, and a page that saves the yes / maybe / no answer from an invitation email without signing in (`POST /events/respond`)

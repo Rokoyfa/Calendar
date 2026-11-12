@@ -19,7 +19,16 @@ import {
   type EventOccurrence,
   type EventPeriod,
 } from '../../../utils/event.ts'
-import { DeleteEventModal, EventModal, getScopeOptions, RecurrenceScopeModal, useEvents } from '../../events/index.ts'
+import {
+  DeleteEventModal,
+  EventModal,
+  getScopeOptions,
+  RecurrenceScopeModal,
+  useEvents,
+  type EventTab,
+} from '../../events/index.ts'
+import { ChatProvider, type ChatAccess } from '../../chat/index.ts'
+import { getChatKey } from '../../../utils/chat.ts'
 import { CurrentUserEmailContext } from '../context/CurrentUserContext.ts'
 import { DraggingEventContext } from '../context/DragContext.ts'
 import { useAttendeeCandidates, type AttendeeCandidateLoader } from '../hooks/useAttendeeCandidates.ts'
@@ -61,7 +70,12 @@ type CalendarProps = {
   headerAccessory?: ReactNode
   currentUserEmail?: string | null
   loadAttendeeCandidates?: AttendeeCandidateLoader
+  chat?: ChatAccess
+  openEvent?: OpenEventRequest
+  onOpenEventDone?: () => void
 }
+
+export type OpenEventRequest = { eventId: string; date: string; tab?: EventTab }
 
 type PendingDrop = { occurrence: EventOccurrence; period: EventPeriod; options: EditScope[] }
 
@@ -77,12 +91,15 @@ export function Calendar({
   headerAccessory,
   currentUserEmail = null,
   loadAttendeeCandidates,
+  chat,
+  openEvent,
+  onOpenEventDone,
 }: CalendarProps) {
   const i18n = useI18n()
   const now = useNow()
   const today = toISODate(now)
   const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
-    useCalendarView(initialView)
+    useCalendarView(initialView, openEvent?.date)
   const { events, error, createEvent, updateEvent, deleteEvent, respond, setReminders } = useEvents({
     ...range,
     calendarIds,
@@ -114,9 +131,29 @@ export function Calendar({
   }, [occurrences, dragPreview, range])
   const mainRef = useRef<HTMLElement>(null)
   const [editor, setEditor] = useState<EditorState | null>(null)
+  const requestedOccurrence = useMemo(
+    () =>
+      openEvent
+        ? (occurrences.find(
+            (occurrence) =>
+              (occurrence.id === openEvent.eventId && occurrence.occurrenceDate === openEvent.date) ||
+              (occurrence.seriesId === openEvent.eventId && occurrence.originalDate === openEvent.date) ||
+              (occurrence.id === openEvent.eventId && !occurrence.recurrence),
+          ) ?? null)
+        : null,
+    [openEvent, occurrences],
+  )
+  const shownEditor: EditorState | null =
+    editor ??
+    (requestedOccurrence && {
+      initialValue: toOccurrenceInput(requestedOccurrence),
+      occurrence: requestedOccurrence,
+      initialTab: openEvent?.tab,
+    })
+
   const [eventToDelete, setEventToDelete] = useState<EventOccurrence | null>(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const editorCalendarId = editor ? (editor.occurrence?.calendarId ?? targetCalendarId) : null
+  const editorCalendarId = shownEditor ? (shownEditor.occurrence?.calendarId ?? targetCalendarId) : null
   const attendeeCandidates = useAttendeeCandidates(loadAttendeeCandidates, editorCalendarId)
 
   const offerUndo = (message: string, undo: (() => Promise<void>) | null) =>
@@ -159,9 +196,14 @@ export function Calendar({
     [canCreate],
   )
 
-  const openEdit = useCallback((occurrence: EventOccurrence) => {
-    setEditor({ initialValue: toOccurrenceInput(occurrence), occurrence })
+  const openEdit = useCallback((occurrence: EventOccurrence, initialTab?: EventTab) => {
+    setEditor({ initialValue: toOccurrenceInput(occurrence), occurrence, initialTab })
   }, [])
+
+  const closeEditor = () => {
+    setEditor(null)
+    if (openEvent) onOpenEventDone?.()
+  }
 
   const openSearchResult = (event: CalendarEvent, date: string) => {
     setIsSearchOpen(false)
@@ -175,17 +217,19 @@ export function Calendar({
     if (occurrence) openEdit(occurrence)
   }
 
-  const duplicate = (input: EventInput) =>
+  const duplicate = (input: EventInput) => {
+    if (openEvent) onOpenEventDone?.()
     setEditor({
       initialValue: toDuplicateInput(input),
       occurrence: null,
       notice: i18n.m.events.duplicateNotice(input.title),
     })
+  }
 
   const removeEvent = async (occurrence: EventOccurrence, scope: EditScope) => {
     const undo = await deleteEvent(occurrence, scope)
     setEventToDelete(null)
-    setEditor(null)
+    closeEditor()
     offerUndo(i18n.m.calendar.undo.deleted(occurrence.title), undo)
   }
 
@@ -195,9 +239,9 @@ export function Calendar({
   }
 
   const handleSave = async (input: EventInput, scope: EditScope) => {
-    if (editor?.occurrence) await updateEvent(editor.occurrence, input, scope)
+    if (shownEditor?.occurrence) await updateEvent(shownEditor.occurrence, input, scope)
     else await createEvent(input)
-    setEditor(null)
+    closeEditor()
     goToDate(toViewerPeriod(input, input.timeZone, viewerTimeZone).startDate)
   }
 
@@ -244,114 +288,125 @@ export function Calendar({
   })
 
   const ViewComponent = VIEW_COMPONENTS[view]
-  const editorSource = editor?.occurrence ? eventSources.get(editor.occurrence.calendarId) : undefined
+  const editorSource = shownEditor?.occurrence ? eventSources.get(shownEditor.occurrence.calendarId) : undefined
 
   return (
     <HolidaysContext value={holidays}>
-      <EventSourcesContext value={eventSources}>
-        <CurrentUserEmailContext value={currentUserEmail}>
-          <DraggingEventContext value={dragPreview?.occurrenceKey ?? null}>
-            <CalendarHeader
-              view={view}
-              title={title}
-              subtitle={subtitle}
-              onViewChange={setView}
-              onPrevious={previous}
-              onNext={next}
-              onToday={goToToday}
-              onSearch={() => setIsSearchOpen(true)}
-              onCreateEvent={canCreate ? createNow : undefined}
-              context={headerContext}
-              accessory={headerAccessory}
-            />
-
-            <ErrorMessage message={error} className="textCenter" />
-            <ErrorMessage message={actionError} className="textCenter" />
-
-            <main ref={mainRef} className="main scrollArea" data-view={view}>
-              <ViewComponent
-                anchor={anchor}
-                dates={dates}
-                today={today}
-                currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
-                segmentsByDate={segmentsByDate}
-                canCreate={canCreate}
-                onCreate={openCreate}
-                onCreateRange={openCreateRange}
-                onCreateAllDay={openCreateAllDay}
-                onEventSelect={openEdit}
-                onShowDay={(date) => show('day', date)}
-                onShowMonth={(date) => show('month', date)}
+      <ChatProvider access={chat} calendarIds={calendarIds}>
+        <EventSourcesContext value={eventSources}>
+          <CurrentUserEmailContext value={currentUserEmail}>
+            <DraggingEventContext value={dragPreview?.occurrenceKey ?? null}>
+              <CalendarHeader
+                view={view}
+                title={title}
+                subtitle={subtitle}
+                onViewChange={setView}
+                onPrevious={previous}
+                onNext={next}
+                onToday={goToToday}
+                onSearch={() => setIsSearchOpen(true)}
+                onCreateEvent={canCreate ? createNow : undefined}
+                context={headerContext}
+                accessory={headerAccessory}
               />
-            </main>
 
-            {editor && (
-              <EventModal
-                key={editor.occurrence?.occurrenceKey ?? 'new'}
-                initialValue={editor.initialValue}
-                occurrence={editor.occurrence}
-                attendeeOptions={{
-                  candidates: attendeeCandidates,
-                  ownEmail: currentUserEmail,
-                  onRespond: respond && editor.occurrence ? (status) => respond(editor.occurrence!, status) : undefined,
-                }}
-                notice={
-                  editor.notice ??
-                  (editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n)))
-                }
-                onSave={handleSave}
-                onDelete={editor.occurrence ? () => requestDelete(editor.occurrence!) : undefined}
-                onDuplicate={editor.occurrence && canCreate ? duplicate : undefined}
-              onRemindersChange={
-                setReminders && editor.occurrence
-                  ? async (reminders) => {
-                      await setReminders(editor.occurrence!, reminders)
-                      setEditor(null)
-                    }
-                  : undefined
-              }
-                onClose={() => setEditor(null)}
-              />
-            )}
+              <ErrorMessage message={error} className="textCenter" />
+              <ErrorMessage message={actionError} className="textCenter" />
 
-            {isSearchOpen && (
-              <EventSearchModal
-                calendarIds={calendarIds}
-                today={today}
-                onSelect={openSearchResult}
-                onClose={() => setIsSearchOpen(false)}
-              />
-            )}
+              <main ref={mainRef} className="main scrollArea" data-view={view}>
+                <ViewComponent
+                  anchor={anchor}
+                  dates={dates}
+                  today={today}
+                  currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
+                  segmentsByDate={segmentsByDate}
+                  canCreate={canCreate}
+                  onCreate={openCreate}
+                  onCreateRange={openCreateRange}
+                  onCreateAllDay={openCreateAllDay}
+                  onEventSelect={openEdit}
+                  onShowDay={(date) => show('day', date)}
+                  onShowMonth={(date) => show('month', date)}
+                />
+              </main>
 
-            {pendingDrop && (
-              <RecurrenceScopeModal
-                options={pendingDrop.options}
-                onSelect={(scope) => void saveDrop(pendingDrop.occurrence, pendingDrop.period, scope)}
-                onClose={() => {
-                  setPendingDrop(null)
-                  setDragPreview(null)
-                }}
-              />
-            )}
+              {shownEditor && (
+                <EventModal
+                  key={shownEditor.occurrence?.occurrenceKey ?? 'new'}
+                  initialValue={shownEditor.initialValue}
+                  occurrence={shownEditor.occurrence}
+                  attendeeOptions={{
+                    candidates: attendeeCandidates,
+                    ownEmail: currentUserEmail,
+                    onRespond:
+                      respond && shownEditor.occurrence
+                        ? (status) => respond(shownEditor.occurrence!, status)
+                        : undefined,
+                  }}
+                  notice={
+                    shownEditor.notice ??
+                    (editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n)))
+                  }
+                  onSave={handleSave}
+                  onDelete={shownEditor.occurrence ? () => requestDelete(shownEditor.occurrence!) : undefined}
+                  chat={
+                    shownEditor.occurrence && chat?.isAvailable(shownEditor.occurrence.calendarId)
+                      ? { key: getChatKey(shownEditor.occurrence), calendarId: shownEditor.occurrence.calendarId }
+                      : undefined
+                  }
+                  initialTab={shownEditor.initialTab}
+                  onDuplicate={shownEditor.occurrence && canCreate ? duplicate : undefined}
+                  onRemindersChange={
+                    setReminders && shownEditor.occurrence
+                      ? async (reminders) => {
+                          await setReminders(shownEditor.occurrence!, reminders)
+                          closeEditor()
+                        }
+                      : undefined
+                  }
+                  onClose={closeEditor}
+                />
+              )}
 
-            {eventToDelete && (
-              <DeleteEventModal
-                occurrence={eventToDelete}
-                onConfirm={(scope) => removeEvent(eventToDelete, scope)}
-                onClose={() => setEventToDelete(null)}
-              />
-            )}
-            {undoOffer && (
-              <UndoNotice
-                key={undoOffer.id}
-                message={undoOffer.message}
-                onUndo={() => void runUndo()}
-                onDismiss={dismissUndo}
-              />
-            )}
-          </DraggingEventContext>
-        </CurrentUserEmailContext>
-      </EventSourcesContext>
+              {isSearchOpen && (
+                <EventSearchModal
+                  calendarIds={calendarIds}
+                  today={today}
+                  onSelect={openSearchResult}
+                  onClose={() => setIsSearchOpen(false)}
+                />
+              )}
+
+              {pendingDrop && (
+                <RecurrenceScopeModal
+                  options={pendingDrop.options}
+                  onSelect={(scope) => void saveDrop(pendingDrop.occurrence, pendingDrop.period, scope)}
+                  onClose={() => {
+                    setPendingDrop(null)
+                    setDragPreview(null)
+                  }}
+                />
+              )}
+
+              {eventToDelete && (
+                <DeleteEventModal
+                  occurrence={eventToDelete}
+                  onConfirm={(scope) => removeEvent(eventToDelete, scope)}
+                  onClose={() => setEventToDelete(null)}
+                />
+              )}
+              {undoOffer && (
+                <UndoNotice
+                  key={undoOffer.id}
+                  message={undoOffer.message}
+                  onUndo={() => void runUndo()}
+                  onDismiss={dismissUndo}
+                />
+              )}
+            </DraggingEventContext>
+          </CurrentUserEmailContext>
+        </EventSourcesContext>
+      </ChatProvider>
     </HolidaysContext>
   )
 }

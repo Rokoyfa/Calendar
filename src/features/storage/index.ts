@@ -8,11 +8,13 @@ export { RemoteColorRepository } from './repositories/RemoteColorRepository.ts'
 export { RemoteEventRepository } from './repositories/RemoteEventRepository.ts'
 export { RemotePreferencesRepository } from './repositories/RemotePreferencesRepository.ts'
 export { RemoteHolidayRepository } from './repositories/RemoteHolidayRepository.ts'
+export { RemoteChatRepository } from './repositories/RemoteChatRepository.ts'
 export type {
   ColorRepository,
   EventQuery,
   EventRepository,
   EventSearchQuery,
+  ChatRepository,
   HolidayQuery,
   HolidayRepository,
   PreferencesRepository,

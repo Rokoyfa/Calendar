@@ -23,6 +23,7 @@ export const settings = {
     emailInvites: 'When someone invites me to an event',
     emailChanges: 'When an event I am invited to changes or is cancelled',
     emailReminders: 'Reminders by email',
+    emailChat: 'New chat messages about events I am invited to',
   },
   themeTitle: 'Color scheme',
   themeLabel: 'Light or dark',

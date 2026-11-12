@@ -41,20 +41,25 @@ import { RecurrenceFields } from './RecurrenceFields.tsx'
 import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
 import { AttendeesField, type AttendeeCandidate } from './AttendeesField.tsx'
 import { LinksField } from './LinksField.tsx'
+import { ChatPanel, useUnreadCount } from '../../chat/index.ts'
+import type { ChatKey } from '../../../utils/chat.ts'
 import { ReminderField } from './ReminderField.tsx'
 import { TimeZoneField } from './TimeZoneField.tsx'
 
 const DEFAULT_START = '09:00'
 const DEFAULT_END = '10:00'
 
-type EventTab = 'general' | 'recurrence' | 'attendees' | 'details'
+export type EventTab = 'general' | 'recurrence' | 'attendees' | 'details' | 'chat'
 
 const TAB_FIELDS: Record<EventTab, readonly (keyof EventValidationErrors)[]> = {
   general: ['title', 'startDate', 'start', 'endDate', 'end', 'timeZone', 'reminders', 'color'],
   recurrence: ['recurrence', 'excludedDates'],
   attendees: ['attendees'],
   details: ['location', 'links', 'description'],
+  chat: [],
 }
+
+const NO_CHAT: ChatKey = { eventId: '', occurrenceDate: null }
 
 const hasTabErrors = (errors: EventValidationErrors, tab: EventTab) =>
   TAB_FIELDS[tab].some((field) => errors[field] !== undefined)
@@ -77,6 +82,8 @@ type EventModalProps = {
   onDelete?: () => void | Promise<void>
   onDuplicate?: (input: EventInput) => void
   onRemindersChange?: (reminders: number[]) => Promise<void>
+  chat?: { key: ChatKey; calendarId: string }
+  initialTab?: EventTab
   onClose: () => void
 }
 
@@ -94,6 +101,8 @@ export function EventModal({
   onDelete,
   onDuplicate,
   onRemindersChange,
+  chat,
+  initialTab = 'general',
   onClose,
 }: EventModalProps) {
   const i18n = useI18n()
@@ -104,7 +113,8 @@ export function EventModal({
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
-  const [activeTab, setActiveTab] = useState<EventTab>('general')
+  const [activeTab, setActiveTab] = useState<EventTab>(chat || initialTab !== 'chat' ? initialTab : 'general')
+  const unreadChat = useUnreadCount(chat?.key ?? NO_CHAT)
   const {
     run: save,
     isPending,
@@ -318,6 +328,12 @@ export function EventModal({
       </>
     ),
   })
+  if (chat)
+    tabDefinitions.push({
+      value: 'chat',
+      label: m.calendars.settings.withCount(m.events.chat.tab, unreadChat),
+      content: <ChatPanel chatKey={chat.key} calendarId={chat.calendarId} isActive={activeTab === 'chat'} />,
+    })
   const tabs = tabDefinitions.map((tab) => ({ ...tab, invalid: hasTabErrors(errors, tab.value) }))
 
   return (

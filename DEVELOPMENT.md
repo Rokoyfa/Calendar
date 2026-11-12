@@ -646,6 +646,16 @@ In den Kalender-Einstellungen (Tab „Import & Export“, beim persönlichen Kal
 
 Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutzers: neuer Tab **Benachrichtigungen** in den Einstellungen (nur angemeldet) mit `emailInvites`, `emailChanges` und `emailReminders`. Einladungs-E-Mails enthalten Links „Ja“, „Vielleicht“, „Nein“ auf `/respond?status=…&token=…`. Die Seite `pages/RespondPage.tsx` speichert die Antwort aus dem Link ohne Anmeldung (`POST /events/respond`, über das Auth-Repository, weil das auch ohne Sitzung erreichbar ist), zeigt Titel, Zeit in der eigenen Zeitzone und Ort und lässt die Antwort ändern. Was das Test-Backend dafür tut, steht in dessen README.
 
+### Chat zu Terminen
+
+- Nur in Teamkalendern und nur angemeldet. Termine haben im Dialog einen Tab **Chat**, im Raster zeigt eine rote Plakette die ungelesenen Nachrichten.
+- **Ein Chat pro Termin**, bei Serien pro Vorkommen. Der Schlüssel ist `{ eventId, occurrenceDate }` (`utils/chat.ts`, `getChatKey`): Einzeltermine `occurrenceDate: null`, Serien das Datum des Vorkommens, herausgelöste Termine die ID ihrer Serie und ihr ursprüngliches Datum, damit der Verlauf beim Verschieben eines einzelnen Termins erhalten bleibt.
+- **Rechte:** alle Mitglieder lesen und schreiben, eigene Nachrichten bearbeiten und löschen, mit `manage_calendars` (Owner, Admin, Manager) alle löschen.
+- **Live:** `RemoteChatRepository` hält eine WebSocket-Verbindung (`/chat/socket`), solange etwas zuhört, schickt alle 25 Sekunden ein Ping und verbindet sich nach Abbrüchen mit wachsender Pause neu. Nach dem Neuverbinden lädt der offene Chat nach und die Zähler werden neu geholt. Senden, Bearbeiten und Löschen laufen über REST.
+- **Ungelesen:** `useChatUnread` lädt die Zähler der sichtbaren Teamkalender, zählt neue Nachrichten anderer live hoch und setzt einen Chat auf null, solange er offen ist. Gelesen wird erst, wenn der Tab „Chat“ wirklich angezeigt wird.
+- **E-Mail-Link:** `?calendar=…&event=…&date=…&tab=chat` wählt den Kalender, springt zum Datum und öffnet den Termin im Chat-Tab (`CalendarPage`, `openEvent` in `Calendar`). Beim Schließen verschwinden die Parameter aus der Adresse.
+- Code: `features/chat/` (ChatPanel, ChatProvider, UnreadBadge, Hooks), Repository in `features/storage/repositories/RemoteChatRepository.ts`. Die Vite-Weiterleitung für `/api` reicht WebSockets mit durch (`ws: true`).
+
 ### Duplizieren und Rückgängig
 
 - **Duplizieren** im Termin-Dialog öffnet einen neuen Termin mit den aktuellen Werten des Dialogs, auch noch nicht gespeicherten. Die Kopie bekommt eine neue `uid`, verliert die Verknüpfung zu einer Serie, und alle Teilnehmer stehen wieder auf „keine Antwort“. Angelegt wird sie erst beim Speichern, im aktiven Kalender.
@@ -865,6 +875,7 @@ src/
    │  ├─ types/
    │  └─ utils/                Serien-Aktionen gegen das Repository, Auswahl der Bereiche, iCalendar-Import (icalExchange)
    ├─ reminders/               Erinnerungen planen und anzeigen, solange das Widget offen ist (useReminders, ReminderNotices)
+   ├─ chat/                    Chat zu Terminen: ChatPanel, ChatProvider (Ungelesen-Zähler), UnreadBadge, useChatMessages
    ├─ holidays/                Feiertage: useHolidays (Region auflösen, Quelle wählen), HolidaySettings, Bibliothek date-holidays (lazy)
    ├─ storage/                 Datenspeicherung
    │  ├─ components/           LocalImportPrompt: lokale Termine ins Konto übernehmen

@@ -1,6 +1,7 @@
 import type { HexColor } from '../../../utils/color.ts'
 import type { DateRange } from '../../../utils/date.ts'
 import type { AttendeeStatus, CalendarEvent, EventInput } from '../../../utils/event.ts'
+import type { ChatEvent, ChatKey, ChatMessage, ChatPage, ChatUnread } from '../../../utils/chat.ts'
 import type { PublicHoliday } from '../../../utils/holidays.ts'
 import type { Preferences } from '../../../utils/preferences.ts'
 
@@ -36,6 +37,16 @@ export interface HolidayRepository {
   list(query: HolidayQuery): Promise<PublicHoliday[]>
 }
 
+export interface ChatRepository {
+  list(key: ChatKey, options?: { before?: string }): Promise<ChatPage>
+  send(key: ChatKey, text: string): Promise<ChatMessage>
+  edit(id: string, text: string): Promise<ChatMessage>
+  remove(id: string): Promise<void>
+  markRead(key: ChatKey): Promise<void>
+  unread(calendarIds: readonly string[]): Promise<ChatUnread[]>
+  subscribe(listener: (event: ChatEvent) => void): () => void
+}
+
 export type StorageMode = 'local' | 'remote'
 
 export type StorageRepositories = {
@@ -44,6 +55,7 @@ export type StorageRepositories = {
   colors: ColorRepository
   preferences: PreferencesRepository
   holidays?: HolidayRepository
+  chat?: ChatRepository
 }
 
 export type StorageContextValue = StorageRepositories & {

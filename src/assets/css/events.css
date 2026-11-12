@@ -66,6 +66,10 @@
   background-color: var(--color-surface);
 }
 
+.modal:has(.eventForm) {
+  width: min(520px, calc(100vw - 2 * var(--space-4)));
+}
+
 .eventForm .tab {
   padding: var(--space-2) var(--space-3);
 }

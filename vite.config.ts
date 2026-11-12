@@ -5,7 +5,7 @@ import { parseEnv } from './src/config/parseEnv.ts'
 
 const createApiProxy = (apiBaseUrl: string, target: string | undefined): Record<string, ProxyOptions> | undefined => {
   if (!target || !apiBaseUrl.startsWith('/')) return undefined
-  return { [apiBaseUrl.replace(/\/+$/, '')]: { target, changeOrigin: true } }
+  return { [apiBaseUrl.replace(/\/+$/, '')]: { target, changeOrigin: true, ws: true } }
 }
 
 export default defineConfig(({ mode }) => {

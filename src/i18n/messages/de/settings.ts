@@ -25,6 +25,7 @@ export const settings: Messages['settings'] = {
     emailInvites: 'Wenn mich jemand zu einem Termin einlädt',
     emailChanges: 'Wenn sich ein Termin ändert, zu dem ich eingeladen bin, oder abgesagt wird',
     emailReminders: 'Erinnerungen per E-Mail',
+    emailChat: 'Neue Nachrichten im Chat von Terminen, zu denen ich eingeladen bin',
   },
   themeTitle: 'Farbschema',
   themeLabel: 'Hell oder dunkel',

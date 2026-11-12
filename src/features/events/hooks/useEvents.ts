@@ -21,11 +21,14 @@ type UseEventsOptions = EventQuery & { targetCalendarId: string }
 export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEventsOptions) {
   const { events: repository, version, invalidate } = useStorage()
   const load = useCallback(
-    () => repository.list({
-        from: addDaysToISODate(from, -ZONE_SHIFT_DAYS),
-        to: addDaysToISODate(to, ZONE_SHIFT_DAYS),
-        calendarIds,
-      }),
+    async () =>
+      calendarIds.length === 0
+        ? NO_EVENTS
+        : repository.list({
+            from: addDaysToISODate(from, -ZONE_SHIFT_DAYS),
+            to: addDaysToISODate(to, ZONE_SHIFT_DAYS),
+            calendarIds,
+          }),
     [repository, from, to, calendarIds],
   )
   const { data: events, error, isLoading } = useAsyncResource(load, NO_EVENTS, version)
@@ -68,7 +71,9 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
 
   const updateEvent = useCallback(
     (occurrence: EventOccurrence, input: EventInput, scope: EditScope) =>
-      withUndo((recording) => updateOccurrence(recording, findSeries(occurrence), occurrence.occurrenceDate, input, scope)),
+      withUndo((recording) =>
+        updateOccurrence(recording, findSeries(occurrence), occurrence.occurrenceDate, input, scope),
+      ),
     [withUndo, findSeries],
   )
 
