@@ -6,6 +6,7 @@ import {
   createEventInputForSlots,
   eventOccursInRange,
   expandEvents,
+  changesOnlyReminders,
   getEventDuration,
   getLinkName,
   hasValidationErrors,
@@ -50,6 +51,14 @@ describe('event', () => {
     const series = eventInput({ title: '  Hi ', recurrence: recurrence(), seriesId: 'x', originalDate: '2026-11-01' })
     expect(normalizeEventInput(series)).toMatchObject({ title: 'Hi', seriesId: null, originalDate: null })
     expect(normalizeEventInput(eventInput({ excludedDates: ['2026-11-03'] })).excludedDates).toEqual([])
+  })
+
+  it('detects changes that only touch the own reminders', () => {
+    const input = eventInput()
+    expect(changesOnlyReminders(input, { ...input, reminders: [10] })).toBe(true)
+    expect(changesOnlyReminders(input, { ...input, title: `${input.title} `, reminders: [10] })).toBe(true)
+    expect(changesOnlyReminders(input, { ...input, title: 'Neu', reminders: [10] })).toBe(false)
+    expect(changesOnlyReminders(input, input)).toBe(false)
   })
 
   it('normalizes, validates and sanitizes links', () => {

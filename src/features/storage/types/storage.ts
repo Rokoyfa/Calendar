@@ -1,6 +1,7 @@
 import type { HexColor } from '../../../utils/color.ts'
 import type { DateRange } from '../../../utils/date.ts'
 import type { AttendeeStatus, CalendarEvent, EventInput } from '../../../utils/event.ts'
+import type { PublicHoliday } from '../../../utils/holidays.ts'
 import type { Preferences } from '../../../utils/preferences.ts'
 
 export type EventQuery = DateRange & { calendarIds: readonly string[] }
@@ -15,6 +16,7 @@ export interface EventRepository {
   remove(id: string): Promise<void>
   search?(query: EventSearchQuery): Promise<CalendarEvent[]>
   respond?(id: string, status: AttendeeStatus): Promise<CalendarEvent>
+  setReminders?(id: string, reminders: number[]): Promise<CalendarEvent>
 }
 
 export interface ColorRepository {
@@ -28,6 +30,12 @@ export interface PreferencesRepository {
   update(changes: Partial<Preferences>): Promise<Preferences>
 }
 
+export type HolidayQuery = DateRange & { region: string; language: string }
+
+export interface HolidayRepository {
+  list(query: HolidayQuery): Promise<PublicHoliday[]>
+}
+
 export type StorageMode = 'local' | 'remote'
 
 export type StorageRepositories = {
@@ -35,6 +43,7 @@ export type StorageRepositories = {
   events: EventRepository
   colors: ColorRepository
   preferences: PreferencesRepository
+  holidays?: HolidayRepository
 }
 
 export type StorageContextValue = StorageRepositories & {

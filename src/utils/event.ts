@@ -197,6 +197,31 @@ export const matchesEventText = (event: Pick<CalendarEvent, 'title' | 'location'
   )
 }
 
+export type EventReply = Exclude<AttendeeStatus, 'needsAction'>
+
+export type EventResponse = Pick<
+  CalendarEvent,
+  'title' | 'location' | 'startDate' | 'start' | 'endDate' | 'end' | 'allDay' | 'timeZone'
+> & { recurring: boolean; status: AttendeeStatus }
+
+export const parseEventResponse = (value: unknown): EventResponse => {
+  const record = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>
+  const text = (field: unknown) => (typeof field === 'string' ? field : '')
+  const allDay = record.allDay === true
+  return {
+    title: text(record.title),
+    location: text(record.location),
+    startDate: text(record.startDate),
+    start: isTime(record.start) ? record.start : ALL_DAY_TIME,
+    endDate: isISODate(record.endDate) ? record.endDate : text(record.startDate),
+    end: isTime(record.end) ? record.end : ALL_DAY_TIME,
+    allDay,
+    timeZone: !allDay && isTimeZone(record.timeZone) ? record.timeZone : null,
+    recurring: record.recurring === true,
+    status: isOneOf(ATTENDEE_STATUSES, record.status) ? record.status : 'needsAction',
+  }
+}
+
 export const createEventUid = () => crypto.randomUUID()
 
 export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
@@ -305,6 +330,20 @@ export const normalizeEventInput = (input: EventInput): EventInput => ({
   ...(input.allDay ? { start: ALL_DAY_TIME, end: ALL_DAY_TIME, timeZone: null } : {}),
   ...(input.recurrence ? NO_SERIES_LINK : { excludedDates: [] }),
 })
+
+export const toDuplicateInput = (input: EventInput): EventInput => ({
+  ...input,
+  uid: createEventUid(),
+  excludedDates: [],
+  ...NO_SERIES_LINK,
+  attendees: input.attendees.map((attendee) => ({ ...attendee, status: 'needsAction' })),
+})
+
+const withoutReminders = (input: EventInput) => JSON.stringify({ ...normalizeEventInput(input), reminders: [] })
+
+export const changesOnlyReminders = (before: EventInput, after: EventInput) =>
+  withoutReminders(before) === withoutReminders(after) &&
+  JSON.stringify(normalizeEventInput(before).reminders) !== JSON.stringify(normalizeEventInput(after).reminders)
 
 export const toOccurrenceInput = (occurrence: EventOccurrence): EventInput => ({
   ...toEventInput(occurrence),

@@ -1,3 +1,4 @@
+import type { EventReply } from '../../../utils/event.ts'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type {
   AccountDeletionInput,
@@ -112,6 +113,8 @@ export function AuthProvider({ repository: configuredRepository, children }: Aut
       requestPasswordReset: (input: PasswordResetRequestInput) => repository.requestPasswordReset(input),
       resetPassword: (input: PasswordResetInput) => repository.resetPassword(input),
       resendVerificationEmail: () => repository.resendVerificationEmail(),
+      respondToEvent: (token: string, status: EventReply) =>
+        repository.respondToEvent ? repository.respondToEvent(token, status) : unavailable(),
     }),
     [repository],
   )
@@ -141,7 +144,19 @@ export function AuthProvider({ repository: configuredRepository, children }: Aut
       verifyEmail,
       expireSession,
     }),
-    [enabled, method, session, accountRequests, login, register, logout, updateProfile, deleteAccount, verifyEmail, expireSession],
+    [
+      enabled,
+      method,
+      session,
+      accountRequests,
+      login,
+      register,
+      logout,
+      updateProfile,
+      deleteAccount,
+      verifyEmail,
+      expireSession,
+    ],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

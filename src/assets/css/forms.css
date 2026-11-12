@@ -269,3 +269,21 @@ select.input {
 .attendeeStatus--declined {
   color: var(--color-red);
 }
+
+.feedUrl {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--font-size-sm);
+}
+
+.respondEvent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  overflow-wrap: anywhere;
+}
+
+.respondTitle {
+  font-size: var(--font-size-lg);
+}

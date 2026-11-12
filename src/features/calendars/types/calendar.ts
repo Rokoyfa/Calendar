@@ -91,6 +91,9 @@ export interface CalendarRepository {
   listTeamInvitations(teamId: string): Promise<TeamInvitation[]>
   invite(teamId: string, invitation: Invitation): Promise<TeamInvitation>
   revokeInvitation(teamId: string, invitationId: string): Promise<void>
+  getFeed?(calendarId: string): Promise<string | null>
+  createFeed?(calendarId: string): Promise<string>
+  deleteFeed?(calendarId: string): Promise<void>
 }
 
 export type CalendarsContextValue = {

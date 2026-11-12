@@ -65,3 +65,11 @@ export const GlobeIcon = (props: IconProps) => (
     path="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9M12 3c-2.4 2.5-3.6 5.5-3.6 9s1.2 6.5 3.6 9"
   />
 )
+
+export const MapPinIcon = (props: IconProps) => (
+  <IconBase
+    {...props}
+    strokeWidth={2.5}
+    path="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21zM12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"
+  />
+)

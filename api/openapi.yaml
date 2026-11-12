@@ -34,6 +34,7 @@ tags:
   - name: Teams
   - name: Invitations
   - name: Preferences
+  - name: Holidays
 paths:
   /auth/me:
     get:
@@ -317,6 +318,50 @@ paths:
         '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
+  /events/{id}/reminders:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Events]
+      summary: Set the own reminders of an event
+      description: Changes only the reminders of the signed-in user. Allowed with read access, so members without edit rights can be reminded too.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reminders]
+              properties:
+                reminders: { type: array, maxItems: 5, items: { type: integer, minimum: 0, maximum: 40320 } }
+      responses:
+        '200': { $ref: '#/components/responses/Event' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /events/respond:
+    post:
+      tags: [Events]
+      summary: Answer an invitation from an email link
+      description: No session needed. The token comes from the invitation email (`/respond?status=…&token=…` on the host page) and stands for one attendee of one event.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, status]
+              properties:
+                token: { type: string }
+                status: { type: string, enum: [accepted, tentative, declined] }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventResponse' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
   /events/{id}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -374,6 +419,50 @@ paths:
       responses:
         '201': { $ref: '#/components/responses/CalendarSummary' }
         '400': { $ref: '#/components/responses/Problem' }
+  /calendars/{calendarId}/feed:
+    parameters:
+      - { $ref: '#/components/parameters/CalendarId' }
+    get:
+      tags: [Calendars]
+      summary: Own subscription link
+      responses:
+        '200':
+          description: Link or null
+          content:
+            application/json:
+              schema: { type: object, required: [url], properties: { url: { oneOf: [{ type: string, format: uri }, { type: 'null' }] } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Calendars]
+      summary: Create a new subscription link
+      description: Replaces an existing link of this user for this calendar.
+      responses:
+        '201':
+          description: New link
+          content:
+            application/json:
+              schema: { type: object, required: [url], properties: { url: { type: string, format: uri } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Calendars]
+      summary: End the subscription
+      responses:
+        '204': { description: Ended }
+  /feeds/{token}.ics:
+    parameters:
+      - { name: token, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Calendars]
+      summary: Calendar subscription
+      description: No session needed. The calendar as iCalendar with the subscriber's own reminders as alarms. `404` when the token is unknown or the user is no longer a member.
+      security: []
+      responses:
+        '200':
+          description: iCalendar
+          content:
+            text/calendar:
+              schema: { type: string }
+        '404': { description: Unknown link }
   /calendars/{calendarId}:
     parameters:
       - { $ref: '#/components/parameters/CalendarId' }
@@ -640,6 +729,28 @@ paths:
       responses:
         '204': { description: Declined }
         '404': { $ref: '#/components/responses/Problem' }
+  /holidays:
+    get:
+      tags: [Holidays]
+      summary: Public holidays of a region
+      description: |
+        Optional. Only called with `holiday-source="backend"`. Without it, or when this request fails, the component computes holidays itself.
+        Return the public holidays (days off) between `from` and `to` inclusive, with names in `lang`.
+      parameters:
+        - { name: from, in: query, required: true, schema: { $ref: '#/components/schemas/ISODate' } }
+        - { name: to, in: query, required: true, schema: { $ref: '#/components/schemas/ISODate' } }
+        - name: region
+          in: query
+          required: true
+          description: Country, optionally with a subdivision, e.g. `DE`, `DE-NW`, `US-CA`
+          schema: { type: string, pattern: '^[A-Z]{2}(-[A-Z0-9]{1,6})?$' }
+        - { name: lang, in: query, required: true, schema: { type: string, examples: [de] } }
+      responses:
+        '200':
+          description: Holidays
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/PublicHoliday' } }
   /preferences:
     get:
       tags: [Preferences]
@@ -662,6 +773,10 @@ paths:
                 mobileDefaultView: { $ref: '#/components/schemas/CalendarView' }
                 locale: { $ref: '#/components/schemas/Locale' }
                 timeZone: { $ref: '#/components/schemas/PreferredTimeZone' }
+                holidays: { $ref: '#/components/schemas/HolidaySetting' }
+                emailInvites: { type: boolean }
+                emailChanges: { type: boolean }
+                emailReminders: { type: boolean }
       responses:
         '200': { $ref: '#/components/responses/Preferences' }
         '400': { $ref: '#/components/responses/Problem' }
@@ -993,16 +1108,45 @@ components:
       description: '`auto` or a BCP 47 language tag such as `en-US`, `en-GB`, `de-DE`'
       maxLength: 35
       pattern: '^(auto|[a-z]{2,3}(-[A-Za-z0-9]{2,8})*)$'
+    HolidaySetting:
+      type: string
+      default: auto
+      description: '`auto` (region given by the host, otherwise from the language), `off`, or a region such as `DE-NW`.'
+      pattern: '^(auto|off|[A-Z]{2}(-[A-Z0-9]{1,6})?)$'
+    EventResponse:
+      type: object
+      required: [title, location, startDate, start, endDate, end, allDay, timeZone, recurring, status]
+      properties:
+        title: { type: string }
+        location: { type: string }
+        startDate: { $ref: '#/components/schemas/ISODate' }
+        start: { $ref: '#/components/schemas/Time' }
+        endDate: { $ref: '#/components/schemas/ISODate' }
+        end: { $ref: '#/components/schemas/Time' }
+        allDay: { type: boolean }
+        timeZone: { oneOf: [{ type: string }, { type: 'null' }] }
+        recurring: { type: boolean }
+        status: { $ref: '#/components/schemas/AttendeeStatus' }
+    PublicHoliday:
+      type: object
+      required: [date, name]
+      properties:
+        date: { $ref: '#/components/schemas/ISODate' }
+        name: { type: string }
     PreferredTimeZone:
       type: string
       default: auto
       description: '`auto` (zone given by the host, otherwise the system zone) or an IANA zone such as `Europe/Berlin`. Events are shown in this zone.'
     Preferences:
       type: object
-      required: [theme, defaultView, mobileDefaultView, locale, timeZone]
+      required: [theme, defaultView, mobileDefaultView, locale, timeZone, holidays, emailInvites, emailChanges, emailReminders]
       properties:
         theme: { $ref: '#/components/schemas/Theme' }
         defaultView: { $ref: '#/components/schemas/CalendarView' }
         mobileDefaultView: { $ref: '#/components/schemas/CalendarView' }
         locale: { $ref: '#/components/schemas/Locale' }
         timeZone: { $ref: '#/components/schemas/PreferredTimeZone' }
+        holidays: { $ref: '#/components/schemas/HolidaySetting' }
+        emailInvites: { type: boolean, default: true, description: Email when someone invites the user to an event }
+        emailChanges: { type: boolean, default: true, description: Email when an event the user is invited to changes or is cancelled }
+        emailReminders: { type: boolean, default: false, description: Emails at the user's own reminder times }

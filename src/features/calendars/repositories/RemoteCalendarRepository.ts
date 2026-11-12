@@ -91,4 +91,16 @@ export class RemoteCalendarRepository implements CalendarRepository {
   declineInvitation(id: string) {
     return this.#api.post<void>(`/invitations/${segment(id)}/decline`)
   }
+
+  async getFeed(calendarId: string) {
+    return (await this.#api.get<{ url: string | null }>(`/calendars/${segment(calendarId)}/feed`)).url
+  }
+
+  async createFeed(calendarId: string) {
+    return (await this.#api.post<{ url: string }>(`/calendars/${segment(calendarId)}/feed`)).url
+  }
+
+  deleteFeed(calendarId: string) {
+    return this.#api.delete(`/calendars/${segment(calendarId)}/feed`)
+  }
 }

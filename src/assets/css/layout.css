@@ -379,6 +379,49 @@
   }
 }
 
+.undoNotice {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-4);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: calc(100% - 2 * var(--space-4));
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-text);
+  color: var(--color-bg);
+  box-shadow: var(--shadow);
+  translate: -50% 0;
+  animation: modalIn 150ms ease-out;
+}
+
+.undoNoticeText {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.undoNoticeAction {
+  flex: none;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: light-dark(rgb(138, 180, 255), rgb(54, 92, 175));
+  font-weight: 700;
+}
+
+.undoNoticeAction:hover,
+.undoNoticeAction:focus-visible {
+  background-color: color-mix(in srgb, currentColor 15%, transparent);
+}
+
+.undoNotice .closeButton {
+  color: inherit;
+  opacity: 0.7;
+}
+
 .reminderNotices {
   position: absolute;
   right: var(--space-4);

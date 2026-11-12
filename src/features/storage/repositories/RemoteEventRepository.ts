@@ -47,6 +47,10 @@ export class RemoteEventRepository implements EventRepository {
     return parseEvent(await this.#api.post<unknown>(`${this.#eventPath(id)}/response`, { status }))
   }
 
+  async setReminders(id: string, reminders: number[]) {
+    return parseEvent(await this.#api.put<unknown>(`${this.#eventPath(id)}/reminders`, { reminders }))
+  }
+
   remove(id: string) {
     return this.#api.delete(this.#eventPath(id))
   }

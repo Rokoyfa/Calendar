@@ -181,6 +181,18 @@ export const calendars = {
     deleteMessage: (team: string, count: number) =>
       `“${team}” will be deleted with all calendars, events and invitations, for all ${count} members as well. This cannot be undone.`,
   },
+  feed: {
+    title: 'Subscribe',
+    description: 'Subscribe to this calendar in Google Calendar, Outlook or Apple Calendar. Changes appear there automatically, usually within a few hours. The subscription is read-only.',
+    label: 'Subscription link',
+    create: 'Create subscription link',
+    copy: 'Copy link',
+    copied: 'Copied',
+    openApp: 'Open in calendar app',
+    warning: 'Anyone with this link can see all events of this calendar. Creating a new link turns the old one off.',
+    renew: 'Create new link',
+    remove: 'End subscription',
+  },
   ical: {
     title: 'Import and export',
     description: 'Exchange events with other calendar apps as an iCalendar file (.ics). Importing again updates events that were imported before.',

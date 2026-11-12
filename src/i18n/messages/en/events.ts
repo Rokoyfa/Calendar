@@ -21,9 +21,6 @@ export const events = {
   deleteTitle: 'Delete event?',
   deleteSeriesMessage: (title: string) =>
     `“${title}” is a recurring event. What should be deleted? This cannot be undone.`,
-  deleteMessage: (title: string) => `Do you really want to delete “${title}”? This cannot be undone.`,
-  yes: 'Yes',
-  no: 'No',
   scopeTitle: 'Change recurring event',
   scopeMessage: 'Which events in the series should the changes apply to?',
   scopes: {
@@ -66,4 +63,14 @@ export const events = {
   linkLabel: 'Label (optional)',
   openLink: (name: string) => `Open ${name}`,
   removeLink: (name: string) => `Remove ${name}`,
+  openMap: (location: string) => `Open “${location}” in maps`,
+  duplicate: 'Duplicate',
+  duplicateNotice: (title: string) => `Copy of “${title}”. It is created when you save.`,
+  respondPage: {
+    title: 'Reply to invitation',
+    sending: 'Saving your reply…',
+    incompleteLink: 'This link is incomplete. Please open it again from the email.',
+    recurring: 'This is a recurring event. Your reply applies to the whole series.',
+    saved: (status: string) => `Saved: ${status}`,
+  },
 }

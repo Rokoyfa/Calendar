@@ -501,8 +501,8 @@ Beim Speichern mit Fehlern springt der Dialog zum ersten Tab mit Fehlern, sofern
 ### Ort, Links, Erinnerungen, Teilnehmer
 
 - **Links** (`links`, bis zu 10, je `url` bis 2000 und `label` bis 100 Zeichen): im Tab „Details“. Adressen ohne Schema bekommen `https://` vorangestellt, erlaubt sind nur `http` und `https` (`isWebUrl` in `utils/event.ts`). Gespeicherte oder importierte Links mit anderem Schema werden beim Einlesen verworfen, damit nie ein `javascript:`-Link angezeigt wird. Gültige Links lassen sich direkt aus dem Dialog in einem neuen Tab öffnen. Im Raster stehen sie mit Weltkugel unter dem Ort, sobald der Termin hoch genug ist (ab 2,5 Stunden ein Link, je weitere halbe Stunde einer mehr, was nicht passt als „+N“ hinter dem letzten). Ein Klick öffnet den Link in einem neuen Tab, nicht den Termin. Damit Links im Termin klickbar sein dürfen, ist der Block ein `div`, über dem ein unsichtbarer Button (`.eventOpen`) die ganze Fläche zum Öffnen abdeckt. Ziehen startet nicht auf einem Link. In der schmalen Wochenansicht am Handy sind die Links ausgeblendet, im Tooltip stehen sie immer. Im iCalendar wird der erste Link als `URL`, alle weiteren als `ATTACH` geschrieben, die Bezeichnung als Parameter `LABEL`.
-- **Ort** (`location`, bis 200 Zeichen): im Tab „Details“. Im Raster ab 90 Minuten in eigener Zeile, darunter hinter dem Titel, in der Monatsansicht hinter dem Titel, im Tooltip und in der Suche.
-- **Erinnerung** (`reminders`, Minuten vor Beginn, bis zu 5, im Dialog wird eine eingestellt): Auswahl von „Zum Beginn“ bis „1 Woche vorher“, Texte über `format.duration` (Intl, je Sprache richtig gebeugt). Erinnerungen sind persönlich: das Test-Backend speichert sie je Nutzer (`remindersByUser`) und liefert nur die eigenen. Solange das Widget offen ist, lädt `features/reminders/useReminders.ts` alle fünf Minuten die nächsten vier Wochen aller Kalender und plant die fälligen Erinnerungen. Gezeigt wird eine Browser-Benachrichtigung (Erlaubnis wird beim Wählen einer Erinnerung angefragt) oder sonst ein Hinweis unten rechts. Bereits gezeigte Erinnerungen merkt sich der Browser zwei Tage lang, damit mehrere Tabs nicht doppelt erinnern. E-Mails bei geschlossenem Kalender sind Sache des Backends.
+- **Ort** (`location`, bis 200 Zeichen): im Tab „Details“. Der Ort lässt sich im Dialog (Stecknadel neben dem Feld), im Termin im Raster und auf der Antwortseite in einer Karte öffnen, standardmäßig Google Maps. Der Host stellt mit `map-url` einen anderen Dienst ein (`{query}` wird durch den Ort ersetzt, `utils/location.ts`). Ist der Ort selbst eine Webadresse, z. B. ein Videocall-Link, öffnet der Link direkt diese Adresse. Im Raster ab 90 Minuten in eigener Zeile, darunter hinter dem Titel, in der Monatsansicht hinter dem Titel, im Tooltip und in der Suche.
+- **Erinnerung** (`reminders`, Minuten vor Beginn, bis zu 5, im Dialog wird eine eingestellt): Auswahl von „Zum Beginn“ bis „1 Woche vorher“, Texte über `format.duration` (Intl, je Sprache richtig gebeugt). Erinnerungen sind persönlich: das Test-Backend speichert sie je Nutzer (`remindersByUser`) und liefert nur die eigenen. Solange das Widget offen ist, lädt `features/reminders/useReminders.ts` alle fünf Minuten die nächsten vier Wochen aller Kalender und plant die fälligen Erinnerungen. Gezeigt wird eine Browser-Benachrichtigung (Erlaubnis wird beim Wählen einer Erinnerung angefragt) oder sonst ein Hinweis unten rechts. Bereits gezeigte Erinnerungen merkt sich der Browser zwei Tage lang, damit mehrere Tabs nicht doppelt erinnern. E-Mails bei geschlossenem Kalender sind Sache des Backends. Ändert man im Dialog nur die Erinnerung, speichert der Kalender sie über `PUT /events/:id/reminders` (`setReminders`), ohne Rückfrage zur Serie. So können auch Mitglieder ohne Bearbeitungsrecht sich an fremde Termine erinnern lassen, und es gehen keine Änderungs-E-Mails raus.
 - **Teilnehmer** (`attendees`, nur in Teamkalendern): im Dialog aus den Mitgliedern des Kalenders hinzufügen und entfernen, „Alle einladen“ fügt alle noch nicht eingeladenen Mitglieder auf einmal hinzu. Wer selbst Teilnehmer ist, antwortet mit Ja, Vielleicht oder Nein (`POST /events/:id/response`, sofort gespeichert, auch mit Leserechten). Unbeantwortete Termine sind schraffiert, abgesagte durchgestrichen.
 
 ### Suche
@@ -622,11 +622,35 @@ Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, r
 | --------------------- | ---------------------------------- |
 | Zurück (Tag, Woche, Monat, Jahr) | `←` oder linker Pfeil im Header    |
 | Vor (Tag, Woche, Monat, Jahr)    | `→` oder rechter Pfeil im Header   |
-| Zu heute                         | **Heute** im Header                |
-| Ansicht wechseln                 | Tag / Woche / Monat / Jahr         |
+| Zu heute                         | `T` oder **Heute** im Header       |
+| Ansicht wechseln                 | `D` / `W` / `M` / `Y` (auch `J`) oder Tag / Woche / Monat / Jahr |
+| Neuer Termin                     | `N` oder **+** im Header           |
+| Suche                            | `/` oder Lupe im Header            |
+| Letzte Aktion rückgängig         | `Strg+Z` / `⌘Z`, solange der Hinweis sichtbar ist |
 | Fenster schließen                | `Esc` oder Klick neben das Fenster |
 
-Die Pfeiltasten wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt nach dem Laden oder nach dem Schließen eines Fensters). Sind mehrere Kalender auf der Seite, reagiert der zuletzt benutzte, anfangs der erste. Solange ein Eingabefeld, ein Fenster oder ein Element der Host-Seite den Fokus hat, sind sie aus (`hooks/useArrowKeyNavigation.ts`).
+Die Kürzel wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt nach dem Laden oder nach dem Schließen eines Fensters). Sind mehrere Kalender auf der Seite, reagiert der zuletzt benutzte, anfangs der erste. Solange ein Eingabefeld, ein Fenster oder ein Element der Host-Seite den Fokus hat, sind sie aus. So bleibt z. B. `Strg+Z` in Eingabefeldern das normale Rückgängig des Browsers (`hooks/useKeyboardShortcuts.ts`, die Tasten stehen in `Calendar.tsx`, die Ansichtstasten in `VIEW_SHORTCUTS`). Die Tooltips der Buttons im Header nennen die Taste.
+
+### Feiertage
+
+- Gesetzliche Feiertage (nur arbeitsfreie, `type: 'public'`) stehen in Tag- und Wochenansicht in der Ganztägig-Zeile, im Monat unter der Tageszahl und im Jahr als rote Tageszahl mit Name im Tooltip. Das Datum selbst ist rot.
+- **Quelle:** die Bibliothek `date-holidays` (Regeln für über 200 Länder und deren Regionen, von der Community gepflegt, Daten unter CC BY-SA 4.0). Sie wird erst geladen, wenn Feiertage angezeigt werden (`features/holidays/utils/holidayLibrary.ts`, eigener Chunk). Gesetzesänderungen kommen mit einem Update des Pakets, gepflegt wird hier nichts.
+- **Backend als Quelle:** Mit `holiday-source="backend"` fragt die Komponente `GET /holidays?from&to&region&lang`. Schlägt das fehl, nimmt sie die Bibliothek. Eigene Adapter können ein `holidays`-Repository mitgeben.
+- **Welche Region:** Einstellung „Feiertage“ unter Darstellung (`preferences.holidays`: `auto`, `off` oder z. B. `DE-NW`) vor Host-Attribut `holidays` vor dem Land aus der Sprache (`de-DE` → `DE`, `fr` → `FR`, `utils/holidays.ts`). In den Einstellungen wählt man Land und optional Bundesland bzw. Region. Ländernamen kommen aus `Intl.DisplayNames`, weil die Bibliothek nicht alle übersetzt.
+
+### Kalender-Abo
+
+In den Kalender-Einstellungen (Tab „Import & Export“, beim persönlichen Kalender als Abschnitt) erstellt man einen geheimen Abo-Link, den Google Kalender, Outlook oder Apple Kalender abonnieren (`SubscribeSection.tsx`). Der Link ist je Nutzer und Kalender, enthält die eigenen Erinnerungen und lässt sich kopieren, als `webcal://` öffnen, neu erzeugen (der alte wird ungültig) oder beenden. Der Abschnitt erscheint nur, wenn das Repository `getFeed`, `createFeed` und `deleteFeed` hat und das Backend `GET /calendars/:id/feed` kennt, im lokalen Modus also nicht.
+
+### E-Mails zu Terminen
+
+Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutzers: neuer Tab **Benachrichtigungen** in den Einstellungen (nur angemeldet) mit `emailInvites`, `emailChanges` und `emailReminders`. Einladungs-E-Mails enthalten Links „Ja“, „Vielleicht“, „Nein“ auf `/respond?status=…&token=…`. Die Seite `pages/RespondPage.tsx` speichert die Antwort aus dem Link ohne Anmeldung (`POST /events/respond`, über das Auth-Repository, weil das auch ohne Sitzung erreichbar ist), zeigt Titel, Zeit in der eigenen Zeitzone und Ort und lässt die Antwort ändern. Was das Test-Backend dafür tut, steht in dessen README.
+
+### Duplizieren und Rückgängig
+
+- **Duplizieren** im Termin-Dialog öffnet einen neuen Termin mit den aktuellen Werten des Dialogs, auch noch nicht gespeicherten. Die Kopie bekommt eine neue `uid`, verliert die Verknüpfung zu einer Serie, und alle Teilnehmer stehen wieder auf „keine Antwort“. Angelegt wird sie erst beim Speichern, im aktiven Kalender.
+- **Löschen** fragt nur noch bei Serien nach (welche Termine). Einzeltermine werden sofort gelöscht.
+- Nach dem Löschen und nach dem Verschieben oder Ändern der Dauer per Ziehen erscheint unten für acht Sekunden ein Hinweis mit **Rückgängig**. `features/events/utils/undo.ts` zeichnet dafür jede Änderung am Speicher auf (anlegen, ändern, löschen, mit dem Stand davor) und nimmt sie rückwärts zurück. Gelöschte Termine werden neu angelegt. Verweisen herausgelöste Termine auf eine wiederhergestellte Serie, wird die neue ID eingesetzt. Ist ein vorheriger Stand nicht bekannt, gibt es kein Rückgängig.
 
 ### Design
 
@@ -760,7 +784,8 @@ src/
 ├─ router.tsx                  Routen und createCalendarRouter (memory oder browser): /, /settings, /calendars/new, /login, …
 ├─ pages/
 │  ├─ CalendarPage.tsx         Kalender mit Startansicht, Kontomenü (Zahnrad nur ohne Anmeldefunktion), Bestätigungsleiste und Übernahme-Abfrage
-│  └─ SettingsPage.tsx         Einstellungen in Tabs: Kalender, Einladungen, Darstellung, Konto
+│  ├─ RespondPage.tsx          Antwort aus dem Link einer Einladungs-E-Mail speichern und ändern (ohne Anmeldung)
+│  └─ SettingsPage.tsx         Einstellungen in Tabs: Kalender, Einladungen, Darstellung, Benachrichtigungen, Konto
 ├─ main.tsx                    Einstieg der Website: <Calendar routing="browser" /> mit Werten aus der .env
 ├─ env.d.ts                    Typen der Umgebungsvariablen
 ├─ config/
@@ -795,7 +820,7 @@ src/
 │  ├─ PageSection.tsx          Abschnitt mit Überschrift und Erklärung links, Inhalt rechts, optional als Gefahrenbereich
 │  └─ Icons.tsx                SVG-Symbole
 ├─ hooks/                      Featureübergreifende Hooks
-│  ├─ useArrowKeyNavigation.ts Pfeiltasten links/rechts
+│  ├─ useKeyboardShortcuts.ts  Tastenkürzel des Kalenders (Pfeile, T, N, /, D/W/M/Y, Strg+Z)
 │  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand, Erfolg und Fehlermeldung
 │  ├─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel, apply() übernimmt das Ergebnis einer Änderung
 │  ├─ useForm.ts               Ganzes Formular: Werte, Prüfung, Vorbereiten, Absenden mit Lade-, Erfolgs- und Fehlerzustand
@@ -813,6 +838,7 @@ src/
 │  ├─ ical.ts                  iCalendar (.ics) schreiben und lesen
 │  ├─ notifications.ts         Erlaubnis für Browser-Benachrichtigungen
 │  ├─ reminders.ts             fällige Erinnerungen aus Terminen berechnen
+│  ├─ holidays.ts              Feiertags-Region auflösen (Einstellung, Host, Sprache), Antworten des Backends prüfen
 │  ├─ event.ts                 Termin-Typen, Farben (Klasse/Style samt weiterer Klassen), Validierung, Vorkommen eines Termins
 │  ├─ number.ts                Ganzzahl-Prüfung mit Bereich
 │  ├─ object.ts                Felder übernehmen, Wert aus fester Liste prüfen (isOneOf)
@@ -839,6 +865,7 @@ src/
    │  ├─ types/
    │  └─ utils/                Serien-Aktionen gegen das Repository, Auswahl der Bereiche, iCalendar-Import (icalExchange)
    ├─ reminders/               Erinnerungen planen und anzeigen, solange das Widget offen ist (useReminders, ReminderNotices)
+   ├─ holidays/                Feiertage: useHolidays (Region auflösen, Quelle wählen), HolidaySettings, Bibliothek date-holidays (lazy)
    ├─ storage/                 Datenspeicherung
    │  ├─ components/           LocalImportPrompt: lokale Termine ins Konto übernehmen
    │  ├─ context/              StorageContext, StorageProvider (inkl. version/invalidate zum Neuladen)
@@ -849,7 +876,7 @@ src/
    ├─ calendars/               Kalenderauswahl (persönlich und Teams), vorbereitet für den Team-Modus
    │  ├─ components/           CalendarSwitcher (Button und Fenster), ActiveCalendarIndicator (Plakette im Kopf),
    │  │                        CalendarPreview (Monatsvorschau), InvitationList (offene Einladungen),
-   │  │  ├─ settings/          CalendarSettingsPage mit Allgemein, Mitglieder, Einladungen, Import & Export, Gefahrenbereich
+   │  │  ├─ settings/          CalendarSettingsPage mit Allgemein, Mitglieder, Einladungen, Import & Export (mit Abo-Link), Gefahrenbereich
    │  │                        CalendarSettings (Liste in den Einstellungen, Verlassen)
    │  │  └─ create/            CreateCalendarPage mit den Schritten Details, Farbe, Mitglieder, Überprüfen
    │  ├─ constants/            Persönlicher Kalender, Rangfolge der Rollen (Bezeichnungen in i18n)
@@ -860,7 +887,7 @@ src/
    │  └─ utils/                Regeln: persönlich oder Team (`kind`), wer verlassen darf, welche Kalender gerade sichtbar sind
    │                           (`visibleCalendarIds`: im persönlichen Kalender dieser plus alle Teams mit showInPersonal)
    ├─ preferences/             Einstellungen (Farbschema, Startansicht)
-   │  ├─ components/           PreferencesSettings
+   │  ├─ components/           PreferencesSettings, NotificationSettings (E-Mails zu Terminen)
    │  ├─ context/              PreferencesProvider (lädt, speichert, setzt data-theme)
    │  └─ hooks/                usePreferences
    ├─ authorization/           Anmeldung, Registrierung, Abmeldung, Konto, Passwort, E-Mail

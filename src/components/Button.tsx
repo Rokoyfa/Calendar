@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ComponentProps } from 'react'
 import { Link } from 'react-router'
 import { classNames } from '../utils/classNames.ts'
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'success'
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger'
 
 type ButtonStyleProps = {
   variant?: ButtonVariant

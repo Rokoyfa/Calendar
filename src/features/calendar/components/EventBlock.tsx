@@ -4,6 +4,7 @@ import type { EventSegment } from '../types/eventLayout.ts'
 import { useSegmentAttributes } from '../hooks/useSegmentAttributes.ts'
 import { getVisibleDuration } from '../utils/eventGeometry.ts'
 import { EventLinks } from './EventLinks.tsx'
+import { EventLocation } from './EventLocation.tsx'
 import { EventTitle } from './EventTitle.tsx'
 
 type EventBlockProps = {
@@ -41,7 +42,7 @@ export function EventBlock({ segment, column, columns, onSelect }: EventBlockPro
     <div {...attributes} style={blockStyle}>
       <button type="button" className="eventOpen" aria-label={attributes.title} onClick={() => onSelect(event)} />
       <EventTitle event={event} source={source} withLocation={!showDetails} />
-      {event.location && showDetails && <span className="eventLocation">{event.location}</span>}
+      {event.location && showDetails && <EventLocation location={event.location} />}
       {!isDragging && <EventLinks links={event.links} lines={getLinkLines(duration, showSource)} />}
       {source && showSource && <span className="eventSource">{source.name}</span>}
       {(showDetails || isDragging) && <span className="eventTime">{formatEventPeriod(event, i18n)}</span>}

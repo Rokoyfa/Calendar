@@ -10,8 +10,9 @@ import {
   type EventInput,
   type EventOccurrence,
 } from '../../../utils/event.ts'
-import { useStorage, type EventQuery } from '../../storage/index.ts'
+import { useStorage, type EventQuery, type EventRepository } from '../../storage/index.ts'
 import { deleteOccurrence, updateOccurrence } from '../utils/seriesActions.ts'
+import { recordChanges, type Undo } from '../utils/undo.ts'
 
 const NO_EVENTS: CalendarEvent[] = []
 
@@ -49,6 +50,17 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
     [invalidate],
   )
 
+  const withUndo = useCallback(
+    (operation: (repository: EventRepository) => Promise<unknown>) =>
+      withReload(async (): Promise<Undo | null> => {
+        const recorder = recordChanges(repository, events)
+        await operation(recorder.repository)
+        const undo = recorder.undo()
+        return undo && (() => withReload(undo))
+      }),
+    [repository, events, withReload],
+  )
+
   const createEvent = useCallback(
     (input: EventInput) => withReload(() => repository.create(targetCalendarId, input)),
     [repository, withReload, targetCalendarId],
@@ -56,14 +68,14 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
 
   const updateEvent = useCallback(
     (occurrence: EventOccurrence, input: EventInput, scope: EditScope) =>
-      withReload(() => updateOccurrence(repository, findSeries(occurrence), occurrence.occurrenceDate, input, scope)),
-    [repository, withReload, findSeries],
+      withUndo((recording) => updateOccurrence(recording, findSeries(occurrence), occurrence.occurrenceDate, input, scope)),
+    [withUndo, findSeries],
   )
 
   const deleteEvent = useCallback(
     (occurrence: EventOccurrence, scope: EditScope) =>
-      withReload(() => deleteOccurrence(repository, findSeries(occurrence), occurrence.occurrenceDate, scope)),
-    [repository, withReload, findSeries],
+      withUndo((recording) => deleteOccurrence(recording, findSeries(occurrence), occurrence.occurrenceDate, scope)),
+    [withUndo, findSeries],
   )
 
   const respond = useMemo(
@@ -76,5 +88,15 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
     [repository, withReload],
   )
 
-  return { events, error, isLoading, reload: invalidate, createEvent, updateEvent, deleteEvent, respond }
+  const setReminders = useMemo(
+    () =>
+      repository.setReminders &&
+      ((occurrence: EventOccurrence, reminders: number[]) =>
+        withReload(async () => {
+          await repository.setReminders!(occurrence.id, reminders)
+        })),
+    [repository, withReload],
+  )
+
+  return { events, error, isLoading, reload: invalidate, createEvent, updateEvent, deleteEvent, respond, setReminders }
 }

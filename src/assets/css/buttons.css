@@ -20,10 +20,6 @@
   background-color: var(--color-red);
 }
 
-.button--success {
-  background-color: var(--color-green);
-}
-
 .button--secondary {
   background-color: var(--color-grey);
 }

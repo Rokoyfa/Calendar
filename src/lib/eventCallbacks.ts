@@ -23,6 +23,7 @@ export const withEventCallbacks = (
       getCallbacks().onEventUpdate?.(event)
       return event
     }),
+  setReminders: repository.setReminders && ((id, reminders) => repository.setReminders!(id, reminders)),
   async create(calendarId, input) {
     const event = await repository.create(calendarId, input)
     getCallbacks().onEventCreate?.(event)

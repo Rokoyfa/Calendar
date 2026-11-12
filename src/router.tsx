@@ -13,6 +13,7 @@ import {
 } from './features/authorization/index.ts'
 import { CalendarSettingsPage, CreateCalendarPage } from './features/calendars/index.ts'
 import { CalendarPage } from './pages/CalendarPage.tsx'
+import { RespondPage } from './pages/RespondPage.tsx'
 import { SettingsPage } from './pages/SettingsPage.tsx'
 
 const guestOnly = (page: ReactNode) => <AuthGate access="guest">{page}</AuthGate>
@@ -35,6 +36,7 @@ const routes: RouteObject[] = [
   { path: ROUTES.forgotPassword, element: guestOnly(<ForgotPasswordPage />) },
   { path: ROUTES.resetPassword, element: withAuth(<ResetPasswordPage />) },
   { path: ROUTES.verifyEmail, element: withAuth(<VerifyEmailPage />) },
+  { path: ROUTES.respond, element: withAuth(<RespondPage />) },
   { path: '*', element: <Navigate to={ROUTES.calendar} replace /> },
 ]
 

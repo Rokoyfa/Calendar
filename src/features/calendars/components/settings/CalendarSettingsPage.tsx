@@ -13,6 +13,7 @@ import { ShowInPersonalSwitch } from '../ShowInPersonalSwitch.tsx'
 import { hasPermission, isPersonalCalendar } from '../../utils/permissions.ts'
 import { DangerSection } from './DangerSection.tsx'
 import { ExchangeSection } from './ExchangeSection.tsx'
+import { SubscribeSection } from './SubscribeSection.tsx'
 import { GeneralSection } from './GeneralSection.tsx'
 import { MembersSection } from './MembersSection.tsx'
 import { TeamInvitationsSection } from './TeamInvitationsSection.tsx'
@@ -78,7 +79,16 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
           },
         ]
       : []),
-    { value: 'exchange', label: settings.tabs.exchange, content: <ExchangeSection calendar={calendar} /> },
+    {
+      value: 'exchange',
+      label: settings.tabs.exchange,
+      content: (
+        <>
+          <SubscribeSection calendar={calendar} />
+          <ExchangeSection calendar={calendar} />
+        </>
+      ),
+    },
     {
       value: 'danger',
       label: settings.tabs.danger,
@@ -117,6 +127,7 @@ export function CalendarSettingsPage() {
       {isPersonalCalendar(calendar) ? (
         <>
           {hasPermission(calendar, 'manage_calendars') && <GeneralSection calendar={calendar} />}
+          <SubscribeSection calendar={calendar} />
           <ExchangeSection calendar={calendar} />
           <PageSection title={settings.personalTitle}>
             <p className="formHint">{settings.personalHint}</p>

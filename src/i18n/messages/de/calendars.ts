@@ -181,6 +181,18 @@ export const calendars: Messages['calendars'] = {
     deleteMessage: (team, count) =>
       `„${team}“ wird mit allen Kalendern, Terminen und Einladungen gelöscht, auch für alle ${count} Mitglieder. Das kann nicht rückgängig gemacht werden.`,
   },
+  feed: {
+    title: 'Abonnieren',
+    description: 'Abonniere diesen Kalender in Google Kalender, Outlook oder Apple Kalender. Änderungen erscheinen dort automatisch, meist innerhalb weniger Stunden. Das Abo kann nur lesen.',
+    label: 'Abo-Link',
+    create: 'Abo-Link erstellen',
+    copy: 'Link kopieren',
+    copied: 'Kopiert',
+    openApp: 'In Kalender-App öffnen',
+    warning: 'Wer diesen Link kennt, sieht alle Termine dieses Kalenders. Ein neuer Link schaltet den alten ab.',
+    renew: 'Neuen Link erstellen',
+    remove: 'Abo beenden',
+  },
   ical: {
     title: 'Import und Export',
     description: 'Termine mit anderen Kalender-Apps als iCalendar-Datei (.ics) austauschen. Ein erneuter Import aktualisiert bereits importierte Termine.',

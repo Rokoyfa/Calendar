@@ -1,12 +1,14 @@
 import { useI18n } from '../../../i18n/index.ts'
 import type { CalendarViewProps } from '../types/view.ts'
 import { MiniMonth } from './MiniMonth.tsx'
+import { useHolidayMap } from '../context/HolidaysContext.ts'
 
 const MONTHS = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'))
 
 export function YearView({ anchor, today, segmentsByDate, onShowDay, onShowMonth }: CalendarViewProps) {
   const { format } = useI18n()
   const year = anchor.slice(0, 4)
+  const holidays = useHolidayMap()
   return (
     <div className="yearView">
       {MONTHS.map((month) => {
@@ -22,6 +24,7 @@ export function YearView({ anchor, today, segmentsByDate, onShowDay, onShowMonth
               month={firstDay}
               today={today}
               hasEvents={(date) => segmentsByDate.has(date)}
+              getHoliday={(date) => holidays.get(date)?.join(' · ')}
               onSelectDay={onShowDay}
             />
           </section>

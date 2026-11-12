@@ -135,9 +135,11 @@ const calendar: Messages['calendar'] = {
   openDay: (date) => `${date} openen`,
   moreEvents: (count) => `nog ${count}`,
   moreLinks: (count) => `+${count} andere links`,
+  holiday: (name) => `Feestdag: ${name}`,
   fromCalendar: (name) => `Uit de agenda ‘${name}’`,
   sharedEventNotice: (source) => `${source}. Alle leden zien wijzigingen.`,
   dismiss: 'Sluiten',
+  undo: { action: 'Ongedaan maken', ctrlZ: 'Ctrl+Z', deleted: (title) => `‘${title}’ verwijderd`, moved: (title) => `‘${title}’ verplaatst` },
   search: {
     open: 'Zoeken',
     title: 'Afspraken zoeken',
@@ -171,9 +173,6 @@ const events: Messages['events'] = {
   deleteTitle: 'Afspraak verwijderen?',
   deleteSeriesMessage: (title) =>
     `‘${title}’ is een terugkerende afspraak. Wat moet er worden verwijderd? Dit kan niet ongedaan worden gemaakt.`,
-  deleteMessage: (title) => `Wil je ‘${title}’ echt verwijderen? Dit kan niet ongedaan worden gemaakt.`,
-  yes: 'Ja',
-  no: 'Nee',
   scopeTitle: 'Terugkerende afspraak wijzigen',
   scopeMessage: 'Op welke afspraken in de reeks moeten de wijzigingen van toepassing zijn?',
   scopes: {
@@ -216,6 +215,16 @@ const events: Messages['events'] = {
   linkLabel: 'Naam (optioneel)',
   openLink: (name) => `${name} openen`,
   removeLink: (name) => `${name} verwijderen`,
+  openMap: (location) => `‘${location}’ openen in kaart`,
+  duplicate: 'Dupliceren',
+  duplicateNotice: (title) => `Kopie van ‘${title}’. Wordt pas bij opslaan aangemaakt.`,
+  respondPage: {
+    title: 'Reageren op uitnodiging',
+    sending: 'Je antwoord wordt opgeslagen…',
+    incompleteLink: 'Deze link is onvolledig. Open hem opnieuw vanuit de e-mail.',
+    recurring: 'Dit is een terugkerende afspraak. Je antwoord geldt voor de hele reeks.',
+    saved: (status) => `Opgeslagen: ${status}`,
+  },
 }
 
 const storage: Messages['storage'] = {
@@ -229,7 +238,7 @@ const storage: Messages['storage'] = {
 
 const settings: Messages['settings'] = {
   tabsLabel: 'Onderdelen van de instellingen',
-  tabs: { calendars: 'Agenda’s', invitations: 'Uitnodigingen', appearance: 'Weergave', account: 'Account' },
+  tabs: { calendars: 'Agenda’s', invitations: 'Uitnodigingen', appearance: 'Weergave', account: 'Account', notifications: 'Meldingen' },
   languageTitle: 'Taal en regio',
   languageDescription: 'Bepaalt de taal, de datum- en tijdnotatie en de eerste dag van de week.',
   languageLabel: 'Taal',
@@ -238,6 +247,21 @@ const settings: Messages['settings'] = {
   timeZoneDescription: 'Afspraken worden in deze tijdzone getoond en nieuwe afspraken krijgen hem vooraf ingesteld.',
   timeZoneLabel: 'Tijdzone',
   timeZoneAuto: (zone) => `Automatisch: ${zone} (aanbevolen)`,
+  holidaysTitle: 'Feestdagen',
+  holidaysDescription: 'Toont officiële feestdagen in de agenda. Gegevens: date-holidays (CC BY-SA 4.0).',
+  holidaysCountry: 'Land',
+  holidaysRegion: 'Regio',
+  holidaysAuto: (name) => `Automatisch: ${name} (aanbevolen)`,
+  holidaysOff: 'Geen feestdagen',
+  holidaysWholeCountry: 'Heel het land',
+  notifications: {
+    title: 'E-mails over afspraken',
+    description: 'E-mails naar je bevestigde adres. Herinneringen per e-mail komen ook als de agenda gesloten is.',
+    unverified: 'Bevestig je e-mailadres om e-mails te ontvangen.',
+    emailInvites: 'Als iemand me uitnodigt voor een afspraak',
+    emailChanges: 'Als een afspraak waarvoor ik ben uitgenodigd wijzigt of wordt geannuleerd',
+    emailReminders: 'Herinneringen per e-mail',
+  },
   themeTitle: 'Kleurenschema',
   themeLabel: 'Licht of donker',
   startViewTitle: 'Startweergave',
@@ -526,6 +550,18 @@ const calendars: Messages['calendars'] = {
     deleting: 'Verwijderen …',
     deleteMessage: (team, count) =>
       `‘${team}’ wordt verwijderd met alle agenda’s, afspraken en uitnodigingen, ook voor alle ${count} leden. Dit kan niet ongedaan worden gemaakt.`,
+  },
+  feed: {
+    title: 'Abonneren',
+    description: 'Abonneer je op deze agenda in Google Agenda, Outlook of Apple Agenda. Wijzigingen verschijnen daar automatisch, meestal binnen enkele uren. Het abonnement is alleen-lezen.',
+    label: 'Abonnementslink',
+    create: 'Abonnementslink maken',
+    copy: 'Link kopiëren',
+    copied: 'Gekopieerd',
+    openApp: 'Openen in agenda-app',
+    warning: 'Iedereen met deze link ziet alle afspraken van deze agenda. Een nieuwe link schakelt de oude uit.',
+    renew: 'Nieuwe link maken',
+    remove: 'Abonnement beëindigen',
   },
   ical: {
     title: 'Import en export',

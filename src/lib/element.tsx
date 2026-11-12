@@ -6,7 +6,7 @@ import { isCalendarView } from '../utils/calendarView.ts'
 import type { CalendarEvent } from '../utils/event.ts'
 import { isOneOf } from '../utils/object.ts'
 import { CalendarWidget } from './CalendarWidget.tsx'
-import { STORAGE_MODES, type CalendarProps } from './config.ts'
+import { HOLIDAY_SOURCES, STORAGE_MODES, type CalendarProps } from './config.ts'
 import type { DeletedEvent } from './eventCallbacks.ts'
 import type { MessageOverrides } from '../i18n/index.ts'
 import { VERSION } from './version.ts'
@@ -17,7 +17,7 @@ const FILL = { height: '100%' }
 
 const THEMES = ['light', 'dark'] as const
 
-const ATTRIBUTES = ['storage-mode', 'api-base-url', 'api-timeout-ms', 'auth', 'teams', 'initial-path', 'locale', 'tenant', 'theme', 'initial-view', 'link-param', 'time-zone'] as const
+const ATTRIBUTES = ['storage-mode', 'api-base-url', 'api-timeout-ms', 'auth', 'teams', 'initial-path', 'locale', 'tenant', 'theme', 'initial-view', 'link-param', 'time-zone', 'holidays', 'holiday-source', 'map-url'] as const
 
 export class CalendarElement extends HTMLElement {
   static observedAttributes = ATTRIBUTES
@@ -100,6 +100,7 @@ export class CalendarElement extends HTMLElement {
     const theme = this.getAttribute('theme')
     const initialView = this.getAttribute('initial-view')
     const linkParam = this.getAttribute('link-param')
+    const holidaySource = this.getAttribute('holiday-source')
     return {
       storageMode: isOneOf(STORAGE_MODES, storageMode) ? storageMode : undefined,
       apiBaseUrl: this.getAttribute('api-base-url') ?? undefined,
@@ -111,6 +112,9 @@ export class CalendarElement extends HTMLElement {
       theme: isOneOf(THEMES, theme) ? theme : undefined,
       initialView: isCalendarView(initialView) ? initialView : undefined,
       timeZone: this.getAttribute('time-zone') ?? undefined,
+      holidays: this.getAttribute('holidays') ?? undefined,
+      mapUrl: this.getAttribute('map-url') ?? undefined,
+      holidaySource: isOneOf(HOLIDAY_SOURCES, holidaySource) ? holidaySource : undefined,
       linkParam: linkParam === 'false' ? false : (linkParam ?? undefined),
       onEventCreate: this.#onEventCreate,
       onEventUpdate: this.#onEventUpdate,

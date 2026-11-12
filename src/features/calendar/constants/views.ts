@@ -43,4 +43,13 @@ export const VIEW_DEFINITIONS: Record<CalendarView, ViewDefinition> = {
   },
 }
 
-export const getViewOptions = (m: Messages) => CALENDAR_VIEWS.map((view) => ({ value: view, label: m.views[view].label }))
+export const VIEW_SHORTCUTS: Record<CalendarView, string> = { day: 'd', week: 'w', month: 'm', year: 'y' }
+
+export const withShortcut = (label: string, key: string) => `${label} (${key.toUpperCase()})`
+
+export const getViewOptions = (m: Messages) =>
+  CALENDAR_VIEWS.map((view) => ({
+    value: view,
+    label: m.views[view].label,
+    title: withShortcut(m.views[view].label, VIEW_SHORTCUTS[view]),
+  }))

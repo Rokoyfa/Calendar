@@ -23,9 +23,6 @@ export const events: Messages['events'] = {
   deleteTitle: 'Termin löschen?',
   deleteSeriesMessage: (title) =>
     `„${title}“ ist ein wiederkehrender Termin. Was soll gelöscht werden? Das kann nicht rückgängig gemacht werden.`,
-  deleteMessage: (title) => `Soll „${title}“ wirklich gelöscht werden? Das kann nicht rückgängig gemacht werden.`,
-  yes: 'Ja',
-  no: 'Nein',
   scopeTitle: 'Wiederkehrenden Termin ändern',
   scopeMessage: 'Für welche Termine der Serie sollen die Änderungen gelten?',
   scopes: {
@@ -68,4 +65,14 @@ export const events: Messages['events'] = {
   linkLabel: 'Bezeichnung (optional)',
   openLink: (name) => `${name} öffnen`,
   removeLink: (name) => `${name} entfernen`,
+  openMap: (location) => `„${location}“ in Karte öffnen`,
+  duplicate: 'Duplizieren',
+  duplicateNotice: (title) => `Kopie von „${title}“. Sie wird erst beim Speichern angelegt.`,
+  respondPage: {
+    title: 'Antwort auf Einladung',
+    sending: 'Deine Antwort wird gespeichert …',
+    incompleteLink: 'Dieser Link ist unvollständig. Bitte öffne ihn erneut aus der E-Mail.',
+    recurring: 'Das ist ein wiederkehrender Termin. Deine Antwort gilt für die ganze Serie.',
+    saved: (status) => `Gespeichert: ${status}`,
+  },
 }

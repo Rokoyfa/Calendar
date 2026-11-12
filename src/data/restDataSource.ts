@@ -4,7 +4,13 @@ import {
   type UserTokenProvider,
 } from '../features/authorization/index.ts'
 import { RemoteCalendarRepository } from '../features/calendars/index.ts'
-import { RemoteColorRepository, RemoteEventRepository, RemotePreferencesRepository } from '../features/storage/index.ts'
+import {
+  RemoteColorRepository,
+  RemoteEventRepository,
+  RemoteHolidayRepository,
+  RemotePreferencesRepository,
+} from '../features/storage/index.ts'
+import type { HolidaySource } from '../lib/defaults.ts'
 import { createApiClient } from '../utils/api.ts'
 import { createLocalRepositories } from './localDataSource.ts'
 import type { CalendarDataSource, DataRepositories, DataSourceContext } from './types.ts'
@@ -16,6 +22,7 @@ export type RestDataSourceOptions = {
   headers?: HeadersInit
   getAccessToken?: () => string | null
   getUserToken?: UserTokenProvider
+  holidaySource?: HolidaySource
 }
 
 export function restDataSource({
@@ -25,6 +32,7 @@ export function restDataSource({
   headers,
   getAccessToken,
   getUserToken,
+  holidaySource = 'library',
 }: RestDataSourceOptions): CalendarDataSource {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
   const createApi = ({ getLanguage, onUnauthorized }: Partial<DataSourceContext>) =>
@@ -38,6 +46,7 @@ export function restDataSource({
       calendars: new RemoteCalendarRepository(api),
       colors: new RemoteColorRepository(api),
       preferences: new RemotePreferencesRepository(api),
+      holidays: holidaySource === 'backend' ? new RemoteHolidayRepository(api) : undefined,
     }
   }
 

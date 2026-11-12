@@ -1,3 +1,4 @@
+import { parseEventResponse, type EventReply } from '../../../utils/event.ts'
 import { ApiError, isApiError } from '../../../utils/apiError.ts'
 import type { ErrorCode } from '../../../utils/appError.ts'
 import type { ApiClient } from '../../../utils/api.ts'
@@ -99,5 +100,11 @@ export class RemoteAuthRepository implements AuthRepository {
 
   async resendVerificationEmail() {
     await this.#api.post<void>(`${AUTH_PATH}/verify-email/resend`)
+  }
+
+  async respondToEvent(token: string, status: EventReply) {
+    return parseEventResponse(
+      await translateErrors(this.#api.post<unknown>('/events/respond', { token, status }), { 410: 'invalidLink' }),
+    )
   }
 }

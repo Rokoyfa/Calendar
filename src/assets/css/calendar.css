@@ -277,6 +277,13 @@ button.columnHeader:hover {
   text-underline-offset: 2px;
 }
 
+.eventLocationLink {
+  flex: none;
+  align-self: flex-start;
+  max-width: 100%;
+  font-size: var(--font-size-sm);
+}
+
 .eventLink:hover,
 .eventLink:focus-visible {
   text-decoration-thickness: 2px;
@@ -748,4 +755,35 @@ button.miniDay:hover {
     transparent 0 6px,
     color-mix(in srgb, var(--color-bg) 22%, transparent) 6px 12px
   );
+}
+
+.holidayLabel {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--color-red);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.allDayLane .holidayLabel {
+  grid-row: 1;
+  grid-column: 1;
+  align-self: center;
+  padding: 0 var(--space-2);
+}
+
+.day.holiday .dayDisplay,
+.monthCell.holiday .dayNumber,
+.miniDay.holiday {
+  color: var(--color-red);
+}
+
+.miniDay.holiday.today {
+  color: var(--event-text, var(--color-on-accent));
+}
+
+.monthCell .holidayLabel {
+  padding: 0 var(--space-1);
+  font-size: var(--font-size-xs);
 }

@@ -15,9 +15,11 @@ export const calendar = {
   openDay: (date: string) => `Open ${date}`,
   moreEvents: (count: number) => `+${count} more`,
   moreLinks: (count: number) => `+${count} more links`,
+  holiday: (name: string) => `Public holiday: ${name}`,
   fromCalendar: (name: string) => `From the calendar “${name}”`,
   sharedEventNotice: (source: string) => `${source}. All members see changes.`,
   dismiss: 'Dismiss',
+  undo: { action: 'Undo', ctrlZ: 'Ctrl+Z', deleted: (title: string) => `“${title}” deleted`, moved: (title: string) => `“${title}” moved` },
   search: {
     open: 'Search',
     title: 'Search events',

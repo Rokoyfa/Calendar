@@ -8,6 +8,7 @@ export const ROUTES = {
   settings: '/settings',
   createCalendar: '/calendars/new',
   calendarSettings: '/calendars/:calendarId/settings',
+  respond: '/respond',
 } as const
 
 export const calendarSettingsPath = (calendarId: string) =>

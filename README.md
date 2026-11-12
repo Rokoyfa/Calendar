@@ -56,6 +56,9 @@ document.querySelector('calendar-widget').addEventListener('event-create', (e) =
 | `theme` | `theme` | system | `light`, `dark` |
 | `initialView` | `initial-view` | user setting | `day`, `week`, `month`, `year` |
 | `timeZone` | `time-zone` | browser | IANA zone the calendar is shown in, e.g. `Europe/Berlin`. New events start in it. A zone the user picks in the settings takes precedence |
+| `holidays` | `holidays` | from `locale` | Public holidays to show: country or region code such as `DE`, `DE-NW`, `AT`, `US-CA`, or `off`. Users can override it in the settings |
+| `mapUrl` | `map-url` | Google Maps | Map service for locations, with `{query}` for the place, e.g. `https://www.openstreetmap.org/search?query={query}` or `https://maps.apple.com/?q={query}` |
+| `holidaySource` | `holiday-source` | `library` | `library` computes holidays in the browser, `backend` asks your backend (`GET /holidays`) and falls back to the library |
 | `storageMode` | `storage-mode` | `local` | `local` or `remote` |
 | `apiBaseUrl` | `api-base-url` | `/api` | Base URL of your backend |
 | `features` | `auth`, `teams` | auth off, teams on | `teams="false"` turns team features off |
@@ -132,7 +135,13 @@ type CalendarSummary = {
 }
 
 type User = { id: string; email: string; name: string; emailVerified: boolean }
-type Preferences = { theme: 'system' | 'light' | 'dark'; defaultView: View; mobileDefaultView: View; locale: string; timeZone: string } // timeZone: 'auto' or IANA zone
+type Preferences = {
+  theme: 'system' | 'light' | 'dark'; defaultView: View; mobileDefaultView: View; locale: string
+  timeZone: string              // 'auto' or IANA zone
+  holidays: string              // 'auto', 'off' or a region such as 'DE-NW'
+}
+type PublicHoliday = { date: string; name: string } // GET /holidays, only with holiday-source="backend"
+// Preferences also carry emailInvites, emailChanges, emailReminders: booleans for the emails below
 type Problem = { code: string; message: string }   // every error response
 ```
 
@@ -153,9 +162,13 @@ The backend stores series as one event. The component expands occurrences itself
 | Delete | single: `PUT` with `excludedDates` · following: `PUT` with `until`, `DELETE` its later detached events · all: `DELETE` detached events, then the series · plain: `DELETE /events/:id` |
 | Search | `GET /events/search?q=…&calendarId=…` (optional: without it the component searches the last and next year via `GET /events`) |
 | Answer as attendee | `POST /events/:id/response` with `{ status }` |
+| Change only own reminders | `PUT /events/:id/reminders` with `{ reminders }` (also for members without edit rights) |
+| Answer from an email link | `POST /events/respond` with `{ token, status }`, no session needed |
+| Subscription link | `GET`, `POST` (new link), `DELETE /calendars/:id/feed`. The link points at your `GET /feeds/:token.ics` |
 | Reminders | `GET /events` for the next four weeks of all calendars, every five minutes while the widget is open |
 | Import .ics | `GET /events` for the whole calendar, then `PUT` for known `uid`s and `POST` for new ones |
 | Settings, colors | `PATCH /preferences`, `POST /colors`, `DELETE /colors/:rrggbb` |
+| Holidays (only with `holiday-source="backend"`) | `GET /holidays?from=…&to=…&region=DE-NW&lang=de`, answer `PublicHoliday[]` |
 | Sign-in, teams, invitations | `/auth/*`, `/calendars`, `/teams/*`, `/invitations/*`, see the OpenAPI file |
 
 Before editing "following" or "all" of a series, the component loads its detached events with `GET /events?seriesId=…`.
@@ -165,6 +178,8 @@ Before editing "following" or "all" of a series, the component loads its detache
 - **Sessions:** requests use `credentials: 'include'`. Set an `HttpOnly` cookie on sign-in. If the widget runs on another domain: CORS for that origin with `Access-Control-Allow-Credentials: true`, allowed headers `Content-Type`, `Accept`, `Accept-Language`, `Authorization`, `X-Calendar-Tenant`, and the cookie as `SameSite=None; Secure`. Answer `401` when the session is gone.
 - **Errors:** always `{ code, message }`. Known codes such as `invalidCredentials`, `emailTaken`, `forbidden`, `lastOwner` are shown translated, others with `message`.
 - **Language:** every request carries `Accept-Language`. Use it, or the stored `locale`, for emails.
+- **Emails about events** (your backend sends them, the component only stores the user's choice): an invitation with yes / maybe / no links to `/respond?status=accepted&token=…` when someone is added as attendee (`emailInvites`), a notice when title, time, place or repetition change or the event is cancelled (`emailChanges`), and reminders at the user's own reminder times even while the calendar is closed (`emailReminders`, off by default). Only to verified addresses, never to the person who made the change.
+- **Subscriptions:** `GET /feeds/:token.ics` answers without a session with the calendar as iCalendar (RFC 5545) and the subscriber's own reminders. Keep one secret token per user and calendar, a new one replaces the old. Stop serving it when the user leaves the calendar.
 - **Email links:** point them at the host page with the screen as parameter, e.g. `https://host.example/calendar?calendarPath=%2Freset-password%3Ftoken%3D…`.
 
 Building, the test backend and all internals are described in German in [DEVELOPMENT.md](DEVELOPMENT.md).
@@ -172,3 +187,5 @@ Building, the test backend and all internals are described in German in [DEVELOP
 ## License
 
 [MIT](LICENSE) © Rokoyfa
+
+Public holiday data comes from [date-holidays](https://github.com/commenthol/date-holidays) (code ISC, data [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)). It is loaded only when holidays are shown.

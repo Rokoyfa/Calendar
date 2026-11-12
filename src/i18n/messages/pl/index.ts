@@ -143,9 +143,11 @@ const calendar: Messages['calendar'] = {
   openDay: (date) => `Otwórz ${date}`,
   moreEvents: (count) => `+${count} więcej`,
   moreLinks: (count) => `+${count} więcej linków`,
+  holiday: (name) => `Święto: ${name}`,
   fromCalendar: (name) => `Z kalendarza „${name}”`,
   sharedEventNotice: (source) => `${source}. Wszyscy członkowie widzą zmiany.`,
   dismiss: 'Zamknij',
+  undo: { action: 'Cofnij', ctrlZ: 'Ctrl+Z', deleted: (title) => `Usunięto „${title}”`, moved: (title) => `Przeniesiono „${title}”` },
   search: {
     open: 'Szukaj',
     title: 'Szukaj wydarzeń',
@@ -178,9 +180,6 @@ const events: Messages['events'] = {
   removeColor: (label) => `Usuń kolor ${label}`,
   deleteTitle: 'Usunąć wydarzenie?',
   deleteSeriesMessage: (title) => `„${title}” to wydarzenie cykliczne. Co usunąć? Tej operacji nie można cofnąć.`,
-  deleteMessage: (title) => `Czy na pewno usunąć „${title}”? Tej operacji nie można cofnąć.`,
-  yes: 'Tak',
-  no: 'Nie',
   scopeTitle: 'Zmień wydarzenie cykliczne',
   scopeMessage: 'Których wydarzeń z serii mają dotyczyć zmiany?',
   scopes: {
@@ -223,6 +222,16 @@ const events: Messages['events'] = {
   linkLabel: 'Etykieta (opcjonalnie)',
   openLink: (name) => `Otwórz ${name}`,
   removeLink: (name) => `Usuń ${name}`,
+  openMap: (location) => `Otwórz „${location}” na mapie`,
+  duplicate: 'Duplikuj',
+  duplicateNotice: (title) => `Kopia „${title}”. Zostanie utworzona po zapisaniu.`,
+  respondPage: {
+    title: 'Odpowiedź na zaproszenie',
+    sending: 'Zapisywanie odpowiedzi…',
+    incompleteLink: 'Ten link jest niekompletny. Otwórz go ponownie z wiadomości e-mail.',
+    recurring: 'To wydarzenie cykliczne. Twoja odpowiedź dotyczy całej serii.',
+    saved: (status) => `Zapisano: ${status}`,
+  },
 }
 
 const storage: Messages['storage'] = {
@@ -236,7 +245,7 @@ const storage: Messages['storage'] = {
 
 const settings: Messages['settings'] = {
   tabsLabel: 'Sekcje ustawień',
-  tabs: { calendars: 'Kalendarze', invitations: 'Zaproszenia', appearance: 'Wygląd', account: 'Konto' },
+  tabs: { calendars: 'Kalendarze', invitations: 'Zaproszenia', appearance: 'Wygląd', account: 'Konto', notifications: 'Powiadomienia' },
   languageTitle: 'Język i region',
   languageDescription: 'Określa język, format daty i godziny oraz pierwszy dzień tygodnia.',
   languageLabel: 'Język',
@@ -245,6 +254,21 @@ const settings: Messages['settings'] = {
   timeZoneDescription: 'Wydarzenia są wyświetlane w tej strefie czasowej, a nowe wydarzenia mają ją ustawioną domyślnie.',
   timeZoneLabel: 'Strefa czasowa',
   timeZoneAuto: (zone) => `Automatyczna: ${zone} (zalecane)`,
+  holidaysTitle: 'Święta',
+  holidaysDescription: 'Pokazuje dni ustawowo wolne w kalendarzu. Dane: date-holidays (CC BY-SA 4.0).',
+  holidaysCountry: 'Kraj',
+  holidaysRegion: 'Region',
+  holidaysAuto: (name) => `Automatycznie: ${name} (zalecane)`,
+  holidaysOff: 'Bez świąt',
+  holidaysWholeCountry: 'Cały kraj',
+  notifications: {
+    title: 'E-maile o wydarzeniach',
+    description: 'E-maile na Twój potwierdzony adres. Przypomnienia e-mailem przychodzą także wtedy, gdy kalendarz jest zamknięty.',
+    unverified: 'Potwierdź adres e-mail, aby otrzymywać wiadomości.',
+    emailInvites: 'Gdy ktoś zaprosi mnie na wydarzenie',
+    emailChanges: 'Gdy wydarzenie, na które jestem zaproszony, zmieni się lub zostanie odwołane',
+    emailReminders: 'Przypomnienia e-mailem',
+  },
   themeTitle: 'Motyw',
   themeLabel: 'Jasny lub ciemny',
   startViewTitle: 'Widok startowy',
@@ -536,6 +560,18 @@ const calendars: Messages['calendars'] = {
     deleting: 'Usuwanie …',
     deleteMessage: (team, count) =>
       `„${team}” zostanie usunięty ze wszystkimi kalendarzami, wydarzeniami i zaproszeniami, także dla wszystkich członków (${count}). Tej operacji nie można cofnąć.`,
+  },
+  feed: {
+    title: 'Subskrybuj',
+    description: 'Subskrybuj ten kalendarz w Kalendarzu Google, Outlooku lub Kalendarzu Apple. Zmiany pojawią się tam automatycznie, zwykle w ciągu kilku godzin. Subskrypcja służy tylko do odczytu.',
+    label: 'Link subskrypcji',
+    create: 'Utwórz link subskrypcji',
+    copy: 'Kopiuj link',
+    copied: 'Skopiowano',
+    openApp: 'Otwórz w aplikacji kalendarza',
+    warning: 'Każdy, kto zna ten link, widzi wszystkie wydarzenia tego kalendarza. Nowy link wyłącza poprzedni.',
+    renew: 'Utwórz nowy link',
+    remove: 'Zakończ subskrypcję',
   },
   ical: {
     title: 'Import i eksport',

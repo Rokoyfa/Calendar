@@ -8,6 +8,7 @@ import type { CalendarViewProps } from '../types/view.ts'
 import { splitAllDay, type AllDaySegment } from '../utils/allDay.ts'
 import { getHoursOnDate, toSlotRange } from '../utils/slotSelection.ts'
 import { DayColumn } from './DayColumn.tsx'
+import { useHolidayMap } from '../context/HolidaysContext.ts'
 import { TimeColumn } from './TimeColumn.tsx'
 
 const NO_SEGMENTS: readonly EventSegment[] = []
@@ -33,12 +34,16 @@ export function TimeGridView({
   const isSingleDay = dates.length === 1
   const lanes = useMemo(() => splitAllDay(dates, segmentsByDate), [dates, segmentsByDate])
   const showsToday = dates.includes(today)
+  const holidays = useHolidayMap()
+  const holidayRows = dates.some((date) => holidays.has(date)) ? 1 : 0
+  const hasAllDayEvents = [...lanes.allDay.values()].some((segments) => segments.length > 0)
+  const allDayRows = holidayRows + (hasAllDayEvents || holidayRows === 0 ? lanes.rows : 0)
 
   return (
     <div
       ref={containerRef}
       className={classNames('calendar', isSingleDay ? 'calendar--day' : 'calendar--week', range && 'isSelecting')}
-      style={{ '--all-day-rows': lanes.rows } as CSSProperties}
+      style={{ '--all-day-rows': allDayRows } as CSSProperties}
     >
       <TimeColumn />
       {dates.map((date) => {
@@ -51,6 +56,7 @@ export function TimeGridView({
             nowMinutes={showsToday ? currentMinutes : null}
             segments={lanes.timed.get(date) ?? NO_SEGMENTS}
             allDaySegments={lanes.allDay.get(date) ?? NO_ALL_DAY}
+            allDayRowOffset={holidayRows}
             selection={hours && { ...hours, label: date === range.first.date ? rangeLabel : null }}
             onSlotSelect={onCreate}
             onAllDaySelect={(allDayDate) => {

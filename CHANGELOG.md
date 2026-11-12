@@ -11,6 +11,14 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - iCalendar export and import (.ics) in the calendar settings. Importing again updates events with the same `uid`, recurring events, exceptions, reminders and attendees are kept
 - Attendees in team calendars with responses yes, maybe and no, plus a button to invite all members at once. Unanswered events are striped, declined ones crossed out
 - The calendar you were in is restored after a reload
+- Public holidays for over 200 countries and their regions, computed in the browser with date-holidays (loaded only when shown) or delivered by your backend (`holiday-source="backend"`, `GET /holidays`). Region from the new `holidays` attribute, the language, or the user's setting
+- Calendar subscriptions: a secret link per user and calendar for Google Calendar, Outlook or Apple Calendar (`/calendars/:id/feed`, `/feeds/:token.ics`)
+- Email settings (invitations, changes, reminders) in a new Notifications tab, and a page that saves the yes / maybe / no answer from an invitation email without signing in (`POST /events/respond`)
+- Members without edit rights can set their own reminders on any event (`PUT /events/:id/reminders`)
+- Locations open in Google Maps from the dialog, the calendar grid and the reply page. Another map service can be set with `map-url`, locations that are web addresses open directly
+- Duplicate events from the event dialog
+- Undo after deleting, moving or resizing events (notice at the bottom or Ctrl+Z / ⌘Z). Single events are deleted without a confirmation, recurring ones still ask which events
+- Keyboard shortcuts: `T` today, `N` new event, `/` search, `D` `W` `M` `Y` views. The header tooltips show them
 - Time zone setting: automatic (zone from the host, otherwise the system, recommended) or a fixed zone. Events are shown in it and new events start in it
 - Search results show times in your own time zone and open events that move to another day there
 - New event fields `uid`, `location`, `links`, `reminders`, `attendees`, preference `timeZone`, new endpoints `GET /events/search` and `POST /events/:id/response`. Older events and backends without them keep working

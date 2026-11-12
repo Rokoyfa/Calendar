@@ -1,3 +1,4 @@
+import type { EventReply, EventResponse } from '../../../utils/event.ts'
 export type User = {
   id: string
   email: string
@@ -51,6 +52,7 @@ export interface AuthRepository {
   resetPassword(input: PasswordResetInput): Promise<void>
   verifyEmail(token: string): Promise<void>
   resendVerificationEmail(): Promise<void>
+  respondToEvent?(token: string, status: EventReply): Promise<EventResponse>
 }
 
 type AccountActions = Pick<
@@ -68,6 +70,7 @@ type AccountActions = Pick<
 >
 
 export type AuthContextValue = AccountActions & {
+  respondToEvent: (token: string, status: EventReply) => Promise<EventResponse>
   enabled: boolean
   method: AuthMethod
   status: AuthStatus

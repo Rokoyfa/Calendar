@@ -1,3 +1,4 @@
+import { parseEventResponse, type EventReply } from '../../../utils/event.ts'
 import { isApiError } from '../../../utils/apiError.ts'
 import { AppError } from '../../../utils/appError.ts'
 import type { ApiClient } from '../../../utils/api.ts'
@@ -41,4 +42,8 @@ export class HostTokenAuthRepository implements AuthRepository {
   resetPassword = notAvailable
   verifyEmail = notAvailable
   resendVerificationEmail = notAvailable
+
+  async respondToEvent(token: string, status: EventReply) {
+    return parseEventResponse(await this.#api.post<unknown>('/events/respond', { token, status }))
+  }
 }

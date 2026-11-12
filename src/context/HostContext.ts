@@ -8,6 +8,8 @@ export type HostOptions = {
   theme?: HostTheme
   initialView?: CalendarView
   timeZone?: string
+  holidays?: string
+  mapUrl?: string
 }
 
 export const HostContext = createContext<HostOptions>({ teams: true })

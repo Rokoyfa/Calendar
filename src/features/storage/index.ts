@@ -7,11 +7,14 @@ export { LocalPreferencesRepository } from './repositories/LocalPreferencesRepos
 export { RemoteColorRepository } from './repositories/RemoteColorRepository.ts'
 export { RemoteEventRepository } from './repositories/RemoteEventRepository.ts'
 export { RemotePreferencesRepository } from './repositories/RemotePreferencesRepository.ts'
+export { RemoteHolidayRepository } from './repositories/RemoteHolidayRepository.ts'
 export type {
   ColorRepository,
   EventQuery,
   EventRepository,
   EventSearchQuery,
+  HolidayQuery,
+  HolidayRepository,
   PreferencesRepository,
   StorageMode,
 } from './types/storage.ts'

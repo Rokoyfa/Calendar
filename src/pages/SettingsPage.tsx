@@ -5,10 +5,11 @@ import { AccountSettings, useAuth } from '../features/authorization/index.ts'
 import { CalendarSettings, InvitationList, useCalendars } from '../features/calendars/index.ts'
 import { useHost } from '../context/HostContext.ts'
 import { CustomColorSettings } from '../features/events/index.ts'
-import { PreferencesSettings } from '../features/preferences/index.ts'
+import { NotificationSettings, PreferencesSettings } from '../features/preferences/index.ts'
+import { HolidaySettings } from '../features/holidays/index.ts'
 import { useI18n } from '../i18n/index.ts'
 
-type SettingsTab = 'calendars' | 'invitations' | 'appearance' | 'account'
+type SettingsTab = 'calendars' | 'invitations' | 'appearance' | 'notifications' | 'account'
 
 export function SettingsPage() {
   const { m } = useI18n()
@@ -30,11 +31,19 @@ export function SettingsPage() {
     content: (
       <>
         <PreferencesSettings />
+        <HolidaySettings />
         <CustomColorSettings />
       </>
     ),
   })
-  if (enabled && user && method === 'password') tabs.push({ value: 'account', label: m.settings.tabs.account, content: <AccountSettings /> })
+  if (enabled && user)
+    tabs.push({
+      value: 'notifications',
+      label: m.settings.tabs.notifications,
+      content: <NotificationSettings emailVerified={user.emailVerified} />,
+    })
+  if (enabled && user && method === 'password')
+    tabs.push({ value: 'account', label: m.settings.tabs.account, content: <AccountSettings /> })
   const [active, select] = useTabParam(tabs)
 
   return (

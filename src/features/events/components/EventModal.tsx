@@ -11,9 +11,12 @@ import { Modal } from '../../../components/Modal.tsx'
 import { Tabs, type TabDefinition } from '../../../components/Tabs.tsx'
 import { TextField } from '../../../components/TextField.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
+import { useLocationUrl } from '../../../hooks/useLocationUrl.ts'
+import { MapPinIcon } from '../../../components/Icons.tsx'
 import { isISODate, isTime } from '../../../utils/date.ts'
 import {
   ALL_DAY_TIME,
+  changesOnlyReminders,
   EVENT_DESCRIPTION_MAX_LENGTH,
   EVENT_LOCATION_MAX_LENGTH,
   formatEventPeriod,
@@ -71,7 +74,9 @@ type EventModalProps = {
   occurrence?: EventOccurrence | null
   notice?: string
   onSave: (input: EventInput, scope: EditScope) => Promise<void>
-  onDelete?: () => void
+  onDelete?: () => void | Promise<void>
+  onDuplicate?: (input: EventInput) => void
+  onRemindersChange?: (reminders: number[]) => Promise<void>
   onClose: () => void
 }
 
@@ -87,17 +92,29 @@ export function EventModal({
   notice,
   onSave,
   onDelete,
+  onDuplicate,
+  onRemindersChange,
   onClose,
 }: EventModalProps) {
   const i18n = useI18n()
   const { m } = i18n
   const viewerTimeZone = useViewerTimeZone()
+  const getLocationUrl = useLocationUrl()
   const mode: EventModalMode = occurrence ? 'edit' : 'create'
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
   const [activeTab, setActiveTab] = useState<EventTab>('general')
-  const { run: save, isPending, error: submitError } = useAsyncAction(onSave)
+  const {
+    run: save,
+    isPending,
+    error: submitError,
+  } = useAsyncAction(async (input: EventInput, scope: EditScope) => {
+    if (occurrence && onRemindersChange && changesOnlyReminders(initialValue, input))
+      await onRemindersChange(input.reminders)
+    else await onSave(input, scope)
+  })
+  const { run: remove, isPending: isDeleting, error: deleteError } = useAsyncAction(async () => onDelete?.())
 
   const update = (changes: Partial<EventInput>, clearedErrors: readonly (keyof EventValidationErrors)[]) => {
     setValues((current) => ({ ...current, ...changes }))
@@ -156,7 +173,8 @@ export function EventModal({
     }
 
     const options = getScopeOptions(occurrence, input.recurrence)
-    if (options.length > 1) setPendingSave({ input, options })
+    if (occurrence && onRemindersChange && changesOnlyReminders(initialValue, input)) void save(input, 'all')
+    else if (options.length > 1) setPendingSave({ input, options })
     else void save(input, options[0])
   }
 
@@ -170,6 +188,8 @@ export function EventModal({
     !values.allDay && values.timeZone && values.timeZone !== viewerTimeZone && isValidPeriod(values)
       ? m.events.inYourTimeZone(formatEventPeriod(toViewerPeriod(values, values.timeZone, viewerTimeZone), i18n))
       : null
+
+  const locationUrl = getLocationUrl(values.location)
 
   const tabDefinitions: TabDefinition<EventTab>[] = [
     {
@@ -268,6 +288,20 @@ export function EventModal({
           value={values.location}
           error={errors.location}
           onChange={(location) => setField('location', location)}
+          addon={
+            locationUrl && (
+              <a
+                className="iconButton iconButton--plain"
+                href={locationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={m.events.openMap(values.location.trim())}
+                title={m.events.openMap(values.location.trim())}
+              >
+                <MapPinIcon size={18} />
+              </a>
+            )
+          }
         />
 
         <LinksField links={values.links} error={errors.links} onChange={(links) => setField('links', links)} />
@@ -293,15 +327,20 @@ export function EventModal({
           {notice && <p className="formHint eventNotice">{notice}</p>}
           <Tabs label={m.events.tabsLabel} tabs={tabs} value={activeTab} stable onChange={setActiveTab} />
 
-          <ErrorMessage message={submitError} />
+          <ErrorMessage message={submitError ?? deleteError} />
 
           <div className="modalActions">
             <Button type="submit" isPending={isPending} pendingLabel={m.common.saving}>
               {m.common.save}
             </Button>
             {onDelete && (
-              <Button variant="danger" disabled={isPending} onClick={onDelete}>
+              <Button variant="danger" disabled={isPending} isPending={isDeleting} onClick={() => void remove()}>
                 {m.common.delete}
+              </Button>
+            )}
+            {onDuplicate && (
+              <Button variant="outline" disabled={isPending || isDeleting} onClick={() => onDuplicate(values)}>
+                {m.events.duplicate}
               </Button>
             )}
             <Button variant="secondary" onClick={onClose}>

@@ -136,9 +136,11 @@ const calendar: Messages['calendar'] = {
   openDay: (date) => `Ouvrir le ${date}`,
   moreEvents: (count) => `+${count} de plus`,
   moreLinks: (count) => `+${count} autres liens`,
+  holiday: (name) => `Jour férié : ${name}`,
   fromCalendar: (name) => `Du calendrier « ${name} »`,
   sharedEventNotice: (source) => `${source}. Tous les membres voient les modifications.`,
   dismiss: 'Fermer',
+  undo: { action: 'Annuler', ctrlZ: 'Ctrl+Z', deleted: (title) => `« ${title} » supprimé`, moved: (title) => `« ${title} » déplacé` },
   search: {
     open: 'Rechercher',
     title: 'Rechercher des événements',
@@ -172,9 +174,6 @@ const events: Messages['events'] = {
   deleteTitle: 'Supprimer l’événement ?',
   deleteSeriesMessage: (title) =>
     `« ${title} » est un événement récurrent. Que faut-il supprimer ? Cette action est irréversible.`,
-  deleteMessage: (title) => `Voulez-vous vraiment supprimer « ${title} » ? Cette action est irréversible.`,
-  yes: 'Oui',
-  no: 'Non',
   scopeTitle: 'Modifier l’événement récurrent',
   scopeMessage: 'À quels événements de la série les modifications doivent-elles s’appliquer ?',
   scopes: {
@@ -217,6 +216,16 @@ const events: Messages['events'] = {
   linkLabel: 'Libellé (facultatif)',
   openLink: (name) => `Ouvrir ${name}`,
   removeLink: (name) => `Retirer ${name}`,
+  openMap: (location) => `Ouvrir « ${location} » dans une carte`,
+  duplicate: 'Dupliquer',
+  duplicateNotice: (title) => `Copie de « ${title} ». Elle est créée à l’enregistrement.`,
+  respondPage: {
+    title: 'Répondre à l’invitation',
+    sending: 'Enregistrement de ta réponse…',
+    incompleteLink: 'Ce lien est incomplet. Ouvre-le à nouveau depuis l’e-mail.',
+    recurring: 'C’est un événement récurrent. Ta réponse vaut pour toute la série.',
+    saved: (status) => `Enregistré : ${status}`,
+  },
 }
 
 const storage: Messages['storage'] = {
@@ -230,7 +239,7 @@ const storage: Messages['storage'] = {
 
 const settings: Messages['settings'] = {
   tabsLabel: 'Sections des paramètres',
-  tabs: { calendars: 'Calendriers', invitations: 'Invitations', appearance: 'Apparence', account: 'Compte' },
+  tabs: { calendars: 'Calendriers', invitations: 'Invitations', appearance: 'Apparence', account: 'Compte', notifications: 'Notifications' },
   languageTitle: 'Langue et région',
   languageDescription: 'Définit la langue, les formats de date et d’heure et le premier jour de la semaine.',
   languageLabel: 'Langue',
@@ -239,6 +248,21 @@ const settings: Messages['settings'] = {
   timeZoneDescription: 'Les événements sont affichés dans ce fuseau horaire, qui est aussi présélectionné pour les nouveaux événements.',
   timeZoneLabel: 'Fuseau horaire',
   timeZoneAuto: (zone) => `Automatique : ${zone} (recommandé)`,
+  holidaysTitle: 'Jours fériés',
+  holidaysDescription: 'Affiche les jours fériés dans le calendrier. Données : date-holidays (CC BY-SA 4.0).',
+  holidaysCountry: 'Pays',
+  holidaysRegion: 'Région',
+  holidaysAuto: (name) => `Automatique : ${name} (recommandé)`,
+  holidaysOff: 'Aucun jour férié',
+  holidaysWholeCountry: 'Tout le pays',
+  notifications: {
+    title: 'E-mails sur les événements',
+    description: 'E-mails à ton adresse confirmée. Les rappels par e-mail arrivent même si le calendrier est fermé.',
+    unverified: 'Confirme ton adresse e-mail pour recevoir des e-mails.',
+    emailInvites: 'Quand quelqu’un m’invite à un événement',
+    emailChanges: 'Quand un événement auquel je suis invité change ou est annulé',
+    emailReminders: 'Rappels par e-mail',
+  },
   themeTitle: 'Thème',
   themeLabel: 'Clair ou sombre',
   startViewTitle: 'Vue de départ',
@@ -537,6 +561,18 @@ const calendars: Messages['calendars'] = {
     deleting: 'Suppression …',
     deleteMessage: (team, count) =>
       `« ${team} » sera supprimée avec tous les calendriers, événements et invitations, également pour les ${count} membres. Cette action est irréversible.`,
+  },
+  feed: {
+    title: 'S’abonner',
+    description: 'Abonne-toi à ce calendrier dans Google Agenda, Outlook ou Apple Calendrier. Les modifications y apparaissent automatiquement, en général en quelques heures. L’abonnement est en lecture seule.',
+    label: 'Lien d’abonnement',
+    create: 'Créer un lien d’abonnement',
+    copy: 'Copier le lien',
+    copied: 'Copié',
+    openApp: 'Ouvrir dans l’app de calendrier',
+    warning: 'Toute personne ayant ce lien voit tous les événements de ce calendrier. Un nouveau lien désactive l’ancien.',
+    renew: 'Créer un nouveau lien',
+    remove: 'Arrêter l’abonnement',
   },
   ical: {
     title: 'Import et export',

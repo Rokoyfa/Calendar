@@ -1,4 +1,5 @@
 import type { UserTokenProvider } from '../features/authorization/index.ts'
+import type { HolidaySource } from '../lib/defaults.ts'
 import { restDataSource } from './restDataSource.ts'
 import type { CalendarDataSource } from './types.ts'
 
@@ -9,7 +10,14 @@ export type TenantDataSourceOptions = {
   baseUrl: string
   timeoutMs?: number
   getUserToken?: UserTokenProvider
+  holidaySource?: HolidaySource
 }
 
-export const tenantDataSource = ({ tenant, baseUrl, timeoutMs, getUserToken }: TenantDataSourceOptions): CalendarDataSource =>
-  restDataSource({ baseUrl, timeoutMs, auth: true, headers: { [TENANT_HEADER]: tenant }, getUserToken })
+export const tenantDataSource = ({
+  tenant,
+  baseUrl,
+  timeoutMs,
+  getUserToken,
+  holidaySource,
+}: TenantDataSourceOptions): CalendarDataSource =>
+  restDataSource({ baseUrl, timeoutMs, auth: true, headers: { [TENANT_HEADER]: tenant }, getUserToken, holidaySource })

@@ -3,7 +3,7 @@ import { Button } from '../../../components/Button.tsx'
 import { IconButton } from '../../../components/IconButton.tsx'
 import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
 import { useI18n } from '../../../i18n/index.ts'
-import { getViewOptions } from '../constants/views.ts'
+import { getViewOptions, withShortcut } from '../constants/views.ts'
 import type { CalendarView } from '../types/view.ts'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, SearchIcon } from '../../../components/Icons.tsx'
 
@@ -45,7 +45,7 @@ export function CalendarHeader({
         <IconButton label={nextLabel} title={`${nextLabel} (→)`} plain onClick={onNext}>
           <ChevronRightIcon />
         </IconButton>
-        <Button variant="outline" className="todayButton" onClick={onToday}>
+        <Button variant="outline" className="todayButton" title={withShortcut(m.calendar.today, 't')} onClick={onToday}>
           {m.calendar.today}
         </Button>
       </div>
@@ -62,12 +62,21 @@ export function CalendarHeader({
         <SegmentedControl label={m.views.label} value={view} options={getViewOptions(m)} onChange={onViewChange} />
         <span className="headerCreate">
           {onSearch && (
-            <IconButton label={m.calendar.search.open} plain onClick={onSearch}>
+            <IconButton
+              label={m.calendar.search.open}
+              title={withShortcut(m.calendar.search.open, '/')}
+              plain
+              onClick={onSearch}
+            >
               <SearchIcon size={18} />
             </IconButton>
           )}
           {onCreateEvent && (
-            <IconButton label={m.calendar.newEvent} onClick={onCreateEvent}>
+            <IconButton
+              label={m.calendar.newEvent}
+              title={withShortcut(m.calendar.newEvent, 'n')}
+              onClick={onCreateEvent}
+            >
               <PlusIcon size={16} />
             </IconButton>
           )}

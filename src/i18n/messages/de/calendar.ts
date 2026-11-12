@@ -17,9 +17,11 @@ export const calendar: Messages['calendar'] = {
   openDay: (date) => `${date} öffnen`,
   moreEvents: (count) => `+${count} weitere`,
   moreLinks: (count) => `+${count} weitere Links`,
+  holiday: (name) => `Feiertag: ${name}`,
   fromCalendar: (name) => `Aus dem Kalender „${name}“`,
   sharedEventNotice: (source) => `${source}. Änderungen sehen alle Mitglieder.`,
   dismiss: 'Schließen',
+  undo: { action: 'Rückgängig', ctrlZ: 'Strg+Z', deleted: (title) => `„${title}“ gelöscht`, moved: (title) => `„${title}“ verschoben` },
   search: {
     open: 'Suchen',
     title: 'Termine suchen',

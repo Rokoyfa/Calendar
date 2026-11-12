@@ -34,6 +34,7 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
       events: withEventCallbacks(repositories.events, () => eventCallbacks.current),
       colors: repositories.colors,
       preferences: repositories.preferences,
+      holidays: repositories.holidays,
     }),
     [repositories, eventCallbacks],
   )

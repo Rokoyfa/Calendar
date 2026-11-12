@@ -10,6 +10,7 @@ import { layoutEvents } from '../utils/layoutEvents.ts'
 import { EventBlock } from './EventBlock.tsx'
 import { EventChip } from './EventChip.tsx'
 import { NowIndicator } from './NowIndicator.tsx'
+import { useHolidayNames } from '../context/HolidaysContext.ts'
 
 type DayColumnProps = {
   date: string
@@ -17,6 +18,7 @@ type DayColumnProps = {
   nowMinutes: number | null
   segments: readonly EventSegment[]
   allDaySegments: readonly AllDaySegment[]
+  allDayRowOffset?: number
   selection?: { fromHour: number; toHour: number; label: string | null } | null
   onSlotSelect: (date: string, hour: number) => void
   onAllDaySelect: (date: string) => void
@@ -30,6 +32,7 @@ export function DayColumn({
   nowMinutes,
   segments,
   allDaySegments,
+  allDayRowOffset = 0,
   selection = null,
   onSlotSelect,
   onAllDaySelect,
@@ -40,6 +43,8 @@ export function DayColumn({
   const day = fromISODate(date)
   const dayLabel = format.longDate(date)
   const positionedSegments = useMemo(() => layoutEvents(segments), [segments])
+  const holidayNames = useHolidayNames(date)
+  const holidayText = holidayNames.join(' · ')
   const header = (
     <>
       <span className="dayName">
@@ -54,7 +59,7 @@ export function DayColumn({
   )
 
   return (
-    <div className={classNames('day', isToday && 'currentDay')} data-date={date}>
+    <div className={classNames('day', isToday && 'currentDay', holidayText && 'holiday')} data-date={date}>
       {onHeaderSelect ? (
         <button
           type="button"
@@ -68,11 +73,16 @@ export function DayColumn({
         <div className="columnHeader">{header}</div>
       )}
       <div className="allDayLane" title={`${dayLabel} ${m.events.allDay}`} onClick={() => onAllDaySelect(date)}>
+        {holidayText && (
+          <span className="holidayLabel" title={m.calendar.holiday(holidayText)}>
+            {holidayText}
+          </span>
+        )}
         {allDaySegments.map(({ segment, row, isFirst }) => (
           <EventChip
             key={segment.event.occurrenceKey}
             segment={segment}
-            row={row}
+            row={row + allDayRowOffset}
             isContinuation={!isFirst}
             onSelect={onEventSelect}
           />

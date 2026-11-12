@@ -5,10 +5,11 @@ import type { HostTheme } from '../context/HostContext.ts'
 import type { UserTokenProvider } from '../features/authorization/index.ts'
 import type { CalendarView } from '../utils/calendarView.ts'
 import type { EventCallbacks } from './eventCallbacks.ts'
-import type { CalendarFeatures, StorageMode } from './defaults.ts'
+import type { CalendarFeatures, HolidaySource, StorageMode } from './defaults.ts'
 
 export { DEFAULT_CONFIG, STORAGE_MODES } from './defaults.ts'
-export type { CalendarFeatures, StorageMode } from './defaults.ts'
+export { HOLIDAY_SOURCES } from './defaults.ts'
+export type { CalendarFeatures, HolidaySource, StorageMode } from './defaults.ts'
 
 export type CalendarRouting = 'memory' | 'browser'
 
@@ -29,6 +30,9 @@ export type CalendarProps = EventCallbacks & {
   theme?: HostTheme
   initialView?: CalendarView
   timeZone?: string
+  holidays?: string
+  holidaySource?: HolidaySource
+  mapUrl?: string
   className?: string
   style?: CSSProperties
 }
