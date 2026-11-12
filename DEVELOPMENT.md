@@ -640,7 +640,7 @@ Die Kürzel wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt
 
 ### Kalender-Abo
 
-In den Kalender-Einstellungen (Tab „Import & Export“, beim persönlichen Kalender als Abschnitt) erstellt man einen geheimen Abo-Link, den Google Kalender, Outlook oder Apple Kalender abonnieren (`SubscribeSection.tsx`). Der Link ist je Nutzer und Kalender, enthält die eigenen Erinnerungen und lässt sich kopieren, als `webcal://` öffnen, neu erzeugen (der alte wird ungültig) oder beenden. Der Abschnitt erscheint nur, wenn das Repository `getFeed`, `createFeed` und `deleteFeed` hat und das Backend `GET /calendars/:id/feed` kennt, im lokalen Modus also nicht.
+In den Kalender-Einstellungen (Tab „Import & Export“, beim persönlichen Kalender als Abschnitt) erstellt man einen geheimen Abo-Link, den Google Kalender, Outlook oder Apple Kalender abonnieren (`SubscribeSection.tsx`). Der Link ist je Nutzer und Kalender, enthält die eigenen Erinnerungen und lässt sich kopieren, als `webcal://` öffnen, neu erzeugen (der alte wird ungültig) oder beenden. Der Abschnitt erscheint nur, wenn das Repository `getFeed`, `createFeed` und `deleteFeed` hat und das Backend `GET /calendars/:id/feed` kennt, im lokalen Modus also nicht. Wie man den Link in Apple Kalender, Google Kalender, Outlook und Thunderbird einbindet und wie schnell die Apps Änderungen holen, steht im README unter „Calendar subscriptions“.
 
 ### E-Mails zu Terminen
 
