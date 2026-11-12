@@ -92,6 +92,7 @@ const validation: Messages['validation'] = {
   dateInvalid: 'Kies een geldige datum.',
   untilBeforeStart: 'De herhaling kan niet eindigen voor de begindatum.',
   locationTooLong: (max) => `De locatie mag maximaal ${max} tekens lang zijn.`,
+  linkInvalid: 'Voer geldige webadressen in (http of https).',
 }
 
 const colors: Messages['colors'] = { blue: 'Blauw', red: 'Rood', green: 'Groen', yellow: 'Geel' }
@@ -133,6 +134,7 @@ const calendar: Messages['calendar'] = {
   now: (time) => `Nu: ${time}`,
   openDay: (date) => `${date} openen`,
   moreEvents: (count) => `nog ${count}`,
+  moreLinks: (count) => `+${count} andere links`,
   fromCalendar: (name) => `Uit de agenda ‘${name}’`,
   sharedEventNotice: (source) => `${source}. Alle leden zien wijzigingen.`,
   dismiss: 'Sluiten',
@@ -205,6 +207,14 @@ const events: Messages['events'] = {
   yourResponse: 'Jouw antwoord',
   respond: { accepted: 'Ja', tentative: 'Misschien', declined: 'Nee' },
   attendeeSummary: (accepted, total) => `${accepted} van ${total} geaccepteerd`,
+  tabsLabel: 'Onderdelen van de afspraak',
+  tabs: { general: 'Algemeen', recurrence: 'Herhaling', attendees: 'Deelnemers', details: 'Details' },
+  links: 'Website en links',
+  addLink: 'Link toevoegen',
+  linkUrl: 'Adres (URL)',
+  linkLabel: 'Naam (optioneel)',
+  openLink: (name) => `${name} openen`,
+  removeLink: (name) => `${name} verwijderen`,
 }
 
 const storage: Messages['storage'] = {
@@ -223,6 +233,10 @@ const settings: Messages['settings'] = {
   languageDescription: 'Bepaalt de taal, de datum- en tijdnotatie en de eerste dag van de week.',
   languageLabel: 'Taal',
   languageAuto: 'Automatisch (browser)',
+  timeZoneTitle: 'Tijdzone',
+  timeZoneDescription: 'Afspraken worden in deze tijdzone getoond en nieuwe afspraken krijgen hem vooraf ingesteld.',
+  timeZoneLabel: 'Tijdzone',
+  timeZoneAuto: (zone) => `Automatisch: ${zone} (aanbevolen)`,
   themeTitle: 'Kleurenschema',
   themeLabel: 'Licht of donker',
   startViewTitle: 'Startweergave',

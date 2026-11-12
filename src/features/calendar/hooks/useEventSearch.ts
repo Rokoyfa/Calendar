@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useDebouncedValue } from '../../../hooks/useDebouncedValue.ts'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
+import { matchesEventText } from '../../../utils/event.ts'
 import { useStorage } from '../../storage/index.ts'
 import {
   getFallbackSearchRange,
-  matchesSearch,
   SEARCH_MIN_LENGTH,
   toSearchResults,
   type SearchResult,
@@ -28,7 +28,7 @@ export function useEventSearch(text: string, calendarIds: readonly string[], tod
       ? repository.search({ text: query, calendarIds })
       : repository
           .list({ ...getFallbackSearchRange(today), calendarIds })
-          .then((events) => events.filter((event) => matchesSearch(event, query)))
+          .then((events) => events.filter((event) => matchesEventText(event, query)))
     search
       .then((events) => {
         if (isCurrent) setState({ query, results: toSearchResults(events, today), error: null })

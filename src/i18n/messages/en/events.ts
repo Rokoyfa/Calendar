@@ -57,4 +57,12 @@ export const events = {
   yourResponse: 'Your response',
   respond: { accepted: 'Yes', tentative: 'Maybe', declined: 'No' },
   attendeeSummary: (accepted: number, total: number) => `${accepted} of ${total} accepted`,
+  tabsLabel: 'Event sections',
+  tabs: { general: 'General', recurrence: 'Repeat', attendees: 'Attendees', details: 'Details' },
+  links: 'Website & links',
+  addLink: 'Add link',
+  linkUrl: 'Address (URL)',
+  linkLabel: 'Label (optional)',
+  openLink: (name: string) => `Open ${name}`,
+  removeLink: (name: string) => `Remove ${name}`,
 }

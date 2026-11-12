@@ -222,6 +222,29 @@
   color: var(--color-text);
 }
 
+.tabs--stable .tabPanels {
+  display: grid;
+}
+
+.tabs--stable .tabPanel {
+  grid-area: 1 / 1;
+}
+
+.tabs--stable .tabPanel[inert] {
+  visibility: hidden;
+}
+
+.tab--invalid::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: var(--space-1);
+  border-radius: 50%;
+  background-color: var(--color-red);
+  vertical-align: super;
+}
+
 .itemList {
   display: flex;
   flex-direction: column;

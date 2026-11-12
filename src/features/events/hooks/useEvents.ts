@@ -3,6 +3,7 @@ import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { AppError } from '../../../utils/appError.ts'
 import { addDaysToISODate } from '../../../utils/date.ts'
 import {
+  ZONE_SHIFT_DAYS,
   type AttendeeStatus,
   type CalendarEvent,
   type EditScope,
@@ -19,7 +20,11 @@ type UseEventsOptions = EventQuery & { targetCalendarId: string }
 export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEventsOptions) {
   const { events: repository, version, invalidate } = useStorage()
   const load = useCallback(
-    () => repository.list({ from: addDaysToISODate(from, -1), to: addDaysToISODate(to, 1), calendarIds }),
+    () => repository.list({
+        from: addDaysToISODate(from, -ZONE_SHIFT_DAYS),
+        to: addDaysToISODate(to, ZONE_SHIFT_DAYS),
+        calendarIds,
+      }),
     [repository, from, to, calendarIds],
   )
   const { data: events, error, isLoading } = useAsyncResource(load, NO_EVENTS, version)

@@ -1,11 +1,12 @@
 import { useState } from 'react'
+import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { Modal } from '../../../components/Modal.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useI18n } from '../../../i18n/index.ts'
 import {
   formatEventPeriod,
   getEventColorAttributes,
-  moveToStartDate,
+  toViewerOccurrencePeriod,
   type CalendarEvent,
 } from '../../../utils/event.ts'
 import { useEventSearch } from '../hooks/useEventSearch.ts'
@@ -24,6 +25,12 @@ export function EventSearchModal({ calendarIds, today, onSelect, onClose }: Even
   const [text, setText] = useState('')
   const { results, isSearching, isTooShort, error } = useEventSearch(text, calendarIds, today)
   const sources = useEventSources()
+  const viewerTimeZone = useViewerTimeZone()
+  const describe = (event: CalendarEvent, date: string) => {
+    const period = toViewerOccurrencePeriod(event, date, viewerTimeZone)
+    const text = formatEventPeriod(period, i18n)
+    return period.startDate === period.endDate ? `${i18n.format.shortDay(period.startDate)}, ${text}` : text
+  }
 
   return (
     <Modal title={search.title} onClose={onClose}>
@@ -58,7 +65,7 @@ export function EventSearchModal({ calendarIds, today, onSelect, onClose }: Even
                     <span className="eventSearchText">
                       <span className="eventSearchTitle">{event.title}</span>
                       <span className="eventSearchMeta">
-                        {formatEventPeriod({ ...event, ...moveToStartDate(event, date) }, i18n)}
+                        {describe(event, date)}
                         {event.location && ` · ${event.location}`}
                         {source && ` · ${source.name}`}
                       </span>

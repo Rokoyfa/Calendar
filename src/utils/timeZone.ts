@@ -68,6 +68,9 @@ const fromInstant = (instant: number, timeZone: string) => toWallTime(instant, t
 export const convertWallTime = (wallTime: WallTime, from: string, to: string): WallTime =>
   from === to ? wallTime : fromInstant(toInstant(wallTime, from), to)
 
+export const formatTimeZoneLabel = (timeZone: string) =>
+  `${timeZone.replaceAll('_', ' ')} (${formatTimeZoneOffset(timeZone)})`
+
 export const formatTimeZoneOffset = (timeZone: string, at = Date.now()) => {
   const minutes = Math.round(offsetAt(at, timeZone) / MS_PER_MINUTE)
   const sign = minutes < 0 ? '−' : '+'

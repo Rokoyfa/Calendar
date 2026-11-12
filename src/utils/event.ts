@@ -36,6 +36,10 @@ export const EVENT_LOCATION_MAX_LENGTH = 200
 export const MAX_REMINDERS = 5
 export const MAX_REMINDER_MINUTES = 4 * 7 * MINUTES_PER_DAY
 export const MAX_ATTENDEES = 100
+export const MAX_EVENT_LINKS = 10
+export const ZONE_SHIFT_DAYS = 2
+export const EVENT_LINK_URL_MAX_LENGTH = 2000
+export const EVENT_LINK_LABEL_MAX_LENGTH = 100
 
 export const ATTENDEE_STATUSES = ['needsAction', 'accepted', 'tentative', 'declined'] as const
 
@@ -43,12 +47,15 @@ export type AttendeeStatus = (typeof ATTENDEE_STATUSES)[number]
 
 export type Attendee = { email: string; name: string; status: AttendeeStatus }
 
+export type EventLink = { url: string; label: string }
+
 export type CalendarEvent = {
   id: string
   calendarId: string
   uid: string
   title: string
   location: string
+  links: EventLink[]
   startDate: string
   start: string
   endDate: string
@@ -71,6 +78,7 @@ const EVENT_INPUT_KEYS = [
   'uid',
   'title',
   'location',
+  'links',
   'startDate',
   'start',
   'endDate',
@@ -151,6 +159,44 @@ const parseAttendees = (value: unknown) =>
         .slice(0, MAX_ATTENDEES)
     : []
 
+const URL_SCHEME = /^[a-z][a-z\d+.-]*:/i
+
+export const isWebUrl = (value: string) => {
+  if (/\s/.test(value)) return false
+  try {
+    const { protocol, hostname } = new URL(value)
+    return (protocol === 'http:' || protocol === 'https:') && hostname !== '' && !hostname.includes('%')
+  } catch {
+    return false
+  }
+}
+
+export const normalizeLinkUrl = (value: string) => {
+  const url = value.trim()
+  return url === '' || URL_SCHEME.test(url) ? url : `https://${url}`
+}
+
+export const getLinkName = ({ url, label }: EventLink) => label || url.replace(/^https?:\/\//i, '').replace(/\/$/, '')
+
+const parseLinks = (value: unknown): EventLink[] =>
+  Array.isArray(value)
+    ? value
+        .flatMap((entry) => {
+          if (typeof entry !== 'object' || entry === null) return []
+          const { url, label } = entry as Record<string, unknown>
+          if (typeof url !== 'string' || url.length > EVENT_LINK_URL_MAX_LENGTH || !isWebUrl(url)) return []
+          return [{ url, label: typeof label === 'string' ? label.slice(0, EVENT_LINK_LABEL_MAX_LENGTH) : '' }]
+        })
+        .slice(0, MAX_EVENT_LINKS)
+    : []
+
+export const matchesEventText = (event: Pick<CalendarEvent, 'title' | 'location' | 'description' | 'links'>, text: string) => {
+  const needle = text.trim().toLocaleLowerCase()
+  return [event.title, event.location, event.description, ...event.links.flatMap(({ url, label }) => [url, label])].some(
+    (field) => field.toLocaleLowerCase().includes(needle),
+  )
+}
+
 export const createEventUid = () => crypto.randomUUID()
 
 export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
@@ -186,6 +232,7 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
     uid: typeof rest.uid === 'string' && rest.uid !== '' ? rest.uid : rest.id,
     title: rest.title,
     location: typeof rest.location === 'string' ? rest.location : '',
+    links: parseLinks(rest.links),
     startDate,
     start: allDay ? ALL_DAY_TIME : start,
     endDate,
@@ -216,6 +263,7 @@ export const createEventInputForSlots = (first: HourSlot, last: HourSlot, timeZo
     uid: createEventUid(),
     title: '',
     location: '',
+    links: [],
     startDate: first.date,
     start: minutesToTime(first.hour * MINUTES_PER_HOUR),
     endDate: endsNextDay ? addDaysToISODate(last.date, 1) : last.date,
@@ -249,6 +297,9 @@ export const normalizeEventInput = (input: EventInput): EventInput => ({
   ...input,
   title: input.title.trim(),
   location: input.location.trim(),
+  links: input.links
+    .map(({ url, label }) => ({ url: normalizeLinkUrl(url), label: label.trim() }))
+    .filter(({ url, label }) => url !== '' || label !== ''),
   description: input.description.trim(),
   reminders: parseReminders(input.reminders),
   ...(input.allDay ? { start: ALL_DAY_TIME, end: ALL_DAY_TIME, timeZone: null } : {}),
@@ -316,8 +367,8 @@ export const expandEvents = (
 ): EventOccurrence[] =>
   events.flatMap((event) => {
     const shifts = event.timeZone !== null && viewerTimeZone !== null && event.timeZone !== viewerTimeZone
-    const searchFrom = shifts ? addDaysToISODate(from, -1) : from
-    const searchTo = shifts ? addDaysToISODate(to, 1) : to
+    const searchFrom = shifts ? addDaysToISODate(from, -ZONE_SHIFT_DAYS) : from
+    const searchTo = shifts ? addDaysToISODate(to, ZONE_SHIFT_DAYS) : to
     return getOccurrenceStartDates(event, searchFrom, searchTo).flatMap((startDate) => {
       const source = { start: event.start, end: event.end, ...moveToStartDate(event, startDate) }
       const period = toViewerPeriod(source, event.timeZone, viewerTimeZone)
@@ -334,6 +385,15 @@ export const expandEvents = (
       ]
     })
   })
+
+export const toViewerOccurrencePeriod = (
+  event: CalendarEvent,
+  startDate: string,
+  viewerTimeZone: string | null,
+): EventPeriod & { allDay: boolean } => ({
+  allDay: event.allDay,
+  ...toViewerPeriod({ start: event.start, end: event.end, ...moveToStartDate(event, startDate) }, event.timeZone, viewerTimeZone),
+})
 
 export const formatEventPeriod = (event: EventPeriod & { allDay?: boolean }, { m, format }: Pick<I18n, 'm' | 'format'>) => {
   if (event.allDay)
@@ -371,6 +431,15 @@ export const validateEventInput = (input: EventInput, m: Messages): EventValidat
 
   if (input.location.length > EVENT_LOCATION_MAX_LENGTH)
     errors.location = validation.locationTooLong(EVENT_LOCATION_MAX_LENGTH)
+
+  if (
+    input.links.length > MAX_EVENT_LINKS ||
+    input.links.some(
+      ({ url, label }) =>
+        url.length > EVENT_LINK_URL_MAX_LENGTH || label.length > EVENT_LINK_LABEL_MAX_LENGTH || !isWebUrl(url),
+    )
+  )
+    errors.links = validation.linkInvalid
 
   if (input.description.length > EVENT_DESCRIPTION_MAX_LENGTH)
     errors.description = validation.descriptionTooLong(EVENT_DESCRIPTION_MAX_LENGTH)

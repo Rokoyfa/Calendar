@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { SelectField, type SelectOption } from '../../../components/SelectField.tsx'
 import { useI18n } from '../../../i18n/index.ts'
-import { formatTimeZoneOffset, listTimeZones } from '../../../utils/timeZone.ts'
+import { formatTimeZoneLabel, listTimeZones } from '../../../utils/timeZone.ts'
 
 const FLOATING = ''
 
@@ -10,8 +10,6 @@ type TimeZoneFieldProps = {
   onChange: (timeZone: string | null) => void
 }
 
-const toLabel = (timeZone: string) => `${timeZone.replaceAll('_', ' ')} (${formatTimeZoneOffset(timeZone)})`
-
 export function TimeZoneField({ value, onChange }: TimeZoneFieldProps) {
   const { m } = useI18n()
   const options = useMemo<SelectOption<string>[]>(() => {
@@ -19,7 +17,7 @@ export function TimeZoneField({ value, onChange }: TimeZoneFieldProps) {
     if (value && !zones.includes(value)) zones.unshift(value)
     return [
       { value: FLOATING, label: m.events.floatingTimeZone },
-      ...zones.map((zone) => ({ value: zone, label: toLabel(zone) })),
+      ...zones.map((zone) => ({ value: zone, label: formatTimeZoneLabel(zone) })),
     ]
   }, [m, value])
 

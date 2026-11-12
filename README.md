@@ -55,7 +55,7 @@ document.querySelector('calendar-widget').addEventListener('event-create', (e) =
 | `messages` | property | – | Own texts per language, see below |
 | `theme` | `theme` | system | `light`, `dark` |
 | `initialView` | `initial-view` | user setting | `day`, `week`, `month`, `year` |
-| `timeZone` | `time-zone` | browser | IANA zone the calendar is shown in, e.g. `Europe/Berlin` |
+| `timeZone` | `time-zone` | browser | IANA zone the calendar is shown in, e.g. `Europe/Berlin`. New events start in it. A zone the user picks in the settings takes precedence |
 | `storageMode` | `storage-mode` | `local` | `local` or `remote` |
 | `apiBaseUrl` | `api-base-url` | `/api` | Base URL of your backend |
 | `features` | `auth`, `teams` | auth off, teams on | `teams="false"` turns team features off |
@@ -94,6 +94,7 @@ type EventInput = {
   uid: string                   // stable id for iCalendar, shared by a series and its detached events
   title: string                 // 1–100 chars
   location: string              // max 200 chars, '' if none
+  links: EventLink[]            // up to 10 http(s) links
   startDate: string             // 'YYYY-MM-DD'
   start: string                 // 'HH:mm' in timeZone
   endDate: string               // inclusive for all-day events
@@ -112,6 +113,8 @@ type EventInput = {
 
 type Attendee = { email: string; name: string; status: 'needsAction' | 'accepted' | 'tentative' | 'declined' }
 
+type EventLink = { url: string; label: string } // url max 2000 chars, label max 100 chars, '' if none
+
 type Recurrence = {
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
   interval: number              // 1–99
@@ -129,7 +132,7 @@ type CalendarSummary = {
 }
 
 type User = { id: string; email: string; name: string; emailVerified: boolean }
-type Preferences = { theme: 'system' | 'light' | 'dark'; defaultView: View; mobileDefaultView: View; locale: string }
+type Preferences = { theme: 'system' | 'light' | 'dark'; defaultView: View; mobileDefaultView: View; locale: string; timeZone: string } // timeZone: 'auto' or IANA zone
 type Problem = { code: string; message: string }   // every error response
 ```
 
@@ -142,7 +145,7 @@ The backend stores series as one event. The component expands occurrences itself
 | Moment | Requests |
 | --- | --- |
 | Widget loads | `GET /auth/me` (only with `auth`), then `GET /preferences`, `GET /colors`, `GET /calendars`, `GET /invitations` |
-| Visible range changes | `GET /events?from=…&to=…&calendarId=…` with the calendars shown. The range is one day wider than the view to cover time zone shifts. Return every event in the range **and** every series that can occur in it. |
+| Visible range changes | `GET /events?from=…&to=…&calendarId=…` with the calendars shown. The range is two days wider than the view to cover time zone shifts. Return every event in the range **and** every series that can occur in it. |
 | Create event | `POST /events` with `EventInput` + `calendarId` |
 | Edit event / whole series | `PUT /events/:id` with the full `EventInput` |
 | Edit only this occurrence | `PUT` the series with the date added to `excludedDates`, then `POST` a detached event with `seriesId` and `originalDate` |

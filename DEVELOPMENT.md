@@ -487,15 +487,27 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 - **Herausgelöste Einzeltermine** gehören weiter zur Serie: Sie werden mit „Alle Termine“ bzw. „Dieser und alle folgenden“ gelöscht, und wechseln bei einer Aufteilung zur neuen Serie.
 - Wird ein Termin in eine andere Woche verschoben, springt der Kalender nach dem Speichern dorthin
 
-### Ort, Erinnerungen, Teilnehmer
+### Termin-Dialog
 
-- **Ort** (`location`, bis 200 Zeichen): im Dialog unter dem Titel. Im Raster ab 90 Minuten in eigener Zeile, darunter hinter dem Titel, in der Monatsansicht hinter dem Titel, im Tooltip und in der Suche.
+Der Dialog ist in Tabs aufgeteilt (`components/Tabs.tsx`), damit er kompakt bleibt:
+
+- **Allgemein:** Titel, Ganztägig, Beginn, Ende, Zeitzone, Erinnerung, Farbe
+- **Wiederholung:** Wiederholungsregel
+- **Teilnehmer:** nur in Teamkalendern mit Mitgliedern, mit Anzahl im Tab
+- **Details:** Ort, Webseite & Links, Beschreibung
+
+Beim Speichern mit Fehlern springt der Dialog zum ersten Tab mit Fehlern, sofern der aktuelle keine hat. Tabs mit Fehlern tragen einen roten Punkt. Welches Feld zu welchem Tab gehört, steht in `TAB_FIELDS` in `EventModal.tsx`.
+
+### Ort, Links, Erinnerungen, Teilnehmer
+
+- **Links** (`links`, bis zu 10, je `url` bis 2000 und `label` bis 100 Zeichen): im Tab „Details“. Adressen ohne Schema bekommen `https://` vorangestellt, erlaubt sind nur `http` und `https` (`isWebUrl` in `utils/event.ts`). Gespeicherte oder importierte Links mit anderem Schema werden beim Einlesen verworfen, damit nie ein `javascript:`-Link angezeigt wird. Gültige Links lassen sich direkt aus dem Dialog in einem neuen Tab öffnen. Im Raster stehen sie mit Weltkugel unter dem Ort, sobald der Termin hoch genug ist (ab 2,5 Stunden ein Link, je weitere halbe Stunde einer mehr, was nicht passt als „+N“ hinter dem letzten). Ein Klick öffnet den Link in einem neuen Tab, nicht den Termin. Damit Links im Termin klickbar sein dürfen, ist der Block ein `div`, über dem ein unsichtbarer Button (`.eventOpen`) die ganze Fläche zum Öffnen abdeckt. Ziehen startet nicht auf einem Link. In der schmalen Wochenansicht am Handy sind die Links ausgeblendet, im Tooltip stehen sie immer. Im iCalendar wird der erste Link als `URL`, alle weiteren als `ATTACH` geschrieben, die Bezeichnung als Parameter `LABEL`.
+- **Ort** (`location`, bis 200 Zeichen): im Tab „Details“. Im Raster ab 90 Minuten in eigener Zeile, darunter hinter dem Titel, in der Monatsansicht hinter dem Titel, im Tooltip und in der Suche.
 - **Erinnerung** (`reminders`, Minuten vor Beginn, bis zu 5, im Dialog wird eine eingestellt): Auswahl von „Zum Beginn“ bis „1 Woche vorher“, Texte über `format.duration` (Intl, je Sprache richtig gebeugt). Erinnerungen sind persönlich: das Test-Backend speichert sie je Nutzer (`remindersByUser`) und liefert nur die eigenen. Solange das Widget offen ist, lädt `features/reminders/useReminders.ts` alle fünf Minuten die nächsten vier Wochen aller Kalender und plant die fälligen Erinnerungen. Gezeigt wird eine Browser-Benachrichtigung (Erlaubnis wird beim Wählen einer Erinnerung angefragt) oder sonst ein Hinweis unten rechts. Bereits gezeigte Erinnerungen merkt sich der Browser zwei Tage lang, damit mehrere Tabs nicht doppelt erinnern. E-Mails bei geschlossenem Kalender sind Sache des Backends.
 - **Teilnehmer** (`attendees`, nur in Teamkalendern): im Dialog aus den Mitgliedern des Kalenders hinzufügen und entfernen. Wer selbst Teilnehmer ist, antwortet mit Ja, Vielleicht oder Nein (`POST /events/:id/response`, sofort gespeichert, auch mit Leserechten). Unbeantwortete Termine sind schraffiert, abgesagte durchgestrichen.
 
 ### Suche
 
-Die Lupe im Kopf öffnet die Suche über Titel, Ort und Beschreibung der angezeigten Kalender (ab 2 Zeichen, 250 ms Verzögerung). Treffer stehen nach dem nächsten Vorkommen sortiert, vergangene danach. Ein Klick springt zum Datum und öffnet den Termin. Das Backend sucht über `GET /events/search`. Adapter ohne `search` werden über das letzte und nächste Jahr aus `GET /events` durchsucht (`features/calendar/utils/search.ts`).
+Die Lupe im Kopf öffnet die Suche über Titel, Ort, Beschreibung und Links der angezeigten Kalender (ab 2 Zeichen, 250 ms Verzögerung). Treffer stehen nach dem nächsten Vorkommen sortiert, vergangene danach. Ein Klick springt zum Datum und öffnet den Termin. Das Backend sucht über `GET /events/search`. Adapter ohne `search` werden über das letzte und nächste Jahr aus `GET /events` durchsucht (`features/calendar/utils/search.ts`).
 
 ### Import und Export (iCalendar)
 
@@ -644,6 +656,7 @@ type CalendarEvent = {
   uid: string
   title: string
   location: string
+  links: EventLink[]
   startDate: string
   start: string
   endDate: string
@@ -662,6 +675,8 @@ type CalendarEvent = {
   updatedAt: string
 }
 
+type EventLink = { url: string; label: string }
+
 type Recurrence = {
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
   interval: number
@@ -675,7 +690,7 @@ type Recurrence = {
 - `startDate` und `endDate` im Format `JJJJ-MM-TT`, `start` und `end` im Format `HH:MM`
 - Das Ende ist exklusiv: `endDate` = Folgetag mit `end` = `00:00` bedeutet „bis Mitternacht“
 - **Ganztägig** (`allDay: true`): `start` und `end` sind `00:00`, `endDate` zählt mit (inklusiv), `timeZone` ist immer `null`. Angezeigt in der Zeile „Ganztägig“ über dem Raster, mehrtägige als durchgehender Balken (`features/calendar/utils/allDay.ts`).
-- **Zeitzone** (`timeZone`): IANA-Name wie `Europe/Berlin`, in dem `start` und `end` gemeint sind. `null` heißt „überall dieselbe Ortszeit“. Neue Termine bekommen die Anzeige-Zeitzone (Prop `timeZone`, sonst Browser). Beim Anzeigen werden Vorkommen in der Zone des Termins berechnet und dann in die Anzeige-Zone umgerechnet (`expandEvents`, `utils/timeZone.ts`), dabei kann sich das Datum verschieben. `source` am Vorkommen hält die Zeiten in der Zone des Termins, `occurrenceDate` das Datum in der Serie. Bearbeitet wird in der Zone des Termins, der Dialog zeigt die Zeit in der eigenen Zone darunter.
+- **Zeitzone** (`timeZone`): IANA-Name wie `Europe/Berlin`, in dem `start` und `end` gemeint sind. `null` heißt „überall dieselbe Ortszeit“. Neue Termine bekommen die Anzeige-Zeitzone vorausgewählt. Sie kommt aus der Einstellung „Zeitzone“ unter Darstellung (`preferences.timeZone`), bei „Automatisch (empfohlen)“ aus dem Prop `timeZone` des Hosts und sonst aus dem System (`context/TimeZoneContext.ts`, `useViewerTimeZone`). Die Reihenfolge ist dieselbe wie bei der Sprache: eigene Wahl vor Host vor System. Beim Anzeigen werden Vorkommen in der Zone des Termins berechnet und dann in die Anzeige-Zone umgerechnet (`expandEvents`, `utils/timeZone.ts`), dabei kann sich das Datum verschieben, bei extremen Zonen um bis zu zwei Tage (`ZONE_SHIFT_DAYS`, um so viel wird auch der Ladebereich erweitert). Die Suche zeigt Treffer ebenfalls in der Anzeige-Zone und springt zum umgerechneten Tag. `source` am Vorkommen hält die Zeiten in der Zone des Termins, `occurrenceDate` das Datum in der Serie. Bearbeitet wird in der Zone des Termins, der Dialog zeigt die Zeit in der eigenen Zone darunter.
 - Ältere Termine ohne `allDay` und `timeZone` werden als zeitgebundene Termine ohne Zeitzone gelesen
 - Ein wiederkehrender Termin wird **einmal** als Serie gespeichert. `startDate` bis `endDate` beschreibt das erste Vorkommen, die weiteren werden beim Anzeigen berechnet (`utils/recurrence.ts`).
 - `weekdays` zählt von `0` = Montag bis `6` = Sonntag und wird nur bei `weekly` ausgewertet. `until` ist das letzte mögliche Startdatum (inklusiv) oder `null`.
@@ -739,7 +754,8 @@ src/
 │  ├─ locale.ts                Unterstützte Sprachen, Auswahl und Rückfall
 │  └─ errorMessage.ts          Fehler-Codes in Text übersetzen
 ├─ context/
-│  ├─ HostContext.ts           Vorgaben des Gastgebers: teams, theme, initialView
+│  ├─ HostContext.ts           Vorgaben des Gastgebers: teams, theme, initialView, timeZone
+│  ├─ TimeZoneContext.ts       Anzeige-Zeitzone: Einstellung, sonst Host, sonst System
 │  └─ RootElementContext.ts    Wurzel-Element des Widgets (Theme, Modals, Tasten, Breakpoints)
 ├─ router.tsx                  Routen und createCalendarRouter (memory oder browser): /, /settings, /calendars/new, /login, …
 ├─ pages/
@@ -817,7 +833,7 @@ src/
    │                           (components/MiniMonth: kleiner Monat für Jahresansicht und Kalender-Vorschau)
    ├─ events/                  Termine anlegen, bearbeiten, löschen
    │  ├─ components/           EventModal, DeleteEventModal, ColorPicker, RecurrenceFields, RecurrenceScopeModal, ScopeButtons, CustomColorSettings,
-   │  │                        TimeZoneField, ReminderField, AttendeesField
+   │  │                        TimeZoneField, ReminderField, AttendeesField, LinksField
    │  ├─ constants/            Farben, Bezeichnungen der Bearbeitungsbereiche
    │  ├─ hooks/                useEvents, useCustomColors
    │  ├─ types/

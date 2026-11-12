@@ -4,7 +4,9 @@ import { SelectField } from '../../../components/SelectField.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { getLocaleChoices, getLocaleName, useI18n } from '../../../i18n/index.ts'
-import { THEMES } from '../../../utils/preferences.ts'
+import { useAutomaticTimeZone } from '../../../context/TimeZoneContext.ts'
+import { AUTO_TIME_ZONE, THEMES } from '../../../utils/preferences.ts'
+import { formatTimeZoneLabel, listTimeZones } from '../../../utils/timeZone.ts'
 import { getViewOptions } from '../../calendar/index.ts'
 import { usePreferences } from '../hooks/usePreferences.ts'
 
@@ -20,6 +22,13 @@ export function PreferencesSettings() {
     label: choice === 'auto' ? m.settings.languageAuto : getLocaleName(choice),
   }))
   const viewOptions = getViewOptions(m)
+  const automaticTimeZone = useAutomaticTimeZone()
+  const zones = listTimeZones()
+  if (preferences.timeZone !== AUTO_TIME_ZONE && !zones.includes(preferences.timeZone)) zones.unshift(preferences.timeZone)
+  const timeZoneOptions = [
+    { value: AUTO_TIME_ZONE, label: m.settings.timeZoneAuto(formatTimeZoneLabel(automaticTimeZone)) },
+    ...zones.map((zone) => ({ value: zone, label: formatTimeZoneLabel(zone) })),
+  ]
 
   return (
     <>
@@ -30,6 +39,16 @@ export function PreferencesSettings() {
           value={preferences.locale}
           options={languageOptions}
           onChange={(locale) => void run({ locale })}
+        />
+      </PageSection>
+
+      <PageSection title={m.settings.timeZoneTitle} description={m.settings.timeZoneDescription}>
+        <SelectField
+          label={m.settings.timeZoneLabel}
+          name="timeZone"
+          value={preferences.timeZone}
+          options={timeZoneOptions}
+          onChange={(timeZone) => void run({ timeZone })}
         />
       </PageSection>
 

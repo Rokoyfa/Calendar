@@ -52,6 +52,7 @@ export function useEventDrag({ containerRef, enabled, occurrences, onPreview, on
     delay: DELAY,
     vibrateMs: 15,
     start: (target, point) => {
+      if (target instanceof Element && target.closest('a[href]')) return null
       const element = target instanceof Element ? target.closest<HTMLElement>('[data-occurrence-key]') : null
       const occurrence = element && occurrences.get(element.dataset.occurrenceKey ?? '')
       if (!element || !occurrence) return null

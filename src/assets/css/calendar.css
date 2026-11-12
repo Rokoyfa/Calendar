@@ -234,8 +234,63 @@ button.columnHeader:hover {
   background-color: var(--color-red);
 }
 
-.event:focus-visible {
+.event:has(> .eventOpen:focus-visible) {
   z-index: 2;
+}
+
+.eventOpen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  cursor: inherit;
+}
+
+.eventOpen:focus-visible {
+  outline-offset: -3px;
+}
+
+.eventLinks {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+}
+
+.eventLinkRow {
+  display: flex;
+  gap: var(--space-1);
+  align-items: baseline;
+  min-width: 0;
+}
+
+.eventLink {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.eventLink:hover,
+.eventLink:focus-visible {
+  text-decoration-thickness: 2px;
+}
+
+.eventLink svg {
+  display: inline-block;
+  margin-right: 3px;
+  vertical-align: -1px;
+}
+
+.eventMoreLinks {
+  flex: none;
+  opacity: 0.9;
 }
 
 .eventName,
@@ -528,6 +583,7 @@ button.miniDay:hover {
   }
 
   .calendar--week .eventName svg,
+  .calendar--week .eventLinks,
   .calendar--week .eventTime {
     display: none;
   }
@@ -575,6 +631,7 @@ button.miniDay:hover {
 
 .eventResizeHandle {
   position: absolute;
+  z-index: 2;
   left: 0;
   right: 0;
   bottom: 0;

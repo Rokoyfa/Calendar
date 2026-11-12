@@ -1,5 +1,5 @@
 import type { I18n } from '../../../i18n/index.ts'
-import { formatEventPeriod, getEventColorAttributes, type EventOccurrence } from '../../../utils/event.ts'
+import { formatEventPeriod, getEventColorAttributes, getLinkName, type EventOccurrence } from '../../../utils/event.ts'
 import { formatRecurrence } from '../../../utils/recurrence.ts'
 import type { ClassNameValue } from '../../../utils/classNames.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
@@ -16,6 +16,7 @@ const getEventTooltip = (event: EventOccurrence, source: EventSource | undefined
   [
     `${formatEventPeriod(event, i18n)}: ${event.title}`,
     event.location,
+    ...event.links.map(getLinkName),
     getRecurrenceText(event, i18n),
     source && getSourceText(source, i18n),
   ]

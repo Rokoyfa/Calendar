@@ -53,3 +53,15 @@ export const SettingsIcon = (props: IconProps) => (
 export const SearchIcon = (props: IconProps) => (
   <IconBase {...props} strokeWidth={2.5} path="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5.2-5.2" />
 )
+
+export const ExternalLinkIcon = (props: IconProps) => (
+  <IconBase {...props} strokeWidth={2.5} path="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+)
+
+export const GlobeIcon = (props: IconProps) => (
+  <IconBase
+    {...props}
+    strokeWidth={2.5}
+    path="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9M12 3c-2.4 2.5-3.6 5.5-3.6 9s1.2 6.5 3.6 9"
+  />
+)

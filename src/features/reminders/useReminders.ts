@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useViewerTimeZone } from '../../context/HostContext.ts'
+import { useViewerTimeZone } from '../../context/TimeZoneContext.ts'
 import { useCalendars } from '../calendars/index.ts'
 import { useStorage } from '../storage/index.ts'
 import { getReminderRange, getScheduledReminders, type ScheduledReminder } from '../../utils/reminders.ts'

@@ -14,6 +14,7 @@ export const calendar = {
   now: (time: string) => `Now: ${time}`,
   openDay: (date: string) => `Open ${date}`,
   moreEvents: (count: number) => `+${count} more`,
+  moreLinks: (count: number) => `+${count} more links`,
   fromCalendar: (name: string) => `From the calendar “${name}”`,
   sharedEventNotice: (source: string) => `${source}. All members see changes.`,
   dismiss: 'Dismiss',

@@ -3,14 +3,19 @@ import {
   ATTENDEE_STATUSES,
   createEventUid,
   EVENT_DESCRIPTION_MAX_LENGTH,
+  EVENT_LINK_LABEL_MAX_LENGTH,
+  EVENT_LINK_URL_MAX_LENGTH,
   EVENT_LOCATION_MAX_LENGTH,
   EVENT_TITLE_MAX_LENGTH,
+  isWebUrl,
+  MAX_EVENT_LINKS,
   MAX_REMINDER_MINUTES,
   NO_SERIES_LINK,
   type Attendee,
   type AttendeeStatus,
   type CalendarEvent,
   type EventInput,
+  type EventLink,
 } from './event.ts'
 import { getISODateWeekday, getWeekdayOrdinal, type Recurrence } from './recurrence.ts'
 import { convertWallTime, isTimeZone } from './timeZone.ts'
@@ -34,6 +39,8 @@ const DEFAULT_DURATION_MINUTES = 60
 
 const escapeText = (value: string) =>
   value.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
+
+const quoteParam = (name: string, value: string) => (value ? `;${name}="${value.replace(/"/g, "'")}"` : '')
 
 const unescapeText = (value: string) =>
   value.replace(/\\([\\;,nN])/g, (_, char: string) => (char === 'n' || char === 'N' ? '\n' : char))
@@ -115,6 +122,9 @@ const eventLines = (event: CalendarEvent, series: CalendarEvent | undefined, sta
   }
   if (event.location) lines.push(`LOCATION:${escapeText(event.location)}`)
   if (event.description) lines.push(`DESCRIPTION:${escapeText(event.description)}`)
+  event.links.forEach(({ url, label }, index) =>
+    lines.push(`${index === 0 ? 'URL' : 'ATTACH'}${quoteParam('LABEL', label)}:${url}`),
+  )
   const rrule = toRRule(event)
   if (rrule) lines.push(`RRULE:${rrule}`)
   for (const date of event.excludedDates) {
@@ -122,8 +132,7 @@ const eventLines = (event: CalendarEvent, series: CalendarEvent | undefined, sta
     lines.push(`EXDATE${excluded.params}:${excluded.value}`)
   }
   for (const attendee of event.attendees) {
-    const name = attendee.name ? `;CN="${attendee.name.replace(/"/g, "'")}"` : ''
-    lines.push(`ATTENDEE${name};PARTSTAT=${PARTSTATS[attendee.status]}:mailto:${attendee.email}`)
+    lines.push(`ATTENDEE${quoteParam('CN', attendee.name)};PARTSTAT=${PARTSTATS[attendee.status]}:mailto:${attendee.email}`)
   }
   for (const minutes of event.reminders)
     lines.push(
@@ -154,14 +163,14 @@ export function toICalendar(events: readonly CalendarEvent[], calendarName: stri
 
 type Property = { name: string; params: Record<string, string>; value: string }
 
+const PROPERTY_HEAD = /^([^:;]+)((?:;[^=;:]+=(?:"[^"]*"|[^";:]*))*):(.*)$/
+const PARAM = /;([^=;:]+)=("[^"]*"|[^";:]*)/g
+
 const parseProperty = (line: string): Property | null => {
-  const match = /^([^:;]+)((?:;[^:]*)?):(.*)$/.exec(line)
+  const match = PROPERTY_HEAD.exec(line)
   if (!match) return null
   const params: Record<string, string> = {}
-  for (const part of match[2].split(';').slice(1)) {
-    const index = part.indexOf('=')
-    if (index > 0) params[part.slice(0, index).toUpperCase()] = part.slice(index + 1).replace(/^"|"$/g, '')
-  }
+  for (const [, name, value] of match[2].matchAll(PARAM)) params[name.toUpperCase()] = value.replace(/^"|"$/g, '')
   return { name: match[1].toUpperCase(), params, value: match[3] }
 }
 
@@ -264,6 +273,13 @@ const parseAttendee = ({ params, value }: Property): Attendee | null => {
   return { email, name: params.CN ?? '', status: ATTENDEE_STATUSES.includes(status) ? status : 'needsAction' }
 }
 
+const parseLink = ({ params, value }: Property): EventLink | null => {
+  const url = value.trim()
+  if (params.VALUE === 'BINARY' || params.ENCODING || url.length > EVENT_LINK_URL_MAX_LENGTH || !isWebUrl(url))
+    return null
+  return { url, label: (params.LABEL ?? '').trim().slice(0, EVENT_LINK_LABEL_MAX_LENGTH) }
+}
+
 const parseReminder = (alarm: Component) => {
   const trigger = alarm.properties.find((property) => property.name === 'TRIGGER')
   if (!trigger || trigger.params.VALUE === 'DATE-TIME' || trigger.params.RELATED === 'END') return null
@@ -328,6 +344,11 @@ const toImportedEvent = (component: Component): ImportedEvent | null => {
       uid: get('UID')?.value.trim() || createEventUid(),
       title: text('SUMMARY', EVENT_TITLE_MAX_LENGTH) || UNTITLED,
       location: text('LOCATION', EVENT_LOCATION_MAX_LENGTH),
+      links: [...all('URL'), ...all('ATTACH')]
+        .map(parseLink)
+        .filter((link): link is EventLink => link !== null)
+        .filter((link, index, links) => links.findIndex(({ url }) => url === link.url) === index)
+        .slice(0, MAX_EVENT_LINKS),
       startDate: start.date,
       start: start.time,
       endDate: end.date,

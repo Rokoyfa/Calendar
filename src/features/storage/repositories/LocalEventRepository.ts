@@ -2,6 +2,7 @@ import { AppError } from '../../../utils/appError.ts'
 import { PERSONAL_CALENDAR_ID } from '../../../config/calendars.ts'
 import {
   eventOccursInRange,
+  matchesEventText,
   parseCalendarEvent,
   type CalendarEvent,
   type EventInput,
@@ -35,14 +36,9 @@ export class LocalEventRepository implements EventRepository {
   }
 
   async search({ text, calendarIds }: EventSearchQuery) {
-    const needle = text.trim().toLocaleLowerCase()
     return this.#events
       .read()
-      .filter(
-        (event) =>
-          calendarIds.includes(event.calendarId) &&
-          [event.title, event.location, event.description].some((field) => field.toLocaleLowerCase().includes(needle)),
-      )
+      .filter((event) => calendarIds.includes(event.calendarId) && matchesEventText(event, text))
   }
 
   async listAll() {

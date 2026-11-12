@@ -94,6 +94,7 @@ const validation: Messages['validation'] = {
   dateInvalid: 'Escolha uma data válida.',
   untilBeforeStart: 'A repetição não pode terminar antes da data de início.',
   locationTooLong: (max) => `O local pode ter no máximo ${max} caracteres.`,
+  linkInvalid: 'Insira endereços web válidos (http ou https).',
 }
 
 const colors: Messages['colors'] = { blue: 'Azul', red: 'Vermelho', green: 'Verde', yellow: 'Amarelo' }
@@ -137,6 +138,7 @@ const calendar: Messages['calendar'] = {
   now: (time) => `Agora: ${time}`,
   openDay: (date) => `Abrir ${date}`,
   moreEvents: (count) => `mais ${count}`,
+  moreLinks: (count) => `+${count} outros links`,
   fromCalendar: (name) => `Do calendário “${name}”`,
   sharedEventNotice: (source) => `${source}. Todos os membros veem as alterações.`,
   dismiss: 'Fechar',
@@ -208,6 +210,14 @@ const events: Messages['events'] = {
   yourResponse: 'Sua resposta',
   respond: { accepted: 'Sim', tentative: 'Talvez', declined: 'Não' },
   attendeeSummary: (accepted, total) => `${accepted} de ${total} aceitaram`,
+  tabsLabel: 'Secções do evento',
+  tabs: { general: 'Geral', recurrence: 'Repetição', attendees: 'Participantes', details: 'Detalhes' },
+  links: 'Site e links',
+  addLink: 'Adicionar link',
+  linkUrl: 'Endereço (URL)',
+  linkLabel: 'Rótulo (opcional)',
+  openLink: (name) => `Abrir ${name}`,
+  removeLink: (name) => `Remover ${name}`,
 }
 
 const storage: Messages['storage'] = {
@@ -226,6 +236,10 @@ const settings: Messages['settings'] = {
   languageDescription: 'Define o idioma, os formatos de data e hora e o primeiro dia da semana.',
   languageLabel: 'Idioma',
   languageAuto: 'Automático (navegador)',
+  timeZoneTitle: 'Fuso horário',
+  timeZoneDescription: 'Os eventos são mostrados neste fuso horário, que também vem pré-selecionado nos novos eventos.',
+  timeZoneLabel: 'Fuso horário',
+  timeZoneAuto: (zone) => `Automático: ${zone} (recomendado)`,
   themeTitle: 'Tema',
   themeLabel: 'Claro ou escuro',
   startViewTitle: 'Visualização inicial',

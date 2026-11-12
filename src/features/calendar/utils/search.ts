@@ -7,11 +7,6 @@ const FALLBACK_RANGE_DAYS = 366
 
 export type SearchResult = { event: CalendarEvent; date: string }
 
-export const matchesSearch = (event: CalendarEvent, text: string) => {
-  const needle = text.trim().toLocaleLowerCase()
-  return [event.title, event.location, event.description].some((field) => field.toLocaleLowerCase().includes(needle))
-}
-
 export const getFallbackSearchRange = (today: string) => ({
   from: addDaysToISODate(today, -FALLBACK_RANGE_DAYS),
   to: addDaysToISODate(today, FALLBACK_RANGE_DAYS),

@@ -7,10 +7,13 @@ import {
   eventOccursInRange,
   expandEvents,
   getEventDuration,
+  getLinkName,
   hasValidationErrors,
+  matchesEventText,
   normalizeEventInput,
   parseCalendarEvent,
   toOccurrenceInput,
+  toViewerOccurrencePeriod,
   validateEventInput,
 } from './event.ts'
 
@@ -47,6 +50,32 @@ describe('event', () => {
     const series = eventInput({ title: '  Hi ', recurrence: recurrence(), seriesId: 'x', originalDate: '2026-11-01' })
     expect(normalizeEventInput(series)).toMatchObject({ title: 'Hi', seriesId: null, originalDate: null })
     expect(normalizeEventInput(eventInput({ excludedDates: ['2026-11-03'] })).excludedDates).toEqual([])
+  })
+
+  it('normalizes, validates and sanitizes links', () => {
+    const input = eventInput({
+      links: [
+        { url: ' example.com/plan ', label: ' Plan ' },
+        { url: '', label: '' },
+      ],
+    })
+    expect(normalizeEventInput(input).links).toEqual([{ url: 'https://example.com/plan', label: 'Plan' }])
+    expect(validateEventInput(eventInput({ links: [{ url: 'javascript:alert(1)', label: '' }] }), m).links).toBe(
+      m.validation.linkInvalid,
+    )
+    expect(validateEventInput(eventInput({ links: [{ url: 'https://nicht gültig', label: '' }] }), m).links).toBe(
+      m.validation.linkInvalid,
+    )
+    expect(validateEventInput(eventInput({ links: [{ url: '', label: 'Nur Text' }] }), m).links).toBe(
+      m.validation.linkInvalid,
+    )
+    const stored = parseCalendarEvent({
+      ...calendarEvent(),
+      links: [{ url: 'javascript:alert(1)' }, { url: 'https://example.com/', label: 3 }],
+    })
+    expect(stored?.links).toEqual([{ url: 'https://example.com/', label: '' }])
+    expect(getLinkName(stored!.links[0])).toBe('example.com')
+    expect(matchesEventText({ ...stored!, title: 'X' }, 'EXAMPLE')).toBe(true)
   })
 
   it('parses stored events including the legacy date field', () => {
@@ -94,6 +123,40 @@ describe('event', () => {
     const [occurrence] = expandEvents([event], '2026-11-02', '2026-11-02', 'Europe/Berlin')
     expect(occurrence).toMatchObject({ startDate: '2026-11-02', start: '15:00', end: '16:00', occurrenceDate: '2026-11-02' })
     expect(toOccurrenceInput(occurrence)).toMatchObject({ start: '09:00', end: '10:00', timeZone: 'America/New_York' })
+  })
+
+  it('shows a series from another zone correctly while only one side switches daylight saving time', () => {
+    const series = calendarEvent({
+      startDate: '2026-10-20',
+      start: '10:00',
+      endDate: '2026-10-20',
+      end: '11:00',
+      timeZone: 'America/New_York',
+      recurrence: recurrence({ frequency: 'weekly', weekdays: [1], count: 3 }),
+    })
+    const shown = expandEvents([series], '2026-10-19', '2026-11-08', 'Europe/Berlin')
+    expect(shown.map(({ startDate, start, end }) => `${startDate} ${start}-${end}`)).toEqual([
+      '2026-10-20 16:00-17:00',
+      '2026-10-27 15:00-16:00',
+      '2026-11-03 16:00-17:00',
+    ])
+  })
+
+  it('finds events that move more than one day between the creator and the viewer', () => {
+    const event = calendarEvent({
+      startDate: '2026-11-10',
+      start: '23:00',
+      endDate: '2026-11-10',
+      end: '23:30',
+      timeZone: 'Pacific/Pago_Pago',
+    })
+    expect(expandEvents([event], '2026-11-12', '2026-11-12', 'Pacific/Kiritimati')).toMatchObject([
+      { startDate: '2026-11-12', start: '00:00', end: '00:30' },
+    ])
+    expect(toViewerOccurrencePeriod(event, '2026-11-10', 'Pacific/Kiritimati')).toMatchObject({
+      startDate: '2026-11-12',
+      start: '00:00',
+    })
   })
 
   it('moves zoned occurrences across the date line', () => {

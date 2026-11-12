@@ -92,6 +92,7 @@ export const validation: Messages['validation'] = {
   dateInvalid: 'Bitte ein gültiges Datum wählen.',
   untilBeforeStart: 'Das Ende der Wiederholung darf nicht vor dem Startdatum liegen.',
   locationTooLong: (max) => `Der Ort darf höchstens ${max} Zeichen lang sein.`,
+  linkInvalid: 'Bitte gültige Webadressen eingeben (http oder https).',
 }
 
 export const colors: Messages['colors'] = {

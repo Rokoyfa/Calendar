@@ -98,6 +98,7 @@ export const validation = {
   dateInvalid: 'Please choose a valid date.',
   untilBeforeStart: 'The repetition cannot end before the start date.',
   locationTooLong: (max: number) => `The location can be at most ${max} characters long.`,
+  linkInvalid: 'Please enter valid web addresses (http or https).',
 }
 
 export const colors = {

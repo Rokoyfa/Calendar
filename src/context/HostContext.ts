@@ -1,6 +1,5 @@
 import { createContext, use } from 'react'
 import type { CalendarView } from '../utils/calendarView.ts'
-import { getBrowserTimeZone } from '../utils/timeZone.ts'
 
 export type HostTheme = 'light' | 'dark'
 
@@ -14,5 +13,3 @@ export type HostOptions = {
 export const HostContext = createContext<HostOptions>({ teams: true })
 
 export const useHost = () => use(HostContext)
-
-export const useViewerTimeZone = () => useHost().timeZone ?? getBrowserTimeZone()

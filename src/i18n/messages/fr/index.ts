@@ -93,6 +93,7 @@ const validation: Messages['validation'] = {
   dateInvalid: 'Veuillez choisir une date valide.',
   untilBeforeStart: 'La répétition ne peut pas se terminer avant la date de début.',
   locationTooLong: (max) => `Le lieu peut comporter au maximum ${max} caractères.`,
+  linkInvalid: 'Saisissez des adresses web valides (http ou https).',
 }
 
 const colors: Messages['colors'] = { blue: 'Bleu', red: 'Rouge', green: 'Vert', yellow: 'Jaune' }
@@ -134,6 +135,7 @@ const calendar: Messages['calendar'] = {
   now: (time) => `Maintenant : ${time}`,
   openDay: (date) => `Ouvrir le ${date}`,
   moreEvents: (count) => `+${count} de plus`,
+  moreLinks: (count) => `+${count} autres liens`,
   fromCalendar: (name) => `Du calendrier « ${name} »`,
   sharedEventNotice: (source) => `${source}. Tous les membres voient les modifications.`,
   dismiss: 'Fermer',
@@ -206,6 +208,14 @@ const events: Messages['events'] = {
   yourResponse: 'Votre réponse',
   respond: { accepted: 'Oui', tentative: 'Peut-être', declined: 'Non' },
   attendeeSummary: (accepted, total) => `${accepted} sur ${total} ont accepté`,
+  tabsLabel: 'Sections de l’événement',
+  tabs: { general: 'Général', recurrence: 'Répétition', attendees: 'Participants', details: 'Détails' },
+  links: 'Site web et liens',
+  addLink: 'Ajouter un lien',
+  linkUrl: 'Adresse (URL)',
+  linkLabel: 'Libellé (facultatif)',
+  openLink: (name) => `Ouvrir ${name}`,
+  removeLink: (name) => `Retirer ${name}`,
 }
 
 const storage: Messages['storage'] = {
@@ -224,6 +234,10 @@ const settings: Messages['settings'] = {
   languageDescription: 'Définit la langue, les formats de date et d’heure et le premier jour de la semaine.',
   languageLabel: 'Langue',
   languageAuto: 'Automatique (navigateur)',
+  timeZoneTitle: 'Fuseau horaire',
+  timeZoneDescription: 'Les événements sont affichés dans ce fuseau horaire, qui est aussi présélectionné pour les nouveaux événements.',
+  timeZoneLabel: 'Fuseau horaire',
+  timeZoneAuto: (zone) => `Automatique : ${zone} (recommandé)`,
   themeTitle: 'Thème',
   themeLabel: 'Clair ou sombre',
   startViewTitle: 'Vue de départ',

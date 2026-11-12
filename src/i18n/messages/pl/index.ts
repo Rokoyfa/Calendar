@@ -101,6 +101,7 @@ const validation: Messages['validation'] = {
   dateInvalid: 'Wybierz prawidłową datę.',
   untilBeforeStart: 'Powtarzanie nie może kończyć się przed datą rozpoczęcia.',
   locationTooLong: (max) => `Miejsce może mieć maksymalnie ${max} znaków.`,
+  linkInvalid: 'Podaj prawidłowe adresy internetowe (http lub https).',
 }
 
 const colors: Messages['colors'] = { blue: 'Niebieski', red: 'Czerwony', green: 'Zielony', yellow: 'Żółty' }
@@ -141,6 +142,7 @@ const calendar: Messages['calendar'] = {
   now: (time) => `Teraz: ${time}`,
   openDay: (date) => `Otwórz ${date}`,
   moreEvents: (count) => `+${count} więcej`,
+  moreLinks: (count) => `+${count} więcej linków`,
   fromCalendar: (name) => `Z kalendarza „${name}”`,
   sharedEventNotice: (source) => `${source}. Wszyscy członkowie widzą zmiany.`,
   dismiss: 'Zamknij',
@@ -212,6 +214,14 @@ const events: Messages['events'] = {
   yourResponse: 'Twoja odpowiedź',
   respond: { accepted: 'Tak', tentative: 'Może', declined: 'Nie' },
   attendeeSummary: (accepted, total) => `Zaakceptowało: ${accepted} z ${total}`,
+  tabsLabel: 'Sekcje wydarzenia',
+  tabs: { general: 'Ogólne', recurrence: 'Powtarzanie', attendees: 'Uczestnicy', details: 'Szczegóły' },
+  links: 'Strona i linki',
+  addLink: 'Dodaj link',
+  linkUrl: 'Adres (URL)',
+  linkLabel: 'Etykieta (opcjonalnie)',
+  openLink: (name) => `Otwórz ${name}`,
+  removeLink: (name) => `Usuń ${name}`,
 }
 
 const storage: Messages['storage'] = {
@@ -230,6 +240,10 @@ const settings: Messages['settings'] = {
   languageDescription: 'Określa język, format daty i godziny oraz pierwszy dzień tygodnia.',
   languageLabel: 'Język',
   languageAuto: 'Automatyczny (przeglądarka)',
+  timeZoneTitle: 'Strefa czasowa',
+  timeZoneDescription: 'Wydarzenia są wyświetlane w tej strefie czasowej, a nowe wydarzenia mają ją ustawioną domyślnie.',
+  timeZoneLabel: 'Strefa czasowa',
+  timeZoneAuto: (zone) => `Automatyczna: ${zone} (zalecane)`,
   themeTitle: 'Motyw',
   themeLabel: 'Jasny lub ciemny',
   startViewTitle: 'Widok startowy',

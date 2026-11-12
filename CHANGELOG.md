@@ -4,13 +4,16 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ## Unreleased
 
-- Locations: optional `location`, shown in the calendar and in search results
+- The event dialog is split into tabs: General, Repeat, Attendees and Details
+- Locations and links: optional `location` and up to 10 website or other links in the Details tab. Locations are shown in the calendar, links too when the event is tall enough (with a globe icon, open in a new tab), both are searchable and exported to iCalendar
 - Reminders: choose in the event dialog how long before an event to be reminded. Shown as a browser notification or a notice in the calendar while it is open. Reminders are personal per user
-- Search over title, location and description with jump to the event. Custom adapters can implement `search`, otherwise the component searches the last and next year
+- Search over title, location, description and links with jump to the event. Custom adapters can implement `search`, otherwise the component searches the last and next year
 - iCalendar export and import (.ics) in the calendar settings. Importing again updates events with the same `uid`, recurring events, exceptions, reminders and attendees are kept
 - Attendees in team calendars with responses yes, maybe and no. Unanswered events are striped, declined ones crossed out
 - The calendar you were in is restored after a reload
-- New event fields `uid`, `location`, `reminders`, `attendees`, new endpoints `GET /events/search` and `POST /events/:id/response`. Older events and backends without them keep working
+- Time zone setting: automatic (zone from the host, otherwise the system, recommended) or a fixed zone. Events are shown in it and new events start in it
+- Search results show times in your own time zone and open events that move to another day there
+- New event fields `uid`, `location`, `links`, `reminders`, `attendees`, preference `timeZone`, new endpoints `GET /events/search` and `POST /events/:id/response`. Older events and backends without them keep working
 
 ## 1.1.0 – 2026-11-11
 

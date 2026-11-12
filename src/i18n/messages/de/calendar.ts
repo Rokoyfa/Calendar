@@ -16,6 +16,7 @@ export const calendar: Messages['calendar'] = {
   now: (time) => `Jetzt: ${time}`,
   openDay: (date) => `${date} öffnen`,
   moreEvents: (count) => `+${count} weitere`,
+  moreLinks: (count) => `+${count} weitere Links`,
   fromCalendar: (name) => `Aus dem Kalender „${name}“`,
   sharedEventNotice: (source) => `${source}. Änderungen sehen alle Mitglieder.`,
   dismiss: 'Schließen',

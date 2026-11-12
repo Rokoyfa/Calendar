@@ -59,4 +59,12 @@ export const events: Messages['events'] = {
   yourResponse: 'Deine Antwort',
   respond: { accepted: 'Ja', tentative: 'Vielleicht', declined: 'Nein' },
   attendeeSummary: (accepted, total) => `${accepted} von ${total} zugesagt`,
+  tabsLabel: 'Bereiche des Termins',
+  tabs: { general: 'Allgemein', recurrence: 'Wiederholung', attendees: 'Teilnehmer', details: 'Details' },
+  links: 'Webseite & Links',
+  addLink: 'Link hinzufügen',
+  linkUrl: 'Adresse (URL)',
+  linkLabel: 'Bezeichnung (optional)',
+  openLink: (name) => `${name} öffnen`,
+  removeLink: (name) => `${name} entfernen`,
 }

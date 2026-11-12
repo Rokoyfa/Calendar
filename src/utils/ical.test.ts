@@ -65,6 +65,10 @@ describe('iCalendar', () => {
       uid: 'series-uid',
       title: 'Yoga; Kurs',
       location: 'Halle, Nord',
+      links: [
+        { url: 'https://example.com/yoga?kurs=1,2', label: 'Kurs; Infos' },
+        { url: 'https://maps.example.com/halle', label: '' },
+      ],
       timeZone: 'Europe/Berlin',
       recurrence: recurrence({ frequency: 'monthly', monthlyMode: 'weekdayOfMonth', count: 5 }),
       excludedDates: ['2026-12-07'],
@@ -87,6 +91,10 @@ describe('iCalendar', () => {
       uid: 'series-uid',
       title: 'Yoga; Kurs',
       location: 'Halle, Nord',
+      links: [
+        { url: 'https://example.com/yoga?kurs=1,2', label: 'Kurs; Infos' },
+        { url: 'https://maps.example.com/halle', label: '' },
+      ],
       recurrence: { frequency: 'monthly', monthlyMode: 'weekdayOfMonth', count: 5 },
       excludedDates: ['2026-12-07'],
       reminders: [30, 1440],

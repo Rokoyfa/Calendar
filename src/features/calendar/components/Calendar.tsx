@@ -1,15 +1,17 @@
 import { useCallback, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
-import { useViewerTimeZone } from '../../../context/HostContext.ts'
+import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
 import { useArrowKeyNavigation } from '../../../hooks/useArrowKeyNavigation.ts'
-import { MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
+import { addDaysToISODate, MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
 import {
   createAllDayEventInput,
   createEventInput,
   createEventInputForSlots,
   expandEvents,
   toOccurrenceInput,
+  toViewerPeriod,
+  ZONE_SHIFT_DAYS,
   type EditScope,
   type CalendarEvent,
   type EventInput,
@@ -138,10 +140,13 @@ export function Calendar({
 
   const openSearchResult = (event: CalendarEvent, date: string) => {
     setIsSearchOpen(false)
-    goToDate(date)
-    const occurrence = expandEvents([event], date, date, viewerTimeZone).find(
-      (candidate) => candidate.occurrenceDate === date,
-    )
+    const occurrence = expandEvents(
+      [event],
+      addDaysToISODate(date, -ZONE_SHIFT_DAYS),
+      addDaysToISODate(date, ZONE_SHIFT_DAYS),
+      viewerTimeZone,
+    ).find((candidate) => candidate.occurrenceDate === date)
+    goToDate(occurrence?.startDate ?? date)
     if (occurrence) openEdit(occurrence)
   }
 
@@ -149,7 +154,7 @@ export function Calendar({
     if (editor?.occurrence) await updateEvent(editor.occurrence, input, scope)
     else await createEvent(input)
     setEditor(null)
-    goToDate(input.startDate)
+    goToDate(toViewerPeriod(input, input.timeZone, viewerTimeZone).startDate)
   }
 
   const saveDrop = async (occurrence: EventOccurrence, period: EventPeriod, scope: EditScope) => {

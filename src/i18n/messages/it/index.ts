@@ -92,6 +92,7 @@ const validation: Messages['validation'] = {
   dateInvalid: 'Scegli una data valida.',
   untilBeforeStart: 'La ripetizione non può terminare prima della data di inizio.',
   locationTooLong: (max) => `Il luogo può contenere al massimo ${max} caratteri.`,
+  linkInvalid: 'Inserisci indirizzi web validi (http o https).',
 }
 
 const colors: Messages['colors'] = { blue: 'Blu', red: 'Rosso', green: 'Verde', yellow: 'Giallo' }
@@ -135,6 +136,7 @@ const calendar: Messages['calendar'] = {
   now: (time) => `Adesso: ${time}`,
   openDay: (date) => `Apri ${date}`,
   moreEvents: (count) => `altri ${count}`,
+  moreLinks: (count) => `+${count} altri link`,
   fromCalendar: (name) => `Dal calendario «${name}»`,
   sharedEventNotice: (source) => `${source}. Tutti i membri vedono le modifiche.`,
   dismiss: 'Chiudi',
@@ -206,6 +208,14 @@ const events: Messages['events'] = {
   yourResponse: 'La tua risposta',
   respond: { accepted: 'Sì', tentative: 'Forse', declined: 'No' },
   attendeeSummary: (accepted, total) => `${accepted} su ${total} hanno accettato`,
+  tabsLabel: 'Sezioni dell’evento',
+  tabs: { general: 'Generale', recurrence: 'Ripetizione', attendees: 'Partecipanti', details: 'Dettagli' },
+  links: 'Sito web e link',
+  addLink: 'Aggiungi link',
+  linkUrl: 'Indirizzo (URL)',
+  linkLabel: 'Etichetta (facoltativa)',
+  openLink: (name) => `Apri ${name}`,
+  removeLink: (name) => `Rimuovi ${name}`,
 }
 
 const storage: Messages['storage'] = {
@@ -224,6 +234,10 @@ const settings: Messages['settings'] = {
   languageDescription: 'Determina la lingua, i formati di data e ora e il primo giorno della settimana.',
   languageLabel: 'Lingua',
   languageAuto: 'Automatica (browser)',
+  timeZoneTitle: 'Fuso orario',
+  timeZoneDescription: 'Gli eventi vengono mostrati in questo fuso orario, che è preselezionato anche per i nuovi eventi.',
+  timeZoneLabel: 'Fuso orario',
+  timeZoneAuto: (zone) => `Automatico: ${zone} (consigliato)`,
   themeTitle: 'Tema',
   themeLabel: 'Chiaro o scuro',
   startViewTitle: 'Vista iniziale',

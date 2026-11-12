@@ -1,6 +1,6 @@
 import { useState, type SubmitEventHandler } from 'react'
 import { Switch } from '../../../components/Switch.tsx'
-import { useViewerTimeZone } from '../../../context/HostContext.ts'
+import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
 import { DateTimeField } from '../../../components/DateTimeField.tsx'
@@ -8,6 +8,7 @@ import { Form } from '../../../components/Form.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { FormField } from '../../../components/FormField.tsx'
 import { Modal } from '../../../components/Modal.tsx'
+import { Tabs, type TabDefinition } from '../../../components/Tabs.tsx'
 import { TextField } from '../../../components/TextField.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { isISODate, isTime } from '../../../utils/date.ts'
@@ -36,11 +37,24 @@ import { ColorPicker } from './ColorPicker.tsx'
 import { RecurrenceFields } from './RecurrenceFields.tsx'
 import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
 import { AttendeesField, type AttendeeCandidate } from './AttendeesField.tsx'
+import { LinksField } from './LinksField.tsx'
 import { ReminderField } from './ReminderField.tsx'
 import { TimeZoneField } from './TimeZoneField.tsx'
 
 const DEFAULT_START = '09:00'
 const DEFAULT_END = '10:00'
+
+type EventTab = 'general' | 'recurrence' | 'attendees' | 'details'
+
+const TAB_FIELDS: Record<EventTab, readonly (keyof EventValidationErrors)[]> = {
+  general: ['title', 'startDate', 'start', 'endDate', 'end', 'timeZone', 'reminders', 'color'],
+  recurrence: ['recurrence', 'excludedDates'],
+  attendees: ['attendees'],
+  details: ['location', 'links', 'description'],
+}
+
+const hasTabErrors = (errors: EventValidationErrors, tab: EventTab) =>
+  TAB_FIELDS[tab].some((field) => errors[field] !== undefined)
 
 const isValidPeriod = ({ startDate, start, endDate, end }: EventPeriod) =>
   isISODate(startDate) && isISODate(endDate) && isTime(start) && isTime(end)
@@ -82,6 +96,7 @@ export function EventModal({
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
+  const [activeTab, setActiveTab] = useState<EventTab>('general')
   const { run: save, isPending, error: submitError } = useAsyncAction(onSave)
 
   const update = (changes: Partial<EventInput>, clearedErrors: readonly (keyof EventValidationErrors)[]) => {
@@ -134,7 +149,11 @@ export function EventModal({
     const input = normalizeEventInput(values)
     const nextErrors = validateEventInput(input, m)
     setErrors(nextErrors)
-    if (hasValidationErrors(nextErrors)) return
+    if (hasValidationErrors(nextErrors)) {
+      const invalidTab = tabs.find(({ value }) => hasTabErrors(nextErrors, value))
+      if (invalidTab && !hasTabErrors(nextErrors, activeTab)) setActiveTab(invalidTab.value)
+      return
+    }
 
     const options = getScopeOptions(occurrence, input.recurrence)
     if (options.length > 1) setPendingSave({ input, options })
@@ -152,11 +171,12 @@ export function EventModal({
       ? m.events.inYourTimeZone(formatEventPeriod(toViewerPeriod(values, values.timeZone, viewerTimeZone), i18n))
       : null
 
-  return (
-    <>
-      <Modal title={mode === 'create' ? m.events.createTitle : m.events.editTitle} onClose={onClose}>
-        <Form className="eventForm" onSubmit={handleSubmit}>
-          {notice && <p className="formHint eventNotice">{notice}</p>}
+  const tabDefinitions: TabDefinition<EventTab>[] = [
+    {
+      value: 'general',
+      label: m.events.tabs.general,
+      content: (
+        <>
           <TextField
             label={m.events.title}
             name="title"
@@ -166,16 +186,6 @@ export function EventModal({
             error={errors.title}
             onChange={(title) => setField('title', title)}
             data-autofocus
-          />
-
-          <TextField
-            label={m.events.location}
-            name="location"
-            autoComplete="off"
-            maxLength={EVENT_LOCATION_MAX_LENGTH}
-            value={values.location}
-            error={errors.location}
-            onChange={(location) => setField('location', location)}
           />
 
           <Switch label={m.events.allDay} checked={values.allDay} onChange={setAllDay} />
@@ -212,36 +222,76 @@ export function EventModal({
           )}
           {viewerHint && <p className="formHint">{viewerHint}</p>}
 
-          {attendeeOptions && (attendeeOptions.candidates.length > 0 || values.attendees.length > 0) && (
-            <AttendeesField
-              attendees={values.attendees}
-              candidates={attendeeOptions.candidates}
-              ownEmail={attendeeOptions.ownEmail}
-              onChange={(attendees) => setField('attendees', attendees)}
-              onRespond={occurrence ? attendeeOptions.onRespond : undefined}
-            />
-          )}
-
           <ReminderField value={values.reminders} onChange={(reminders) => setField('reminders', reminders)} />
 
-          <RecurrenceFields
-            value={values.recurrence}
-            startDate={values.startDate}
-            errors={errors.recurrence ?? {}}
-            onChange={setRecurrence}
-          />
-
-          <FormField label={m.events.description} error={errors.description}>
-            <textarea
-              className="textarea eventDescription"
-              name="description"
-              maxLength={EVENT_DESCRIPTION_MAX_LENGTH}
-              value={values.description}
-              onChange={(event) => setField('description', event.target.value)}
-            />
-          </FormField>
-
           <ColorPicker value={values.color} onChange={(color) => setField('color', color)} />
+        </>
+      ),
+    },
+    {
+      value: 'recurrence',
+      label: m.events.tabs.recurrence,
+      content: (
+        <RecurrenceFields
+          value={values.recurrence}
+          startDate={values.startDate}
+          errors={errors.recurrence ?? {}}
+          onChange={setRecurrence}
+        />
+      ),
+    },
+  ]
+  if (attendeeOptions && (attendeeOptions.candidates.length > 0 || values.attendees.length > 0))
+    tabDefinitions.push({
+      value: 'attendees',
+      label: m.calendars.settings.withCount(m.events.tabs.attendees, values.attendees.length),
+      content: (
+        <AttendeesField
+          attendees={values.attendees}
+          candidates={attendeeOptions.candidates}
+          ownEmail={attendeeOptions.ownEmail}
+          onChange={(attendees) => setField('attendees', attendees)}
+          onRespond={occurrence ? attendeeOptions.onRespond : undefined}
+        />
+      ),
+    })
+  tabDefinitions.push({
+    value: 'details',
+    label: m.events.tabs.details,
+    content: (
+      <>
+        <TextField
+          label={m.events.location}
+          name="location"
+          autoComplete="off"
+          maxLength={EVENT_LOCATION_MAX_LENGTH}
+          value={values.location}
+          error={errors.location}
+          onChange={(location) => setField('location', location)}
+        />
+
+        <LinksField links={values.links} error={errors.links} onChange={(links) => setField('links', links)} />
+
+        <FormField label={m.events.description} error={errors.description}>
+          <textarea
+            className="textarea eventDescription"
+            name="description"
+            maxLength={EVENT_DESCRIPTION_MAX_LENGTH}
+            value={values.description}
+            onChange={(event) => setField('description', event.target.value)}
+          />
+        </FormField>
+      </>
+    ),
+  })
+  const tabs = tabDefinitions.map((tab) => ({ ...tab, invalid: hasTabErrors(errors, tab.value) }))
+
+  return (
+    <>
+      <Modal title={mode === 'create' ? m.events.createTitle : m.events.editTitle} onClose={onClose}>
+        <Form className="eventForm" onSubmit={handleSubmit}>
+          {notice && <p className="formHint eventNotice">{notice}</p>}
+          <Tabs label={m.events.tabsLabel} tabs={tabs} value={activeTab} stable onChange={setActiveTab} />
 
           <ErrorMessage message={submitError} />
 

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import { useHost } from '../../../context/HostContext.ts'
 import { useRootElement } from '../../../context/RootElementContext.ts'
+import { TimeZoneContext } from '../../../context/TimeZoneContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
-import { DEFAULT_PREFERENCES, type Preferences, type Theme } from '../../../utils/preferences.ts'
+import { AUTO_TIME_ZONE, DEFAULT_PREFERENCES, type Preferences, type Theme } from '../../../utils/preferences.ts'
 import { usePreferencesRepository } from '../../storage/index.ts'
 import { PreferencesContext, type PreferencesContextValue } from './PreferencesContext.ts'
 
@@ -41,5 +42,11 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   )
 
   if (isLoading) return null
-  return <PreferencesContext value={value}>{children}</PreferencesContext>
+  return (
+    <PreferencesContext value={value}>
+      <TimeZoneContext value={preferences.timeZone === AUTO_TIME_ZONE ? null : preferences.timeZone}>
+        {children}
+      </TimeZoneContext>
+    </PreferencesContext>
+  )
 }

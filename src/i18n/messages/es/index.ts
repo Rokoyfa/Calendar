@@ -92,6 +92,7 @@ const validation: Messages['validation'] = {
   dateInvalid: 'Elige una fecha válida.',
   untilBeforeStart: 'La repetición no puede terminar antes de la fecha de inicio.',
   locationTooLong: (max) => `La ubicación puede tener como máximo ${max} caracteres.`,
+  linkInvalid: 'Introduce direcciones web válidas (http o https).',
 }
 
 const colors: Messages['colors'] = { blue: 'Azul', red: 'Rojo', green: 'Verde', yellow: 'Amarillo' }
@@ -133,6 +134,7 @@ const calendar: Messages['calendar'] = {
   now: (time) => `Ahora: ${time}`,
   openDay: (date) => `Abrir ${date}`,
   moreEvents: (count) => `${count} más`,
+  moreLinks: (count) => `+${count} enlaces más`,
   fromCalendar: (name) => `Del calendario «${name}»`,
   sharedEventNotice: (source) => `${source}. Todos los miembros ven los cambios.`,
   dismiss: 'Cerrar',
@@ -204,6 +206,14 @@ const events: Messages['events'] = {
   yourResponse: 'Tu respuesta',
   respond: { accepted: 'Sí', tentative: 'Quizás', declined: 'No' },
   attendeeSummary: (accepted, total) => `${accepted} de ${total} han aceptado`,
+  tabsLabel: 'Secciones del evento',
+  tabs: { general: 'General', recurrence: 'Repetición', attendees: 'Participantes', details: 'Detalles' },
+  links: 'Sitio web y enlaces',
+  addLink: 'Añadir enlace',
+  linkUrl: 'Dirección (URL)',
+  linkLabel: 'Etiqueta (opcional)',
+  openLink: (name) => `Abrir ${name}`,
+  removeLink: (name) => `Quitar ${name}`,
 }
 
 const storage: Messages['storage'] = {
@@ -222,6 +232,10 @@ const settings: Messages['settings'] = {
   languageDescription: 'Determina el idioma, los formatos de fecha y hora y el primer día de la semana.',
   languageLabel: 'Idioma',
   languageAuto: 'Automático (navegador)',
+  timeZoneTitle: 'Zona horaria',
+  timeZoneDescription: 'Los eventos se muestran en esta zona horaria y los nuevos eventos la usan por defecto.',
+  timeZoneLabel: 'Zona horaria',
+  timeZoneAuto: (zone) => `Automática: ${zone} (recomendado)`,
   themeTitle: 'Tema',
   themeLabel: 'Claro u oscuro',
   startViewTitle: 'Vista inicial',
