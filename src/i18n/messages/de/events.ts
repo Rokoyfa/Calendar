@@ -53,6 +53,7 @@ export const events: Messages['events'] = {
   reminderBlocked: 'Benachrichtigungen sind in diesem Browser blockiert. Erinnerungen erscheinen nur, solange der Kalender offen ist.',
   attendees: 'Teilnehmer',
   addAttendee: 'Teilnehmer hinzufügen',
+  inviteAll: (count) => `Alle einladen (${count})`,
   removeAttendee: (name) => `${name} entfernen`,
   allMembersInvited: 'Alle Mitglieder sind eingeladen.',
   attendeeStatus: { needsAction: 'Keine Antwort', accepted: 'Zugesagt', tentative: 'Vielleicht', declined: 'Abgesagt' },

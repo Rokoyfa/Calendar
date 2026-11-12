@@ -51,6 +51,7 @@ export const events = {
   reminderBlocked: 'Notifications are blocked in this browser. Reminders only appear while the calendar is open.',
   attendees: 'Attendees',
   addAttendee: 'Add attendee',
+  inviteAll: (count: number) => `Invite all (${count})`,
   removeAttendee: (name: string) => `Remove ${name}`,
   allMembersInvited: 'All members are invited.',
   attendeeStatus: { needsAction: 'No response', accepted: 'Accepted', tentative: 'Maybe', declined: 'Declined' },

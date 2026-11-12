@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { SegmentedField } from '../../../components/SegmentedField.tsx'
 import { SelectField } from '../../../components/SelectField.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
+import { Button } from '../../../components/Button.tsx'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
 import { MAX_ATTENDEES, type Attendee, type AttendeeStatus } from '../../../utils/event.ts'
 
@@ -35,6 +36,14 @@ export function AttendeesField({ attendees, candidates, ownEmail, onChange, onRe
     if (candidate && attendees.length < MAX_ATTENDEES)
       onChange([...attendees, { email: candidate.email.toLowerCase(), name: candidate.name, status: 'needsAction' }])
   }
+
+  const addAll = () =>
+    onChange([
+      ...attendees,
+      ...available
+        .slice(0, MAX_ATTENDEES - attendees.length)
+        .map(({ email, name }) => ({ email: email.toLowerCase(), name, status: 'needsAction' as const })),
+    ])
 
   const respond = async (status: Response) => {
     if (!own || !onRespond) return
@@ -99,16 +108,23 @@ export function AttendeesField({ attendees, candidates, ownEmail, onChange, onRe
 
       {candidates.length > 0 &&
         (available.length > 0 ? (
-          <SelectField
-            label={m.events.addAttendee}
-            name="addAttendee"
-            value={ADD}
-            options={[
-              { value: ADD, label: '…' },
-              ...available.map(({ email, name }) => ({ value: email, label: name ? `${name} (${email})` : email })),
-            ]}
-            onChange={add}
-          />
+          <div className="attendeeAdd">
+            <SelectField
+              label={m.events.addAttendee}
+              name="addAttendee"
+              value={ADD}
+              options={[
+                { value: ADD, label: '…' },
+                ...available.map(({ email, name }) => ({ value: email, label: name ? `${name} (${email})` : email })),
+              ]}
+              onChange={add}
+            />
+            {available.length > 1 && attendees.length < MAX_ATTENDEES && (
+              <Button variant="outline" className="button--small" onClick={addAll}>
+                {m.events.inviteAll(available.length)}
+              </Button>
+            )}
+          </div>
         ) : (
           <p className="formHint">{m.events.allMembersInvited}</p>
         ))}

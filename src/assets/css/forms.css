@@ -212,6 +212,18 @@ select.input {
   border: 0;
 }
 
+.attendeeAdd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: flex-end;
+}
+
+.attendeeAdd > .field {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
 .attendeesSummary {
   font-weight: 400;
   color: var(--color-muted);

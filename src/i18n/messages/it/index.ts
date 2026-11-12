@@ -202,6 +202,7 @@ const events: Messages['events'] = {
   reminderBlocked: 'Le notifiche sono bloccate in questo browser. I promemoria compaiono solo mentre il calendario è aperto.',
   attendees: 'Partecipanti',
   addAttendee: 'Aggiungi partecipante',
+  inviteAll: (count) => `Invita tutti (${count})`,
   removeAttendee: (name) => `Rimuovi ${name}`,
   allMembersInvited: 'Tutti i membri sono invitati.',
   attendeeStatus: { needsAction: 'Nessuna risposta', accepted: 'Accettato', tentative: 'Forse', declined: 'Rifiutato' },

@@ -201,6 +201,7 @@ const events: Messages['events'] = {
   reminderBlocked: 'Meldingen zijn in deze browser geblokkeerd. Herinneringen verschijnen alleen zolang de agenda open is.',
   attendees: 'Deelnemers',
   addAttendee: 'Deelnemer toevoegen',
+  inviteAll: (count) => `Iedereen uitnodigen (${count})`,
   removeAttendee: (name) => `${name} verwijderen`,
   allMembersInvited: 'Alle leden zijn uitgenodigd.',
   attendeeStatus: { needsAction: 'Geen antwoord', accepted: 'Geaccepteerd', tentative: 'Misschien', declined: 'Afgewezen' },
