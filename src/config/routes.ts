@@ -9,6 +9,7 @@ export const ROUTES = {
   createCalendar: '/calendars/new',
   calendarSettings: '/calendars/:calendarId/settings',
   respond: '/respond',
+  shared: '/shared/:token',
 } as const
 
 export const calendarSettingsPath = (calendarId: string) =>

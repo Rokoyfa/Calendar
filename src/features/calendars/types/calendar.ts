@@ -94,6 +94,9 @@ export interface CalendarRepository {
   getFeed?(calendarId: string): Promise<string | null>
   createFeed?(calendarId: string): Promise<string>
   deleteFeed?(calendarId: string): Promise<void>
+  getShare?(calendarId: string): Promise<string | null>
+  createShare?(calendarId: string): Promise<string>
+  deleteShare?(calendarId: string): Promise<void>
 }
 
 export type CalendarsContextValue = {

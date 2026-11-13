@@ -25,6 +25,11 @@ const errors: Messages['errors'] = {
   saveEventsFailed: 'Les événements n’ont pas pu être enregistrés dans ce navigateur.',
   savePreferencesFailed: 'Les paramètres n’ont pas pu être enregistrés dans ce navigateur.',
   saveColorFailed: 'La couleur n’a pas pu être enregistrée dans ce navigateur.',
+  saveCategoriesFailed: 'Les catégories n’ont pas pu être enregistrées dans ce navigateur.',
+  categoryExists: 'Une catégorie portant ce nom existe déjà.',
+  tooManyCategories: 'Ce calendrier a déjà le nombre maximal de catégories.',
+  categoryNotFound: 'Cette catégorie n’existe plus.',
+  shareNotFound: 'Ce calendrier n’est pas partagé ou le lien a été désactivé.',
   saveDecisionFailed: 'Votre choix n’a pas pu être enregistré dans ce navigateur.',
   invalidLink: 'Ce lien n’est pas valide ou a expiré.',
   invalidResetLink: 'Ce lien n’est pas valide ou a expiré. Veuillez en demander un nouveau.',
@@ -32,8 +37,7 @@ const errors: Messages['errors'] = {
   emailTaken: 'Un compte existe déjà avec cette adresse e-mail.',
   wrongCurrentPassword: 'Le mot de passe actuel est incorrect.',
   wrongPassword: 'Le mot de passe est incorrect.',
-  soleOwner:
-    'Vous êtes le seul propriétaire d’une équipe qui a d’autres membres. Transférez d’abord la propriété.',
+  soleOwner: 'Vous êtes le seul propriétaire d’une équipe qui a d’autres membres. Transférez d’abord la propriété.',
   unauthorized: 'Veuillez vous connecter.',
   forbidden: 'Vous n’avez pas l’autorisation de faire cela.',
   notFound: 'L’élément est introuvable.',
@@ -102,7 +106,12 @@ const colors: Messages['colors'] = { blue: 'Bleu', red: 'Rouge', green: 'Vert', 
 const themes: Messages['themes'] = { system: 'Automatique', light: 'Clair', dark: 'Sombre' }
 
 const recurrence: Messages['recurrence'] = {
-  frequency: { daily: 'Tous les jours', weekly: 'Toutes les semaines', monthly: 'Tous les mois', yearly: 'Tous les ans' },
+  frequency: {
+    daily: 'Tous les jours',
+    weekly: 'Toutes les semaines',
+    monthly: 'Tous les mois',
+    yearly: 'Tous les ans',
+  },
   units: {
     daily: { one: 'jour', many: 'jours' },
     weekly: { one: 'semaine', many: 'semaines' },
@@ -141,7 +150,19 @@ const calendar: Messages['calendar'] = {
   fromCalendar: (name) => `Du calendrier « ${name} »`,
   sharedEventNotice: (source) => `${source}. Tous les membres voient les modifications.`,
   dismiss: 'Fermer',
-  undo: { action: 'Annuler', ctrlZ: 'Ctrl+Z', deleted: (title) => `« ${title} » supprimé`, moved: (title) => `« ${title} » déplacé` },
+  undo: {
+    action: 'Annuler',
+    ctrlZ: 'Ctrl+Z',
+    deleted: (title) => `« ${title} » supprimé`,
+    moved: (title) => `« ${title} » déplacé`,
+  },
+  filter: {
+    open: 'Filtrer par catégorie',
+    openActive: 'Filtrer par catégorie (actif)',
+    title: 'Filtrer par catégorie',
+    uncategorized: 'Sans catégorie',
+    reset: 'Tout afficher',
+  },
   search: {
     open: 'Rechercher',
     title: 'Rechercher des événements',
@@ -173,6 +194,8 @@ const events: Messages['events'] = {
   noCustomColors: 'Pas encore de couleurs personnalisées.',
   removeColor: (label) => `Supprimer la couleur ${label}`,
   deleteTitle: 'Supprimer l’événement ?',
+  viewTitle: 'Événement',
+  categories: { label: 'Catégories' },
   deleteMessage: (title) => `« ${title} » sera supprimé. Cette action est irréversible.`,
   deleteSeriesMessage: (title) =>
     `« ${title} » est un événement récurrent. Que faut-il supprimer ? Cette action est irréversible.`,
@@ -200,7 +223,8 @@ const events: Messages['events'] = {
   reminderAtStart: 'Au début',
   reminderBefore: (duration) => `${duration} avant`,
   reminderDue: (title, time) => `${title} commence à ${time}`,
-  reminderBlocked: 'Les notifications sont bloquées dans ce navigateur. Les rappels n’apparaissent que tant que le calendrier est ouvert.',
+  reminderBlocked:
+    'Les notifications sont bloquées dans ce navigateur. Les rappels n’apparaissent que tant que le calendrier est ouvert.',
   attendees: 'Participants',
   addAttendee: 'Ajouter un participant',
   inviteAll: (count) => `Inviter tout le monde (${count})`,
@@ -256,13 +280,20 @@ const storage: Messages['storage'] = {
 
 const settings: Messages['settings'] = {
   tabsLabel: 'Sections des paramètres',
-  tabs: { calendars: 'Calendriers', invitations: 'Invitations', appearance: 'Apparence', account: 'Compte', notifications: 'Notifications' },
+  tabs: {
+    calendars: 'Calendriers',
+    invitations: 'Invitations',
+    appearance: 'Apparence',
+    account: 'Compte',
+    notifications: 'Notifications',
+  },
   languageTitle: 'Langue et région',
   languageDescription: 'Définit la langue, les formats de date et d’heure et le premier jour de la semaine.',
   languageLabel: 'Langue',
   languageAuto: 'Automatique (navigateur)',
   timeZoneTitle: 'Fuseau horaire',
-  timeZoneDescription: 'Les événements sont affichés dans ce fuseau horaire, qui est aussi présélectionné pour les nouveaux événements.',
+  timeZoneDescription:
+    'Les événements sont affichés dans ce fuseau horaire, qui est aussi présélectionné pour les nouveaux événements.',
   timeZoneLabel: 'Fuseau horaire',
   timeZoneAuto: (zone) => `Automatique : ${zone} (recommandé)`,
   holidaysTitle: 'Jours fériés',
@@ -453,7 +484,8 @@ const calendars: Messages['calendars'] = {
     personalHint: 'Votre propre calendrier. Il ne peut être ni quitté ni supprimé.',
     showInPersonal: 'Afficher aussi les événements dans le calendrier personnel',
     leave: 'Quitter le calendrier',
-    ownerCannotLeave: 'En tant que propriétaire, vous ne pouvez quitter le calendrier qu’après avoir transféré la propriété.',
+    ownerCannotLeave:
+      'En tant que propriétaire, vous ne pouvez quitter le calendrier qu’après avoir transféré la propriété.',
     noTeamCalendars: 'Pas encore de calendrier d’équipe. Créez-en un ou rejoignez-en un via une invitation.',
     create: 'Créer un calendrier',
   },
@@ -467,7 +499,11 @@ const calendars: Messages['calendars'] = {
   create: {
     title: 'Nouveau calendrier',
     steps: [
-      { label: 'Nom', title: 'Comment s’appelle le calendrier ?', hint: 'Tous les membres voient le nom et la description.' },
+      {
+        label: 'Nom',
+        title: 'Comment s’appelle le calendrier ?',
+        hint: 'Tous les membres voient le nom et la description.',
+      },
       {
         label: 'Couleur',
         title: 'Quelle couleur doit-il avoir ?',
@@ -520,7 +556,13 @@ const calendars: Messages['calendars'] = {
     notFound: 'Ce calendrier n’existe pas ou vous n’y avez plus accès.',
     tabsLabel: 'Sections des paramètres du calendrier',
     withCount: (label, count) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'Général', members: 'Membres', invitations: 'Invitations', danger: 'Zone de danger', exchange: 'Import et export' },
+    tabs: {
+      general: 'Général',
+      members: 'Membres',
+      invitations: 'Invitations',
+      danger: 'Zone de danger',
+      exchange: 'Import et export',
+    },
     displayTitle: 'Affichage',
     displayDescription: 'S’applique uniquement à vous. Les autres membres règlent cela eux-mêmes.',
     personalTitle: 'Calendrier personnel',
@@ -564,7 +606,8 @@ const calendars: Messages['calendars'] = {
     transferUnavailable:
       'Pour transférer la propriété, l’équipe a besoin d’un autre membre qui n’est pas encore propriétaire.',
     transfer: 'Transférer la propriété',
-    lastOwnerHint: 'En tant que seul propriétaire, vous ne pouvez pas partir. Transférez d’abord la propriété ou supprimez l’équipe.',
+    lastOwnerHint:
+      'En tant que seul propriétaire, vous ne pouvez pas partir. Transférez d’abord la propriété ou supprimez l’équipe.',
     leaveHint: 'Vous ne verrez plus le calendrier. Vous ne pourrez revenir que via une nouvelle invitation.',
     deleteHint: (team) =>
       `Supprime l’équipe « ${team} » avec tous les calendriers, événements et invitations, pour tous les membres.`,
@@ -580,21 +623,51 @@ const calendars: Messages['calendars'] = {
     deleteMessage: (team, count) =>
       `« ${team} » sera supprimée avec tous les calendriers, événements et invitations, également pour les ${count} membres. Cette action est irréversible.`,
   },
+  categories: {
+    title: 'Catégories',
+    description: 'Classez les événements de ce calendrier par catégories et filtrez les vues.',
+    empty: 'Aucune catégorie pour le moment.',
+    nameLabel: 'Nom de la catégorie',
+    newLabel: 'Nouvelle catégorie',
+    add: 'Ajouter',
+    rename: 'Renommer',
+    remove: (name) => `Supprimer la catégorie ${name}`,
+  },
+  share: {
+    title: 'Lien public',
+    description:
+      'Partagez ce calendrier en lecture seule avec tout le monde, sans connexion. Les visiteurs voient le titre, l’heure, le lieu, la description, les liens et les catégories de tous les événements, mais pas les participants, les rappels ni la discussion.',
+    label: 'Lien public',
+    pathLabel: 'Chemin pour l’option initial-path',
+    create: 'Créer un lien public',
+    copy: 'Copier le lien',
+    copied: 'Copié',
+    open: 'Ouvrir',
+    warning:
+      'Toute personne disposant de ce lien peut voir tous les événements de ce calendrier. Créer un nouveau lien désactive l’ancien.',
+    renew: 'Créer un nouveau lien',
+    remove: 'Arrêter le partage',
+    readOnly: 'Lecture seule',
+    notFound: 'Ce calendrier n’est pas partagé ou le lien a été désactivé.',
+  },
   feed: {
     title: 'S’abonner',
-    description: 'Abonne-toi à ce calendrier dans Google Agenda, Outlook ou Apple Calendrier. Les modifications y apparaissent automatiquement, en général en quelques heures. L’abonnement est en lecture seule.',
+    description:
+      'Abonne-toi à ce calendrier dans Google Agenda, Outlook ou Apple Calendrier. Les modifications y apparaissent automatiquement, en général en quelques heures. L’abonnement est en lecture seule.',
     label: 'Lien d’abonnement',
     create: 'Créer un lien d’abonnement',
     copy: 'Copier le lien',
     copied: 'Copié',
     openApp: 'Ouvrir dans l’app de calendrier',
-    warning: 'Toute personne ayant ce lien voit tous les événements de ce calendrier. Un nouveau lien désactive l’ancien.',
+    warning:
+      'Toute personne ayant ce lien voit tous les événements de ce calendrier. Un nouveau lien désactive l’ancien.',
     renew: 'Créer un nouveau lien',
     remove: 'Arrêter l’abonnement',
   },
   ical: {
     title: 'Import et export',
-    description: 'Échangez des événements avec d’autres applications de calendrier au format iCalendar (.ics). Un nouvel import met à jour les événements déjà importés.',
+    description:
+      'Échangez des événements avec d’autres applications de calendrier au format iCalendar (.ics). Un nouvel import met à jour les événements déjà importés.',
     exportLabel: 'Exporter en .ics',
     exporting: 'Exportation …',
     importLabel: 'Importer un fichier .ics',

@@ -100,6 +100,8 @@ export function CalendarPage() {
   const initialView =
     host.initialView ?? nearestView(getStartView(preferences, isCompactWidth(root.clientWidth)), host.views)
 
+  const calendarNames = useMemo(() => new Map(calendars.map((calendar) => [calendar.id, calendar.name])), [calendars])
+
   return (
     <div className="app">
       <EmailVerificationBanner />
@@ -108,6 +110,7 @@ export function CalendarPage() {
         targetCalendarId={activeCalendar.id}
         canCreate={hasPermission(activeCalendar, 'create_entry')}
         eventSources={eventSources}
+        calendarNames={calendarNames}
         initialView={initialView}
         headerContext={<ActiveCalendarIndicator />}
         currentUserEmail={user?.email ?? null}

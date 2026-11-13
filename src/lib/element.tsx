@@ -11,9 +11,14 @@ import {
   HOLIDAY_SOURCES,
   HOST_THEMES,
   STORAGE_MODES,
+  DENSITIES,
+  type CalendarAppearance,
   type CalendarConfigSource,
   type CalendarFeature,
   type CalendarFeatures,
+  type CalendarHandle,
+  type CalendarState,
+  type NewEventDraft,
   type CalendarProps,
 } from './config.ts'
 import type { DeletedEvent } from './eventCallbacks.ts'
@@ -50,6 +55,11 @@ const ATTRIBUTES = [
   'holidays',
   'holiday-source',
   'map-url',
+  'read-only',
+  'accent-color',
+  'font-family',
+  'radius',
+  'density',
   ...FEATURE_NAMES.map(toFeatureAttribute),
 ]
 
@@ -62,6 +72,7 @@ export class CalendarElement extends HTMLElement {
   #getUserToken: UserTokenProvider | undefined
   #messages: MessageOverrides | undefined
   #config: CalendarConfigSource | undefined
+  readonly #handle: { current: CalendarHandle | null } = { current: null }
 
   get dataSource() {
     return this.#dataSource
@@ -136,18 +147,71 @@ export class CalendarElement extends HTMLElement {
     return features
   }
 
+  #flag(name: string) {
+    const value = this.getAttribute(name)
+    return value === null ? undefined : value !== 'false'
+  }
+
+  #appearance(): CalendarAppearance {
+    const radius = Number(this.getAttribute('radius') ?? Number.NaN)
+    const density = this.getAttribute('density')
+    return {
+      accentColor: this.getAttribute('accent-color') ?? undefined,
+      fontFamily: this.getAttribute('font-family') ?? undefined,
+      radius: Number.isFinite(radius) ? radius : undefined,
+      density: isOneOf(DENSITIES, density) ? density : undefined,
+    }
+  }
+
+  getState() {
+    return this.#handle.current?.getState() ?? null
+  }
+
+  goToDate(date: string | Date) {
+    return this.#handle.current?.goToDate(date) ?? false
+  }
+
+  setView(view: CalendarView) {
+    return this.#handle.current?.setView(view) ?? false
+  }
+
+  next() {
+    return this.#handle.current?.next() ?? false
+  }
+
+  previous() {
+    return this.#handle.current?.previous() ?? false
+  }
+
+  today() {
+    return this.#handle.current?.today() ?? false
+  }
+
+  openEvent(eventId: string, date: string | Date) {
+    return this.#handle.current?.openEvent(eventId, date) ?? false
+  }
+
+  createEvent(draft?: NewEventDraft) {
+    return this.#handle.current?.createEvent(draft) ?? false
+  }
+
+  refresh() {
+    return this.#handle.current?.refresh() ?? false
+  }
+
   #views() {
     const views = (this.getAttribute('views') ?? '').split(/[\s,]+/).filter(isCalendarView)
     return views.length > 0 ? (views as CalendarView[]) : undefined
   }
 
-  #emit(type: string, detail: CalendarEvent | DeletedEvent) {
+  #emit(type: string, detail: CalendarEvent | DeletedEvent | CalendarState) {
     this.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }))
   }
 
   #onEventCreate = (event: CalendarEvent) => this.#emit('event-create', event)
   #onEventUpdate = (event: CalendarEvent) => this.#emit('event-update', event)
   #onEventDelete = (event: DeletedEvent) => this.#emit('event-delete', event)
+  #onViewChange = (state: CalendarState) => this.#emit('view-change', state)
 
   #props(): CalendarProps {
     const storageMode = this.getAttribute('storage-mode')
@@ -161,6 +225,10 @@ export class CalendarElement extends HTMLElement {
       apiBaseUrl: this.getAttribute('api-base-url') ?? undefined,
       apiTimeoutMs: Number.isInteger(timeout) && timeout > 0 ? timeout : undefined,
       config: this.config,
+      ref: this.#handle,
+      onViewChange: this.#onViewChange,
+      readOnly: this.#flag('read-only'),
+      appearance: this.#appearance(),
       features: this.#features(),
       views: this.#views(),
       initialPath: this.getAttribute('initial-path') ?? undefined,

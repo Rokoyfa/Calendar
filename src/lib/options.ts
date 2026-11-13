@@ -36,7 +36,18 @@ export type CalendarOptions = {
   holidays?: string
   holidaySource?: HolidaySource
   mapUrl?: string
+  readOnly?: boolean
+  appearance?: CalendarAppearance
 }
+
+export type CalendarAppearance = {
+  accentColor?: string
+  fontFamily?: string
+  radius?: number
+  density?: 'comfortable' | 'compact'
+}
+
+export const DENSITIES = ['comfortable', 'compact'] as const
 
 export type CalendarOptionName = keyof CalendarOptions
 
@@ -45,6 +56,17 @@ export type ParsedOptions = { options: CalendarOptions; issues: string[] }
 type Reader = (value: unknown, name: string) => unknown
 
 const INVALID = Symbol('invalid')
+
+export const MAX_RADIUS = 24
+
+const CSS_COLOR = /^(#[0-9a-f]{3,8}|(rgb|hsl|oklch|oklab|lab|lch|hwb)a?\([0-9a-z.,%/\s+-]+\)|[a-z]+)$/i
+const FONT_FAMILY = /^[\w\s,'"-]+$/
+
+export const isCssColor = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length <= 60 && CSS_COLOR.test(value.trim())
+
+export const isFontFamily = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim() !== '' && value.length <= 200 && FONT_FAMILY.test(value)
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -59,6 +81,8 @@ const oneOf =
 const positiveInteger: Reader = (value) => (Number.isInteger(value) && (value as number) > 0 ? value : INVALID)
 
 const linkParam: Reader = (value) => (value === false ? false : text(value, ''))
+
+const flag: Reader = (value) => (typeof value === 'boolean' ? value : INVALID)
 
 const messages: Reader = (value) =>
   isPlainObject(value) && Object.values(value).every(isPlainObject) ? value : INVALID
@@ -82,6 +106,8 @@ const EXPECTED: Record<CalendarOptionName, string> = {
   holidays: 'a non-empty string',
   holidaySource: HOLIDAY_SOURCES.join(' or '),
   mapUrl: 'a non-empty string',
+  readOnly: 'true or false',
+  appearance: 'an object with accentColor, fontFamily, radius or density',
 }
 
 export const OPTION_NAMES = Object.keys(EXPECTED) as CalendarOptionName[]
@@ -97,6 +123,20 @@ export function parseCalendarOptions(value: unknown): ParsedOptions {
       if (!isOneOf(FEATURE_NAMES, name)) issues.push(`Unknown feature "${name}".`)
       else if (typeof enabled !== 'boolean') issues.push(`Feature "${name}" must be true or false.`)
       else result[name] = enabled
+    }
+    return result
+  }
+
+  const appearance: Reader = (raw) => {
+    if (!isPlainObject(raw)) return INVALID
+    const result: CalendarAppearance = {}
+    for (const [name, value] of Object.entries(raw)) {
+      if (name === 'accentColor' && isCssColor(value)) result.accentColor = value.trim()
+      else if (name === 'fontFamily' && isFontFamily(value)) result.fontFamily = value.trim()
+      else if (name === 'radius' && typeof value === 'number' && value >= 0 && value <= MAX_RADIUS)
+        result.radius = value
+      else if (name === 'density' && isOneOf(DENSITIES, value)) result.density = value
+      else issues.push(`Appearance "${name}" is unknown or invalid.`)
     }
     return result
   }
@@ -126,6 +166,8 @@ export function parseCalendarOptions(value: unknown): ParsedOptions {
     holidays: text,
     holidaySource: oneOf(HOLIDAY_SOURCES),
     mapUrl: text,
+    readOnly: flag,
+    appearance,
   }
 
   const options: Record<string, unknown> = {}
@@ -142,6 +184,9 @@ export function parseCalendarOptions(value: unknown): ParsedOptions {
   return { options: options as CalendarOptions, issues }
 }
 
+const definedOnly = <T extends object>(value: T | undefined) =>
+  Object.fromEntries(Object.entries(value ?? {}).filter(([, entry]) => entry !== undefined)) as Partial<T>
+
 export function mergeCalendarOptions(base: CalendarOptions, overrides: CalendarOptions): CalendarOptions {
   const merged: Record<string, unknown> = { ...base }
   for (const name of OPTION_NAMES) if (overrides[name] !== undefined) merged[name] = overrides[name]
@@ -150,5 +195,6 @@ export function mergeCalendarOptions(base: CalendarOptions, overrides: CalendarO
     const value = overrides.features?.[name]
     if (value !== undefined) features[name] = value
   }
-  return { ...merged, features } as CalendarOptions
+  const appearance = { ...base.appearance, ...definedOnly(overrides.appearance) }
+  return { ...merged, features, ...(Object.keys(appearance).length > 0 ? { appearance } : {}) } as CalendarOptions
 }

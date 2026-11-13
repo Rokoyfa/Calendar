@@ -16,6 +16,10 @@ Everything you need to put `@rokoyfa/calendar` on your page: embedding, all opti
 10. [Backend](#10-backend)
 11. [Event chat](#11-event-chat)
 12. [Calendar subscriptions](#12-calendar-subscriptions)
+13. [Categories](#13-categories)
+14. [Read-only mode and public links](#14-read-only-mode-and-public-links)
+15. [Controlling the calendar from your page](#15-controlling-the-calendar-from-your-page)
+16. [Look and feel](#16-look-and-feel)
 
 ## 1. Embedding
 
@@ -94,6 +98,7 @@ Every option can be given in three ways: as a React prop, as an attribute of the
 | `features` | `feature-*` | see [Features](#3-features) | Switches for every optional feature |
 | `views` | `views` | all four | Views the user can switch between: `day`, `week`, `month`, `year`. Attribute: separated by spaces or commas, `views="week month"`. With one view the switch disappears |
 | `initialView` | `initial-view` | user's start view | View shown first. Wins over the user's setting |
+| `readOnly` | `read-only` | `false` | Shows events without letting anyone create, change, move, delete or import them, see [Read-only mode](#14-read-only-mode-and-public-links) |
 
 ### Appearance
 
@@ -106,6 +111,7 @@ Every option can be given in three ways: as a React prop, as an attribute of the
 | `holidays` | `holidays` | from `locale` | Region for public holidays: `DE`, `DE-NW`, `AT`, `US-CA`, or `off`. Users can override it in the settings |
 | `holidaySource` | `holiday-source` | `library` | `library` computes holidays in the browser, `backend` asks your backend (`GET /holidays`) and falls back to the library |
 | `mapUrl` | `map-url` | Google Maps | Map service for locations, with `{query}` for the place: `https://www.openstreetmap.org/search?query={query}`, `https://maps.apple.com/?q={query}` |
+| `appearance` | `accent-color`, `font-family`, `radius`, `density` | – | Accent color, font, corner radius and density, see [Look and feel](#16-look-and-feel) |
 | `className`, `style` | `class`, `style` | – | Size and place on your page |
 
 ### Navigation
@@ -123,6 +129,8 @@ Every option can be given in three ways: as a React prop, as an attribute of the
 | --- | --- | --- | --- |
 | `config` | `config`, property `config` | – | URL of a JSON or YAML file, or an object with options. See [Configuration file](#4-configuration-file) |
 | `onEventCreate`, `onEventUpdate`, `onEventDelete` | events `event-create`, `event-update`, `event-delete` | – | After every stored change, see [Reacting to changes](#6-reacting-to-changes) |
+| `onViewChange` | event `view-change` | – | When the view or the shown dates change, see [Controlling the calendar](#15-controlling-the-calendar-from-your-page) |
+| `ref` | methods on the element | – | Methods such as `goToDate()`, see [Controlling the calendar](#15-controlling-the-calendar-from-your-page) |
 
 ### Which setting wins
 
@@ -166,6 +174,8 @@ Everything beyond the core calendar (views, creating, editing, moving and deleti
 | `emailNotifications` | `feature-email-notifications` | on | E-mail settings of a signed-in user | Sending the e-mails |
 | `timeZones` | `feature-time-zones` | on | Time zone per event and in the settings | – |
 | `customColors` | `feature-custom-colors` | on | Own event colors | `/colors` |
+| `categories` | `feature-categories` | on | Categories per calendar and the filter, see [Categories](#13-categories) | `/categories`, `/calendars/:id/categories` |
+| `publicLinks` | `feature-public-links` | on | Public read-only links and the page they open, see [Public links](#14-read-only-mode-and-public-links) | `/calendars/:id/share`, `/shared/:token` |
 
 Good to know:
 
@@ -244,6 +254,8 @@ All options from [Options](#2-options) under their prop names, except those that
 | `holidays` | text (region or `"off"`) | from `locale` |
 | `holidaySource` | `"library"` or `"backend"` | `"library"` |
 | `mapUrl` | text with `{query}` | Google Maps |
+| `readOnly` | `true` or `false` | `false` |
+| `appearance` | object with `accentColor`, `fontFamily`, `radius`, `density` | – |
 | `routing` | `"memory"` or `"browser"` | `"memory"` |
 | `basename` | text | – |
 | `initialPath` | text | `/` |
@@ -409,15 +421,17 @@ const myDataSource: CalendarDataSource = {
     preferences: myPreferences,
     holidays: myHolidays,
     chat: myChat,
+    categories: myCategories,
+    shared: mySharedCalendars,
   }),
 }
 ```
 
 - `connect` returns the repositories for the current state. It is called again on sign-in and sign-out.
 - `createAuthRepository` is optional. Without it there is no sign-in in the widget.
-- `holidays` and `chat` are optional. Without `chat` there is no chat, without `holidays` they are computed in the browser.
+- `holidays`, `chat`, `categories` and `shared` are optional. Without `chat` there is no chat, without `categories` no categories, without `shared` public links cannot be opened, and without `holidays` they are computed in the browser.
 - `mode: 'remote'` makes the calendar offer to move local events into the account after sign-in.
-- Optional methods switch their feature on: `events.search`, `events.respond`, `events.setReminders`, `calendars.getFeed` / `createFeed` / `deleteFeed`. Without `search` the calendar searches the last and next year itself.
+- Optional methods switch their feature on: `events.search`, `events.respond`, `events.setReminders`, `calendars.getFeed` / `createFeed` / `deleteFeed`, `calendars.getShare` / `createShare` / `deleteShare`. Without `search` the calendar searches the last and next year itself.
 - Call `onUnauthorized` when a session has run out. `getLanguage` returns the current language for your requests.
 - Errors with a known `code` are shown translated, others with their `message`.
 
@@ -451,6 +465,8 @@ Everything below is exported from `@rokoyfa/calendar`.
 | `CalendarView` | type | `'day' | 'week' | 'month' | 'year'` |
 | `CalendarRouting`, `StorageMode`, `HolidaySource`, `HostTheme` | types | The values of `routing`, `storageMode`, `holidaySource`, `theme` |
 | `EventCallbacks`, `DeletedEvent` | types | The three callbacks, and `{ id }` |
+| `CalendarHandle`, `CalendarState`, `NewEventDraft` | types | The methods of `ref` and of the element, the state they report, and the argument of `createEvent()` |
+| `CalendarAppearance` | type | The value of `appearance` |
 | `Messages`, `PartialMessages`, `MessageOverrides`, `DeepPartial` | types | All texts, a part of them, and the type of `messages` |
 
 ```ts
@@ -473,11 +489,22 @@ type CalendarOptions = {
   holidays?: string
   holidaySource?: 'library' | 'backend'
   mapUrl?: string
+  readOnly?: boolean
+  appearance?: CalendarAppearance
+}
+
+type CalendarAppearance = {
+  accentColor?: string
+  fontFamily?: string
+  radius?: number
+  density?: 'comfortable' | 'compact'
 }
 
 type CalendarProps = CalendarOptions &
   EventCallbacks & {
     config?: string | CalendarOptions
+    ref?: Ref<CalendarHandle>
+    onViewChange?: (state: CalendarState) => void
     dataSource?: CalendarDataSource
     getUserToken?: UserTokenProvider
     className?: string
@@ -503,6 +530,8 @@ type CalendarFeatures = {
   emailNotifications: boolean
   timeZones: boolean
   customColors: boolean
+  categories: boolean
+  publicLinks: boolean
 }
 ```
 
@@ -515,6 +544,8 @@ type CalendarFeatures = {
 | `User`, `AuthMethod`, `UserTokenProvider` | The signed-in user, `'password' | 'hostToken'`, and the type of `getUserToken` |
 | `Preferences` | A user's settings |
 | `PublicHoliday` | `{ date, name }` |
+| `Category` | `{ id, calendarId, name }` |
+| `SharedCalendar` | `{ id, name, color, categories }`, what a public link shows of a calendar |
 | `ChatMessage`, `ChatKey`, `ChatPage`, `ChatUnread`, `ChatEvent` | Chat, see [Event chat](#11-event-chat) |
 
 ### Data adapters
@@ -530,6 +561,8 @@ type CalendarFeatures = {
 | `ColorRepository`, `PreferencesRepository` | Own colors, settings |
 | `HolidayRepository`, `HolidayQuery` | Public holidays |
 | `ChatRepository` | Chat |
+| `CategoryRepository` | Categories |
+| `SharedCalendarRepository` | Reading a calendar through a public link |
 
 ```ts
 interface CalendarDataSource {
@@ -547,6 +580,20 @@ type DataRepositories = {
   preferences: PreferencesRepository
   holidays?: HolidayRepository
   chat?: ChatRepository
+  categories?: CategoryRepository
+  shared?: SharedCalendarRepository
+}
+
+interface CategoryRepository {
+  list(calendarIds: readonly string[]): Promise<Category[]>
+  create(calendarId: string, name: string): Promise<Category>
+  rename(id: string, name: string): Promise<Category>
+  remove(id: string): Promise<void>
+}
+
+interface SharedCalendarRepository {
+  get(token: string): Promise<SharedCalendar>
+  listEvents(token: string, range: { from: string; to: string }): Promise<CalendarEvent[]>
 }
 
 interface EventRepository {
@@ -604,6 +651,7 @@ type EventInput = {
   title: string                 // 1–100 chars
   location: string              // max 200 chars, '' if none
   links: EventLink[]            // up to 10 http(s) links
+  categoryIds: string[]         // up to 5 categories of the event's calendar
   startDate: string             // 'YYYY-MM-DD'
   start: string                 // 'HH:mm' in timeZone
   endDate: string               // inclusive for all-day events
@@ -671,6 +719,8 @@ The backend stores series as one event. The component expands occurrences itself
 | Change only own reminders | `PUT /events/:id/reminders` with `{ reminders }` (also for members without edit rights) |
 | Answer from an email link | `POST /events/respond` with `{ token, status }`, no session needed |
 | Event chat | `GET`/`POST /events/:id/chat?date=…`, `POST /events/:id/chat/read`, `PATCH`/`DELETE /chat/messages/:id`, `GET /chat/unread?calendarId=…`, WebSocket `/chat/socket` |
+| Categories | `GET /categories?calendarId=…` with the calendars shown, `POST /calendars/:id/categories`, `PATCH` and `DELETE /categories/:id`. Events carry `categoryIds` |
+| Public link | `GET`, `POST` (new link), `DELETE /calendars/:id/share`. The page behind the link calls `GET /shared/:token` and `GET /shared/:token/events?from=…&to=…` without a session |
 | Subscription link | `GET`, `POST` (new link), `DELETE /calendars/:id/feed`. The link points at your `GET /feeds/:token.ics` |
 | Reminders | `GET /events` for the next four weeks of all calendars, every five minutes while the widget is open |
 | Import .ics | `GET /events` for the whole calendar, then `PUT` for known `uid`s and `POST` for new ones |
@@ -687,6 +737,8 @@ Before editing "following" or "all" of a series, the component loads its detache
 - **Language:** every request carries `Accept-Language`. Use it, or the stored `locale`, for emails.
 - **Emails about events** (your backend sends them, the component only stores the user's choice): an invitation with yes / maybe / no links to `/respond?status=accepted&token=…` when someone is added as attendee (`emailInvites`), a notice when title, time, place or repetition change or the event is cancelled (`emailChanges`), and reminders at the user's own reminder times even while the calendar is closed (`emailReminders`, off by default). Only to verified addresses, never to the person who made the change.
 - **Subscriptions:** `GET /feeds/:token.ics` answers without a session with the calendar as iCalendar (RFC 5545) and the subscriber's own reminders. Keep one secret token per user and calendar, a new one replaces the old. Stop serving it when the user leaves the calendar.
+- **Categories:** belong to one calendar, names are unique per calendar without regard to case. Reject an event whose `categoryIds` are not from its calendar, and remove a deleted category from all events.
+- **Public links:** one unguessable token per calendar. `GET /shared/:token/events` must leave out everything personal: empty `attendees` and `reminders`, no `createdBy`, and never chat messages. A new link, or stopping the share, must make the old token fail at once.
 - **Email links:** point them at the host page with the screen as parameter, e.g. `https://host.example/calendar?calendarPath=%2Freset-password%3Ftoken%3D…`.
 
 ## 11. Event chat
@@ -741,3 +793,142 @@ A subscription is not live: the app downloads the whole calendar again at interv
 The feed asks clients to reload every hour (`REFRESH-INTERVAL` and `X-PUBLISHED-TTL`), but most apps follow their own settings. For changes that must show up immediately, users should open this calendar directly. Two-way sync with near-instant updates would need a CalDAV server, which this component does not cover.
 
 Without the feed endpoints, turn the feature off: `features: { subscriptions: false }`.
+
+## 13. Categories
+
+Every calendar can have its own categories, for example "Training" and "Match". Events get up to five of them, and a filter in the header shows only the chosen ones.
+
+- **Managing.** Categories are created, renamed and deleted in the calendar's settings, by members with `manage_calendars`. A calendar holds up to 30.
+- **Assigning.** The event dialog shows the categories of the event's calendar as chips. Anyone who may edit the event may assign them.
+- **Filtering.** The filter button appears as soon as one of the shown calendars has categories. It also offers "Without category". The choice lasts until the page is reloaded.
+- **Deleting.** A deleted category disappears from its events.
+- **Local mode.** Categories work without a backend, stored in the browser.
+- **Not included.** Categories are not written to exported `.ics` files or subscription feeds.
+
+Turn the feature off with `features: { categories: false }`.
+
+## 14. Read-only mode and public links
+
+### Read-only mode
+
+`readOnly` turns the calendar into a display. Events can be opened and read, but not created, changed, moved, deleted or imported. Views, search, the category filter and the user's own settings keep working.
+
+```html
+<calendar-widget read-only storage-mode="remote" api-base-url="https://api.example.com"></calendar-widget>
+```
+
+```tsx
+<Calendar readOnly />
+```
+
+This is a display option, not a protection. Your backend still has to reject changes it does not allow.
+
+### Public links
+
+A member with `manage_calendars` can create a public link in the calendar's settings. Anyone with the link sees the calendar read-only, without an account.
+
+- **What visitors see.** Title, time, location, description, links and categories of all events. Never attendees, reminders or chat.
+- **One link per calendar.** Creating a new one, or stopping the share, turns the old link off at once.
+- **Where the link points.** With `routing: memory` it is your own page with the link parameter, for example `https://example.com/team?calendarPath=%2Fshared%2F<token>`. With `routing: browser` it is `/shared/<token>` under your `basename`. If `linkParam` is `false`, the settings show the path instead, for use with `initialPath`.
+
+To show a shared calendar permanently on a page, for example a club's public event list, open the widget on that path. Visitors do not sign in. Use the same data options as on your other pages, so the widget knows your backend (with accounts that is `feature-auth`, otherwise `storage-mode="remote"`):
+
+```html
+<calendar-widget feature-auth api-base-url="https://api.example.com" initial-path="/shared/<token>" style="height: 600px"></calendar-widget>
+```
+
+In local mode there is no backend to ask, so public links are not available.
+
+Turn the feature off with `features: { publicLinks: false }`. Existing links then show a "not shared" message.
+
+## 15. Controlling the calendar from your page
+
+Your page can move the calendar and react to where it is.
+
+```js
+const calendar = document.querySelector('calendar-widget')
+
+calendar.goToDate('2027-03-05')
+calendar.setView('month')
+calendar.addEventListener('view-change', (e) => console.log(e.detail))
+```
+
+```tsx
+import { useRef } from 'react'
+import { Calendar, type CalendarHandle } from '@rokoyfa/calendar'
+
+function Page() {
+  const calendar = useRef<CalendarHandle>(null)
+  return (
+    <>
+      <button onClick={() => calendar.current?.today()}>Today</button>
+      <Calendar ref={calendar} onViewChange={(state) => console.log(state)} />
+    </>
+  )
+}
+```
+
+| Method | |
+| --- | --- |
+| `getState()` | `{ view, date, from, to }`: the view, the date it is centred on and the first and last day shown. `null` while the calendar itself is not on screen |
+| `goToDate(date)` | Shows the date. Takes `'YYYY-MM-DD'` or a `Date` |
+| `setView(view)` | Switches to `day`, `week`, `month` or `year` |
+| `next()`, `previous()`, `today()` | The same as the buttons in the header |
+| `openEvent(eventId, date)` | Goes to the date and opens the event. For a recurring event the date picks the occurrence |
+| `createEvent(draft?)` | Opens the dialog for a new event, optionally filled in: `{ title, startDate, start, end, endDate, allDay, location, description }`. Nothing is stored until the user saves |
+| `refresh()` | Loads the events again, for example after your page changed data on the backend |
+
+- Every method except `getState()` returns `true` when it was carried out and `false` otherwise.
+- A method answers `false` while the calendar itself is not on screen (settings, sign-in, or the configuration still loading), when an argument is invalid, when `setView` asks for a view that is not in `views`, and `createEvent` when the user may not create events.
+- `view-change` / `onViewChange` fires once at the start and then whenever the view or the dates change, with the same value as `getState()`.
+
+## 16. Look and feel
+
+The calendar follows light and dark mode by itself. On top of that you can match it to your page in two ways. Both set the same things, so use whichever is handier.
+
+**From your CSS.** Custom properties set on the element reach into the calendar:
+
+```css
+calendar-widget {
+  --calendar-accent: #e63946;
+  --calendar-on-accent: #ffffff;
+  --calendar-font: 'Inter', sans-serif;
+  --calendar-radius: 6px;
+}
+```
+
+With the React component, set them on the element you give a `className` or `style`.
+
+| Property | Default | |
+| --- | --- | --- |
+| `--calendar-accent` | blue | Buttons, links, the active view, today, selection and focus ring |
+| `--calendar-on-accent` | white | Text on the accent color. Set it when your accent is light |
+| `--calendar-font` | Segoe UI, sans-serif | Font family. Your page has to load the font |
+| `--calendar-radius` | `10px` | Corner radius of dialogs, buttons and fields. `0px` gives square corners |
+| `--calendar-bg` | white / near black | Background |
+| `--calendar-surface` | white / dark grey | Dialogs and cards |
+| `--calendar-text` | near black / light grey | Text |
+| `--calendar-heading` | grey | Headings |
+| `--calendar-muted` | grey | Secondary text |
+| `--calendar-border` | light grey / dark grey | Grid lines and borders |
+
+Colors you set apply in light and dark mode alike. To give each its own value, use `light-dark()` or a media query in your CSS, or fix the mode with `theme`.
+
+**As an option**, which also works in a configuration file:
+
+```html
+<calendar-widget accent-color="#e63946" font-family="Inter, sans-serif" radius="6" density="compact"></calendar-widget>
+```
+
+```tsx
+<Calendar appearance={{ accentColor: '#e63946', fontFamily: 'Inter, sans-serif', radius: 6, density: 'compact' }} />
+```
+
+| Field | Attribute | |
+| --- | --- | --- |
+| `accentColor` | `accent-color` | A CSS color. For a hex color the text color on it is picked for you |
+| `fontFamily` | `font-family` | A CSS font family |
+| `radius` | `radius` | Corner radius in pixels, 0 to 24 |
+| `density` | `density` | `comfortable` (default) or `compact` with smaller text, rows and spacing |
+
+The option wins over the CSS properties. The colors of events are not affected by the accent color, they keep the color the user gave them.

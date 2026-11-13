@@ -1,7 +1,10 @@
 :host {
   color-scheme: light dark;
+}
 
-  --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+:host,
+.calendarRoot {
+  --font-family: var(--calendar-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
   --font-size-xs: 10px;
   --font-size-sm: 12px;
   --font-size-md: 14px;
@@ -9,14 +12,15 @@
   --font-size-lg: 20px;
   --font-size-xl: 22px;
 
-  --color-bg: light-dark(#ffffff, #16171a);
-  --color-surface: light-dark(#ffffff, #1e1f23);
+  --color-bg: var(--calendar-bg, light-dark(#ffffff, #16171a));
+  --color-surface: var(--calendar-surface, light-dark(#ffffff, #1e1f23));
   --color-surface-hover: light-dark(#eeeeee, #2a2b30);
-  --color-grid: light-dark(#cecece, #3a3b40);
-  --color-muted: light-dark(#777777, #9a9a9f);
-  --color-text: light-dark(#222222, #e6e6e6);
-  --color-heading: light-dark(rgb(94, 91, 91), #b9b6b6);
+  --color-grid: var(--calendar-border, light-dark(#cecece, #3a3b40));
+  --color-muted: var(--calendar-muted, light-dark(#777777, #9a9a9f));
+  --color-text: var(--calendar-text, light-dark(#222222, #e6e6e6));
+  --color-heading: var(--calendar-heading, light-dark(rgb(94, 91, 91), #b9b6b6));
   --color-on-accent: #ffffff;
+  --color-on-brand: var(--calendar-on-accent, #ffffff);
   --color-on-yellow: light-dark(#222222, #1a1a1a);
 
   --color-red: light-dark(rgb(190, 35, 15), rgb(226, 80, 60));
@@ -24,14 +28,15 @@
   --color-green: light-dark(rgb(21, 129, 21), rgb(52, 170, 82));
   --color-yellow: light-dark(rgb(233, 229, 4), rgb(230, 210, 40));
   --color-grey: light-dark(rgb(94, 91, 91), rgb(150, 147, 147));
+  --color-accent: var(--calendar-accent, var(--color-blue));
 
   --shadow-color: light-dark(rgba(87, 5, 5, 0.3), rgba(0, 0, 0, 0.6));
   --shadow: 0 0 20px var(--shadow-color);
-  --focus-ring: 0 0 0 2px var(--color-blue);
+  --focus-ring: 0 0 0 2px var(--color-accent);
 
-  --radius-sm: 4px;
-  --radius-md: 10px;
-  --radius-pill: 25px;
+  --radius-md: var(--calendar-radius, 10px);
+  --radius-sm: min(4px, var(--radius-md));
+  --radius-pill: calc(var(--radius-md) * 2.5);
   --radius-round: 50%;
 
   --space-1: 2px;
@@ -56,4 +61,15 @@
 
 .calendarRoot[data-theme="dark"] {
   color-scheme: dark;
+}
+
+.calendarRoot[data-compact] {
+  --font-size-base: 14px;
+  --font-size-md: 13px;
+  --space-3: 8px;
+  --space-4: 14px;
+  --space-5: 18px;
+  --slot-height: 24px;
+  --column-header-height: 50px;
+  --time-column-width: 80px;
 }

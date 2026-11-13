@@ -25,6 +25,11 @@ const errors: Messages['errors'] = {
   saveEventsFailed: 'Non è stato possibile salvare gli eventi in questo browser.',
   savePreferencesFailed: 'Non è stato possibile salvare le impostazioni in questo browser.',
   saveColorFailed: 'Non è stato possibile salvare il colore in questo browser.',
+  saveCategoriesFailed: 'Impossibile salvare le categorie in questo browser.',
+  categoryExists: 'Esiste già una categoria con questo nome.',
+  tooManyCategories: 'Questo calendario ha già il numero massimo di categorie.',
+  categoryNotFound: 'Questa categoria non esiste più.',
+  shareNotFound: 'Questo calendario non è condiviso oppure il link è stato disattivato.',
   saveDecisionFailed: 'Non è stato possibile salvare la tua scelta in questo browser.',
   invalidLink: 'Questo link non è valido o è scaduto.',
   invalidResetLink: 'Questo link non è valido o è scaduto. Richiedine uno nuovo.',
@@ -142,7 +147,19 @@ const calendar: Messages['calendar'] = {
   fromCalendar: (name) => `Dal calendario «${name}»`,
   sharedEventNotice: (source) => `${source}. Tutti i membri vedono le modifiche.`,
   dismiss: 'Chiudi',
-  undo: { action: 'Annulla', ctrlZ: 'Ctrl+Z', deleted: (title) => `«${title}» eliminato`, moved: (title) => `«${title}» spostato` },
+  undo: {
+    action: 'Annulla',
+    ctrlZ: 'Ctrl+Z',
+    deleted: (title) => `«${title}» eliminato`,
+    moved: (title) => `«${title}» spostato`,
+  },
+  filter: {
+    open: 'Filtra per categoria',
+    openActive: 'Filtra per categoria (attivo)',
+    title: 'Filtra per categoria',
+    uncategorized: 'Senza categoria',
+    reset: 'Mostra tutto',
+  },
   search: {
     open: 'Cerca',
     title: 'Cerca eventi',
@@ -174,8 +191,11 @@ const events: Messages['events'] = {
   noCustomColors: 'Ancora nessun colore personalizzato.',
   removeColor: (label) => `Rimuovi il colore ${label}`,
   deleteTitle: 'Eliminare l’evento?',
+  viewTitle: 'Evento',
+  categories: { label: 'Categorie' },
   deleteMessage: (title) => `«${title}» verrà eliminato. L’operazione è irreversibile.`,
-  deleteSeriesMessage: (title) => `«${title}» è un evento ricorrente. Cosa vuoi eliminare? L’operazione è irreversibile.`,
+  deleteSeriesMessage: (title) =>
+    `«${title}» è un evento ricorrente. Cosa vuoi eliminare? L’operazione è irreversibile.`,
   scopeTitle: 'Modifica evento ricorrente',
   scopeMessage: 'A quali eventi della serie vuoi applicare le modifiche?',
   scopes: {
@@ -200,7 +220,8 @@ const events: Messages['events'] = {
   reminderAtStart: 'All’inizio',
   reminderBefore: (duration) => `${duration} prima`,
   reminderDue: (title, time) => `${title} inizia alle ${time}`,
-  reminderBlocked: 'Le notifiche sono bloccate in questo browser. I promemoria compaiono solo mentre il calendario è aperto.',
+  reminderBlocked:
+    'Le notifiche sono bloccate in questo browser. I promemoria compaiono solo mentre il calendario è aperto.',
   attendees: 'Partecipanti',
   addAttendee: 'Aggiungi partecipante',
   inviteAll: (count) => `Invita tutti (${count})`,
@@ -256,13 +277,20 @@ const storage: Messages['storage'] = {
 
 const settings: Messages['settings'] = {
   tabsLabel: 'Sezioni delle impostazioni',
-  tabs: { calendars: 'Calendari', invitations: 'Inviti', appearance: 'Aspetto', account: 'Account', notifications: 'Notifiche' },
+  tabs: {
+    calendars: 'Calendari',
+    invitations: 'Inviti',
+    appearance: 'Aspetto',
+    account: 'Account',
+    notifications: 'Notifiche',
+  },
   languageTitle: 'Lingua e regione',
   languageDescription: 'Determina la lingua, i formati di data e ora e il primo giorno della settimana.',
   languageLabel: 'Lingua',
   languageAuto: 'Automatica (browser)',
   timeZoneTitle: 'Fuso orario',
-  timeZoneDescription: 'Gli eventi vengono mostrati in questo fuso orario, che è preselezionato anche per i nuovi eventi.',
+  timeZoneDescription:
+    'Gli eventi vengono mostrati in questo fuso orario, che è preselezionato anche per i nuovi eventi.',
   timeZoneLabel: 'Fuso orario',
   timeZoneAuto: (zone) => `Automatico: ${zone} (consigliato)`,
   holidaysTitle: 'Festività',
@@ -466,14 +494,26 @@ const calendars: Messages['calendars'] = {
   create: {
     title: 'Nuovo calendario',
     steps: [
-      { label: 'Nome', title: 'Come si chiama il calendario?', hint: 'Tutti i membri vedono il nome e la descrizione.' },
-      { label: 'Colore', title: 'Che colore deve avere?', hint: 'I nuovi eventi di questo calendario iniziano con questo colore.' },
+      {
+        label: 'Nome',
+        title: 'Come si chiama il calendario?',
+        hint: 'Tutti i membri vedono il nome e la descrizione.',
+      },
+      {
+        label: 'Colore',
+        title: 'Che colore deve avere?',
+        hint: 'I nuovi eventi di questo calendario iniziano con questo colore.',
+      },
       {
         label: 'Membri',
         title: 'Chi vuoi invitare?',
         hint: 'Gli invitati ricevono un’email e vedono il calendario appena accettano.',
       },
-      { label: 'Riepilogo', title: 'È tutto corretto?', hint: 'Sei il proprietario e puoi modificare tutto in seguito.' },
+      {
+        label: 'Riepilogo',
+        title: 'È tutto corretto?',
+        hint: 'Sei il proprietario e puoi modificare tutto in seguito.',
+      },
     ],
     stepCount: (step, total) => `Passo ${step} di ${total}`,
     next: 'Avanti',
@@ -511,7 +551,13 @@ const calendars: Messages['calendars'] = {
     notFound: 'Questo calendario non esiste oppure non hai più accesso.',
     tabsLabel: 'Sezioni delle impostazioni del calendario',
     withCount: (label, count) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'Generale', members: 'Membri', invitations: 'Inviti', danger: 'Zona pericolosa', exchange: 'Importa ed esporta' },
+    tabs: {
+      general: 'Generale',
+      members: 'Membri',
+      invitations: 'Inviti',
+      danger: 'Zona pericolosa',
+      exchange: 'Importa ed esporta',
+    },
     displayTitle: 'Visualizzazione',
     displayDescription: 'Vale solo per te. Gli altri membri lo impostano da soli.',
     personalTitle: 'Calendario personale',
@@ -534,8 +580,7 @@ const calendars: Messages['calendars'] = {
     remove: 'Rimuovi',
     removeTitle: 'Rimuovere il membro?',
     removing: 'Rimozione …',
-    removeMessage: (name, calendar) =>
-      `${name} non vedrà più «${calendar}». Potrà tornare solo con un nuovo invito.`,
+    removeMessage: (name, calendar) => `${name} non vedrà più «${calendar}». Potrà tornare solo con un nuovo invito.`,
   },
   teamInvitations: {
     title: 'Inviti',
@@ -552,7 +597,8 @@ const calendars: Messages['calendars'] = {
     title: 'Zona pericolosa',
     transferHint:
       'Un altro membro diventa proprietario e tu diventi amministratore. Riottieni il ruolo solo se il nuovo proprietario te lo restituisce.',
-    transferUnavailable: 'Per trasferire la proprietà, il team ha bisogno di un altro membro che non sia ancora proprietario.',
+    transferUnavailable:
+      'Per trasferire la proprietà, il team ha bisogno di un altro membro che non sia ancora proprietario.',
     transfer: 'Trasferisci proprietà',
     lastOwnerHint: 'Come unico proprietario non puoi uscire. Trasferisci prima la proprietà o elimina il team.',
     leaveHint: 'Non vedrai più il calendario. Potrai tornare solo con un nuovo invito.',
@@ -569,21 +615,51 @@ const calendars: Messages['calendars'] = {
     deleteMessage: (team, count) =>
       `«${team}» verrà eliminato con tutti i calendari, eventi e inviti, anche per tutti i ${count} membri. L’operazione è irreversibile.`,
   },
+  categories: {
+    title: 'Categorie',
+    description: 'Ordina gli eventi di questo calendario in categorie e filtra le viste.',
+    empty: 'Ancora nessuna categoria.',
+    nameLabel: 'Nome della categoria',
+    newLabel: 'Nuova categoria',
+    add: 'Aggiungi',
+    rename: 'Rinomina',
+    remove: (name) => `Rimuovi la categoria ${name}`,
+  },
+  share: {
+    title: 'Link pubblico',
+    description:
+      'Condividi questo calendario in sola lettura con chiunque, senza accesso. I visitatori vedono titolo, orario, luogo, descrizione, link e categorie di tutti gli eventi, ma non i partecipanti, i promemoria e la chat.',
+    label: 'Link pubblico',
+    pathLabel: 'Percorso per l’opzione initial-path',
+    create: 'Crea link pubblico',
+    copy: 'Copia link',
+    copied: 'Copiato',
+    open: 'Apri',
+    warning:
+      'Chiunque abbia questo link può vedere tutti gli eventi di questo calendario. Creando un nuovo link, quello vecchio smette di funzionare.',
+    renew: 'Crea nuovo link',
+    remove: 'Interrompi condivisione',
+    readOnly: 'Sola lettura',
+    notFound: 'Questo calendario non è condiviso oppure il link è stato disattivato.',
+  },
   feed: {
     title: 'Iscriviti',
-    description: 'Iscriviti a questo calendario in Google Calendar, Outlook o Apple Calendario. Le modifiche compaiono lì automaticamente, di solito entro poche ore. L’iscrizione è di sola lettura.',
+    description:
+      'Iscriviti a questo calendario in Google Calendar, Outlook o Apple Calendario. Le modifiche compaiono lì automaticamente, di solito entro poche ore. L’iscrizione è di sola lettura.',
     label: 'Link di iscrizione',
     create: 'Crea link di iscrizione',
     copy: 'Copia link',
     copied: 'Copiato',
     openApp: 'Apri nell’app calendario',
-    warning: 'Chiunque abbia questo link vede tutti gli eventi di questo calendario. Un nuovo link disattiva quello vecchio.',
+    warning:
+      'Chiunque abbia questo link vede tutti gli eventi di questo calendario. Un nuovo link disattiva quello vecchio.',
     renew: 'Crea nuovo link',
     remove: 'Termina iscrizione',
   },
   ical: {
     title: 'Importa ed esporta',
-    description: 'Scambia eventi con altre app di calendario come file iCalendar (.ics). Importando di nuovo, gli eventi già importati vengono aggiornati.',
+    description:
+      'Scambia eventi con altre app di calendario come file iCalendar (.ics). Importando di nuovo, gli eventi già importati vengono aggiornati.',
     exportLabel: 'Esporta come .ics',
     exporting: 'Esportazione …',
     importLabel: 'Importa file .ics',

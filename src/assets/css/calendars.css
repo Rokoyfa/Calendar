@@ -37,7 +37,7 @@
 }
 
 .calendarCard.active {
-  border-color: var(--color-blue);
+  border-color: var(--color-accent);
 }
 
 .calendarPreview {
@@ -49,8 +49,8 @@
 
 .calendarPreviewHeader {
   padding: var(--space-1) var(--space-2);
-  background-color: var(--event-color, var(--color-blue));
-  color: var(--event-text, var(--color-on-accent));
+  background-color: var(--event-color, var(--color-accent));
+  color: var(--event-text, var(--color-on-brand));
   font-size: var(--font-size-sm);
   font-weight: 600;
 }
@@ -71,7 +71,7 @@
 }
 
 .calendarPreviewMonth .miniDay.today {
-  color: var(--event-text, var(--color-on-accent));
+  color: var(--event-text, var(--color-on-brand));
   font-weight: 700;
 }
 
@@ -99,8 +99,8 @@
   width: 24px;
   height: 24px;
   border-radius: var(--radius-round);
-  background-color: var(--color-blue);
-  color: var(--color-on-accent);
+  background-color: var(--color-accent);
+  color: var(--color-on-brand);
   font-size: var(--font-size-sm);
   font-weight: 700;
 }
@@ -167,8 +167,8 @@
 }
 
 .calendarCardNew:hover {
-  color: var(--color-blue);
-  border-color: var(--color-blue);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .wizard {
@@ -193,7 +193,7 @@
 .wizardStepCount {
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: var(--color-blue);
+  color: var(--color-accent);
 }
 
 .wizardTitle {
@@ -266,7 +266,7 @@
 
 .step--done + .step::before,
 .step--done + .step--current::before {
-  background-color: var(--color-blue);
+  background-color: var(--color-accent);
 }
 
 .stepContent {
@@ -281,7 +281,7 @@
 }
 
 button.stepContent:hover .stepLabel {
-  color: var(--color-blue);
+  color: var(--color-accent);
 }
 
 .stepNumber {
@@ -295,14 +295,14 @@ button.stepContent:hover .stepLabel {
 }
 
 .step--done .stepNumber {
-  border-color: var(--color-blue);
-  color: var(--color-blue);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .step--current .stepNumber {
-  border-color: var(--color-blue);
-  background-color: var(--color-blue);
-  color: var(--color-on-accent);
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-on-brand);
 }
 
 .step--current .stepContent {
@@ -359,9 +359,9 @@ button.stepContent:hover .stepLabel {
   max-width: 100%;
   margin: 0;
   padding: var(--space-1) var(--space-3);
-  border: 1px solid color-mix(in srgb, var(--event-color, var(--color-blue)) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--event-color, var(--color-accent)) 45%, transparent);
   border-radius: var(--radius-pill);
-  background-color: color-mix(in srgb, var(--event-color, var(--color-blue)) 12%, var(--color-bg));
+  background-color: color-mix(in srgb, var(--event-color, var(--color-accent)) 12%, var(--color-bg));
   font-size: var(--font-size-sm);
   line-height: 1.4;
 }
@@ -371,7 +371,7 @@ button.stepContent:hover .stepLabel {
   width: 10px;
   height: 10px;
   border-radius: var(--radius-round);
-  background-color: var(--event-color, var(--color-blue));
+  background-color: var(--event-color, var(--color-accent));
 }
 
 .activeCalendarName {
@@ -453,11 +453,11 @@ button.stepContent:hover .stepLabel {
 }
 
 .memberOption:has(input:checked) {
-  border-color: var(--color-blue);
-  background-color: color-mix(in srgb, var(--color-blue) 10%, transparent);
+  border-color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .memberOption input {
   flex: none;
-  accent-color: var(--color-blue);
+  accent-color: var(--color-accent);
 }

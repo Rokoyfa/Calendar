@@ -46,7 +46,8 @@ export const calendars = {
   },
   invitations: {
     title: 'Invitations',
-    description: 'You have been invited to these calendars. Once accepted, they appear under Calendars and in “Switch calendar”.',
+    description:
+      'You have been invited to these calendars. Once accepted, they appear under Calendars and in “Switch calendar”.',
     empty: 'No open invitations. When someone invites you to a calendar, it shows up here.',
     invitedBy: (name: string) => `${name} invited you`,
     invited: 'You are invited',
@@ -79,7 +80,11 @@ export const calendars = {
     title: 'New calendar',
     steps: [
       { label: 'Name', title: 'What is the calendar called?', hint: 'All members see the name and description.' },
-      { label: 'Color', title: 'Which color should it get?', hint: 'New events in this calendar start with this color.' },
+      {
+        label: 'Color',
+        title: 'Which color should it get?',
+        hint: 'New events in this calendar start with this color.',
+      },
       {
         label: 'Members',
         title: 'Who do you want to invite?',
@@ -123,7 +128,13 @@ export const calendars = {
     notFound: 'This calendar does not exist, or you no longer have access to it.',
     tabsLabel: 'Calendar settings sections',
     withCount: (label: string, count: number) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'General', members: 'Members', invitations: 'Invitations', danger: 'Danger zone', exchange: 'Import & export' },
+    tabs: {
+      general: 'General',
+      members: 'Members',
+      invitations: 'Invitations',
+      danger: 'Danger zone',
+      exchange: 'Import & export',
+    },
     displayTitle: 'Display',
     displayDescription: 'Applies only to you. Other members set this themselves.',
     personalTitle: 'Personal calendar',
@@ -168,7 +179,8 @@ export const calendars = {
     transfer: 'Transfer ownership',
     lastOwnerHint: 'As the only owner you cannot leave. Transfer ownership first or delete the team.',
     leaveHint: 'You will no longer see the calendar. You can only come back through a new invitation.',
-    deleteHint: (team: string) => `Deletes the team “${team}” with all calendars, events and invitations for all members.`,
+    deleteHint: (team: string) =>
+      `Deletes the team “${team}” with all calendars, events and invitations for all members.`,
     deleteTeam: 'Delete team',
     transferConfirmTitle: 'Really transfer ownership?',
     transferConfirm: 'Transfer permanently',
@@ -181,9 +193,36 @@ export const calendars = {
     deleteMessage: (team: string, count: number) =>
       `“${team}” will be deleted with all calendars, events and invitations, for all ${count} members as well. This cannot be undone.`,
   },
+  categories: {
+    title: 'Categories',
+    description: 'Sort the events of this calendar into categories and filter the views by them.',
+    empty: 'No categories yet.',
+    nameLabel: 'Category name',
+    newLabel: 'New category',
+    add: 'Add',
+    rename: 'Rename',
+    remove: (name: string) => `Remove category ${name}`,
+  },
+  share: {
+    title: 'Public link',
+    description:
+      'Share this calendar read-only with anyone, without signing in. Visitors see title, time, location, description, links and categories of all events, but no attendees, reminders or chat.',
+    label: 'Public link',
+    pathLabel: 'Path for the initial-path option',
+    create: 'Create public link',
+    copy: 'Copy link',
+    copied: 'Copied',
+    open: 'Open',
+    warning: 'Anyone with this link can see all events of this calendar. Creating a new link turns the old one off.',
+    renew: 'Create new link',
+    remove: 'Stop sharing',
+    readOnly: 'Read-only',
+    notFound: 'This calendar is not shared, or the link was turned off.',
+  },
   feed: {
     title: 'Subscribe',
-    description: 'Subscribe to this calendar in Google Calendar, Outlook or Apple Calendar. Changes appear there automatically, usually within a few hours. The subscription is read-only.',
+    description:
+      'Subscribe to this calendar in Google Calendar, Outlook or Apple Calendar. Changes appear there automatically, usually within a few hours. The subscription is read-only.',
     label: 'Subscription link',
     create: 'Create subscription link',
     copy: 'Copy link',
@@ -195,7 +234,8 @@ export const calendars = {
   },
   ical: {
     title: 'Import and export',
-    description: 'Exchange events with other calendar apps as an iCalendar file (.ics). Importing again updates events that were imported before.',
+    description:
+      'Exchange events with other calendar apps as an iCalendar file (.ics). Importing again updates events that were imported before.',
     exportLabel: 'Export as .ics',
     exporting: 'Exporting …',
     importLabel: 'Import .ics file',

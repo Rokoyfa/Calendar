@@ -37,8 +37,12 @@ tags:
   - name: Chat
     description: |
       One chat per event in team calendars, for recurring events one per occurrence (`date` = original date of the occurrence).
-      Live updates come over a WebSocket at `{base}/chat/socket`, see the README section “Event chat”.
+      Live updates come over a WebSocket at `{base}/chat/socket`, see the Developer Guide section “Event chat”.
   - name: Holidays
+  - name: Categories
+    description: Categories belong to one calendar. Events carry their ids in `categoryIds`.
+  - name: Sharing
+    description: Public read-only links to a calendar. The `/shared` paths need no session.
 paths:
   /auth/me:
     get:
@@ -910,6 +914,143 @@ paths:
           schema: { type: string, pattern: '^[0-9a-fA-F]{6}$' }
       responses:
         '200': { $ref: '#/components/responses/Colors' }
+  /categories:
+    get:
+      tags: [Categories]
+      summary: Categories of one or more calendars
+      parameters:
+        - name: calendarId
+          in: query
+          required: true
+          description: Repeat the parameter for several calendars.
+          schema: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Categories
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Category' } }
+        '404': { $ref: '#/components/responses/Problem' }
+  /calendars/{calendarId}/categories:
+    parameters:
+      - { $ref: '#/components/parameters/CalendarId' }
+    post:
+      tags: [Categories]
+      summary: Create a category
+      description: Needs `manage_calendars`. `409` with `categoryExists` when the name is taken in this calendar (compared without case), `409` with `tooManyCategories` from 30 categories.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CategoryName' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Category' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /categories/{categoryId}:
+    parameters:
+      - { name: categoryId, in: path, required: true, schema: { type: string } }
+    patch:
+      tags: [Categories]
+      summary: Rename a category
+      description: Needs `manage_calendars`. `409` with `categoryExists` when the name is taken.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CategoryName' }
+      responses:
+        '200':
+          description: Renamed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Category' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Categories]
+      summary: Delete a category
+      description: Needs `manage_calendars`. Also removes the category from all events.
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /calendars/{calendarId}/share:
+    parameters:
+      - { $ref: '#/components/parameters/CalendarId' }
+    get:
+      tags: [Sharing]
+      summary: Public link of the calendar
+      description: Needs `manage_calendars`. There is one link per calendar, shared by everyone who may manage it.
+      responses:
+        '200':
+          description: Token or null
+          content:
+            application/json:
+              schema: { type: object, required: [token], properties: { token: { oneOf: [{ type: string }, { type: 'null' }] } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Sharing]
+      summary: Create a new public link
+      description: Replaces an existing link, which stops working at once. The token must not be guessable.
+      responses:
+        '201':
+          description: New token
+          content:
+            application/json:
+              schema: { type: object, required: [token], properties: { token: { type: string } } }
+        '403': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Sharing]
+      summary: Stop sharing
+      responses:
+        '204': { description: Stopped }
+        '403': { $ref: '#/components/responses/Problem' }
+  /shared/{token}:
+    parameters:
+      - { name: token, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Sharing]
+      summary: A shared calendar
+      description: No session needed. `404` with `shareNotFound` when the token is unknown or sharing was stopped.
+      security: []
+      responses:
+        '200':
+          description: Name, color and categories
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SharedCalendar' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /shared/{token}/events:
+    parameters:
+      - { name: token, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Sharing]
+      summary: Events of a shared calendar
+      description: |
+        No session needed. Same rules for the range as `GET /events`.
+        Leave out everything personal: `attendees` and `reminders` are always empty, `createdBy` is omitted or null.
+        Chat messages are never available through a public link.
+      security: []
+      parameters:
+        - { name: from, in: query, required: true, schema: { $ref: '#/components/schemas/ISODate' } }
+        - { name: to, in: query, required: true, schema: { $ref: '#/components/schemas/ISODate' } }
+      responses:
+        '200':
+          description: Events
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CalendarEvent' } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
 components:
   securitySchemes:
     sessionCookie:
@@ -1053,6 +1194,12 @@ components:
           default: []
           items: { $ref: '#/components/schemas/EventLink' }
           description: Website and other links. Only http and https addresses are accepted.
+        categoryIds:
+          type: array
+          maxItems: 5
+          default: []
+          items: { type: string }
+          description: Categories of the event. Every id must belong to the calendar of the event, otherwise `400`.
         startDate: { $ref: '#/components/schemas/ISODate' }
         start: { $ref: '#/components/schemas/Time' }
         endDate: { $ref: '#/components/schemas/ISODate' }
@@ -1088,6 +1235,28 @@ components:
           maxItems: 100
           default: []
           items: { $ref: '#/components/schemas/Attendee' }
+    Category:
+      type: object
+      required: [id, calendarId, name]
+      properties:
+        id: { type: string }
+        calendarId: { type: string }
+        name: { type: string, minLength: 1, maxLength: 40 }
+    CategoryName:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+    SharedCalendar:
+      type: object
+      required: [id, name, color, categories]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        color: { type: string }
+        categories:
+          type: array
+          items: { $ref: '#/components/schemas/Category' }
     EventLink:
       type: object
       required: [url]

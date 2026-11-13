@@ -103,4 +103,16 @@ export class RemoteCalendarRepository implements CalendarRepository {
   deleteFeed(calendarId: string) {
     return this.#api.delete(`/calendars/${segment(calendarId)}/feed`)
   }
+
+  async getShare(calendarId: string) {
+    return (await this.#api.get<{ token: string | null }>(`/calendars/${segment(calendarId)}/share`)).token
+  }
+
+  async createShare(calendarId: string) {
+    return (await this.#api.post<{ token: string }>(`/calendars/${segment(calendarId)}/share`)).token
+  }
+
+  deleteShare(calendarId: string) {
+    return this.#api.delete(`/calendars/${segment(calendarId)}/share`)
+  }
 }

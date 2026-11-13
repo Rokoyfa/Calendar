@@ -4,6 +4,9 @@ import yamlExample from '../../demo/calendar.config.yaml?raw'
 import schema from '../../schema/calendar-config.schema.json'
 import { toFeatureVariable } from '../config/parseEnv.ts'
 import { nearestView } from '../utils/calendarView.ts'
+import { HostBridge } from '../context/HostBridge.ts'
+import { getAppearanceVariables, getReadableTextColor } from './appearance.ts'
+import { createCalendarHandle } from './handle.ts'
 import { getConfigFormat, parseConfigText, stripJsonComments } from './configFile.ts'
 import { DEFAULT_FEATURES, FEATURE_NAMES, resolveFeatures, resolveViews } from './defaults.ts'
 import { mergeCalendarOptions, OPTION_NAMES, parseCalendarOptions } from './options.ts'
@@ -157,13 +160,19 @@ describe('example files', () => {
     expect(json.issues).toEqual([])
     expect(json.options).toEqual(yaml.options)
     expect(yaml.options.features).toEqual(DEFAULT_FEATURES)
-    expect(yaml.options).toMatchObject({ storageMode: 'local', apiBaseUrl: '/api', apiTimeoutMs: 10_000 })
+    expect(yaml.options).toMatchObject({
+      storageMode: 'local',
+      apiBaseUrl: '/api',
+      apiTimeoutMs: 10_000,
+      readOnly: false,
+    })
   })
 
   it('show every option, also the commented ones', async () => {
     const yaml = await parseConfigText(uncomment(yamlExample), 'yaml')
     expect(yaml.issues).toEqual([])
-    expect(Object.keys(yaml.options).sort()).toEqual(OPTION_NAMES.filter((name) => name !== 'messages').sort())
+    const withoutBlocks = OPTION_NAMES.filter((name) => name !== 'messages' && name !== 'appearance')
+    expect(Object.keys(yaml.options).sort()).toEqual(withoutBlocks.sort())
   })
 })
 
@@ -177,5 +186,104 @@ describe('JSON schema', () => {
   it('states the feature defaults', () => {
     for (const name of FEATURE_NAMES)
       expect(schema.properties.features.properties[name].default).toBe(DEFAULT_FEATURES[name])
+  })
+})
+
+describe('appearance and read-only', () => {
+  it('accepts valid appearance values and reports the rest', () => {
+    const { options, issues } = parseCalendarOptions({
+      readOnly: true,
+      appearance: {
+        accentColor: ' #e63946 ',
+        fontFamily: 'Inter, sans-serif',
+        radius: 0,
+        density: 'compact',
+        shadow: 1,
+      },
+    })
+    expect(options).toEqual({
+      readOnly: true,
+      appearance: { accentColor: '#e63946', fontFamily: 'Inter, sans-serif', radius: 0, density: 'compact' },
+    })
+    expect(issues).toHaveLength(1)
+  })
+
+  it('rejects values that could carry other CSS', () => {
+    const { options, issues } = parseCalendarOptions({
+      appearance: { accentColor: 'red; background: url(x)', fontFamily: 'a; } * { color: red', radius: 99 },
+    })
+    expect(options.appearance).toEqual({})
+    expect(issues).toHaveLength(3)
+  })
+
+  it('merges appearance value by value', () => {
+    const merged = mergeCalendarOptions(
+      { appearance: { accentColor: '#111111', radius: 4 } },
+      { appearance: { radius: 0, fontFamily: undefined } },
+    )
+    expect(merged.appearance).toEqual({ accentColor: '#111111', radius: 0 })
+  })
+
+  it('turns appearance into CSS variables with readable text', () => {
+    expect(getAppearanceVariables({ accentColor: '#ffe066', radius: 6, fontFamily: 'Inter' })).toEqual({
+      '--calendar-accent': '#ffe066',
+      '--calendar-on-accent': '#222222',
+      '--calendar-radius': '6px',
+      '--calendar-font': 'Inter',
+    })
+    expect(getReadableTextColor('#1d3557')).toBe('#ffffff')
+    expect(getReadableTextColor('#fff')).toBe('#222222')
+    expect(getReadableTextColor('rebeccapurple')).toBeNull()
+    expect(getAppearanceVariables({ accentColor: 'javascript:1' })).toEqual({})
+  })
+})
+
+describe('host handle', () => {
+  const state = { view: 'week' as const, date: '2026-03-04', from: '2026-03-02', to: '2026-03-08' }
+
+  it('answers false while no calendar is shown', () => {
+    const handle = createCalendarHandle(new HostBridge())
+    expect(handle.getState()).toBeNull()
+    expect(handle.next()).toBe(false)
+    expect(handle.goToDate('2026-03-04')).toBe(false)
+  })
+
+  it('checks its arguments and passes them on', () => {
+    const bridge = new HostBridge()
+    const calls: unknown[] = []
+    const detach = bridge.attach(() => ({
+      getState: () => state,
+      goToDate: (date) => calls.push(['goToDate', date]),
+      setView: (view) => view !== 'year',
+      next: () => calls.push('next'),
+      previous: () => calls.push('previous'),
+      today: () => calls.push('today'),
+      openEvent: (id, date) => calls.push(['openEvent', id, date]),
+      createEvent: () => false,
+      refresh: () => calls.push('refresh'),
+    }))
+    const handle = createCalendarHandle(bridge)
+    expect(handle.getState()).toEqual(state)
+    expect(handle.goToDate(new Date(2026, 2, 4))).toBe(true)
+    expect(handle.goToDate('04.03.2026')).toBe(false)
+    expect(handle.openEvent('e1', '2026-03-05')).toBe(true)
+    expect(handle.openEvent('', '2026-03-05')).toBe(false)
+    expect(handle.setView('month')).toBe(true)
+    expect(handle.setView('year')).toBe(false)
+    expect(handle.createEvent()).toBe(false)
+    expect(handle.refresh()).toBe(true)
+    expect(calls).toEqual([['goToDate', '2026-03-04'], ['openEvent', 'e1', '2026-03-05'], 'refresh'])
+    detach()
+    expect(handle.next()).toBe(false)
+  })
+
+  it('reports a view change once', () => {
+    const bridge = new HostBridge()
+    const seen: unknown[] = []
+    bridge.listen((reported) => seen.push(reported))
+    bridge.report(state)
+    bridge.report({ ...state })
+    bridge.report({ ...state, view: 'month' })
+    expect(seen).toHaveLength(2)
   })
 })

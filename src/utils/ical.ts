@@ -132,7 +132,9 @@ const eventLines = (event: CalendarEvent, series: CalendarEvent | undefined, sta
     lines.push(`EXDATE${excluded.params}:${excluded.value}`)
   }
   for (const attendee of event.attendees) {
-    lines.push(`ATTENDEE${quoteParam('CN', attendee.name)};PARTSTAT=${PARTSTATS[attendee.status]}:mailto:${attendee.email}`)
+    lines.push(
+      `ATTENDEE${quoteParam('CN', attendee.name)};PARTSTAT=${PARTSTATS[attendee.status]}:mailto:${attendee.email}`,
+    )
   }
   for (const minutes of event.reminders)
     lines.push(
@@ -344,6 +346,7 @@ const toImportedEvent = (component: Component): ImportedEvent | null => {
       uid: get('UID')?.value.trim() || createEventUid(),
       title: text('SUMMARY', EVENT_TITLE_MAX_LENGTH) || UNTITLED,
       location: text('LOCATION', EVENT_LOCATION_MAX_LENGTH),
+      categoryIds: [],
       links: [...all('URL'), ...all('ATTACH')]
         .map(parseLink)
         .filter((link): link is EventLink => link !== null)

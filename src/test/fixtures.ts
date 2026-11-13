@@ -16,6 +16,7 @@ export const eventInput = (overrides: Partial<EventInput> = {}): EventInput => (
   title: 'Event',
   location: '',
   links: [],
+  categoryIds: [],
   startDate: '2026-11-02',
   start: '09:00',
   endDate: '2026-11-02',

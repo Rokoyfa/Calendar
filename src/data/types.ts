@@ -3,9 +3,11 @@ import type { CalendarRepository } from '../features/calendars/index.ts'
 import type {
   ColorRepository,
   EventRepository,
+  CategoryRepository,
   ChatRepository,
   HolidayRepository,
   PreferencesRepository,
+  SharedCalendarRepository,
   StorageMode,
 } from '../features/storage/index.ts'
 
@@ -17,6 +19,8 @@ export type DataRepositories = {
   preferences: PreferencesRepository
   holidays?: HolidayRepository
   chat?: ChatRepository
+  categories?: CategoryRepository
+  shared?: SharedCalendarRepository
 }
 
 export type DataSourceContext = {

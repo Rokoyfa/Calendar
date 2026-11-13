@@ -218,7 +218,7 @@
 }
 
 .tab.active {
-  border-bottom-color: var(--color-blue);
+  border-bottom-color: var(--color-accent);
   color: var(--color-text);
 }
 

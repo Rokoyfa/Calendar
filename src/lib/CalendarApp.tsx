@@ -38,6 +38,8 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
       preferences: repositories.preferences,
       holidays: repositories.holidays,
       chat: repositories.chat,
+      categories: repositories.categories,
+      shared: repositories.shared,
     }),
     [repositories, eventCallbacks],
   )

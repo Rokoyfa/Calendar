@@ -27,6 +27,8 @@ export const DEFAULT_FEATURES = {
   emailNotifications: true,
   timeZones: true,
   customColors: true,
+  categories: true,
+  publicLinks: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES

@@ -658,6 +658,29 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 - **E-Mail-Link:** `?calendar=…&event=…&date=…&tab=chat` wählt den Kalender, springt zum Datum und öffnet den Termin im Chat-Tab (`CalendarPage`, `openEvent` in `Calendar`). Beim Schließen verschwinden die Parameter aus der Adresse.
 - Code: `features/chat/` (ChatPanel, ChatProvider, UnreadBadge, Hooks), Repository in `features/storage/repositories/RemoteChatRepository.ts`. Die Vite-Weiterleitung für `/api` reicht WebSockets mit durch (`ws: true`).
 
+### Kategorien
+
+- Kategorien gehören zu einem Kalender (`utils/category.ts`, höchstens 30 pro Kalender, Namen ohne Groß-/Kleinschreibung eindeutig). Termine tragen bis zu 5 davon in `categoryIds`.
+- Verwaltung in den Kalender-Einstellungen (`CategoriesSection`, braucht `manage_calendars`), Zuordnung im Termin-Dialog (`CategoryField`), Filter im Kopf (`CategoryFilterModal`). Der Filter lebt nur im Zustand von `Calendar` und kennt zusätzlich „Ohne Kategorie“. Unbekannte Ids (gelöschte Kategorien) zählen als „ohne“.
+- Speicherung über `CategoryRepository` (lokal `LocalCategoryRepository`, sonst `RemoteCategoryRepository`). Fehlt das Repository im Daten-Adapter, gibt es die Funktion nicht.
+
+### Nur-Lesen-Modus und öffentliche Links
+
+- `readOnly` (Option des Gastgebers) landet im `HostContext`. `Calendar` setzt damit `canCreate` auf `false`, der Termin-Dialog zeigt seine Felder in einem deaktivierten `fieldset` und nur noch „Schließen“, der Import ist ausgeblendet.
+- Öffentlicher Link: `ShareSection` in den Kalender-Einstellungen holt ein Token (`getShare`, `createShare`, `deleteShare` am `CalendarRepository`) und baut daraus mit `buildSharedLink` die Adresse, je nach Routing über den Link-Parameter der Gastgeberseite oder als `/shared/:token`.
+- Die Seite `/shared/:token` (`SharedCalendarPage`) braucht keine Anmeldung. Sie lädt den Kalender über `SharedCalendarRepository` und setzt einen eigenen `StorageProvider` mit nur lesenden Repositories um die normale `Calendar`-Komponente.
+
+### Steuerung durch den Gastgeber
+
+- `HostBridge` (`context/HostBridge.ts`) verbindet die Hülle (`CalendarWidget`) mit der gerade sichtbaren `Calendar`-Komponente. `useHostController` meldet dort den Controller an und berichtet Ansichtswechsel.
+- Nach außen gibt es `CalendarHandle` (`lib/handle.ts`): als `ref` der React-Komponente und als Methoden am Custom Element. Die Methoden prüfen ihre Argumente und antworten mit `false`, solange kein Kalender angezeigt wird.
+
+### Aussehen anpassen
+
+- Öffentliche CSS-Variablen `--calendar-accent`, `--calendar-on-accent`, `--calendar-font`, `--calendar-radius`, `--calendar-bg`, `--calendar-surface`, `--calendar-text`, `--calendar-heading`, `--calendar-muted`, `--calendar-border`. Sie werden in `variables.css` in die internen Variablen übernommen. Die internen Variablen stehen dafür auch auf `.calendarRoot`, damit dort gesetzte Werte greifen.
+- Akzentfarbe (`--color-accent`) und die Terminfarbe Blau (`--color-blue`) sind getrennt. Text auf der Akzentfarbe nutzt `--color-on-brand`, Text auf Terminfarben `--event-text`.
+- Die Option `appearance` setzt dieselben Variablen als Inline-Stil auf `.calendarRoot` (`lib/appearance.ts`) und für `density: compact` das Attribut `data-compact`.
+
 ### Duplizieren und Rückgängig
 
 - **Duplizieren** im Termin-Dialog öffnet einen neuen Termin mit den aktuellen Werten des Dialogs, auch noch nicht gespeicherten. Die Kopie bekommt eine neue `uid`, verliert die Verknüpfung zu einer Serie, und alle Teilnehmer stehen wieder auf „keine Antwort“. Angelegt wird sie erst beim Speichern, im aktiven Kalender.
@@ -878,6 +901,7 @@ src/
    │  ├─ types/
    │  └─ utils/                Serien-Aktionen gegen das Repository, Auswahl der Bereiche, iCalendar-Import (icalExchange)
    ├─ reminders/               Erinnerungen planen und anzeigen, solange das Widget offen ist (useReminders, ReminderNotices)
+   ├─ categories/              Kategorien: CategoryField (Termin-Dialog), CategoryFilterModal, CategoriesSection (Einstellungen), useCategories
    ├─ chat/                    Chat zu Terminen: ChatPanel, ChatProvider (Ungelesen-Zähler), UnreadBadge, useChatMessages
    ├─ holidays/                Feiertage: useHolidays (Region auflösen, Quelle wählen), HolidaySettings, Bibliothek date-holidays (lazy)
    ├─ storage/                 Datenspeicherung

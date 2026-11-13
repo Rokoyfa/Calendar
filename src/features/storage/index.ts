@@ -8,8 +8,12 @@ export { RemoteColorRepository } from './repositories/RemoteColorRepository.ts'
 export { RemoteEventRepository } from './repositories/RemoteEventRepository.ts'
 export { RemotePreferencesRepository } from './repositories/RemotePreferencesRepository.ts'
 export { RemoteHolidayRepository } from './repositories/RemoteHolidayRepository.ts'
+export { LocalCategoryRepository } from './repositories/LocalCategoryRepository.ts'
+export { RemoteCategoryRepository } from './repositories/RemoteCategoryRepository.ts'
+export { RemoteSharedCalendarRepository } from './repositories/RemoteSharedCalendarRepository.ts'
 export { RemoteChatRepository } from './repositories/RemoteChatRepository.ts'
 export type {
+  CategoryRepository,
   ColorRepository,
   EventQuery,
   EventRepository,
@@ -18,5 +22,6 @@ export type {
   HolidayQuery,
   HolidayRepository,
   PreferencesRepository,
+  SharedCalendarRepository,
   StorageMode,
 } from './types/storage.ts'

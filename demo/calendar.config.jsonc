@@ -90,8 +90,18 @@
     "timeZones": true,
 
     // Letting users add their own event colors.
-    "customColors": true
+    "customColors": true,
+
+    // Categories per calendar: assigning them to events and filtering the views by them.
+    // Needs the category endpoints.
+    "categories": true,
+
+    // Public read-only links to a calendar, and the page they open. Needs the share endpoints.
+    "publicLinks": true
   },
+
+  // Shows events without letting anyone create, change, move, delete or import them.
+  "readOnly": false,
 
   // ── Appearance ────────────────────────────────────────────────────────────────
 
@@ -124,6 +134,14 @@
 
   // Map service for locations. {query} is replaced by the place. Default: Google Maps.
   // "mapUrl": "https://www.openstreetmap.org/search?query={query}",
+
+  // Look of the calendar. The same can be set from your CSS with --calendar-accent,
+  // --calendar-font and --calendar-radius on the element. Default: not set.
+  //   accentColor  buttons, links, today, selection
+  //   fontFamily   your page has to load the font
+  //   radius       corner radius in pixels, 0 to 24
+  //   density      comfortable or compact (smaller text, rows and spacing)
+  // "appearance": { "accentColor": "#e63946", "fontFamily": "Inter, sans-serif", "radius": 10, "density": "comfortable" },
 
   // Own texts per language. Only plain texts can be set here. Texts that are functions
   // (for example with a count) need the "messages" prop or property instead.

@@ -42,6 +42,8 @@ import { RecurrenceFields } from './RecurrenceFields.tsx'
 import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
 import { AttendeesField, type AttendeeCandidate } from './AttendeesField.tsx'
 import { LinksField } from './LinksField.tsx'
+import type { Category } from '../../../utils/category.ts'
+import { CategoryField } from '../../categories/index.ts'
 import { ChatPanel, useUnreadCount } from '../../chat/index.ts'
 import type { ChatKey } from '../../../utils/chat.ts'
 import { ReminderField } from './ReminderField.tsx'
@@ -59,6 +61,8 @@ const TAB_FIELDS: Record<EventTab, readonly (keyof EventValidationErrors)[]> = {
   details: ['location', 'links', 'description'],
   chat: [],
 }
+
+const NO_CATEGORIES: readonly Category[] = []
 
 const NO_CHAT: ChatKey = { eventId: '', occurrenceDate: null }
 
@@ -85,6 +89,8 @@ type EventModalProps = {
   onRemindersChange?: (reminders: number[]) => Promise<void>
   chat?: { key: ChatKey; calendarId: string }
   initialTab?: EventTab
+  categories?: readonly Category[]
+  readOnly?: boolean
   onClose: () => void
 }
 
@@ -104,6 +110,8 @@ export function EventModal({
   onRemindersChange,
   chat,
   initialTab = 'general',
+  categories = NO_CATEGORIES,
+  readOnly = false,
   onClose,
 }: EventModalProps) {
   const i18n = useI18n()
@@ -175,6 +183,7 @@ export function EventModal({
 
   const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
+    if (readOnly) return
     const input = normalizeEventInput(values)
     const nextErrors = validateEventInput(input, m)
     setErrors(nextErrors)
@@ -254,11 +263,17 @@ export function EventModal({
           )}
           {viewerHint && <p className="formHint">{viewerHint}</p>}
 
-          {features.reminders && (
+          {features.reminders && !readOnly && (
             <ReminderField value={values.reminders} onChange={(reminders) => setField('reminders', reminders)} />
           )}
 
           <ColorPicker value={values.color} onChange={(color) => setField('color', color)} />
+
+          <CategoryField
+            categories={categories}
+            value={values.categoryIds}
+            onChange={(categoryIds) => setField('categoryIds', categoryIds)}
+          />
         </>
       ),
     },
@@ -343,12 +358,23 @@ export function EventModal({
     })
   const tabs = tabDefinitions.map((tab) => ({
     ...tab,
+    content:
+      readOnly && tab.value !== 'chat' ? (
+        <fieldset className="readOnlyFields" disabled>
+          {tab.content}
+        </fieldset>
+      ) : (
+        tab.content
+      ),
     invalid: hasTabErrors(errors, tab.value),
   }))
 
   return (
     <>
-      <Modal title={mode === 'create' ? m.events.createTitle : m.events.editTitle} onClose={onClose}>
+      <Modal
+        title={readOnly ? m.events.viewTitle : mode === 'create' ? m.events.createTitle : m.events.editTitle}
+        onClose={onClose}
+      >
         <Form className="eventForm" onSubmit={handleSubmit}>
           {notice && <p className="formHint eventNotice">{notice}</p>}
           <Tabs label={m.events.tabsLabel} tabs={tabs} value={activeTab} stable onChange={setActiveTab} />
@@ -356,21 +382,23 @@ export function EventModal({
           <ErrorMessage message={submitError ?? deleteError} />
 
           <div className="modalActions">
-            <Button type="submit" isPending={isPending} pendingLabel={m.common.saving}>
-              {m.common.save}
-            </Button>
-            {onDelete && (
+            {!readOnly && (
+              <Button type="submit" isPending={isPending} pendingLabel={m.common.saving}>
+                {m.common.save}
+              </Button>
+            )}
+            {onDelete && !readOnly && (
               <Button variant="danger" disabled={isPending} isPending={isDeleting} onClick={() => void remove()}>
                 {m.common.delete}
               </Button>
             )}
-            {onDuplicate && (
+            {onDuplicate && !readOnly && (
               <Button variant="outline" disabled={isPending || isDeleting} onClick={() => onDuplicate(values)}>
                 {m.events.duplicate}
               </Button>
             )}
             <Button variant="secondary" onClick={onClose}>
-              {m.common.cancel}
+              {readOnly ? m.common.close : m.common.cancel}
             </Button>
           </div>
         </Form>

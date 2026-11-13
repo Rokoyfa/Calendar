@@ -174,7 +174,7 @@ select.input {
 }
 
 .switchInput:checked + .switchTrack {
-  background-color: var(--color-blue);
+  background-color: var(--color-accent);
 }
 
 .switchInput:checked + .switchTrack::after {
@@ -286,4 +286,87 @@ select.input {
 
 .respondTitle {
   font-size: var(--font-size-lg);
+}
+
+.categoryChip {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-grid);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-md);
+}
+
+.categoryChip:hover {
+  border-color: var(--color-text);
+}
+
+.categoryChip.active {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-on-brand);
+}
+
+.categoryFilter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 320px;
+  overflow: auto;
+  list-style: none;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.checkRow input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-accent);
+}
+
+.inlineForm {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.inlineForm .input {
+  flex: 1;
+  min-width: 140px;
+}
+
+.readOnlyFields {
+  min-width: 0;
+  border: none;
+}
+
+.readOnlyFields :is(input, textarea, select, button):disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.readOnlyFields .chip:not(.active),
+.readOnlyFields .colorAdd {
+  display: none;
+}
+
+.filterButton {
+  position: relative;
+  display: inline-flex;
+}
+
+.filterButton--active::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-round);
+  background-color: var(--color-accent);
 }

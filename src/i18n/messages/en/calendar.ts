@@ -19,7 +19,19 @@ export const calendar = {
   fromCalendar: (name: string) => `From the calendar “${name}”`,
   sharedEventNotice: (source: string) => `${source}. All members see changes.`,
   dismiss: 'Dismiss',
-  undo: { action: 'Undo', ctrlZ: 'Ctrl+Z', deleted: (title: string) => `“${title}” deleted`, moved: (title: string) => `“${title}” moved` },
+  undo: {
+    action: 'Undo',
+    ctrlZ: 'Ctrl+Z',
+    deleted: (title: string) => `“${title}” deleted`,
+    moved: (title: string) => `“${title}” moved`,
+  },
+  filter: {
+    open: 'Filter by category',
+    openActive: 'Filter by category (active)',
+    title: 'Filter by category',
+    uncategorized: 'Without category',
+    reset: 'Show all',
+  },
   search: {
     open: 'Search',
     title: 'Search events',

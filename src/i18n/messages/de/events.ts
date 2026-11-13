@@ -21,6 +21,8 @@ export const events: Messages['events'] = {
   noCustomColors: 'Noch keine eigenen Farben.',
   removeColor: (label) => `Farbe ${label} entfernen`,
   deleteTitle: 'Termin löschen?',
+  viewTitle: 'Termin',
+  categories: { label: 'Kategorien' },
   deleteMessage: (title) => `„${title}“ wird gelöscht. Das kann nicht rückgängig gemacht werden.`,
   deleteSeriesMessage: (title) =>
     `„${title}“ ist ein wiederkehrender Termin. Was soll gelöscht werden? Das kann nicht rückgängig gemacht werden.`,
@@ -48,7 +50,8 @@ export const events: Messages['events'] = {
   reminderAtStart: 'Zum Beginn',
   reminderBefore: (duration) => `${duration} vorher`,
   reminderDue: (title, time) => `${title} beginnt um ${time}`,
-  reminderBlocked: 'Benachrichtigungen sind in diesem Browser blockiert. Erinnerungen erscheinen nur, solange der Kalender offen ist.',
+  reminderBlocked:
+    'Benachrichtigungen sind in diesem Browser blockiert. Erinnerungen erscheinen nur, solange der Kalender offen ist.',
   attendees: 'Teilnehmer',
   addAttendee: 'Teilnehmer hinzufügen',
   inviteAll: (count) => `Alle einladen (${count})`,

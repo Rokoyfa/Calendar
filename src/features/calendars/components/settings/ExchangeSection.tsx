@@ -2,6 +2,7 @@ import { useCallback, useState, type ChangeEvent } from 'react'
 import { Button } from '../../../../components/Button.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
+import { useHost } from '../../../../context/HostContext.ts'
 import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
 import { useI18n } from '../../../../i18n/index.ts'
 import { classNames } from '../../../../utils/classNames.ts'
@@ -28,6 +29,7 @@ const download = (content: string, fileName: string) => {
 export function ExchangeSection({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
   const { ical } = m.calendars
+  const { readOnly = false } = useHost()
   const { events: repository, invalidate } = useStorage()
   const [result, setResult] = useState<string | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
@@ -84,7 +86,7 @@ export function ExchangeSection({ calendar }: { calendar: CalendarSummary }) {
         >
           {ical.exportLabel}
         </Button>
-        {hasPermission(calendar, 'create_entry') && (
+        {!readOnly && hasPermission(calendar, 'create_entry') && (
           <label className={classNames('button', 'button--outline', importing.isPending && 'isDisabled')}>
             {importing.isPending ? ical.importing : ical.importLabel}
             <input

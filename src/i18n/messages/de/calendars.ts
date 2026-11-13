@@ -38,7 +38,8 @@ export const calendars: Messages['calendars'] = {
     personal: 'Persönlich',
     teams: 'Teams',
     active: 'Aktiv',
-    openInvitations: (count) => (count === 1 ? 'Du hast eine offene Einladung.' : `Du hast ${count} offene Einladungen.`),
+    openInvitations: (count) =>
+      count === 1 ? 'Du hast eine offene Einladung.' : `Du hast ${count} offene Einladungen.`,
     view: 'Ansehen',
     noTeams: 'Du bist noch in keinem Team. Erstelle einen Kalender oder tritt über eine Einladung bei.',
     newCalendar: 'Neuer Kalender',
@@ -79,7 +80,11 @@ export const calendars: Messages['calendars'] = {
     title: 'Neuer Kalender',
     steps: [
       { label: 'Name', title: 'Wie heißt der Kalender?', hint: 'Name und Beschreibung sehen alle Mitglieder.' },
-      { label: 'Farbe', title: 'Welche Farbe bekommt er?', hint: 'Neue Termine in diesem Kalender starten mit dieser Farbe.' },
+      {
+        label: 'Farbe',
+        title: 'Welche Farbe bekommt er?',
+        hint: 'Neue Termine in diesem Kalender starten mit dieser Farbe.',
+      },
       {
         label: 'Mitglieder',
         title: 'Wen möchtest du einladen?',
@@ -123,7 +128,13 @@ export const calendars: Messages['calendars'] = {
     notFound: 'Diesen Kalender gibt es nicht, oder du hast keinen Zugriff mehr.',
     tabsLabel: 'Bereiche der Kalender-Einstellungen',
     withCount: (label, count) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'Allgemein', members: 'Mitglieder', invitations: 'Einladungen', danger: 'Gefahrenbereich', exchange: 'Import & Export' },
+    tabs: {
+      general: 'Allgemein',
+      members: 'Mitglieder',
+      invitations: 'Einladungen',
+      danger: 'Gefahrenbereich',
+      exchange: 'Import & Export',
+    },
     displayTitle: 'Anzeige',
     displayDescription: 'Gilt nur für dich. Andere Mitglieder stellen das selbst ein.',
     personalTitle: 'Persönlicher Kalender',
@@ -168,7 +179,8 @@ export const calendars: Messages['calendars'] = {
     transfer: 'Leitung übertragen',
     lastOwnerHint: 'Als einziger Owner kannst du nicht austreten. Übertrage vorher die Leitung oder lösche das Team.',
     leaveHint: 'Du siehst den Kalender danach nicht mehr. Zurück geht es nur über eine neue Einladung.',
-    deleteHint: (team) => `Löscht das Team „${team}“ mit allen Kalendern, Terminen und Einladungen für alle Mitglieder.`,
+    deleteHint: (team) =>
+      `Löscht das Team „${team}“ mit allen Kalendern, Terminen und Einladungen für alle Mitglieder.`,
     deleteTeam: 'Team löschen',
     transferConfirmTitle: 'Leitung wirklich übertragen?',
     transferConfirm: 'Endgültig übertragen',
@@ -181,9 +193,36 @@ export const calendars: Messages['calendars'] = {
     deleteMessage: (team, count) =>
       `„${team}“ wird mit allen Kalendern, Terminen und Einladungen gelöscht, auch für alle ${count} Mitglieder. Das kann nicht rückgängig gemacht werden.`,
   },
+  categories: {
+    title: 'Kategorien',
+    description: 'Ordne die Termine dieses Kalenders in Kategorien ein und filtere die Ansichten danach.',
+    empty: 'Noch keine Kategorien.',
+    nameLabel: 'Name der Kategorie',
+    newLabel: 'Neue Kategorie',
+    add: 'Hinzufügen',
+    rename: 'Umbenennen',
+    remove: (name) => `Kategorie ${name} entfernen`,
+  },
+  share: {
+    title: 'Öffentlicher Link',
+    description:
+      'Gib diesen Kalender nur lesend für alle frei, ohne Anmeldung. Besucher sehen Titel, Zeit, Ort, Beschreibung, Links und Kategorien aller Termine, aber keine Teilnehmer, Erinnerungen und keinen Chat.',
+    label: 'Öffentlicher Link',
+    pathLabel: 'Pfad für die Option initial-path',
+    create: 'Öffentlichen Link erstellen',
+    copy: 'Link kopieren',
+    copied: 'Kopiert',
+    open: 'Öffnen',
+    warning: 'Jeder mit diesem Link kann alle Termine dieses Kalenders sehen. Ein neuer Link schaltet den alten ab.',
+    renew: 'Neuen Link erstellen',
+    remove: 'Freigabe beenden',
+    readOnly: 'Nur lesen',
+    notFound: 'Dieser Kalender ist nicht freigegeben oder der Link wurde abgeschaltet.',
+  },
   feed: {
     title: 'Abonnieren',
-    description: 'Abonniere diesen Kalender in Google Kalender, Outlook oder Apple Kalender. Änderungen erscheinen dort automatisch, meist innerhalb weniger Stunden. Das Abo kann nur lesen.',
+    description:
+      'Abonniere diesen Kalender in Google Kalender, Outlook oder Apple Kalender. Änderungen erscheinen dort automatisch, meist innerhalb weniger Stunden. Das Abo kann nur lesen.',
     label: 'Abo-Link',
     create: 'Abo-Link erstellen',
     copy: 'Link kopieren',
@@ -195,7 +234,8 @@ export const calendars: Messages['calendars'] = {
   },
   ical: {
     title: 'Import und Export',
-    description: 'Termine mit anderen Kalender-Apps als iCalendar-Datei (.ics) austauschen. Ein erneuter Import aktualisiert bereits importierte Termine.',
+    description:
+      'Termine mit anderen Kalender-Apps als iCalendar-Datei (.ics) austauschen. Ein erneuter Import aktualisiert bereits importierte Termine.',
     exportLabel: 'Als .ics exportieren',
     exporting: 'Exportiere …',
     importLabel: '.ics-Datei importieren',

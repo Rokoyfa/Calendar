@@ -4,6 +4,12 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ## Unreleased
 
+- Categories per calendar: managed in the calendar settings, assigned in the event dialog, with a filter in the header. Events carry `categoryIds`. New feature switch `categories`
+- Public read-only links: a calendar can be shared with anyone without sign-in, opened at `/shared/:token`. New feature switch `publicLinks`
+- Read-only mode: `readOnly` / `read-only` shows events without letting anyone change them
+- Control from the host page: `goToDate()`, `setView()`, `next()`, `previous()`, `today()`, `openEvent()`, `createEvent()`, `refresh()` and `getState()` on the element and through `ref`, plus `view-change` / `onViewChange`
+- Look and feel: accent color, font, corner radius and more through `--calendar-*` CSS properties or the `appearance` option, and a compact density
+- New REST endpoints for categories and sharing in `api/openapi.yaml`
 - Every optional feature can be switched off through `features` or `feature-*` attributes: chat, attendees, recurrence, reminders, links, map links, holidays, search, undo, duplicate, shortcuts, subscriptions, import and export, e-mail settings, time zones and custom colors. A feature that is off makes no backend calls, so no WebSocket is opened without chat
 - `views` limits the views a user can switch between
 - Configuration file: `config` takes the URL of a JSON or YAML file, or an object, with all serializable options. Props and attributes win over the file. A JSON Schema is included as `@rokoyfa/calendar/config.schema.json`

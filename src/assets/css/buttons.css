@@ -5,8 +5,8 @@
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-pill);
-  background-color: var(--color-blue);
-  color: var(--color-on-accent);
+  background-color: var(--color-accent);
+  color: var(--color-on-brand);
   font-weight: 600;
   transition: opacity var(--transition-fast);
 }
@@ -18,10 +18,12 @@
 
 .button--danger {
   background-color: var(--color-red);
+  color: var(--color-on-accent);
 }
 
 .button--secondary {
   background-color: var(--color-grey);
+  color: var(--color-on-accent);
 }
 
 .button--outline {
@@ -95,8 +97,8 @@
 }
 
 .segment.active {
-  background-color: var(--color-blue);
-  color: var(--color-on-accent);
+  background-color: var(--color-accent);
+  color: var(--color-on-brand);
 }
 
 .closeButton {

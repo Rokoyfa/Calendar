@@ -127,6 +127,16 @@
           "type": "boolean",
           "default": true,
           "description": "Adding own event colors."
+        },
+        "categories": {
+          "type": "boolean",
+          "default": true,
+          "description": "Categories per calendar, assigning them to events and filtering the views by them. Needs the category endpoints."
+        },
+        "publicLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Public read-only links to a calendar, and the page they open. Needs the share endpoints."
         }
       }
     },
@@ -227,6 +237,41 @@
       "type": "string",
       "minLength": 1,
       "description": "Map link template containing {query}."
+    },
+    "readOnly": {
+      "type": "boolean",
+      "default": false,
+      "description": "Shows events without letting anyone create, change, move, delete or import them."
+    },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Look of the calendar. The same can be set from CSS with the --calendar-* custom properties.",
+      "properties": {
+        "accentColor": {
+          "type": "string",
+          "description": "Color of buttons, links, today and the selection, as a CSS color such as #e63946."
+        },
+        "fontFamily": {
+          "type": "string",
+          "description": "CSS font family, for example Inter, sans-serif. The font itself must be loaded by your page."
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 24,
+          "default": 10,
+          "description": "Corner radius in pixels. 0 gives square corners."
+        },
+        "density": {
+          "enum": [
+            "comfortable",
+            "compact"
+          ],
+          "default": "comfortable",
+          "description": "compact uses smaller text, rows and spacing."
+        }
+      }
     }
   }
 }

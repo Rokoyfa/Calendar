@@ -25,6 +25,11 @@ const errors: Messages['errors'] = {
   saveEventsFailed: 'No se han podido guardar los eventos en este navegador.',
   savePreferencesFailed: 'No se ha podido guardar la configuración en este navegador.',
   saveColorFailed: 'No se ha podido guardar el color en este navegador.',
+  saveCategoriesFailed: 'No se pudieron guardar las categorías en este navegador.',
+  categoryExists: 'Ya existe una categoría con este nombre.',
+  tooManyCategories: 'Este calendario ya tiene el número máximo de categorías.',
+  categoryNotFound: 'Esta categoría ya no existe.',
+  shareNotFound: 'Este calendario no está compartido o el enlace se ha desactivado.',
   saveDecisionFailed: 'No se ha podido guardar tu elección en este navegador.',
   invalidLink: 'Este enlace no es válido o ha caducado.',
   invalidResetLink: 'Este enlace no es válido o ha caducado. Solicita uno nuevo.',
@@ -140,7 +145,19 @@ const calendar: Messages['calendar'] = {
   fromCalendar: (name) => `Del calendario «${name}»`,
   sharedEventNotice: (source) => `${source}. Todos los miembros ven los cambios.`,
   dismiss: 'Cerrar',
-  undo: { action: 'Deshacer', ctrlZ: 'Ctrl+Z', deleted: (title) => `«${title}» eliminado`, moved: (title) => `«${title}» movido` },
+  undo: {
+    action: 'Deshacer',
+    ctrlZ: 'Ctrl+Z',
+    deleted: (title) => `«${title}» eliminado`,
+    moved: (title) => `«${title}» movido`,
+  },
+  filter: {
+    open: 'Filtrar por categoría',
+    openActive: 'Filtrar por categoría (activo)',
+    title: 'Filtrar por categoría',
+    uncategorized: 'Sin categoría',
+    reset: 'Mostrar todo',
+  },
   search: {
     open: 'Buscar',
     title: 'Buscar eventos',
@@ -172,6 +189,8 @@ const events: Messages['events'] = {
   noCustomColors: 'Todavía no hay colores personalizados.',
   removeColor: (label) => `Quitar el color ${label}`,
   deleteTitle: '¿Eliminar el evento?',
+  viewTitle: 'Evento',
+  categories: { label: 'Categorías' },
   deleteMessage: (title) => `Se eliminará «${title}». No se puede deshacer.`,
   deleteSeriesMessage: (title) => `«${title}» es un evento periódico. ¿Qué quieres eliminar? No se puede deshacer.`,
   scopeTitle: 'Cambiar evento periódico',
@@ -198,7 +217,8 @@ const events: Messages['events'] = {
   reminderAtStart: 'Al empezar',
   reminderBefore: (duration) => `${duration} antes`,
   reminderDue: (title, time) => `${title} empieza a las ${time}`,
-  reminderBlocked: 'Las notificaciones están bloqueadas en este navegador. Los recordatorios solo aparecen mientras el calendario está abierto.',
+  reminderBlocked:
+    'Las notificaciones están bloqueadas en este navegador. Los recordatorios solo aparecen mientras el calendario está abierto.',
   attendees: 'Participantes',
   addAttendee: 'Añadir participante',
   inviteAll: (count) => `Invitar a todos (${count})`,
@@ -254,7 +274,13 @@ const storage: Messages['storage'] = {
 
 const settings: Messages['settings'] = {
   tabsLabel: 'Secciones de la configuración',
-  tabs: { calendars: 'Calendarios', invitations: 'Invitaciones', appearance: 'Apariencia', account: 'Cuenta', notifications: 'Notificaciones' },
+  tabs: {
+    calendars: 'Calendarios',
+    invitations: 'Invitaciones',
+    appearance: 'Apariencia',
+    account: 'Cuenta',
+    notifications: 'Notificaciones',
+  },
   languageTitle: 'Idioma y región',
   languageDescription: 'Determina el idioma, los formatos de fecha y hora y el primer día de la semana.',
   languageLabel: 'Idioma',
@@ -272,7 +298,8 @@ const settings: Messages['settings'] = {
   holidaysWholeCountry: 'Todo el país',
   notifications: {
     title: 'Correos sobre eventos',
-    description: 'Correos a tu dirección confirmada. Los recordatorios por correo llegan aunque el calendario esté cerrado.',
+    description:
+      'Correos a tu dirección confirmada. Los recordatorios por correo llegan aunque el calendario esté cerrado.',
     unverified: 'Confirma tu dirección de correo para recibir correos.',
     emailInvites: 'Cuando alguien me invita a un evento',
     emailChanges: 'Cuando cambia o se cancela un evento al que estoy invitado',
@@ -465,8 +492,16 @@ const calendars: Messages['calendars'] = {
   create: {
     title: 'Nuevo calendario',
     steps: [
-      { label: 'Nombre', title: '¿Cómo se llama el calendario?', hint: 'Todos los miembros ven el nombre y la descripción.' },
-      { label: 'Color', title: '¿Qué color debe tener?', hint: 'Los nuevos eventos de este calendario empiezan con este color.' },
+      {
+        label: 'Nombre',
+        title: '¿Cómo se llama el calendario?',
+        hint: 'Todos los miembros ven el nombre y la descripción.',
+      },
+      {
+        label: 'Color',
+        title: '¿Qué color debe tener?',
+        hint: 'Los nuevos eventos de este calendario empiezan con este color.',
+      },
       {
         label: 'Miembros',
         title: '¿A quién quieres invitar?',
@@ -510,7 +545,13 @@ const calendars: Messages['calendars'] = {
     notFound: 'Este calendario no existe o ya no tienes acceso.',
     tabsLabel: 'Secciones de la configuración del calendario',
     withCount: (label, count) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'General', members: 'Miembros', invitations: 'Invitaciones', danger: 'Zona de peligro', exchange: 'Importar y exportar' },
+    tabs: {
+      general: 'General',
+      members: 'Miembros',
+      invitations: 'Invitaciones',
+      danger: 'Zona de peligro',
+      exchange: 'Importar y exportar',
+    },
     displayTitle: 'Visualización',
     displayDescription: 'Solo se aplica a ti. Los demás miembros lo configuran ellos mismos.',
     personalTitle: 'Calendario personal',
@@ -551,7 +592,8 @@ const calendars: Messages['calendars'] = {
     title: 'Zona de peligro',
     transferHint:
       'Otro miembro pasa a ser el propietario y tú pasas a ser administrador. Solo recuperarás el rol si el nuevo propietario te lo devuelve.',
-    transferUnavailable: 'Para transferir la propiedad, el equipo necesita otro miembro que todavía no sea propietario.',
+    transferUnavailable:
+      'Para transferir la propiedad, el equipo necesita otro miembro que todavía no sea propietario.',
     transfer: 'Transferir propiedad',
     lastOwnerHint: 'Como único propietario no puedes salir. Transfiere primero la propiedad o elimina el equipo.',
     leaveHint: 'Dejarás de ver el calendario. Solo podrás volver con una nueva invitación.',
@@ -569,21 +611,51 @@ const calendars: Messages['calendars'] = {
     deleteMessage: (team, count) =>
       `«${team}» se eliminará con todos los calendarios, eventos e invitaciones, también para los ${count} miembros. No se puede deshacer.`,
   },
+  categories: {
+    title: 'Categorías',
+    description: 'Ordena los eventos de este calendario en categorías y filtra las vistas por ellas.',
+    empty: 'Aún no hay categorías.',
+    nameLabel: 'Nombre de la categoría',
+    newLabel: 'Nueva categoría',
+    add: 'Añadir',
+    rename: 'Renombrar',
+    remove: (name) => `Eliminar la categoría ${name}`,
+  },
+  share: {
+    title: 'Enlace público',
+    description:
+      'Comparte este calendario en modo de solo lectura con cualquiera, sin iniciar sesión. Los visitantes ven título, hora, lugar, descripción, enlaces y categorías de todos los eventos, pero no los asistentes, los recordatorios ni el chat.',
+    label: 'Enlace público',
+    pathLabel: 'Ruta para la opción initial-path',
+    create: 'Crear enlace público',
+    copy: 'Copiar enlace',
+    copied: 'Copiado',
+    open: 'Abrir',
+    warning:
+      'Cualquiera con este enlace puede ver todos los eventos de este calendario. Al crear un enlace nuevo, el anterior deja de funcionar.',
+    renew: 'Crear enlace nuevo',
+    remove: 'Dejar de compartir',
+    readOnly: 'Solo lectura',
+    notFound: 'Este calendario no está compartido o el enlace se ha desactivado.',
+  },
   feed: {
     title: 'Suscribirse',
-    description: 'Suscríbete a este calendario en Google Calendar, Outlook o Apple Calendar. Los cambios aparecen allí automáticamente, normalmente en pocas horas. La suscripción es de solo lectura.',
+    description:
+      'Suscríbete a este calendario en Google Calendar, Outlook o Apple Calendar. Los cambios aparecen allí automáticamente, normalmente en pocas horas. La suscripción es de solo lectura.',
     label: 'Enlace de suscripción',
     create: 'Crear enlace de suscripción',
     copy: 'Copiar enlace',
     copied: 'Copiado',
     openApp: 'Abrir en la app de calendario',
-    warning: 'Quien tenga este enlace puede ver todos los eventos de este calendario. Un enlace nuevo desactiva el anterior.',
+    warning:
+      'Quien tenga este enlace puede ver todos los eventos de este calendario. Un enlace nuevo desactiva el anterior.',
     renew: 'Crear enlace nuevo',
     remove: 'Cancelar suscripción',
   },
   ical: {
     title: 'Importar y exportar',
-    description: 'Intercambia eventos con otras aplicaciones de calendario como archivo iCalendar (.ics). Si vuelves a importar, se actualizan los eventos ya importados.',
+    description:
+      'Intercambia eventos con otras aplicaciones de calendario como archivo iCalendar (.ics). Si vuelves a importar, se actualizan los eventos ya importados.',
     exportLabel: 'Exportar como .ics',
     exporting: 'Exportando …',
     importLabel: 'Importar archivo .ics',

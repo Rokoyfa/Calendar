@@ -2,7 +2,12 @@ import { useCallback, useMemo, useRef, useState, type ComponentType, type ReactN
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useHost } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
+import type { CalendarController, CalendarState } from '../../../context/HostBridge.ts'
 import { nearestView } from '../../../utils/calendarView.ts'
+import { matchesCategoryFilter, type CategoryFilter } from '../../../utils/category.ts'
+import { isISODate, isTime } from '../../../utils/date.ts'
+import { CategoryFilterModal, useCategories } from '../../categories/index.ts'
+import { useStorage } from '../../storage/index.ts'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
 import { useKeyboardShortcuts } from '../../../hooks/useKeyboardShortcuts.ts'
 import { addDaysToISODate, MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
@@ -41,6 +46,7 @@ import { UndoNotice } from './UndoNotice.tsx'
 import { VIEW_SHORTCUTS } from '../constants/views.ts'
 import { EventSourcesContext, NO_EVENT_SOURCES } from '../context/EventSourcesContext.ts'
 import { useCalendarView } from '../hooks/useCalendarView.ts'
+import { useHostController } from '../hooks/useHostController.ts'
 import { useEventDrag, type DragPreview } from '../hooks/useEventDrag.ts'
 import { useNow } from '../hooks/useNow.ts'
 import type { EditorState } from '../types/editor.ts'
@@ -66,6 +72,8 @@ type CalendarProps = {
   calendarIds: readonly string[]
   targetCalendarId: string
   canCreate?: boolean
+  readOnly?: boolean
+  calendarNames?: ReadonlyMap<string, string>
   eventSources?: EventSources
   initialView?: CalendarView
   headerContext?: ReactNode
@@ -90,13 +98,16 @@ type PendingDrop = {
 }
 
 const NO_SHORTCUTS = {}
+const NO_NAMES: ReadonlyMap<string, string> = new Map()
 
 type UndoOffer = { id: number; message: string; undo: () => Promise<void> }
 
 export function Calendar({
   calendarIds,
   targetCalendarId,
-  canCreate = true,
+  canCreate: mayCreate = true,
+  readOnly: forcedReadOnly = false,
+  calendarNames = NO_NAMES,
   eventSources = NO_EVENT_SOURCES,
   initialView,
   headerContext,
@@ -104,15 +115,20 @@ export function Calendar({
   currentUserEmail = null,
   loadAttendeeCandidates,
   chat,
-  openEvent,
+  openEvent: linkedEvent,
   onOpenEventDone,
 }: CalendarProps) {
   const i18n = useI18n()
-  const { features, views } = useHost()
+  const { features, views, readOnly: hostReadOnly = false } = useHost()
+  const { invalidate } = useStorage()
+  const readOnly = forcedReadOnly || hostReadOnly
+  const canCreate = mayCreate && !readOnly
+  const [hostRequest, setHostRequest] = useState<OpenEventRequest | null>(null)
+  const openEvent = hostRequest ?? linkedEvent
   const now = useNow()
   const today = toISODate(now)
   const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
-    useCalendarView(initialView, openEvent?.date)
+    useCalendarView(initialView, linkedEvent?.date)
   const { events, error, createEvent, updateEvent, deleteEvent, respond, setReminders } = useEvents({
     ...range,
     calendarIds,
@@ -120,10 +136,16 @@ export function Calendar({
   })
   const holidays = useHolidays(range)
   const viewerTimeZone = useViewerTimeZone()
-  const occurrences = useMemo(
-    () => expandEvents(events, range.from, range.to, viewerTimeZone),
-    [events, range, viewerTimeZone],
-  )
+  const { categories } = useCategories(calendarIds)
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(null)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const activeFilter = categories.length > 0 ? categoryFilter : null
+  const occurrences = useMemo(() => {
+    const expanded = expandEvents(events, range.from, range.to, viewerTimeZone)
+    if (activeFilter === null) return expanded
+    const known = new Set(categories.map((category) => category.id))
+    return expanded.filter((occurrence) => matchesCategoryFilter(occurrence.categoryIds, known, activeFilter))
+  }, [events, range, viewerTimeZone, categories, activeFilter])
   const occurrencesByKey = useMemo(
     () => new Map(occurrences.map((occurrence) => [occurrence.occurrenceKey, occurrence])),
     [occurrences],
@@ -228,9 +250,14 @@ export function Calendar({
     })
   }, [])
 
+  const finishRequest = () => {
+    if (hostRequest) setHostRequest(null)
+    else if (linkedEvent) onOpenEventDone?.()
+  }
+
   const closeEditor = () => {
     setEditor(null)
-    if (openEvent) onOpenEventDone?.()
+    finishRequest()
   }
 
   const openSearchResult = (event: CalendarEvent, date: string) => {
@@ -246,7 +273,7 @@ export function Calendar({
   }
 
   const duplicate = (input: EventInput) => {
-    if (openEvent) onOpenEventDone?.()
+    finishRequest()
     setEditor({
       initialValue: toDuplicateInput(input),
       occurrence: null,
@@ -326,6 +353,55 @@ export function Calendar({
       : NO_SHORTCUTS,
   )
 
+  const state = useMemo<CalendarState>(
+    () => ({ view, date: anchor, from: dates[0], to: dates[dates.length - 1] }),
+    [view, anchor, dates],
+  )
+  const controller: CalendarController = {
+    getState: () => state,
+    goToDate,
+    setView: (wanted) => {
+      if (!views.includes(wanted)) return false
+      setView(wanted)
+      return true
+    },
+    next,
+    previous,
+    today: goToToday,
+    openEvent: (eventId, date) => {
+      setEditor(null)
+      goToDate(date)
+      setHostRequest({ eventId, date })
+    },
+    createEvent: (draft = {}) => {
+      if (!canCreate) return false
+      const startDate = isISODate(draft.startDate) ? draft.startDate : view === 'day' ? anchor : today
+      const base = draft.allDay
+        ? createAllDayEventInput(
+            startDate,
+            isISODate(draft.endDate) && draft.endDate >= startDate ? draft.endDate : startDate,
+          )
+        : createEventInput(startDate, now.getHours(), viewerTimeZone)
+      const times =
+        !draft.allDay && isTime(draft.start) && isTime(draft.end)
+          ? { start: draft.start, end: draft.end, endDate: isISODate(draft.endDate) ? draft.endDate : startDate }
+          : {}
+      setEditor({
+        initialValue: {
+          ...base,
+          ...times,
+          title: draft.title ?? '',
+          location: draft.location ?? '',
+          description: draft.description ?? '',
+        },
+        occurrence: null,
+      })
+      return true
+    },
+    refresh: invalidate,
+  }
+  useHostController(controller, state)
+
   const ViewComponent = VIEW_COMPONENTS[view]
   const editorSource = shownEditor?.occurrence ? eventSources.get(shownEditor.occurrence.calendarId) : undefined
 
@@ -344,6 +420,8 @@ export function Calendar({
                 onNext={next}
                 onToday={goToToday}
                 onSearch={features.search ? () => setIsSearchOpen(true) : undefined}
+                onFilter={categories.length > 0 ? () => setIsFilterOpen(true) : undefined}
+                isFiltered={activeFilter !== null}
                 onCreateEvent={canCreate ? createNow : undefined}
                 context={headerContext}
                 accessory={headerAccessory}
@@ -371,6 +449,8 @@ export function Calendar({
 
               {shownEditor && (
                 <EventModal
+                  readOnly={readOnly}
+                  categories={categories.filter((category) => category.calendarId === editorCalendarId)}
                   key={shownEditor.occurrence?.occurrenceKey ?? 'new'}
                   initialValue={shownEditor.initialValue}
                   occurrence={shownEditor.occurrence}
@@ -411,6 +491,16 @@ export function Calendar({
                       : undefined
                   }
                   onClose={closeEditor}
+                />
+              )}
+
+              {isFilterOpen && (
+                <CategoryFilterModal
+                  categories={categories}
+                  calendarNames={calendarNames}
+                  value={activeFilter}
+                  onChange={setCategoryFilter}
+                  onClose={() => setIsFilterOpen(false)}
                 />
               )}
 

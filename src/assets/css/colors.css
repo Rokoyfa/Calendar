@@ -1,13 +1,16 @@
 .color-red {
   --event-color: var(--color-red);
+  --event-text: var(--color-on-accent);
 }
 
 .color-blue {
   --event-color: var(--color-blue);
+  --event-text: var(--color-on-accent);
 }
 
 .color-green {
   --event-color: var(--color-green);
+  --event-text: var(--color-on-accent);
 }
 
 .color-yellow {

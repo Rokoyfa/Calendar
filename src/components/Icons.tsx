@@ -54,8 +54,14 @@ export const SearchIcon = (props: IconProps) => (
   <IconBase {...props} strokeWidth={2.5} path="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5.2-5.2" />
 )
 
+export const FilterIcon = (props: IconProps) => <IconBase {...props} strokeWidth={2.5} path="M4 6h16M7 12h10M10 18h4" />
+
 export const ExternalLinkIcon = (props: IconProps) => (
-  <IconBase {...props} strokeWidth={2.5} path="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+  <IconBase
+    {...props}
+    strokeWidth={2.5}
+    path="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"
+  />
 )
 
 export const GlobeIcon = (props: IconProps) => (

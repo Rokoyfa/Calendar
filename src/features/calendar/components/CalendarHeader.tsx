@@ -6,7 +6,8 @@ import { useHost } from '../../../context/HostContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { getViewOptions, withShortcut as addShortcut } from '../constants/views.ts'
 import type { CalendarView } from '../types/view.ts'
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, SearchIcon } from '../../../components/Icons.tsx'
+import { classNames } from '../../../utils/classNames.ts'
+import { ChevronLeftIcon, ChevronRightIcon, FilterIcon, PlusIcon, SearchIcon } from '../../../components/Icons.tsx'
 
 type CalendarHeaderProps = {
   view: CalendarView
@@ -18,6 +19,8 @@ type CalendarHeaderProps = {
   onToday: () => void
   onCreateEvent?: () => void
   onSearch?: () => void
+  onFilter?: () => void
+  isFiltered?: boolean
   context?: ReactNode
   accessory?: ReactNode
 }
@@ -32,6 +35,8 @@ export function CalendarHeader({
   onToday,
   onCreateEvent,
   onSearch,
+  onFilter,
+  isFiltered = false,
   context,
   accessory,
 }: CalendarHeaderProps) {
@@ -71,6 +76,17 @@ export function CalendarHeader({
           />
         )}
         <span className="headerCreate">
+          {onFilter && (
+            <span className={classNames('filterButton', isFiltered && 'filterButton--active')}>
+              <IconButton
+                label={isFiltered ? m.calendar.filter.openActive : m.calendar.filter.open}
+                plain
+                onClick={onFilter}
+              >
+                <FilterIcon size={18} />
+              </IconButton>
+            </span>
+          )}
           {onSearch && (
             <IconButton
               label={m.calendar.search.open}

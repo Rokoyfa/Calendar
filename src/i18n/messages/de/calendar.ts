@@ -21,7 +21,19 @@ export const calendar: Messages['calendar'] = {
   fromCalendar: (name) => `Aus dem Kalender „${name}“`,
   sharedEventNotice: (source) => `${source}. Änderungen sehen alle Mitglieder.`,
   dismiss: 'Schließen',
-  undo: { action: 'Rückgängig', ctrlZ: 'Strg+Z', deleted: (title) => `„${title}“ gelöscht`, moved: (title) => `„${title}“ verschoben` },
+  undo: {
+    action: 'Rückgängig',
+    ctrlZ: 'Strg+Z',
+    deleted: (title) => `„${title}“ gelöscht`,
+    moved: (title) => `„${title}“ verschoben`,
+  },
+  filter: {
+    open: 'Nach Kategorie filtern',
+    openActive: 'Nach Kategorie filtern (aktiv)',
+    title: 'Nach Kategorie filtern',
+    uncategorized: 'Ohne Kategorie',
+    reset: 'Alle anzeigen',
+  },
   search: {
     open: 'Suchen',
     title: 'Termine suchen',

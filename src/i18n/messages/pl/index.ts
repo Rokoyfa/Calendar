@@ -34,6 +34,11 @@ const errors: Messages['errors'] = {
   saveEventsFailed: 'Nie udało się zapisać wydarzeń w tej przeglądarce.',
   savePreferencesFailed: 'Nie udało się zapisać ustawień w tej przeglądarce.',
   saveColorFailed: 'Nie udało się zapisać koloru w tej przeglądarce.',
+  saveCategoriesFailed: 'Nie udało się zapisać kategorii w tej przeglądarce.',
+  categoryExists: 'Kategoria o tej nazwie już istnieje.',
+  tooManyCategories: 'Ten kalendarz ma już maksymalną liczbę kategorii.',
+  categoryNotFound: 'Ta kategoria już nie istnieje.',
+  shareNotFound: 'Ten kalendarz nie jest udostępniony lub link został wyłączony.',
   saveDecisionFailed: 'Nie udało się zapisać Twojego wyboru w tej przeglądarce.',
   invalidLink: 'Ten link jest nieprawidłowy lub wygasł.',
   invalidResetLink: 'Ten link jest nieprawidłowy lub wygasł. Poproś o nowy.',
@@ -148,7 +153,19 @@ const calendar: Messages['calendar'] = {
   fromCalendar: (name) => `Z kalendarza „${name}”`,
   sharedEventNotice: (source) => `${source}. Wszyscy członkowie widzą zmiany.`,
   dismiss: 'Zamknij',
-  undo: { action: 'Cofnij', ctrlZ: 'Ctrl+Z', deleted: (title) => `Usunięto „${title}”`, moved: (title) => `Przeniesiono „${title}”` },
+  undo: {
+    action: 'Cofnij',
+    ctrlZ: 'Ctrl+Z',
+    deleted: (title) => `Usunięto „${title}”`,
+    moved: (title) => `Przeniesiono „${title}”`,
+  },
+  filter: {
+    open: 'Filtruj według kategorii',
+    openActive: 'Filtruj według kategorii (aktywne)',
+    title: 'Filtruj według kategorii',
+    uncategorized: 'Bez kategorii',
+    reset: 'Pokaż wszystko',
+  },
   search: {
     open: 'Szukaj',
     title: 'Szukaj wydarzeń',
@@ -180,6 +197,8 @@ const events: Messages['events'] = {
   noCustomColors: 'Nie ma jeszcze własnych kolorów.',
   removeColor: (label) => `Usuń kolor ${label}`,
   deleteTitle: 'Usunąć wydarzenie?',
+  viewTitle: 'Wydarzenie',
+  categories: { label: 'Kategorie' },
   deleteMessage: (title) => `„${title}” zostanie usunięte. Tej operacji nie można cofnąć.`,
   deleteSeriesMessage: (title) => `„${title}” to wydarzenie cykliczne. Co usunąć? Tej operacji nie można cofnąć.`,
   scopeTitle: 'Zmień wydarzenie cykliczne',
@@ -206,7 +225,8 @@ const events: Messages['events'] = {
   reminderAtStart: 'Na początku',
   reminderBefore: (duration) => `${duration} wcześniej`,
   reminderDue: (title, time) => `${title} zaczyna się o ${time}`,
-  reminderBlocked: 'Powiadomienia są zablokowane w tej przeglądarce. Przypomnienia pojawiają się tylko, gdy kalendarz jest otwarty.',
+  reminderBlocked:
+    'Powiadomienia są zablokowane w tej przeglądarce. Przypomnienia pojawiają się tylko, gdy kalendarz jest otwarty.',
   attendees: 'Uczestnicy',
   addAttendee: 'Dodaj uczestnika',
   inviteAll: (count) => `Zaproś wszystkich (${count})`,
@@ -262,13 +282,20 @@ const storage: Messages['storage'] = {
 
 const settings: Messages['settings'] = {
   tabsLabel: 'Sekcje ustawień',
-  tabs: { calendars: 'Kalendarze', invitations: 'Zaproszenia', appearance: 'Wygląd', account: 'Konto', notifications: 'Powiadomienia' },
+  tabs: {
+    calendars: 'Kalendarze',
+    invitations: 'Zaproszenia',
+    appearance: 'Wygląd',
+    account: 'Konto',
+    notifications: 'Powiadomienia',
+  },
   languageTitle: 'Język i region',
   languageDescription: 'Określa język, format daty i godziny oraz pierwszy dzień tygodnia.',
   languageLabel: 'Język',
   languageAuto: 'Automatyczny (przeglądarka)',
   timeZoneTitle: 'Strefa czasowa',
-  timeZoneDescription: 'Wydarzenia są wyświetlane w tej strefie czasowej, a nowe wydarzenia mają ją ustawioną domyślnie.',
+  timeZoneDescription:
+    'Wydarzenia są wyświetlane w tej strefie czasowej, a nowe wydarzenia mają ją ustawioną domyślnie.',
   timeZoneLabel: 'Strefa czasowa',
   timeZoneAuto: (zone) => `Automatyczna: ${zone} (zalecane)`,
   holidaysTitle: 'Święta',
@@ -280,7 +307,8 @@ const settings: Messages['settings'] = {
   holidaysWholeCountry: 'Cały kraj',
   notifications: {
     title: 'E-maile o wydarzeniach',
-    description: 'E-maile na Twój potwierdzony adres. Przypomnienia e-mailem przychodzą także wtedy, gdy kalendarz jest zamknięty.',
+    description:
+      'E-maile na Twój potwierdzony adres. Przypomnienia e-mailem przychodzą także wtedy, gdy kalendarz jest zamknięty.',
     unverified: 'Potwierdź adres e-mail, aby otrzymywać wiadomości.',
     emailInvites: 'Gdy ktoś zaprosi mnie na wydarzenie',
     emailChanges: 'Gdy wydarzenie, na które jestem zaproszony, zmieni się lub zostanie odwołane',
@@ -482,7 +510,11 @@ const calendars: Messages['calendars'] = {
         title: 'Kogo chcesz zaprosić?',
         hint: 'Zaproszone osoby dostaną e-mail i zobaczą kalendarz, gdy tylko zaakceptują.',
       },
-      { label: 'Podsumowanie', title: 'Czy wszystko się zgadza?', hint: 'Jesteś właścicielem i możesz wszystko później zmienić.' },
+      {
+        label: 'Podsumowanie',
+        title: 'Czy wszystko się zgadza?',
+        hint: 'Jesteś właścicielem i możesz wszystko później zmienić.',
+      },
     ],
     stepCount: (step, total) => `Krok ${step} z ${total}`,
     next: 'Dalej',
@@ -520,7 +552,13 @@ const calendars: Messages['calendars'] = {
     notFound: 'Ten kalendarz nie istnieje lub nie masz już do niego dostępu.',
     tabsLabel: 'Sekcje ustawień kalendarza',
     withCount: (label, count) => (count > 0 ? `${label} (${count})` : label),
-    tabs: { general: 'Ogólne', members: 'Członkowie', invitations: 'Zaproszenia', danger: 'Strefa zagrożenia', exchange: 'Import i eksport' },
+    tabs: {
+      general: 'Ogólne',
+      members: 'Członkowie',
+      invitations: 'Zaproszenia',
+      danger: 'Strefa zagrożenia',
+      exchange: 'Import i eksport',
+    },
     displayTitle: 'Wyświetlanie',
     displayDescription: 'Dotyczy tylko Ciebie. Inni członkowie ustawiają to sami.',
     personalTitle: 'Kalendarz osobisty',
@@ -561,7 +599,8 @@ const calendars: Messages['calendars'] = {
     title: 'Strefa zagrożenia',
     transferHint:
       'Inny członek zostaje właścicielem, a Ty administratorem. Rolę odzyskasz tylko wtedy, gdy nowy właściciel Ci ją przekaże.',
-    transferUnavailable: 'Aby przekazać własność, zespół potrzebuje innego członka, który nie jest jeszcze właścicielem.',
+    transferUnavailable:
+      'Aby przekazać własność, zespół potrzebuje innego członka, który nie jest jeszcze właścicielem.',
     transfer: 'Przekaż własność',
     lastOwnerHint: 'Jako jedyny właściciel nie możesz odejść. Najpierw przekaż własność lub usuń zespół.',
     leaveHint: 'Nie będziesz już widzieć kalendarza. Wrócić możesz tylko przez nowe zaproszenie.',
@@ -579,9 +618,37 @@ const calendars: Messages['calendars'] = {
     deleteMessage: (team, count) =>
       `„${team}” zostanie usunięty ze wszystkimi kalendarzami, wydarzeniami i zaproszeniami, także dla wszystkich członków (${count}). Tej operacji nie można cofnąć.`,
   },
+  categories: {
+    title: 'Kategorie',
+    description: 'Przypisuj wydarzenia z tego kalendarza do kategorii i filtruj według nich widoki.',
+    empty: 'Brak kategorii.',
+    nameLabel: 'Nazwa kategorii',
+    newLabel: 'Nowa kategoria',
+    add: 'Dodaj',
+    rename: 'Zmień nazwę',
+    remove: (name) => `Usuń kategorię ${name}`,
+  },
+  share: {
+    title: 'Link publiczny',
+    description:
+      'Udostępnij ten kalendarz każdemu tylko do odczytu, bez logowania. Odwiedzający widzą tytuł, czas, miejsce, opis, linki i kategorie wszystkich wydarzeń, ale nie uczestników, przypomnień ani czatu.',
+    label: 'Link publiczny',
+    pathLabel: 'Ścieżka dla opcji initial-path',
+    create: 'Utwórz link publiczny',
+    copy: 'Kopiuj link',
+    copied: 'Skopiowano',
+    open: 'Otwórz',
+    warning:
+      'Każdy, kto ma ten link, może zobaczyć wszystkie wydarzenia z tego kalendarza. Utworzenie nowego linku wyłącza stary.',
+    renew: 'Utwórz nowy link',
+    remove: 'Zakończ udostępnianie',
+    readOnly: 'Tylko do odczytu',
+    notFound: 'Ten kalendarz nie jest udostępniony lub link został wyłączony.',
+  },
   feed: {
     title: 'Subskrybuj',
-    description: 'Subskrybuj ten kalendarz w Kalendarzu Google, Outlooku lub Kalendarzu Apple. Zmiany pojawią się tam automatycznie, zwykle w ciągu kilku godzin. Subskrypcja służy tylko do odczytu.',
+    description:
+      'Subskrybuj ten kalendarz w Kalendarzu Google, Outlooku lub Kalendarzu Apple. Zmiany pojawią się tam automatycznie, zwykle w ciągu kilku godzin. Subskrypcja służy tylko do odczytu.',
     label: 'Link subskrypcji',
     create: 'Utwórz link subskrypcji',
     copy: 'Kopiuj link',
@@ -593,7 +660,8 @@ const calendars: Messages['calendars'] = {
   },
   ical: {
     title: 'Import i eksport',
-    description: 'Wymieniaj wydarzenia z innymi aplikacjami kalendarza jako plik iCalendar (.ics). Ponowny import aktualizuje wcześniej zaimportowane wydarzenia.',
+    description:
+      'Wymieniaj wydarzenia z innymi aplikacjami kalendarza jako plik iCalendar (.ics). Ponowny import aktualizuje wcześniej zaimportowane wydarzenia.',
     exportLabel: 'Eksportuj jako .ics',
     exporting: 'Eksportowanie …',
     importLabel: 'Importuj plik .ics',

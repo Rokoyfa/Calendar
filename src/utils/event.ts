@@ -1,3 +1,4 @@
+import { parseCategoryIds } from './category.ts'
 import type { CSSProperties } from 'react'
 import {
   addDaysToISODate,
@@ -56,6 +57,7 @@ export type CalendarEvent = {
   title: string
   location: string
   links: EventLink[]
+  categoryIds: string[]
   startDate: string
   start: string
   endDate: string
@@ -79,6 +81,7 @@ const EVENT_INPUT_KEYS = [
   'title',
   'location',
   'links',
+  'categoryIds',
   'startDate',
   'start',
   'endDate',
@@ -118,7 +121,7 @@ export type EventValidationErrors = Partial<Record<Exclude<keyof EventInput, 're
 
 const isPresetEventColor = (value: unknown): value is PresetEventColor => isOneOf(PRESET_EVENT_COLORS, value)
 
-const isEventColor = (value: unknown): value is EventColor => isPresetEventColor(value) || isHexColor(value)
+export const isEventColor = (value: unknown): value is EventColor => isPresetEventColor(value) || isHexColor(value)
 
 export const getEventColorLabel = (color: EventColor, m: Messages) =>
   isPresetEventColor(color) ? m.colors[color] : color.toUpperCase()
@@ -190,11 +193,17 @@ const parseLinks = (value: unknown): EventLink[] =>
         .slice(0, MAX_EVENT_LINKS)
     : []
 
-export const matchesEventText = (event: Pick<CalendarEvent, 'title' | 'location' | 'description' | 'links'>, text: string) => {
+export const matchesEventText = (
+  event: Pick<CalendarEvent, 'title' | 'location' | 'description' | 'links'>,
+  text: string,
+) => {
   const needle = text.trim().toLocaleLowerCase()
-  return [event.title, event.location, event.description, ...event.links.flatMap(({ url, label }) => [url, label])].some(
-    (field) => field.toLocaleLowerCase().includes(needle),
-  )
+  return [
+    event.title,
+    event.location,
+    event.description,
+    ...event.links.flatMap(({ url, label }) => [url, label]),
+  ].some((field) => field.toLocaleLowerCase().includes(needle))
 }
 
 export type EventReply = Exclude<AttendeeStatus, 'needsAction'>
@@ -258,6 +267,7 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
     title: rest.title,
     location: typeof rest.location === 'string' ? rest.location : '',
     links: parseLinks(rest.links),
+    categoryIds: parseCategoryIds(rest.categoryIds),
     startDate,
     start: allDay ? ALL_DAY_TIME : start,
     endDate,
@@ -289,6 +299,7 @@ export const createEventInputForSlots = (first: HourSlot, last: HourSlot, timeZo
     title: '',
     location: '',
     links: [],
+    categoryIds: [],
     startDate: first.date,
     start: minutesToTime(first.hour * MINUTES_PER_HOUR),
     endDate: endsNextDay ? addDaysToISODate(last.date, 1) : last.date,
@@ -326,6 +337,7 @@ export const normalizeEventInput = (input: EventInput): EventInput => ({
     .map(({ url, label }) => ({ url: normalizeLinkUrl(url), label: label.trim() }))
     .filter(({ url, label }) => url !== '' || label !== ''),
   description: input.description.trim(),
+  categoryIds: parseCategoryIds(input.categoryIds),
   reminders: parseReminders(input.reminders),
   ...(input.allDay ? { start: ALL_DAY_TIME, end: ALL_DAY_TIME, timeZone: null } : {}),
   ...(input.recurrence ? NO_SERIES_LINK : { excludedDates: [] }),
@@ -355,8 +367,7 @@ export const getEventDuration = (period: EventPeriod & { allDay?: boolean }) =>
     ? (getSpanDays(period) + 1) * MINUTES_PER_DAY
     : getSpanDays(period) * MINUTES_PER_DAY + timeToMinutes(period.end) - timeToMinutes(period.start)
 
-const isMultiDayEvent = ({ startDate, endDate }: Pick<EventPeriod, 'startDate' | 'endDate'>) =>
-  startDate !== endDate
+const isMultiDayEvent = ({ startDate, endDate }: Pick<EventPeriod, 'startDate' | 'endDate'>) => startDate !== endDate
 
 const getSpanDays = ({ startDate, endDate }: Pick<EventPeriod, 'startDate' | 'endDate'>) =>
   daysBetween(startDate, endDate)
@@ -388,7 +399,11 @@ export const toSeriesRule = (occurrence: EventOccurrence): SeriesRule => ({
   excludedDates: occurrence.excludedDates,
 })
 
-export const toViewerPeriod = (period: EventPeriod, timeZone: string | null, viewerTimeZone: string | null): EventPeriod => {
+export const toViewerPeriod = (
+  period: EventPeriod,
+  timeZone: string | null,
+  viewerTimeZone: string | null,
+): EventPeriod => {
   if (!timeZone || !viewerTimeZone || timeZone === viewerTimeZone) return period
   const start = convertWallTime({ date: period.startDate, time: period.start }, timeZone, viewerTimeZone)
   const end = convertWallTime({ date: period.endDate, time: period.end }, timeZone, viewerTimeZone)
@@ -431,10 +446,17 @@ export const toViewerOccurrencePeriod = (
   viewerTimeZone: string | null,
 ): EventPeriod & { allDay: boolean } => ({
   allDay: event.allDay,
-  ...toViewerPeriod({ start: event.start, end: event.end, ...moveToStartDate(event, startDate) }, event.timeZone, viewerTimeZone),
+  ...toViewerPeriod(
+    { start: event.start, end: event.end, ...moveToStartDate(event, startDate) },
+    event.timeZone,
+    viewerTimeZone,
+  ),
 })
 
-export const formatEventPeriod = (event: EventPeriod & { allDay?: boolean }, { m, format }: Pick<I18n, 'm' | 'format'>) => {
+export const formatEventPeriod = (
+  event: EventPeriod & { allDay?: boolean },
+  { m, format }: Pick<I18n, 'm' | 'format'>,
+) => {
   if (event.allDay)
     return isMultiDayEvent(event)
       ? `${format.shortDay(event.startDate)} – ${format.shortDay(event.endDate)}`

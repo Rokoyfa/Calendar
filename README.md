@@ -9,6 +9,8 @@ An embeddable calendar for React apps and any other website. It runs without a b
 - iCalendar import, export and subscription links for other calendar apps
 - English, German, French, Spanish, Italian, Dutch, Polish and Portuguese built in, more through your own texts
 - Styles isolated in a Shadow DOM, so your page and the calendar never affect each other
+- Categories with a filter, a read-only mode and public read-only links
+- Your page can steer it (`goToDate()`, `setView()`, `openEvent()`) and match it to your design with CSS variables
 - Every optional feature can be switched off
 
 ## Quick start

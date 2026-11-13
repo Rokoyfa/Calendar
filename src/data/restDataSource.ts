@@ -5,11 +5,13 @@ import {
 } from '../features/authorization/index.ts'
 import { RemoteCalendarRepository } from '../features/calendars/index.ts'
 import {
+  RemoteCategoryRepository,
   RemoteColorRepository,
   RemoteChatRepository,
   RemoteEventRepository,
   RemoteHolidayRepository,
   RemotePreferencesRepository,
+  RemoteSharedCalendarRepository,
 } from '../features/storage/index.ts'
 import type { HolidaySource } from '../lib/defaults.ts'
 import { createApiClient } from '../utils/api.ts'
@@ -68,6 +70,8 @@ export function restDataSource({
       colors: new RemoteColorRepository(api),
       preferences: new RemotePreferencesRepository(api),
       holidays: holidaySource === 'backend' ? new RemoteHolidayRepository(api) : undefined,
+      categories: new RemoteCategoryRepository(api),
+      shared: new RemoteSharedCalendarRepository(api),
       chat: chat ? new RemoteChatRepository(api, getSocketUrl()) : undefined,
     }
   }
@@ -79,6 +83,8 @@ export function restDataSource({
         ? (context) => new HostTokenAuthRepository(createApi(context), getUserToken)
         : (context) => new RemoteAuthRepository(createApi(context)),
     connect: (session, context) =>
-      auth && !session.isAuthenticated ? createLocalRepositories() : createRemoteRepositories(context),
+      auth && !session.isAuthenticated
+        ? { ...createLocalRepositories(), shared: new RemoteSharedCalendarRepository(createApi(context)) }
+        : createRemoteRepositories(context),
   }
 }

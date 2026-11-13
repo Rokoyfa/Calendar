@@ -153,9 +153,9 @@ button.columnHeader:hover {
   height: calc(var(--selection-hours, 1) * var(--slot-height));
   padding: var(--space-1) var(--space-2);
   overflow: hidden;
-  border: 2px solid var(--color-blue);
+  border: 2px solid var(--color-accent);
   border-radius: var(--radius-sm);
-  background-color: color-mix(in srgb, var(--color-blue) 22%, transparent);
+  background-color: color-mix(in srgb, var(--color-accent) 22%, transparent);
   pointer-events: none;
 }
 
@@ -187,8 +187,8 @@ button.columnHeader:hover {
 
 .event,
 .eventChip {
-  background-color: var(--event-color, var(--color-blue));
-  color: var(--event-text, var(--color-on-accent));
+  background-color: var(--event-color, var(--color-accent));
+  color: var(--event-text, var(--color-on-brand));
   transition: filter var(--transition-fast);
 }
 
@@ -400,8 +400,8 @@ button.columnHeader:hover {
 
 .today .dayNumber,
 .miniDay.today {
-  background-color: var(--event-color, var(--color-blue));
-  color: var(--event-text, var(--color-on-accent));
+  background-color: var(--event-color, var(--color-accent));
+  color: var(--event-text, var(--color-on-brand));
 }
 
 .monthCellEvents {
@@ -475,7 +475,7 @@ button.columnHeader:hover {
 }
 
 .yearMonthTitle:hover {
-  color: var(--color-blue);
+  color: var(--color-accent);
 }
 
 .miniMonth .monthGridWeekday {
@@ -503,7 +503,7 @@ button.miniDay:hover {
   width: 4px;
   height: 4px;
   border-radius: var(--radius-round);
-  background-color: var(--color-blue);
+  background-color: var(--color-accent);
   transform: translateX(-50%);
 }
 
@@ -613,7 +613,7 @@ button.miniDay:hover {
     min-width: 18px;
     padding: 0 4px;
     border-radius: var(--radius-pill);
-    background-color: var(--color-blue);
+    background-color: var(--color-accent);
     color: var(--color-on-accent);
     font-size: var(--font-size-xs);
     text-align: center;
@@ -726,7 +726,7 @@ button.miniDay:hover {
   height: 10px;
   margin-top: 6px;
   border-radius: 50%;
-  background-color: var(--event-color, var(--color-blue));
+  background-color: var(--event-color, var(--color-accent));
 }
 
 .eventSearchText {
@@ -780,7 +780,7 @@ button.miniDay:hover {
 }
 
 .miniDay.holiday.today {
-  color: var(--event-text, var(--color-on-accent));
+  color: var(--event-text, var(--color-on-brand));
 }
 
 .monthCell .holidayLabel {

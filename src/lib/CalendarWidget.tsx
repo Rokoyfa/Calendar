@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { HostBridge } from '../context/HostBridge.ts'
 import { HostContext, type HostOptions } from '../context/HostContext.ts'
 import { localDataSource, restDataSource, tenantDataSource } from '../data/index.ts'
 import { I18nProvider, useI18n } from '../i18n/index.ts'
@@ -9,6 +10,7 @@ import { CalendarApp } from './CalendarApp.tsx'
 import { DEFAULT_CONFIG, type CalendarProps } from './config.ts'
 import { resolveFeatures, resolveViews } from './defaults.ts'
 import type { EventCallbacks } from './eventCallbacks.ts'
+import { createCalendarHandle } from './handle.ts'
 import { IsolatedRoot } from './IsolatedRoot.tsx'
 import { DEFAULT_LINK_PARAM, readLinkedPath } from './linkParam.ts'
 import { mergeCalendarOptions, type CalendarOptions } from './options.ts'
@@ -17,6 +19,7 @@ import { useCalendarOptions } from './useCalendarOptions.ts'
 type ConfiguredCalendarProps = EventCallbacks &
   Pick<CalendarProps, 'dataSource' | 'getUserToken'> & {
     options: CalendarOptions
+    bridge: HostBridge
   }
 
 function ConfigStatus({ failed }: { failed: boolean }) {
@@ -30,6 +33,7 @@ function ConfigStatus({ failed }: { failed: boolean }) {
 
 function ConfiguredCalendar({
   options,
+  bridge,
   dataSource: providedDataSource,
   getUserToken,
   onEventCreate,
@@ -51,6 +55,7 @@ function ConfiguredCalendar({
     holidays,
     holidaySource,
     mapUrl,
+    readOnly = false,
   } = options
   const featureKey = JSON.stringify(options.features ?? {})
   const features = useMemo(() => resolveFeatures(JSON.parse(featureKey) as CalendarOptions['features']), [featureKey])
@@ -83,6 +88,7 @@ function ConfiguredCalendar({
         : undefined
   const hostMapUrl = isMapUrlTemplate(mapUrl) ? mapUrl : undefined
   const hostView = initialView && views.includes(initialView) ? initialView : undefined
+  const links = useMemo(() => ({ routing, basename, linkParam }), [routing, basename, linkParam])
   const host = useMemo<HostOptions>(
     () => ({
       features,
@@ -92,8 +98,11 @@ function ConfiguredCalendar({
       timeZone: viewerTimeZone,
       holidays: hostHolidays,
       mapUrl: hostMapUrl,
+      readOnly,
+      bridge,
+      links,
     }),
-    [features, views, theme, hostView, viewerTimeZone, hostHolidays, hostMapUrl],
+    [features, views, theme, hostView, viewerTimeZone, hostHolidays, hostMapUrl, readOnly, bridge, links],
   )
   const callbacks = useRef<EventCallbacks>({})
   useEffect(() => {
@@ -121,20 +130,28 @@ export function CalendarWidget({
   onEventCreate,
   onEventUpdate,
   onEventDelete,
+  onViewChange,
+  ref,
   className,
   style,
   ...direct
 }: CalendarProps) {
+  const [bridge] = useState(() => new HostBridge())
+  useImperativeHandle(ref, () => createCalendarHandle(bridge), [bridge])
+  useEffect(() => {
+    bridge.listen(onViewChange ?? null)
+  }, [bridge, onViewChange])
   const state = useCalendarOptions(config)
   const options = state.status === 'ready' ? mergeCalendarOptions(state.options, direct) : direct
   const routing = options.routing ?? 'memory'
 
   return (
-    <IsolatedRoot className={className} style={style} autoFocus={routing === 'browser'}>
+    <IsolatedRoot className={className} style={style} autoFocus={routing === 'browser'} appearance={options.appearance}>
       <I18nProvider locale={options.locale} messages={options.messages}>
         {state.status === 'ready' ? (
           <ConfiguredCalendar
             options={options}
+            bridge={bridge}
             dataSource={dataSource}
             getUserToken={getUserToken}
             onEventCreate={onEventCreate}
