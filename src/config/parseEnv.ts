@@ -1,4 +1,11 @@
-import { DEFAULT_CONFIG, STORAGE_MODES, type CalendarConfig, type StorageMode } from '../lib/defaults.ts'
+import {
+  DEFAULT_CONFIG,
+  FEATURE_NAMES,
+  STORAGE_MODES,
+  type CalendarConfig,
+  type CalendarFeature,
+  type StorageMode,
+} from '../lib/defaults.ts'
 import { isOneOf } from '../utils/object.ts'
 
 const DEFAULT_API_BASE_URL = DEFAULT_CONFIG.apiBaseUrl
@@ -10,7 +17,12 @@ type RawEnv = Record<string, string | undefined>
 
 const clean = (value: string | undefined) => value?.trim() || undefined
 
-export function parseEnv(raw: RawEnv): CalendarConfig {
+export type EnvConfig = CalendarConfig & { configUrl?: string }
+
+export const toFeatureVariable = (feature: CalendarFeature) =>
+  `VITE_FEATURE_${feature.replace(/[A-Z]/g, (letter) => `_${letter}`).toUpperCase()}`
+
+export function parseEnv(raw: RawEnv): EnvConfig {
   const errors: string[] = []
 
   const readStorageMode = (): StorageMode => {
@@ -38,7 +50,7 @@ export function parseEnv(raw: RawEnv): CalendarConfig {
     return DEFAULT_API_TIMEOUT_MS
   }
 
-  const readFlag = (name: 'VITE_FEATURE_AUTH' | 'VITE_FEATURE_TEAMS', fallback: boolean) => {
+  const readFlag = (name: string, fallback: boolean) => {
     const value = clean(raw[name])?.toLowerCase()
     if (value === undefined) return fallback
     if (FALSE_VALUES.includes(value)) return false
@@ -47,14 +59,14 @@ export function parseEnv(raw: RawEnv): CalendarConfig {
     return fallback
   }
 
-  const env: CalendarConfig = {
+  const env: EnvConfig = {
+    configUrl: clean(raw.VITE_CONFIG_URL),
     storageMode: readStorageMode(),
     apiBaseUrl: readApiBaseUrl(),
     apiTimeoutMs: readTimeout(),
-    features: {
-      auth: readFlag('VITE_FEATURE_AUTH', DEFAULT_CONFIG.features.auth),
-      teams: readFlag('VITE_FEATURE_TEAMS', DEFAULT_CONFIG.features.teams),
-    },
+    features: Object.fromEntries(
+      FEATURE_NAMES.map((feature) => [feature, readFlag(toFeatureVariable(feature), DEFAULT_CONFIG.features[feature])]),
+    ) as CalendarConfig['features'],
   }
 
   if (errors.length > 0) throw new Error(`Invalid environment variables:\n- ${errors.join('\n- ')}`)

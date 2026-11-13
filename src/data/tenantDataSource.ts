@@ -11,6 +11,7 @@ export type TenantDataSourceOptions = {
   timeoutMs?: number
   getUserToken?: UserTokenProvider
   holidaySource?: HolidaySource
+  chat?: boolean
 }
 
 export const tenantDataSource = ({
@@ -19,5 +20,14 @@ export const tenantDataSource = ({
   timeoutMs,
   getUserToken,
   holidaySource,
+  chat,
 }: TenantDataSourceOptions): CalendarDataSource =>
-  restDataSource({ baseUrl, timeoutMs, auth: true, headers: { [TENANT_HEADER]: tenant }, getUserToken, holidaySource })
+  restDataSource({
+    baseUrl,
+    timeoutMs,
+    auth: true,
+    headers: { [TENANT_HEADER]: tenant },
+    getUserToken,
+    holidaySource,
+    chat,
+  })

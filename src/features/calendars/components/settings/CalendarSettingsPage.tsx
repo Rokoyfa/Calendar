@@ -5,6 +5,7 @@ import { PageSection } from '../../../../components/PageSection.tsx'
 import { Tabs, type TabDefinition } from '../../../../components/Tabs.tsx'
 import { SETTINGS_CALENDARS_PATH } from '../../../../config/routes.ts'
 import { useTabParam } from '../../../../hooks/useTabParam.ts'
+import { useFeatures } from '../../../../context/HostContext.ts'
 import { useAuth } from '../../../authorization/index.ts'
 import { useCalendars } from '../../hooks/useCalendars.ts'
 import { useTeam } from '../../hooks/useTeam.ts'
@@ -35,6 +36,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
   const { withCount } = settings
   const { user } = useAuth()
   const team = useTeam(calendar)
+  const { subscriptions, importExport } = useFeatures()
   const tabs: TabDefinition<TeamTab>[] = [
     {
       value: 'general',
@@ -79,16 +81,20 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
           },
         ]
       : []),
-    {
-      value: 'exchange',
-      label: settings.tabs.exchange,
-      content: (
-        <>
-          <SubscribeSection calendar={calendar} />
-          <ExchangeSection calendar={calendar} />
-        </>
-      ),
-    },
+    ...(subscriptions || importExport
+      ? [
+          {
+            value: 'exchange' as const,
+            label: settings.tabs.exchange,
+            content: (
+              <>
+                {subscriptions && <SubscribeSection calendar={calendar} />}
+                {importExport && <ExchangeSection calendar={calendar} />}
+              </>
+            ),
+          },
+        ]
+      : []),
     {
       value: 'danger',
       label: settings.tabs.danger,
@@ -113,6 +119,7 @@ export function CalendarSettingsPage() {
   const back = { to: SETTINGS_CALENDARS_PATH, label: m.common.backToSettings }
   const { calendarId } = useParams()
   const { calendars, isLoading } = useCalendars()
+  const { subscriptions, importExport } = useFeatures()
   const calendar = calendars.find((entry) => entry.id === calendarId)
 
   if (!calendar)
@@ -127,8 +134,8 @@ export function CalendarSettingsPage() {
       {isPersonalCalendar(calendar) ? (
         <>
           {hasPermission(calendar, 'manage_calendars') && <GeneralSection calendar={calendar} />}
-          <SubscribeSection calendar={calendar} />
-          <ExchangeSection calendar={calendar} />
+          {subscriptions && <SubscribeSection calendar={calendar} />}
+          {importExport && <ExchangeSection calendar={calendar} />}
           <PageSection title={settings.personalTitle}>
             <p className="formHint">{settings.personalHint}</p>
           </PageSection>

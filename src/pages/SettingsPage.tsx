@@ -3,7 +3,7 @@ import { Tabs, type TabDefinition } from '../components/Tabs.tsx'
 import { useTabParam } from '../hooks/useTabParam.ts'
 import { AccountSettings, useAuth } from '../features/authorization/index.ts'
 import { CalendarSettings, InvitationList, useCalendars } from '../features/calendars/index.ts'
-import { useHost } from '../context/HostContext.ts'
+import { useFeatures } from '../context/HostContext.ts'
 import { CustomColorSettings } from '../features/events/index.ts'
 import { NotificationSettings, PreferencesSettings } from '../features/preferences/index.ts'
 import { HolidaySettings } from '../features/holidays/index.ts'
@@ -14,10 +14,14 @@ type SettingsTab = 'calendars' | 'invitations' | 'appearance' | 'notifications' 
 export function SettingsPage() {
   const { m } = useI18n()
   const { enabled, method, user } = useAuth()
-  const { teams } = useHost()
+  const { teams, holidays, customColors, emailNotifications } = useFeatures()
   const { invitations } = useCalendars()
   const tabs: TabDefinition<SettingsTab>[] = [
-    { value: 'calendars', label: m.settings.tabs.calendars, content: <CalendarSettings /> },
+    {
+      value: 'calendars',
+      label: m.settings.tabs.calendars,
+      content: <CalendarSettings />,
+    },
   ]
   if (teams && user?.emailVerified)
     tabs.push({
@@ -31,19 +35,23 @@ export function SettingsPage() {
     content: (
       <>
         <PreferencesSettings />
-        <HolidaySettings />
-        <CustomColorSettings />
+        {holidays && <HolidaySettings />}
+        {customColors && <CustomColorSettings />}
       </>
     ),
   })
-  if (enabled && user)
+  if (emailNotifications && enabled && user)
     tabs.push({
       value: 'notifications',
       label: m.settings.tabs.notifications,
       content: <NotificationSettings emailVerified={user.emailVerified} />,
     })
   if (enabled && user && method === 'password')
-    tabs.push({ value: 'account', label: m.settings.tabs.account, content: <AccountSettings /> })
+    tabs.push({
+      value: 'account',
+      label: m.settings.tabs.account,
+      content: <AccountSettings />,
+    })
   const [active, select] = useTabParam(tabs)
 
   return (

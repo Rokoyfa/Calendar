@@ -11,6 +11,7 @@ const FEW_UNITS: Record<string, string> = { dni: 'dni', tygodni: 'tygodnie', mie
 
 const common: Messages['common'] = {
   loading: 'Ładowanie …',
+  configError: 'Nie udało się wczytać konfiguracji kalendarza.',
   close: 'Zamknij',
   cancel: 'Anuluj',
   save: 'Zapisz',
@@ -179,6 +180,7 @@ const events: Messages['events'] = {
   noCustomColors: 'Nie ma jeszcze własnych kolorów.',
   removeColor: (label) => `Usuń kolor ${label}`,
   deleteTitle: 'Usunąć wydarzenie?',
+  deleteMessage: (title) => `„${title}” zostanie usunięte. Tej operacji nie można cofnąć.`,
   deleteSeriesMessage: (title) => `„${title}” to wydarzenie cykliczne. Co usunąć? Tej operacji nie można cofnąć.`,
   scopeTitle: 'Zmień wydarzenie cykliczne',
   scopeMessage: 'Których wydarzeń z serii mają dotyczyć zmiany?',

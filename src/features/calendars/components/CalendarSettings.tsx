@@ -12,7 +12,7 @@ import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
 import { ShowInPersonalSwitch } from './ShowInPersonalSwitch.tsx'
 import { canLeaveCalendar, getCalendarKindLabel, isPersonalCalendar } from '../utils/permissions.ts'
-import { useHost } from '../../../context/HostContext.ts'
+import { useFeatures } from '../../../context/HostContext.ts'
 import { useAuth } from '../../authorization/index.ts'
 
 function LeaveCalendarModal({ calendar, onClose }: { calendar: CalendarSummary; onClose: () => void }) {
@@ -80,7 +80,7 @@ function CalendarRow({ calendar, onLeave }: { calendar: CalendarSummary; onLeave
 export function CalendarSettings() {
   const { m } = useI18n()
   const { list } = m.calendars
-  const { teams } = useHost()
+  const { teams } = useFeatures()
   const { calendars, error } = useCalendars()
   const { user } = useAuth()
   const canUseTeams = teams && user !== null

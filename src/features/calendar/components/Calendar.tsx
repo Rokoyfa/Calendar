@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
+import { useHost } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
+import { nearestView } from '../../../utils/calendarView.ts'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
 import { useKeyboardShortcuts } from '../../../hooks/useKeyboardShortcuts.ts'
 import { addDaysToISODate, MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
@@ -75,9 +77,19 @@ type CalendarProps = {
   onOpenEventDone?: () => void
 }
 
-export type OpenEventRequest = { eventId: string; date: string; tab?: EventTab }
+export type OpenEventRequest = {
+  eventId: string
+  date: string
+  tab?: EventTab
+}
 
-type PendingDrop = { occurrence: EventOccurrence; period: EventPeriod; options: EditScope[] }
+type PendingDrop = {
+  occurrence: EventOccurrence
+  period: EventPeriod
+  options: EditScope[]
+}
+
+const NO_SHORTCUTS = {}
 
 type UndoOffer = { id: number; message: string; undo: () => Promise<void> }
 
@@ -96,6 +108,7 @@ export function Calendar({
   onOpenEventDone,
 }: CalendarProps) {
   const i18n = useI18n()
+  const { features, views } = useHost()
   const now = useNow()
   const today = toISODate(now)
   const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
@@ -157,7 +170,7 @@ export function Calendar({
   const attendeeCandidates = useAttendeeCandidates(loadAttendeeCandidates, editorCalendarId)
 
   const offerUndo = (message: string, undo: (() => Promise<void>) | null) =>
-    setUndoOffer(undo ? { id: Date.now(), message, undo } : null)
+    setUndoOffer(undo && features.undo ? { id: Date.now(), message, undo } : null)
 
   const dismissUndo = useCallback(() => setUndoOffer(null), [])
 
@@ -176,7 +189,11 @@ export function Calendar({
 
   const openCreate = useCallback(
     (date: string, hour: number) => {
-      if (canCreate) setEditor({ initialValue: createEventInput(date, hour, viewerTimeZone), occurrence: null })
+      if (canCreate)
+        setEditor({
+          initialValue: createEventInput(date, hour, viewerTimeZone),
+          occurrence: null,
+        })
     },
     [canCreate, viewerTimeZone],
   )
@@ -184,20 +201,31 @@ export function Calendar({
   const openCreateRange = useCallback(
     ({ first, last }: SlotRange) => {
       if (canCreate)
-        setEditor({ initialValue: createEventInputForSlots(first, last, viewerTimeZone), occurrence: null })
+        setEditor({
+          initialValue: createEventInputForSlots(first, last, viewerTimeZone),
+          occurrence: null,
+        })
     },
     [canCreate, viewerTimeZone],
   )
 
   const openCreateAllDay = useCallback(
     (date: string) => {
-      if (canCreate) setEditor({ initialValue: createAllDayEventInput(date), occurrence: null })
+      if (canCreate)
+        setEditor({
+          initialValue: createAllDayEventInput(date),
+          occurrence: null,
+        })
     },
     [canCreate],
   )
 
   const openEdit = useCallback((occurrence: EventOccurrence, initialTab?: EventTab) => {
-    setEditor({ initialValue: toOccurrenceInput(occurrence), occurrence, initialTab })
+    setEditor({
+      initialValue: toOccurrenceInput(occurrence),
+      occurrence,
+      initialTab,
+    })
   }, [])
 
   const closeEditor = () => {
@@ -234,7 +262,7 @@ export function Calendar({
   }
 
   const requestDelete = async (occurrence: EventOccurrence) => {
-    if (getScopeOptions(occurrence).length > 1) setEventToDelete(occurrence)
+    if (!features.undo || getScopeOptions(occurrence).length > 1) setEventToDelete(occurrence)
     else await removeEvent(occurrence, 'all')
   }
 
@@ -273,19 +301,30 @@ export function Calendar({
     onDrop: handleDrop,
   })
 
-  useKeyboardShortcuts({
-    ArrowLeft: previous,
-    ArrowRight: next,
-    t: goToToday,
-    '/': () => setIsSearchOpen(true),
-    n: canCreate ? createNow : undefined,
-    [VIEW_SHORTCUTS.day]: () => setView('day'),
-    [VIEW_SHORTCUTS.week]: () => setView('week'),
-    [VIEW_SHORTCUTS.month]: () => setView('month'),
-    [VIEW_SHORTCUTS.year]: () => setView('year'),
-    j: () => setView('year'),
-    'mod+z': undoOffer ? () => void runUndo() : undefined,
-  })
+  const showView = (wanted: CalendarView, date: string) => {
+    const target = nearestView(wanted, views)
+    if (target === wanted || target !== view) show(target, date)
+    else goToDate(date)
+  }
+  const selectView = (wanted: CalendarView) => (views.includes(wanted) ? () => setView(wanted) : undefined)
+
+  useKeyboardShortcuts(
+    features.shortcuts
+      ? {
+          ArrowLeft: previous,
+          ArrowRight: next,
+          t: goToToday,
+          '/': features.search ? () => setIsSearchOpen(true) : undefined,
+          n: canCreate ? createNow : undefined,
+          [VIEW_SHORTCUTS.day]: selectView('day'),
+          [VIEW_SHORTCUTS.week]: selectView('week'),
+          [VIEW_SHORTCUTS.month]: selectView('month'),
+          [VIEW_SHORTCUTS.year]: selectView('year'),
+          j: selectView('year'),
+          'mod+z': undoOffer ? () => void runUndo() : undefined,
+        }
+      : NO_SHORTCUTS,
+  )
 
   const ViewComponent = VIEW_COMPONENTS[view]
   const editorSource = shownEditor?.occurrence ? eventSources.get(shownEditor.occurrence.calendarId) : undefined
@@ -304,7 +343,7 @@ export function Calendar({
                 onPrevious={previous}
                 onNext={next}
                 onToday={goToToday}
-                onSearch={() => setIsSearchOpen(true)}
+                onSearch={features.search ? () => setIsSearchOpen(true) : undefined}
                 onCreateEvent={canCreate ? createNow : undefined}
                 context={headerContext}
                 accessory={headerAccessory}
@@ -325,8 +364,8 @@ export function Calendar({
                   onCreateRange={openCreateRange}
                   onCreateAllDay={openCreateAllDay}
                   onEventSelect={openEdit}
-                  onShowDay={(date) => show('day', date)}
-                  onShowMonth={(date) => show('month', date)}
+                  onShowDay={(date) => showView('day', date)}
+                  onShowMonth={(date) => showView('month', date)}
                 />
               </main>
 
@@ -335,14 +374,18 @@ export function Calendar({
                   key={shownEditor.occurrence?.occurrenceKey ?? 'new'}
                   initialValue={shownEditor.initialValue}
                   occurrence={shownEditor.occurrence}
-                  attendeeOptions={{
-                    candidates: attendeeCandidates,
-                    ownEmail: currentUserEmail,
-                    onRespond:
-                      respond && shownEditor.occurrence
-                        ? (status) => respond(shownEditor.occurrence!, status)
-                        : undefined,
-                  }}
+                  attendeeOptions={
+                    features.attendees
+                      ? {
+                          candidates: attendeeCandidates,
+                          ownEmail: currentUserEmail,
+                          onRespond:
+                            respond && shownEditor.occurrence
+                              ? (status) => respond(shownEditor.occurrence!, status)
+                              : undefined,
+                        }
+                      : undefined
+                  }
                   notice={
                     shownEditor.notice ??
                     (editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n)))
@@ -351,11 +394,14 @@ export function Calendar({
                   onDelete={shownEditor.occurrence ? () => requestDelete(shownEditor.occurrence!) : undefined}
                   chat={
                     shownEditor.occurrence && chat?.isAvailable(shownEditor.occurrence.calendarId)
-                      ? { key: getChatKey(shownEditor.occurrence), calendarId: shownEditor.occurrence.calendarId }
+                      ? {
+                          key: getChatKey(shownEditor.occurrence),
+                          calendarId: shownEditor.occurrence.calendarId,
+                        }
                       : undefined
                   }
                   initialTab={shownEditor.initialTab}
-                  onDuplicate={shownEditor.occurrence && canCreate ? duplicate : undefined}
+                  onDuplicate={features.duplicate && shownEditor.occurrence && canCreate ? duplicate : undefined}
                   onRemindersChange={
                     setReminders && shownEditor.occurrence
                       ? async (reminders) => {
@@ -368,7 +414,7 @@ export function Calendar({
                 />
               )}
 
-              {isSearchOpen && (
+              {isSearchOpen && features.search && (
                 <EventSearchModal
                   calendarIds={calendarIds}
                   today={today}

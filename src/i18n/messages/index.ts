@@ -32,6 +32,7 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 
 const mergeDeep = (base: unknown, override: unknown): unknown => {
   if (override === undefined) return base
+  if (base !== undefined && typeof base !== typeof override) return base
   if (!isPlainObject(base) || !isPlainObject(override)) return override
   const result: Record<string, unknown> = { ...base }
   for (const [key, value] of Object.entries(override)) result[key] = mergeDeep(base[key], value)

@@ -23,9 +23,13 @@ export const VIEW_DEFINITIONS: Record<CalendarView, ViewDefinition> = {
     getTitle: (anchor, { format }) => format.longDate(anchor),
   },
   week: {
-    getRange: (anchor, firstDay) => ({ from: startOfWeekISO(anchor, firstDay), to: endOfWeekISO(anchor, firstDay) }),
+    getRange: (anchor, firstDay) => ({
+      from: startOfWeekISO(anchor, firstDay),
+      to: endOfWeekISO(anchor, firstDay),
+    }),
     step: (anchor, direction) => addDaysToISODate(anchor, direction * DAYS_PER_WEEK),
-    getTitle: (anchor, { format, weekInfo }) => format.weekTitle(fromISODate(startOfWeekISO(anchor, weekInfo.firstDay))),
+    getTitle: (anchor, { format, weekInfo }) =>
+      format.weekTitle(fromISODate(startOfWeekISO(anchor, weekInfo.firstDay))),
     getSubtitle: (anchor, { m, weekInfo }) => m.views.weekNumber(getWeekNumber(fromISODate(anchor), weekInfo)),
   },
   month: {
@@ -37,19 +41,27 @@ export const VIEW_DEFINITIONS: Record<CalendarView, ViewDefinition> = {
     getTitle: (anchor, { format }) => format.monthYear(anchor),
   },
   year: {
-    getRange: (anchor) => ({ from: startOfYearISO(anchor), to: endOfYearISO(anchor) }),
+    getRange: (anchor) => ({
+      from: startOfYearISO(anchor),
+      to: endOfYearISO(anchor),
+    }),
     step: (anchor, direction) => addMonthsToISODate(anchor, direction * MONTHS_PER_YEAR),
     getTitle: (anchor) => anchor.slice(0, 4),
   },
 }
 
-export const VIEW_SHORTCUTS: Record<CalendarView, string> = { day: 'd', week: 'w', month: 'm', year: 'y' }
+export const VIEW_SHORTCUTS: Record<CalendarView, string> = {
+  day: 'd',
+  week: 'w',
+  month: 'm',
+  year: 'y',
+}
 
 export const withShortcut = (label: string, key: string) => `${label} (${key.toUpperCase()})`
 
-export const getViewOptions = (m: Messages) =>
-  CALENDAR_VIEWS.map((view) => ({
+export const getViewOptions = (m: Messages, views: readonly CalendarView[] = CALENDAR_VIEWS, shortcuts = true) =>
+  views.map((view) => ({
     value: view,
     label: m.views[view].label,
-    title: withShortcut(m.views[view].label, VIEW_SHORTCUTS[view]),
+    title: shortcuts ? withShortcut(m.views[view].label, VIEW_SHORTCUTS[view]) : undefined,
   }))

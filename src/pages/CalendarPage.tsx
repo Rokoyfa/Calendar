@@ -19,9 +19,15 @@ import { LocalImportPrompt } from '../features/storage/index.ts'
 import { useI18n } from '../i18n/index.ts'
 import { useHost } from '../context/HostContext.ts'
 import { useRootElement } from '../context/RootElementContext.ts'
+import { nearestView } from '../utils/calendarView.ts'
 import { getStartView, isCompactWidth } from '../utils/preferences.ts'
 
-const LINK_PARAMS = { calendar: 'calendar', event: 'event', date: 'date', tab: 'tab' } as const
+const LINK_PARAMS = {
+  calendar: 'calendar',
+  event: 'event',
+  date: 'date',
+  tab: 'tab',
+} as const
 
 export function CalendarPage() {
   const root = useRootElement()
@@ -39,9 +45,13 @@ export function CalendarPage() {
   const openEvent = useMemo<OpenEventRequest | undefined>(
     () =>
       linkedEventId && isISODate(linkedDate)
-        ? { eventId: linkedEventId, date: linkedDate, tab: linkedTab === 'chat' ? 'chat' : undefined }
+        ? {
+            eventId: linkedEventId,
+            date: linkedDate,
+            tab: linkedTab === 'chat' && host.features.chat ? 'chat' : undefined,
+          }
         : undefined,
-    [linkedEventId, linkedDate, linkedTab],
+    [linkedEventId, linkedDate, linkedTab, host.features.chat],
   )
   const linkedCalendarExists = calendars.some((calendar) => calendar.id === linkedCalendarId)
 
@@ -60,7 +70,7 @@ export function CalendarPage() {
     )
 
   const chatAccess = useMemo<ChatAccess | undefined>(() => {
-    if (!host.teams || !user) return undefined
+    if (!host.features.chat || !user) return undefined
     const find = (calendarId: string) => calendars.find((calendar) => calendar.id === calendarId)
     return {
       currentUserId: user.id,
@@ -73,21 +83,22 @@ export function CalendarPage() {
         return Boolean(calendar && hasPermission(calendar, 'manage_calendars'))
       },
     }
-  }, [host.teams, user, calendars])
+  }, [host.features.chat, user, calendars])
   const loadAttendeeCandidates = useMemo(() => {
-    if (!host.teams || !user) return undefined
+    if (!host.features.attendees || !user) return undefined
     return async (calendarId: string) => {
       const calendar = calendars.find((entry) => entry.id === calendarId)
       if (!calendar || isPersonalCalendar(calendar)) return []
       const members = await repository.listMembers(calendar.teamId)
       return members.map(({ email, name }) => ({ email, name }))
     }
-  }, [host.teams, user, calendars, repository])
+  }, [host.features.attendees, user, calendars, repository])
   const eventSources = useMemo(
     () => new Map(getSharedCalendars(calendars, activeCalendar).map(({ id, name, color }) => [id, { name, color }])),
     [calendars, activeCalendar],
   )
-  const initialView = host.initialView ?? getStartView(preferences, isCompactWidth(root.clientWidth))
+  const initialView =
+    host.initialView ?? nearestView(getStartView(preferences, isCompactWidth(root.clientWidth)), host.views)
 
   return (
     <div className="app">
@@ -111,7 +122,7 @@ export function CalendarPage() {
                 <SettingsIcon size={20} />
               </Link>
             )}
-            <AccountMenu menuItems={host.teams ? <CalendarSwitcher /> : undefined} />
+            <AccountMenu menuItems={host.features.teams ? <CalendarSwitcher /> : undefined} />
           </>
         }
       />

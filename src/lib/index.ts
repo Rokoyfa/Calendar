@@ -1,7 +1,18 @@
 export { CalendarWidget as Calendar } from './CalendarWidget.tsx'
 export { VERSION } from './version.ts'
 export { CalendarElement, DEFAULT_ELEMENT_NAME, defineCalendarElement } from './element.tsx'
-export type { CalendarFeatures, CalendarProps, CalendarRouting, HolidaySource, StorageMode } from './config.ts'
+export { DEFAULT_FEATURES, FEATURE_NAMES, parseCalendarOptions } from './config.ts'
+export type {
+  CalendarConfigSource,
+  CalendarFeature,
+  CalendarFeatures,
+  CalendarOptions,
+  CalendarProps,
+  CalendarRouting,
+  HolidaySource,
+  ParsedOptions,
+  StorageMode,
+} from './config.ts'
 export type { DeletedEvent, EventCallbacks } from './eventCallbacks.ts'
 export type { HostTheme } from '../context/HostContext.ts'
 export type { CalendarView } from '../utils/calendarView.ts'
@@ -29,6 +40,7 @@ export type {
   TeamRole,
 } from '../features/calendars/index.ts'
 export type {
+  ChatRepository,
   ColorRepository,
   EventQuery,
   EventRepository,
@@ -38,6 +50,7 @@ export type {
   PreferencesRepository,
 } from '../features/storage/index.ts'
 export type { Attendee, AttendeeStatus, CalendarEvent, EventInput, EventLink } from '../utils/event.ts'
+export type { ChatEvent, ChatKey, ChatMessage, ChatPage, ChatUnread } from '../utils/chat.ts'
 export type { Preferences } from '../utils/preferences.ts'
 export type { PublicHoliday } from '../utils/holidays.ts'
 export type { Recurrence } from '../utils/recurrence.ts'

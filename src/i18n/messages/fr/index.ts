@@ -2,6 +2,7 @@ import type { Messages } from '../types.ts'
 
 const common: Messages['common'] = {
   loading: 'Chargement …',
+  configError: 'La configuration du calendrier n’a pas pu être chargée.',
   close: 'Fermer',
   cancel: 'Annuler',
   save: 'Enregistrer',
@@ -172,6 +173,7 @@ const events: Messages['events'] = {
   noCustomColors: 'Pas encore de couleurs personnalisées.',
   removeColor: (label) => `Supprimer la couleur ${label}`,
   deleteTitle: 'Supprimer l’événement ?',
+  deleteMessage: (title) => `« ${title} » sera supprimé. Cette action est irréversible.`,
   deleteSeriesMessage: (title) =>
     `« ${title} » est un événement récurrent. Que faut-il supprimer ? Cette action est irréversible.`,
   scopeTitle: 'Modifier l’événement récurrent',

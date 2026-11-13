@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useFeatures } from '../../../context/HostContext.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import type { HexColor } from '../../../utils/color.ts'
 import { useColorRepository } from '../../storage/index.ts'
@@ -8,7 +9,8 @@ const NO_COLORS: HexColor[] = []
 
 export function useCustomColors() {
   const repository = useColorRepository()
-  const load = useCallback(() => repository.list(), [repository])
+  const { customColors: enabled } = useFeatures()
+  const load = useCallback(() => (enabled ? repository.list() : Promise.resolve(NO_COLORS)), [repository, enabled])
   const { data: colors, error, apply } = useAsyncResource(load, NO_COLORS)
 
   const addColor = useCallback((color: HexColor) => apply(repository.add(color)), [repository, apply])
@@ -20,5 +22,11 @@ export function useCustomColors() {
     [repository, apply],
   )
 
-  return { colors, error, addColor, removeColor, canAddMore: colors.length < MAX_CUSTOM_COLORS }
+  return {
+    colors,
+    error,
+    addColor,
+    removeColor,
+    canAddMore: enabled && colors.length < MAX_CUSTOM_COLORS,
+  }
 }

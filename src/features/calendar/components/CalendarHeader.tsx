@@ -2,8 +2,9 @@ import type { ReactNode } from 'react'
 import { Button } from '../../../components/Button.tsx'
 import { IconButton } from '../../../components/IconButton.tsx'
 import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
+import { useHost } from '../../../context/HostContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
-import { getViewOptions, withShortcut } from '../constants/views.ts'
+import { getViewOptions, withShortcut as addShortcut } from '../constants/views.ts'
 import type { CalendarView } from '../types/view.ts'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, SearchIcon } from '../../../components/Icons.tsx'
 
@@ -35,14 +36,16 @@ export function CalendarHeader({
   accessory,
 }: CalendarHeaderProps) {
   const { m } = useI18n()
+  const { views, features } = useHost()
+  const withShortcut = (label: string, key: string) => (features.shortcuts ? addShortcut(label, key) : label)
   const { previous: previousLabel, next: nextLabel } = m.views[view]
   return (
     <header className="header">
       <div className="headerNav">
-        <IconButton label={previousLabel} title={`${previousLabel} (←)`} plain onClick={onPrevious}>
+        <IconButton label={previousLabel} title={withShortcut(previousLabel, '←')} plain onClick={onPrevious}>
           <ChevronLeftIcon />
         </IconButton>
-        <IconButton label={nextLabel} title={`${nextLabel} (→)`} plain onClick={onNext}>
+        <IconButton label={nextLabel} title={withShortcut(nextLabel, '→')} plain onClick={onNext}>
           <ChevronRightIcon />
         </IconButton>
         <Button variant="outline" className="todayButton" title={withShortcut(m.calendar.today, 't')} onClick={onToday}>
@@ -59,7 +62,14 @@ export function CalendarHeader({
       </div>
 
       <div className="headerActions">
-        <SegmentedControl label={m.views.label} value={view} options={getViewOptions(m)} onChange={onViewChange} />
+        {views.length > 1 && (
+          <SegmentedControl
+            label={m.views.label}
+            value={view}
+            options={getViewOptions(m, views, features.shortcuts)}
+            onChange={onViewChange}
+          />
+        )}
         <span className="headerCreate">
           {onSearch && (
             <IconButton

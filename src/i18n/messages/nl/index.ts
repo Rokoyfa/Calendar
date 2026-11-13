@@ -2,6 +2,7 @@ import type { Messages } from '../types.ts'
 
 const common: Messages['common'] = {
   loading: 'Laden …',
+  configError: 'De configuratie van de kalender kon niet worden geladen.',
   close: 'Sluiten',
   cancel: 'Annuleren',
   save: 'Opslaan',
@@ -171,6 +172,7 @@ const events: Messages['events'] = {
   noCustomColors: 'Nog geen eigen kleuren.',
   removeColor: (label) => `Kleur ${label} verwijderen`,
   deleteTitle: 'Afspraak verwijderen?',
+  deleteMessage: (title) => `‘${title}’ wordt verwijderd. Dit kan niet ongedaan worden gemaakt.`,
   deleteSeriesMessage: (title) =>
     `‘${title}’ is een terugkerende afspraak. Wat moet er worden verwijderd? Dit kan niet ongedaan worden gemaakt.`,
   scopeTitle: 'Terugkerende afspraak wijzigen',

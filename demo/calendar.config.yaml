@@ -1,0 +1,146 @@
+# yaml-language-server: $schema=https://unpkg.com/@rokoyfa/calendar/schema/calendar-config.schema.json
+#
+# Example configuration for @rokoyfa/calendar.
+#
+#   <calendar-widget config="/calendar.config.yaml"></calendar-widget>
+#   <Calendar config="/calendar.config.yaml" />
+#
+# Every entry is optional. Leave out what you do not need, the value shown here is
+# the default unless a comment says otherwise. Props and attributes on the page win
+# over this file. The file is public like everything a browser loads: no secrets.
+
+# ── Data ────────────────────────────────────────────────────────────────────────
+
+# Where events are stored.
+#   local   in the visitor's browser, no backend needed
+#   remote  in your backend (see the Developer Guide, "Backend")
+# With features.auth the sign-in decides: signed-in users use the backend, guests the browser.
+storageMode: local
+
+# Base URL of your backend. Relative ("/api") or absolute ("https://api.example.com").
+# Only used with storageMode "remote" or features.auth.
+apiBaseUrl: /api
+
+# How long a request to the backend may take, in milliseconds.
+apiTimeoutMs: 10000
+
+# Multi-tenant backends: sent with every request as the X-Calendar-Tenant header.
+# Setting it turns sign-in on. Default: not set.
+# tenant: acme
+
+# ── Features ────────────────────────────────────────────────────────────────────
+# Everything beyond the core calendar can be switched off. A feature that is off
+# disappears from the interface and makes no requests to the backend.
+
+features:
+  # Sign-in, registration and account pages. Needs the /auth endpoints.
+  auth: false
+
+  # Team calendars with members, roles and invitations. Needs sign-in.
+  teams: true
+
+  # Chat per event in team calendars. Needs teams, the chat endpoints and the WebSocket.
+  chat: true
+
+  # Inviting team members to events and answering with yes, maybe or no. Needs teams.
+  attendees: true
+
+  # Creating and editing recurring events. Existing series are still shown when off.
+  recurrence: true
+
+  # Reminders on events, shown as browser notifications or notices in the calendar.
+  reminders: true
+
+  # Website and other links on events.
+  links: true
+
+  # Opening an event's location in a map service (see mapUrl).
+  mapLinks: true
+
+  # Public holidays in the views, and their setting.
+  holidays: true
+
+  # Event search.
+  search: true
+
+  # Undo after moving or deleting an event. When off, deleting asks for confirmation.
+  undo: true
+
+  # "Duplicate" in the event dialog.
+  duplicate: true
+
+  # Keyboard shortcuts (T today, N new event, / search, D W M Y views, arrow keys).
+  shortcuts: true
+
+  # Subscription links for other calendar apps. Needs the feed endpoints.
+  subscriptions: true
+
+  # Import and export of .ics files in the calendar settings.
+  importExport: true
+
+  # The "Notifications" tab where signed-in users choose which e-mails they get.
+  # Your backend sends the e-mails.
+  emailNotifications: true
+
+  # Time zone per event and in the settings. When off, the automatic zone is always used.
+  timeZones: true
+
+  # Letting users add their own event colors.
+  customColors: true
+
+# ── Appearance ──────────────────────────────────────────────────────────────────
+
+# Views the user can switch between, any of: day, week, month, year.
+# With a single view the switch disappears.
+views: [day, week, month, year]
+
+# View shown first. Default: the user's own start view (week on desktop, day on phones).
+# initialView: month
+
+# Language and region, e.g. en-US, de-DE, fr-FR, pt-BR. Default: the browser's language.
+# Users can change it in the settings.
+# locale: de-DE
+
+# Theme while the user has chosen "system": light or dark. Default: follows the device.
+# theme: dark
+
+# IANA time zone the calendar is shown in while the user has chosen "automatic".
+# Default: the browser's zone.
+# timeZone: Europe/Berlin
+
+# Region for public holidays: a country (DE, AT, US) or a region (DE-NW, US-CA), or "off".
+# Default: derived from the language. Users can override it in the settings.
+# holidays: DE-NW
+
+# Where public holidays come from.
+#   library  computed in the browser
+#   backend  asked from your backend (GET /holidays), falling back to the library
+holidaySource: library
+
+# Map service for locations. {query} is replaced by the place. Default: Google Maps.
+# mapUrl: https://www.openstreetmap.org/search?query={query}
+
+# Own texts per language. Only plain texts can be set here. Texts that are functions
+# (for example with a count) need the "messages" prop or property instead.
+# messages:
+#   de:
+#     calendar:
+#       newEvent: Neuer Eintrag
+
+# ── Navigation ──────────────────────────────────────────────────────────────────
+
+# How the calendar's own pages (settings, sign-in, …) are addressed.
+#   memory   inside the widget, the address bar stays untouched (right for embedding)
+#   browser  in the address bar, when the calendar is the whole page
+routing: memory
+
+# Path prefix for routing "browser", when the calendar does not live at "/". Default: none.
+# basename: /calendar
+
+# Page the widget opens on. Default: the calendar itself.
+# initialPath: /settings
+
+# Query parameter of your page that links from e-mails use to open a page of the widget,
+# e.g. https://example.com/team?calendarPath=%2Freset-password%3Ftoken%3D…
+# Set to false to turn it off. Only used with routing "memory".
+linkParam: calendarPath

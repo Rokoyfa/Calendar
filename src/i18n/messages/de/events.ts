@@ -21,6 +21,7 @@ export const events: Messages['events'] = {
   noCustomColors: 'Noch keine eigenen Farben.',
   removeColor: (label) => `Farbe ${label} entfernen`,
   deleteTitle: 'Termin löschen?',
+  deleteMessage: (title) => `„${title}“ wird gelöscht. Das kann nicht rückgängig gemacht werden.`,
   deleteSeriesMessage: (title) =>
     `„${title}“ ist ein wiederkehrender Termin. Was soll gelöscht werden? Das kann nicht rückgängig gemacht werden.`,
   scopeTitle: 'Wiederkehrenden Termin ändern',

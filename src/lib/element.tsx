@@ -2,11 +2,20 @@ import { StrictMode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { CalendarDataSource } from '../data/index.ts'
 import type { UserTokenProvider } from '../features/authorization/index.ts'
-import { isCalendarView } from '../utils/calendarView.ts'
+import { isCalendarView, type CalendarView } from '../utils/calendarView.ts'
 import type { CalendarEvent } from '../utils/event.ts'
 import { isOneOf } from '../utils/object.ts'
 import { CalendarWidget } from './CalendarWidget.tsx'
-import { HOLIDAY_SOURCES, STORAGE_MODES, type CalendarProps } from './config.ts'
+import {
+  FEATURE_NAMES,
+  HOLIDAY_SOURCES,
+  HOST_THEMES,
+  STORAGE_MODES,
+  type CalendarConfigSource,
+  type CalendarFeature,
+  type CalendarFeatures,
+  type CalendarProps,
+} from './config.ts'
 import type { DeletedEvent } from './eventCallbacks.ts'
 import type { MessageOverrides } from '../i18n/index.ts'
 import { VERSION } from './version.ts'
@@ -15,9 +24,34 @@ export const DEFAULT_ELEMENT_NAME = 'calendar-widget'
 
 const FILL = { height: '100%' }
 
-const THEMES = ['light', 'dark'] as const
+export const toFeatureAttribute = (feature: CalendarFeature) =>
+  `feature-${feature.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`
 
-const ATTRIBUTES = ['storage-mode', 'api-base-url', 'api-timeout-ms', 'auth', 'teams', 'initial-path', 'locale', 'tenant', 'theme', 'initial-view', 'link-param', 'time-zone', 'holidays', 'holiday-source', 'map-url'] as const
+const FEATURE_ALIASES: Partial<Record<CalendarFeature, string>> = {
+  auth: 'auth',
+  teams: 'teams',
+}
+
+const ATTRIBUTES = [
+  'config',
+  'storage-mode',
+  'api-base-url',
+  'api-timeout-ms',
+  'auth',
+  'teams',
+  'views',
+  'initial-path',
+  'locale',
+  'tenant',
+  'theme',
+  'initial-view',
+  'link-param',
+  'time-zone',
+  'holidays',
+  'holiday-source',
+  'map-url',
+  ...FEATURE_NAMES.map(toFeatureAttribute),
+]
 
 export class CalendarElement extends HTMLElement {
   static observedAttributes = ATTRIBUTES
@@ -27,6 +61,7 @@ export class CalendarElement extends HTMLElement {
   #dataSource: CalendarDataSource | undefined
   #getUserToken: UserTokenProvider | undefined
   #messages: MessageOverrides | undefined
+  #config: CalendarConfigSource | undefined
 
   get dataSource() {
     return this.#dataSource
@@ -55,7 +90,17 @@ export class CalendarElement extends HTMLElement {
     if (this.#root) this.#render()
   }
 
+  get config() {
+    return this.#config ?? this.getAttribute('config') ?? undefined
+  }
+
+  set config(value: CalendarConfigSource | undefined) {
+    this.#config = value
+    if (this.#root) this.#render()
+  }
+
   connectedCallback() {
+    this.#adoptEarlyProperty('config')
     this.#adoptEarlyProperty('dataSource')
     this.#adoptEarlyProperty('getUserToken')
     this.#adoptEarlyProperty('messages')
@@ -64,7 +109,7 @@ export class CalendarElement extends HTMLElement {
     this.#render()
   }
 
-  #adoptEarlyProperty(name: 'dataSource' | 'getUserToken' | 'messages') {
+  #adoptEarlyProperty(name: 'dataSource' | 'getUserToken' | 'messages' | 'config') {
     if (!Object.hasOwn(this, name)) return
     const value = this[name]
     delete (this as Partial<Record<typeof name, unknown>>)[name]
@@ -81,9 +126,19 @@ export class CalendarElement extends HTMLElement {
     if (this.#root) this.#render()
   }
 
-  #flag(name: 'auth' | 'teams') {
-    const value = this.getAttribute(name)
-    return value === null ? undefined : value !== 'false'
+  #features() {
+    const features: Partial<CalendarFeatures> = {}
+    for (const feature of FEATURE_NAMES) {
+      const alias = FEATURE_ALIASES[feature]
+      const value = this.getAttribute(toFeatureAttribute(feature)) ?? (alias ? this.getAttribute(alias) : null)
+      if (value !== null) features[feature] = value !== 'false'
+    }
+    return features
+  }
+
+  #views() {
+    const views = (this.getAttribute('views') ?? '').split(/[\s,]+/).filter(isCalendarView)
+    return views.length > 0 ? (views as CalendarView[]) : undefined
   }
 
   #emit(type: string, detail: CalendarEvent | DeletedEvent) {
@@ -105,11 +160,13 @@ export class CalendarElement extends HTMLElement {
       storageMode: isOneOf(STORAGE_MODES, storageMode) ? storageMode : undefined,
       apiBaseUrl: this.getAttribute('api-base-url') ?? undefined,
       apiTimeoutMs: Number.isInteger(timeout) && timeout > 0 ? timeout : undefined,
-      features: { auth: this.#flag('auth'), teams: this.#flag('teams') },
+      config: this.config,
+      features: this.#features(),
+      views: this.#views(),
       initialPath: this.getAttribute('initial-path') ?? undefined,
       locale: this.getAttribute('locale') ?? undefined,
       tenant: this.getAttribute('tenant') ?? undefined,
-      theme: isOneOf(THEMES, theme) ? theme : undefined,
+      theme: isOneOf(HOST_THEMES, theme) ? theme : undefined,
       initialView: isCalendarView(initialView) ? initialView : undefined,
       timeZone: this.getAttribute('time-zone') ?? undefined,
       holidays: this.getAttribute('holidays') ?? undefined,

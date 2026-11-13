@@ -2,7 +2,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { versionDefine } from './scripts/packageVersion.ts'
 
-const NPM_EXTERNALS = [/^react($|\/)/, /^react-dom($|\/)/, /^date-holidays($|\/)/]
+const NPM_EXTERNALS = [/^react($|\/)/, /^react-dom($|\/)/, /^date-holidays($|\/)/, /^yaml($|\/)/]
 
 export default defineConfig(({ mode }) => {
   const isElementBundle = mode === 'element'

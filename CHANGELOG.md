@@ -4,6 +4,14 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ## Unreleased
 
+- Every optional feature can be switched off through `features` or `feature-*` attributes: chat, attendees, recurrence, reminders, links, map links, holidays, search, undo, duplicate, shortcuts, subscriptions, import and export, e-mail settings, time zones and custom colors. A feature that is off makes no backend calls, so no WebSocket is opened without chat
+- `views` limits the views a user can switch between
+- Configuration file: `config` takes the URL of a JSON or YAML file, or an object, with all serializable options. Props and attributes win over the file. A JSON Schema is included as `@rokoyfa/calendar/config.schema.json`
+- `restDataSource` and `tenantDataSource` accept `chat: false`
+- Configuration files in JSON may contain comments, and `.jsonc` is recognised. Commented example files for YAML and JSON are in `demo/`
+- New [Developer Guide](DEVELOPER_GUIDE.md) with embedding, options, configuration, exported types and the backend contract. The README is now a short overview
+- The chat types `ChatRepository`, `ChatMessage`, `ChatKey`, `ChatPage`, `ChatUnread` and `ChatEvent` are exported
+- Text overrides of the wrong type (a text where a function is expected) are ignored instead of breaking the page
 - The event dialog is split into tabs: General, Repeat, Attendees and Details
 - Locations and links: optional `location` and up to 10 website or other links in the Details tab. Locations are shown in the calendar, links too when the event is tall enough (with a globe icon, open in a new tab), both are searchable and exported to iCalendar
 - Reminders: choose in the event dialog how long before an event to be reminded. Shown as a browser notification or a notice in the calendar while it is open. Reminders are personal per user

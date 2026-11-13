@@ -14,7 +14,7 @@ export const useHolidayRegion = () => {
   const { preferences } = usePreferences()
   const host = useHost()
   const { locale } = useI18n()
-  return resolveHolidayRegion(preferences.holidays, host.holidays, locale)
+  return host.features.holidays ? resolveHolidayRegion(preferences.holidays, host.holidays, locale) : null
 }
 
 export function useHolidays({ from, to }: DateRange) {

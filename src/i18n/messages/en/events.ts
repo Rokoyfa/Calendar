@@ -19,6 +19,7 @@ export const events = {
   noCustomColors: 'No custom colors yet.',
   removeColor: (label: string) => `Remove color ${label}`,
   deleteTitle: 'Delete event?',
+  deleteMessage: (title: string) => `“${title}” will be deleted. This cannot be undone.`,
   deleteSeriesMessage: (title: string) =>
     `“${title}” is a recurring event. What should be deleted? This cannot be undone.`,
   scopeTitle: 'Change recurring event',

@@ -1,6 +1,6 @@
 # Kalender – Entwicklung
 
-Einbettbarer Kalender (`@rokoyfa/calendar`), gebaut mit React, TypeScript und Vite. Diese Datei beschreibt Aufbau, Konfiguration und Verhalten im Detail. Die öffentliche Dokumentation für Nutzer des Pakets steht auf Englisch in der [README.md](README.md), Änderungen je Version im [CHANGELOG.md](CHANGELOG.md).
+Einbettbarer Kalender (`@rokoyfa/calendar`), gebaut mit React, TypeScript und Vite. Diese Datei beschreibt Aufbau, Konfiguration und Verhalten im Detail. Die öffentliche Dokumentation für Nutzer des Pakets steht auf Englisch in der [README.md](README.md) (Überblick) und im [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) (Einbindung, Konfiguration, Typen, Backend), Änderungen je Version im [CHANGELOG.md](CHANGELOG.md).
 
 - **Ohne Anmeldung:** Termine werden im Browser gespeichert (localStorage).
 - **Mit Anmeldung:** Termine, Einstellungen und Farben liegen auf einem Server, der [`api/openapi.yaml`](api/openapi.yaml) umsetzt.
@@ -35,7 +35,7 @@ Unter Windows (PowerShell) statt `cp`: `Copy-Item .example.env .env`. Ohne `.env
 
 ## Einbetten
 
-> Die öffentliche Dokumentation auf Englisch steht in der [README.md](README.md). Diese Datei beschreibt die Entwicklung im Detail.
+> Die öffentliche Dokumentation auf Englisch steht im [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md). Diese Datei beschreibt die Entwicklung im Detail.
 
 Der Kalender ist eine einbettbare Komponente. Diese Website ist selbst nur ein Gastgeber: `src/main.tsx` rendert `<Calendar routing="browser" />` mit den Werten aus der `.env`. Eine Demo-Gastgeberseite mit zwei Widgets und absichtlich störendem CSS liegt unter `/demo/embed.html` (im Dev-Server erreichbar).
 
@@ -235,7 +235,7 @@ npm pack                       # erzeugt rokoyfa-calendar-1.0.0.tgz
 
 `demo/cdn.html` bindet die veröffentlichte Version über jsDelivr ein und zeigt alle Einbindungsarten (lokal, mit Backend, Ereignisse, Theme). `@1` holt immer die neueste `1.x`, für feste Stände die volle Version angeben (z. B. `@1.0.0`).
 
-**Im Paket** stehen nur `dist-lib/` (npm-Build mit Typen, CDN-Script, Source-Maps), `api/openapi.yaml`, `CHANGELOG.md`, `README.md`, `LICENSE` und `package.json`. Die Version steht zur Laufzeit in `VERSION` (Export) bzw. `customElements.get('calendar-widget').version`.
+**Im Paket** stehen nur `dist-lib/` (npm-Build mit Typen, CDN-Script, Source-Maps), `api/openapi.yaml`, `schema/`, die beiden Beispiel-Konfigurationen aus `demo/`, `DEVELOPER_GUIDE.md`, `CHANGELOG.md`, `README.md`, `LICENSE` und `package.json`. Die Version steht zur Laufzeit in `VERSION` (Export) bzw. `customElements.get('calendar-widget').version`.
 
 ## Konfiguration (.env)
 
@@ -257,6 +257,8 @@ Die App wird über Umgebungsvariablen eingestellt. Vite liest sie aus diesen Dat
 | `VITE_API_TIMEOUT_MS` | `10000`                 | Maximale Wartezeit pro API-Anfrage in Millisekunden |
 | `VITE_FEATURE_AUTH`   | `false`                 | Schaltet Anmeldung, Registrierung und Abmeldung ein (siehe [Anmeldung](#anmeldung)). Braucht das Backend mit den `/auth`-Endpunkten. |
 | `VITE_FEATURE_TEAMS`  | `true`                  | Team-Funktionen (Kalender wechseln, erstellen, einladen) |
+| `VITE_FEATURE_…`      | wie im Developer Guide  | Jede Zusatzfunktion hat einen Schalter, der Name folgt dem Feature: `chat` → `VITE_FEATURE_CHAT`, `mapLinks` → `VITE_FEATURE_MAP_LINKS`, `emailNotifications` → `VITE_FEATURE_EMAIL_NOTIFICATIONS`. Liste und Standardwerte stehen im Developer Guide unter „Features“. |
+| `VITE_CONFIG_URL`     | –                       | Adresse einer Konfigurationsdatei (JSON oder YAML), z. B. `/calendar.config.yaml` aus dem Ordner `public`. Ist sie gesetzt, kommt die gesamte Konfiguration aus der Datei, die übrigen `VITE_`-Variablen werden von der App nicht mehr genutzt. Der Entwicklungs-Proxy richtet sich weiter nach `VITE_API_BASE_URL`. |
 | `API_PROXY_TARGET`    | `http://localhost:3000` | Nur Entwicklung: Backend, an das `npm run dev` und `npm run preview` alle Aufrufe unter `VITE_API_BASE_URL` weiterleiten. Greift nur bei relativer API-Adresse. |
 
 ### Wichtig
@@ -640,7 +642,7 @@ Die Kürzel wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt
 
 ### Kalender-Abo
 
-In den Kalender-Einstellungen (Tab „Import & Export“, beim persönlichen Kalender als Abschnitt) erstellt man einen geheimen Abo-Link, den Google Kalender, Outlook oder Apple Kalender abonnieren (`SubscribeSection.tsx`). Der Link ist je Nutzer und Kalender, enthält die eigenen Erinnerungen und lässt sich kopieren, als `webcal://` öffnen, neu erzeugen (der alte wird ungültig) oder beenden. Der Abschnitt erscheint nur, wenn das Repository `getFeed`, `createFeed` und `deleteFeed` hat und das Backend `GET /calendars/:id/feed` kennt, im lokalen Modus also nicht. Wie man den Link in Apple Kalender, Google Kalender, Outlook und Thunderbird einbindet und wie schnell die Apps Änderungen holen, steht im README unter „Calendar subscriptions“.
+In den Kalender-Einstellungen (Tab „Import & Export“, beim persönlichen Kalender als Abschnitt) erstellt man einen geheimen Abo-Link, den Google Kalender, Outlook oder Apple Kalender abonnieren (`SubscribeSection.tsx`). Der Link ist je Nutzer und Kalender, enthält die eigenen Erinnerungen und lässt sich kopieren, als `webcal://` öffnen, neu erzeugen (der alte wird ungültig) oder beenden. Der Abschnitt erscheint nur, wenn das Repository `getFeed`, `createFeed` und `deleteFeed` hat und das Backend `GET /calendars/:id/feed` kennt, im lokalen Modus also nicht. Wie man den Link in Apple Kalender, Google Kalender, Outlook und Thunderbird einbindet und wie schnell die Apps Änderungen holen, steht im Developer Guide unter „Calendar subscriptions“.
 
 ### E-Mails zu Terminen
 
@@ -753,7 +755,8 @@ Ist die Anmeldung eingeschaltet, entscheidet stattdessen die Sitzung: angemeldet
 ## Projektstruktur
 
 ```
-README.md                      Öffentliche Dokumentation (Englisch), Startseite auf npm und GitHub
+README.md                      Überblick (Englisch), Startseite auf npm und GitHub
+DEVELOPER_GUIDE.md             Einbindung, Konfiguration, Typen und Backend-Vertrag (Englisch)
 DEVELOPMENT.md                 Diese Datei: Entwicklung im Detail (Deutsch)
 CHANGELOG.md                   Änderungen je Version
 LICENSE                        MIT

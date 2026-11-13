@@ -4,7 +4,9 @@ import { SelectField } from '../../../components/SelectField.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { getLocaleChoices, getLocaleName, useI18n } from '../../../i18n/index.ts'
+import { useHost } from '../../../context/HostContext.ts'
 import { useAutomaticTimeZone } from '../../../context/TimeZoneContext.ts'
+import { nearestView } from '../../../utils/calendarView.ts'
 import { AUTO_TIME_ZONE, THEMES } from '../../../utils/preferences.ts'
 import { formatTimeZoneLabel, listTimeZones } from '../../../utils/timeZone.ts'
 import { getViewOptions } from '../../calendar/index.ts'
@@ -14,19 +16,27 @@ export function PreferencesSettings() {
   const { m, languages } = useI18n()
   const { preferences, updatePreferences } = usePreferences()
   const { run, error } = useAsyncAction(updatePreferences)
-  const themeOptions = THEMES.map((theme) => ({ value: theme, label: m.themes[theme] }))
+  const themeOptions = THEMES.map((theme) => ({
+    value: theme,
+    label: m.themes[theme],
+  }))
   const choices = getLocaleChoices(languages)
   if (!choices.includes(preferences.locale)) choices.push(preferences.locale)
   const languageOptions = choices.map((choice) => ({
     value: choice,
     label: choice === 'auto' ? m.settings.languageAuto : getLocaleName(choice),
   }))
-  const viewOptions = getViewOptions(m)
+  const { views, features } = useHost()
+  const viewOptions = getViewOptions(m, views, features.shortcuts)
   const automaticTimeZone = useAutomaticTimeZone()
   const zones = listTimeZones()
-  if (preferences.timeZone !== AUTO_TIME_ZONE && !zones.includes(preferences.timeZone)) zones.unshift(preferences.timeZone)
+  if (preferences.timeZone !== AUTO_TIME_ZONE && !zones.includes(preferences.timeZone))
+    zones.unshift(preferences.timeZone)
   const timeZoneOptions = [
-    { value: AUTO_TIME_ZONE, label: m.settings.timeZoneAuto(formatTimeZoneLabel(automaticTimeZone)) },
+    {
+      value: AUTO_TIME_ZONE,
+      label: m.settings.timeZoneAuto(formatTimeZoneLabel(automaticTimeZone)),
+    },
     ...zones.map((zone) => ({ value: zone, label: formatTimeZoneLabel(zone) })),
   ]
 
@@ -42,15 +52,17 @@ export function PreferencesSettings() {
         />
       </PageSection>
 
-      <PageSection title={m.settings.timeZoneTitle} description={m.settings.timeZoneDescription}>
-        <SelectField
-          label={m.settings.timeZoneLabel}
-          name="timeZone"
-          value={preferences.timeZone}
-          options={timeZoneOptions}
-          onChange={(timeZone) => void run({ timeZone })}
-        />
-      </PageSection>
+      {features.timeZones && (
+        <PageSection title={m.settings.timeZoneTitle} description={m.settings.timeZoneDescription}>
+          <SelectField
+            label={m.settings.timeZoneLabel}
+            name="timeZone"
+            value={preferences.timeZone}
+            options={timeZoneOptions}
+            onChange={(timeZone) => void run({ timeZone })}
+          />
+        </PageSection>
+      )}
 
       <PageSection title={m.settings.themeTitle}>
         <SegmentedField
@@ -61,20 +73,22 @@ export function PreferencesSettings() {
         />
       </PageSection>
 
-      <PageSection title={m.settings.startViewTitle} description={m.settings.startViewDescription}>
-        <SegmentedField
-          label={m.settings.desktop}
-          value={preferences.defaultView}
-          options={viewOptions}
-          onChange={(defaultView) => void run({ defaultView })}
-        />
-        <SegmentedField
-          label={m.settings.mobile}
-          value={preferences.mobileDefaultView}
-          options={viewOptions}
-          onChange={(mobileDefaultView) => void run({ mobileDefaultView })}
-        />
-      </PageSection>
+      {views.length > 1 && (
+        <PageSection title={m.settings.startViewTitle} description={m.settings.startViewDescription}>
+          <SegmentedField
+            label={m.settings.desktop}
+            value={nearestView(preferences.defaultView, views)}
+            options={viewOptions}
+            onChange={(defaultView) => void run({ defaultView })}
+          />
+          <SegmentedField
+            label={m.settings.mobile}
+            value={nearestView(preferences.mobileDefaultView, views)}
+            options={viewOptions}
+            onChange={(mobileDefaultView) => void run({ mobileDefaultView })}
+          />
+        </PageSection>
+      )}
 
       <ErrorMessage message={error} />
     </>

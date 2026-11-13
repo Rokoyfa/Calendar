@@ -10,4 +10,6 @@ export const createLocalRepositories = (): DataRepositories => ({
   preferences: new LocalPreferencesRepository(),
 })
 
-export const localDataSource = (): CalendarDataSource => ({ connect: createLocalRepositories })
+export const localDataSource = (): CalendarDataSource => ({
+  connect: createLocalRepositories,
+})

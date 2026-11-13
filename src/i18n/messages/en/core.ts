@@ -3,6 +3,7 @@ import type { ApiErrorKind } from '../../../utils/apiError.ts'
 
 export const common = {
   loading: 'Loading …',
+  configError: 'The calendar could not load its configuration.',
   close: 'Close',
   cancel: 'Cancel',
   save: 'Save',

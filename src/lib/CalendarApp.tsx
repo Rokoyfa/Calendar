@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode, type RefObject } from 'react'
 import { RouterProvider } from 'react-router'
 import type { CalendarDataSource } from '../data/index.ts'
+import { useFeatures } from '../context/HostContext.ts'
 import { AuthProvider, useAuth } from '../features/authorization/index.ts'
 import { CalendarsProvider } from '../features/calendars/index.ts'
 import { PreferencesProvider } from '../features/preferences/index.ts'
@@ -23,6 +24,7 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
   const { m } = useI18n()
   const getLanguage = useLocaleGetter()
   const { status, user, expireSession } = useAuth()
+  const { reminders } = useFeatures()
   const isAuthenticated = status === 'authenticated'
   const repositories = useMemo(
     () => dataSource.connect({ isAuthenticated }, { getLanguage, onUnauthorized: expireSession }),
@@ -50,7 +52,7 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
           repository={repositories.calendars}
         >
           {children}
-          <ReminderNotices />
+          {reminders && <ReminderNotices />}
         </CalendarsProvider>
       </PreferencesProvider>
     </StorageProvider>

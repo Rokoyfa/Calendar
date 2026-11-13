@@ -1,6 +1,6 @@
 {
   "name": "@rokoyfa/calendar",
-  "version": "1.2.0",
+  "version": "1.1.0",
   "description": "Embeddable calendar for React and any website: day, week, month and year views, recurring and all-day events, time zones, drag and drop, teams and eight languages, as a React component or a <calendar-widget> web component.",
   "keywords": [
     "calendar",
@@ -37,6 +37,7 @@
     },
     "./cdn": "./dist-lib/cdn/calendar-widget.js",
     "./openapi.yaml": "./api/openapi.yaml",
+    "./config.schema.json": "./schema/calendar-config.schema.json",
     "./package.json": "./package.json"
   },
   "jsdelivr": "./dist-lib/cdn/calendar-widget.js",
@@ -47,6 +48,10 @@
   "files": [
     "dist-lib",
     "api/openapi.yaml",
+    "schema",
+    "demo/calendar.config.yaml",
+    "demo/calendar.config.jsonc",
+    "DEVELOPER_GUIDE.md",
     "CHANGELOG.md"
   ],
   "publishConfig": {
@@ -86,6 +91,7 @@
     "vitest": "^5.1.0"
   },
   "dependencies": {
-    "date-holidays": "^3.39.1"
+    "date-holidays": "^3.39.1",
+    "yaml": "^2.9.1"
   }
 }

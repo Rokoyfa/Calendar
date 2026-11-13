@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://unpkg.com/@rokoyfa/calendar/schema/calendar-config.schema.json",
+  "title": "@rokoyfa/calendar configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "tenant": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Tenant sent to the backend in the X-Calendar-Tenant header."
+    },
+    "storageMode": {
+      "enum": [
+        "local",
+        "remote"
+      ],
+      "default": "local",
+      "description": "Where events are stored: in the browser or in the backend."
+    },
+    "apiBaseUrl": {
+      "type": "string",
+      "minLength": 1,
+      "default": "/api",
+      "description": "Base URL of the backend."
+    },
+    "apiTimeoutMs": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 10000,
+      "description": "Timeout of a backend request in milliseconds."
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional features. Everything left out keeps its default.",
+      "properties": {
+        "auth": {
+          "type": "boolean",
+          "default": false,
+          "description": "Sign-in, registration and accounts. Needs a backend."
+        },
+        "teams": {
+          "type": "boolean",
+          "default": true,
+          "description": "Team calendars, members, roles and invitations. Needs a backend and sign-in."
+        },
+        "chat": {
+          "type": "boolean",
+          "default": true,
+          "description": "Chat per event in team calendars. Needs teams, the chat endpoints and the WebSocket."
+        },
+        "attendees": {
+          "type": "boolean",
+          "default": true,
+          "description": "Inviting team members to events and replying to invitations. Needs teams."
+        },
+        "recurrence": {
+          "type": "boolean",
+          "default": true,
+          "description": "Creating and editing recurring events. Existing series are still shown."
+        },
+        "reminders": {
+          "type": "boolean",
+          "default": true,
+          "description": "Reminders on events and their notifications in the browser."
+        },
+        "links": {
+          "type": "boolean",
+          "default": true,
+          "description": "Website and other links on events."
+        },
+        "mapLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Opening an event location in a map service."
+        },
+        "holidays": {
+          "type": "boolean",
+          "default": true,
+          "description": "Public holidays in the views and their setting."
+        },
+        "search": {
+          "type": "boolean",
+          "default": true,
+          "description": "Event search."
+        },
+        "undo": {
+          "type": "boolean",
+          "default": true,
+          "description": "Undo after moving or deleting an event. When off, deleting asks for confirmation."
+        },
+        "duplicate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Duplicating an event."
+        },
+        "shortcuts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Keyboard shortcuts."
+        },
+        "subscriptions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Subscription links (iCalendar feeds) in the calendar settings. Needs the feed endpoints."
+        },
+        "importExport": {
+          "type": "boolean",
+          "default": true,
+          "description": "Import and export of iCalendar files in the calendar settings."
+        },
+        "emailNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "The e-mail notification settings of a signed-in user."
+        },
+        "timeZones": {
+          "type": "boolean",
+          "default": true,
+          "description": "Choosing a time zone per event and in the settings. When off, the automatic time zone is used."
+        },
+        "customColors": {
+          "type": "boolean",
+          "default": true,
+          "description": "Adding own event colors."
+        }
+      }
+    },
+    "views": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week",
+          "month",
+          "year"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "The views a user can switch between. All four by default."
+    },
+    "routing": {
+      "enum": [
+        "memory",
+        "browser"
+      ],
+      "default": "memory",
+      "description": "memory keeps navigation inside the widget, browser uses the address bar."
+    },
+    "basename": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path prefix for browser routing."
+    },
+    "initialPath": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Page the widget opens on."
+    },
+    "linkParam": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "const": false
+        }
+      ],
+      "default": "calendarPath",
+      "description": "Query parameter of the host page that carries links from e-mails, or false to turn it off."
+    },
+    "locale": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Language and region, for example de or en-GB."
+    },
+    "messages": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      },
+      "description": "Text overrides per language. Only plain texts can be overridden from a file."
+    },
+    "theme": {
+      "enum": [
+        "light",
+        "dark"
+      ],
+      "description": "Theme used while the user has chosen the system theme."
+    },
+    "initialView": {
+      "type": "string",
+      "enum": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "description": "View shown first. Overrides the user's start view."
+    },
+    "timeZone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "IANA time zone used while the user has chosen the automatic time zone."
+    },
+    "holidays": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Region for public holidays such as DE or DE-NW, or off."
+    },
+    "holidaySource": {
+      "enum": [
+        "library",
+        "backend"
+      ],
+      "default": "library",
+      "description": "Where public holidays come from."
+    },
+    "mapUrl": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Map link template containing {query}."
+    }
+  }
+}

@@ -25,6 +25,7 @@ export type RestDataSourceOptions = {
   getAccessToken?: () => string | null
   getUserToken?: UserTokenProvider
   holidaySource?: HolidaySource
+  chat?: boolean
   chatSocketUrl?: string
 }
 
@@ -36,11 +37,19 @@ export function restDataSource({
   getAccessToken,
   getUserToken,
   holidaySource = 'library',
+  chat = true,
   chatSocketUrl,
 }: RestDataSourceOptions): CalendarDataSource {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
   const createApi = ({ getLanguage, onUnauthorized }: Partial<DataSourceContext>) =>
-    createApiClient({ baseUrl: normalizedBaseUrl, timeoutMs, headers, getAccessToken, getLanguage, onUnauthorized })
+    createApiClient({
+      baseUrl: normalizedBaseUrl,
+      timeoutMs,
+      headers,
+      getAccessToken,
+      getLanguage,
+      onUnauthorized,
+    })
 
   const getSocketUrl = () => {
     if (chatSocketUrl) return chatSocketUrl
@@ -59,7 +68,7 @@ export function restDataSource({
       colors: new RemoteColorRepository(api),
       preferences: new RemotePreferencesRepository(api),
       holidays: holidaySource === 'backend' ? new RemoteHolidayRepository(api) : undefined,
-      chat: new RemoteChatRepository(api, getSocketUrl()),
+      chat: chat ? new RemoteChatRepository(api, getSocketUrl()) : undefined,
     }
   }
 

@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { useFeatures } from '../../../context/HostContext.ts'
 import { formatEventPeriod, type EventOccurrence } from '../../../utils/event.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import { useSegmentAttributes } from '../hooks/useSegmentAttributes.ts'
@@ -30,6 +31,7 @@ export function EventBlock({ segment, column, columns, onSelect }: EventBlockPro
   const { event, start } = segment
   const duration = getVisibleDuration(segment)
   const { i18n, source, isDragging, style, attributes } = useSegmentAttributes(segment, 'event', getSizeClass(duration))
+  const features = useFeatures()
   const showDetails = duration >= DETAILS_MIN_DURATION
   const showSource = Boolean(source) && duration >= SOURCE_MIN_DURATION
   const blockStyle = {
@@ -46,7 +48,7 @@ export function EventBlock({ segment, column, columns, onSelect }: EventBlockPro
       <button type="button" className="eventOpen" aria-label={attributes.title} onClick={() => onSelect(event)} />
       <EventTitle event={event} source={source} withLocation={!showDetails} />
       {event.location && showDetails && <EventLocation location={event.location} />}
-      {!isDragging && <EventLinks links={event.links} lines={getLinkLines(duration, showSource)} />}
+      {!isDragging && features.links && <EventLinks links={event.links} lines={getLinkLines(duration, showSource)} />}
       {source && showSource && <span className="eventSource">{source.name}</span>}
       {(showDetails || isDragging) && <span className="eventTime">{formatEventPeriod(event, i18n)}</span>}
       {!segment.continuesAfter && <span className="eventResizeHandle" aria-hidden="true" />}

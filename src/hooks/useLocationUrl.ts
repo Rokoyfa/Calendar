@@ -3,6 +3,7 @@ import { useHost } from '../context/HostContext.ts'
 import { getLocationUrl } from '../utils/location.ts'
 
 export const useLocationUrl = () => {
-  const { mapUrl } = useHost()
-  return useCallback((location: string) => getLocationUrl(location, mapUrl), [mapUrl])
+  const { mapUrl, features } = useHost()
+  const enabled = features.mapLinks
+  return useCallback((location: string) => (enabled ? getLocationUrl(location, mapUrl) : null), [enabled, mapUrl])
 }

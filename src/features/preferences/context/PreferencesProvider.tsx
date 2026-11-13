@@ -15,7 +15,7 @@ const applyTheme = (root: HTMLElement, theme: Theme | undefined) => {
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const root = useRootElement()
-  const { theme: hostTheme } = useHost()
+  const { theme: hostTheme, features } = useHost()
   const { setUserLocale } = useI18n()
   const repository = usePreferencesRepository()
   const load = useCallback(() => repository.get(), [repository])
@@ -44,7 +44,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   if (isLoading) return null
   return (
     <PreferencesContext value={value}>
-      <TimeZoneContext value={preferences.timeZone === AUTO_TIME_ZONE ? null : preferences.timeZone}>
+      <TimeZoneContext value={!features.timeZones || preferences.timeZone === AUTO_TIME_ZONE ? null : preferences.timeZone}>
         {children}
       </TimeZoneContext>
     </PreferencesContext>

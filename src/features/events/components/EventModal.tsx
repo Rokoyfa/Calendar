@@ -1,5 +1,6 @@
 import { useState, type SubmitEventHandler } from 'react'
 import { Switch } from '../../../components/Switch.tsx'
+import { useFeatures } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
@@ -107,6 +108,7 @@ export function EventModal({
 }: EventModalProps) {
   const i18n = useI18n()
   const { m } = i18n
+  const features = useFeatures()
   const viewerTimeZone = useViewerTimeZone()
   const getLocationUrl = useLocationUrl()
   const mode: EventModalMode = occurrence ? 'edit' : 'create'
@@ -247,18 +249,22 @@ export function EventModal({
             onTimeChange={(end) => setField('end', end)}
           />
 
-          {!values.allDay && (
+          {!values.allDay && features.timeZones && (
             <TimeZoneField value={values.timeZone} onChange={(timeZone) => setField('timeZone', timeZone)} />
           )}
           {viewerHint && <p className="formHint">{viewerHint}</p>}
 
-          <ReminderField value={values.reminders} onChange={(reminders) => setField('reminders', reminders)} />
+          {features.reminders && (
+            <ReminderField value={values.reminders} onChange={(reminders) => setField('reminders', reminders)} />
+          )}
 
           <ColorPicker value={values.color} onChange={(color) => setField('color', color)} />
         </>
       ),
     },
-    {
+  ]
+  if (features.recurrence)
+    tabDefinitions.push({
       value: 'recurrence',
       label: m.events.tabs.recurrence,
       content: (
@@ -269,8 +275,7 @@ export function EventModal({
           onChange={setRecurrence}
         />
       ),
-    },
-  ]
+    })
   if (attendeeOptions && (attendeeOptions.candidates.length > 0 || values.attendees.length > 0))
     tabDefinitions.push({
       value: 'attendees',
@@ -314,7 +319,9 @@ export function EventModal({
           }
         />
 
-        <LinksField links={values.links} error={errors.links} onChange={(links) => setField('links', links)} />
+        {features.links && (
+          <LinksField links={values.links} error={errors.links} onChange={(links) => setField('links', links)} />
+        )}
 
         <FormField label={m.events.description} error={errors.description}>
           <textarea
@@ -334,7 +341,10 @@ export function EventModal({
       label: m.calendars.settings.withCount(m.events.chat.tab, unreadChat),
       content: <ChatPanel chatKey={chat.key} calendarId={chat.calendarId} isActive={activeTab === 'chat'} />,
     })
-  const tabs = tabDefinitions.map((tab) => ({ ...tab, invalid: hasTabErrors(errors, tab.value) }))
+  const tabs = tabDefinitions.map((tab) => ({
+    ...tab,
+    invalid: hasTabErrors(errors, tab.value),
+  }))
 
   return (
     <>

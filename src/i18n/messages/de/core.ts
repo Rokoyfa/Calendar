@@ -2,6 +2,7 @@ import type { Messages } from '../types.ts'
 
 export const common: Messages['common'] = {
   loading: 'Lädt …',
+  configError: 'Die Konfiguration des Kalenders konnte nicht geladen werden.',
   close: 'Schließen',
   cancel: 'Abbrechen',
   save: 'Speichern',

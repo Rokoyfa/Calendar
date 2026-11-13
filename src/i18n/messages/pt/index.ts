@@ -4,6 +4,7 @@ const isMasculineWeekday = (weekday: string) => /^(sábado|domingo)/i.test(weekd
 
 const common: Messages['common'] = {
   loading: 'Carregando …',
+  configError: 'Não foi possível carregar a configuração do calendário.',
   close: 'Fechar',
   cancel: 'Cancelar',
   save: 'Salvar',
@@ -175,6 +176,7 @@ const events: Messages['events'] = {
   noCustomColors: 'Ainda não há cores personalizadas.',
   removeColor: (label) => `Remover a cor ${label}`,
   deleteTitle: 'Excluir evento?',
+  deleteMessage: (title) => `“${title}” será excluído. Isso não pode ser desfeito.`,
   deleteSeriesMessage: (title) => `“${title}” é um evento recorrente. O que deve ser excluído? Isso não pode ser desfeito.`,
   scopeTitle: 'Alterar evento recorrente',
   scopeMessage: 'A quais eventos da série as alterações devem ser aplicadas?',
