@@ -1,3 +1,4 @@
+import { CATEGORY_NAME_MAX_LENGTH, normalizeCategoryName } from './category.ts'
 import { addDaysToISODate, isISODate, timeToMinutes } from './date.ts'
 import {
   ATTENDEE_STATUSES,
@@ -41,6 +42,23 @@ const escapeText = (value: string) =>
   value.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
 
 const quoteParam = (name: string, value: string) => (value ? `;${name}="${value.replace(/"/g, "'")}"` : '')
+
+const splitTextList = (value: string) => {
+  const items: string[] = []
+  let current = ''
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index]
+    if (char === '\\' && index + 1 < value.length) {
+      current += char + value[index + 1]
+      index += 1
+    } else if (char === ',') {
+      items.push(current)
+      current = ''
+    } else current += char
+  }
+  items.push(current)
+  return items
+}
 
 const unescapeText = (value: string) =>
   value.replace(/\\([\\;,nN])/g, (_, char: string) => (char === 'n' || char === 'N' ? '\n' : char))
@@ -105,7 +123,12 @@ const toDuration = (minutes: number) => {
   return `-PT${minutes}M`
 }
 
-const eventLines = (event: CalendarEvent, series: CalendarEvent | undefined, stamp: string) => {
+const eventLines = (
+  event: CalendarEvent,
+  series: CalendarEvent | undefined,
+  stamp: string,
+  categoryNames: ReadonlyMap<string, string>,
+) => {
   const start = toTimeProperty(event, event.startDate, event.start)
   const end = toTimeProperty(event, event.allDay ? addDaysToISODate(event.endDate, 1) : event.endDate, event.end)
   const lines = [
@@ -122,6 +145,8 @@ const eventLines = (event: CalendarEvent, series: CalendarEvent | undefined, sta
   }
   if (event.location) lines.push(`LOCATION:${escapeText(event.location)}`)
   if (event.description) lines.push(`DESCRIPTION:${escapeText(event.description)}`)
+  const categories = event.categoryIds.flatMap((id) => categoryNames.get(id) ?? [])
+  if (categories.length > 0) lines.push(`CATEGORIES:${categories.map(escapeText).join(',')}`)
   event.links.forEach(({ url, label }, index) =>
     lines.push(`${index === 0 ? 'URL' : 'ATTACH'}${quoteParam('LABEL', label)}:${url}`),
   )
@@ -148,7 +173,18 @@ const eventLines = (event: CalendarEvent, series: CalendarEvent | undefined, sta
   return lines
 }
 
-export function toICalendar(events: readonly CalendarEvent[], calendarName: string, now = new Date()) {
+export type ICalendarExportOptions = {
+  now?: Date
+  categoryNames?: ReadonlyMap<string, string>
+}
+
+const NO_CATEGORY_NAMES: ReadonlyMap<string, string> = new Map()
+
+export function toICalendar(
+  events: readonly CalendarEvent[],
+  calendarName: string,
+  { now = new Date(), categoryNames = NO_CATEGORY_NAMES }: ICalendarExportOptions = {},
+) {
   const byId = new Map(events.map((event) => [event.id, event]))
   const stamp = utcStamp(now)
   const lines = [
@@ -157,7 +193,9 @@ export function toICalendar(events: readonly CalendarEvent[], calendarName: stri
     'PRODID:-//Rokoyfa//Calendar//EN',
     'CALSCALE:GREGORIAN',
     `X-WR-CALNAME:${escapeText(calendarName)}`,
-    ...events.flatMap((event) => eventLines(event, event.seriesId ? byId.get(event.seriesId) : undefined, stamp)),
+    ...events.flatMap((event) =>
+      eventLines(event, event.seriesId ? byId.get(event.seriesId) : undefined, stamp, categoryNames),
+    ),
     'END:VCALENDAR',
   ]
   return `${lines.map(foldLine).join('\r\n')}\r\n`
@@ -289,7 +327,7 @@ const parseReminder = (alarm: Component) => {
   return minutes !== null && minutes <= 0 && -minutes <= MAX_REMINDER_MINUTES ? -minutes : null
 }
 
-export type ImportedEvent = { input: EventInput; recurrenceId: string | null }
+export type ImportedEvent = { input: EventInput; recurrenceId: string | null; categoryNames: string[] }
 
 const toImportedEvent = (component: Component): ImportedEvent | null => {
   const get = (name: string) => component.properties.find((property) => property.name === name)
@@ -340,8 +378,18 @@ const toImportedEvent = (component: Component): ImportedEvent | null => {
     .map(parseReminder)
     .filter((minutes): minutes is number => minutes !== null)
 
+  const categoryNames = all('CATEGORIES')
+    .flatMap((property) => splitTextList(property.value))
+    .map((name) => normalizeCategoryName(unescapeText(name)).slice(0, CATEGORY_NAME_MAX_LENGTH))
+    .filter((name) => name !== '')
+    .filter(
+      (name, index, names) =>
+        names.findIndex((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()) === index,
+    )
+
   return {
     recurrenceId: recurrence ? null : recurrenceId,
+    categoryNames,
     input: {
       uid: get('UID')?.value.trim() || createEventUid(),
       title: text('SUMMARY', EVENT_TITLE_MAX_LENGTH) || UNTITLED,

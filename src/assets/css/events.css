@@ -67,7 +67,7 @@
 }
 
 .modal:has(.eventForm) {
-  width: min(520px, calc(100vw - 2 * var(--space-4)));
+  width: min(620px, calc(100vw - 2 * var(--space-4)));
 }
 
 .eventForm .tab {

@@ -11,7 +11,7 @@ import { useCalendars } from '../../hooks/useCalendars.ts'
 import { useTeam } from '../../hooks/useTeam.ts'
 import type { CalendarSummary } from '../../types/calendar.ts'
 import { ShowInPersonalSwitch } from '../ShowInPersonalSwitch.tsx'
-import { hasPermission, isPersonalCalendar } from '../../utils/permissions.ts'
+import { canManageCategories, hasPermission, isPersonalCalendar } from '../../utils/permissions.ts'
 import { DangerSection } from './DangerSection.tsx'
 import { ExchangeSection } from './ExchangeSection.tsx'
 import { SubscribeSection } from './SubscribeSection.tsx'
@@ -48,7 +48,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
         <>
           <GeneralSection calendar={calendar} />
           <DisplaySection calendar={calendar} />
-          <CategoriesSection calendarId={calendar.id} canManage={canManage} />
+          <CategoriesSection calendarId={calendar.id} canManage={canManageCategories(calendar)} />
           {publicLinks && canManage && <ShareSection calendar={calendar} />}
         </>
       ),
@@ -127,7 +127,7 @@ function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
   return (
     <>
       {canManage && <GeneralSection calendar={calendar} />}
-      <CategoriesSection calendarId={calendar.id} canManage={canManage} />
+      <CategoriesSection calendarId={calendar.id} canManage={canManageCategories(calendar)} />
       {publicLinks && canManage && <ShareSection calendar={calendar} />}
       {subscriptions && <SubscribeSection calendar={calendar} />}
       {importExport && <ExchangeSection calendar={calendar} />}

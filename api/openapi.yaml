@@ -552,7 +552,7 @@ paths:
     get:
       tags: [Calendars]
       summary: Calendar subscription
-      description: No session needed. The calendar as iCalendar with the subscriber's own reminders as alarms. `404` when the token is unknown or the user is no longer a member.
+      description: No session needed. The calendar as iCalendar with the subscriber's own reminders as alarms and the category names as `CATEGORIES`. `404` when the token is unknown or the user is no longer a member.
       security: []
       responses:
         '200':

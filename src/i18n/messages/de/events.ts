@@ -22,7 +22,13 @@ export const events: Messages['events'] = {
   removeColor: (label) => `Farbe ${label} entfernen`,
   deleteTitle: 'Termin löschen?',
   viewTitle: 'Termin',
-  categories: { label: 'Kategorien' },
+  categories: {
+    label: 'Kategorien',
+    add: 'Neue Kategorie',
+    newLabel: 'Name der neuen Kategorie',
+    create: 'Anlegen',
+    empty: 'Noch keine Kategorien. Lege die erste direkt hier an.',
+  },
   deleteMessage: (title) => `„${title}“ wird gelöscht. Das kann nicht rückgängig gemacht werden.`,
   deleteSeriesMessage: (title) =>
     `„${title}“ ist ein wiederkehrender Termin. Was soll gelöscht werden? Das kann nicht rückgängig gemacht werden.`,
@@ -62,7 +68,7 @@ export const events: Messages['events'] = {
   respond: { accepted: 'Ja', tentative: 'Vielleicht', declined: 'Nein' },
   attendeeSummary: (accepted, total) => `${accepted} von ${total} zugesagt`,
   tabsLabel: 'Bereiche des Termins',
-  tabs: { general: 'Allgemein', recurrence: 'Wiederholung', attendees: 'Teilnehmer', details: 'Details' },
+  tabs: { general: 'Allgemein', appearance: 'Darstellung', recurrence: 'Wiederholung', attendees: 'Teilnehmer', details: 'Details' },
   links: 'Webseite & Links',
   addLink: 'Link hinzufügen',
   linkUrl: 'Adresse (URL)',

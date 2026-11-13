@@ -15,6 +15,9 @@ export const getVisibleCalendarIds = (calendars: readonly CalendarSummary[], act
 export const hasPermission = (calendar: CalendarSummary, permission: Permission) =>
   calendar.permissions.includes(permission)
 
+export const canManageCategories = (calendar: CalendarSummary) =>
+  isPersonalCalendar(calendar) || hasPermission(calendar, 'manage_calendars')
+
 export const getSharedCalendars = (calendars: readonly CalendarSummary[], active: CalendarSummary) =>
   isPersonalCalendar(active)
     ? calendars.filter((calendar) => !isPersonalCalendar(calendar) && calendar.showInPersonal)
@@ -27,7 +30,6 @@ export const getAssignableRoles = (actor: TeamRole) =>
   TEAM_ROLES.filter((role) => (role !== 'owner' ? outranks(actor, role) : actor === 'owner'))
 
 export const getInvitableRoles = (actor: TeamRole) => INVITABLE_ROLES.filter((role) => outranks(actor, role))
-
 
 export const getDistinctTeamName = ({ name, teamName }: CalendarSummary) =>
   teamName && teamName !== name ? teamName : null

@@ -370,3 +370,12 @@ select.input {
   border-radius: var(--radius-round);
   background-color: var(--color-accent);
 }
+
+.categoryAdd {
+  border-style: dashed;
+  color: var(--color-muted);
+}
+
+.categoryAdd:hover {
+  color: var(--color-text);
+}

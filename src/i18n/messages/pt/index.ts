@@ -194,7 +194,13 @@ const events: Messages['events'] = {
   removeColor: (label) => `Remover a cor ${label}`,
   deleteTitle: 'Excluir evento?',
   viewTitle: 'Evento',
-  categories: { label: 'Categorias' },
+  categories: {
+    label: 'Categorias',
+    add: 'Nova categoria',
+    newLabel: 'Nome da nova categoria',
+    create: 'Criar',
+    empty: 'Ainda não há categorias. Crie a primeira aqui mesmo.',
+  },
   deleteMessage: (title) => `“${title}” será excluído. Isso não pode ser desfeito.`,
   deleteSeriesMessage: (title) =>
     `“${title}” é um evento recorrente. O que deve ser excluído? Isso não pode ser desfeito.`,
@@ -234,7 +240,7 @@ const events: Messages['events'] = {
   respond: { accepted: 'Sim', tentative: 'Talvez', declined: 'Não' },
   attendeeSummary: (accepted, total) => `${accepted} de ${total} aceitaram`,
   tabsLabel: 'Secções do evento',
-  tabs: { general: 'Geral', recurrence: 'Repetição', attendees: 'Participantes', details: 'Detalhes' },
+  tabs: { general: 'Geral', appearance: 'Aparência', recurrence: 'Repetição', attendees: 'Participantes', details: 'Detalhes' },
   links: 'Site e links',
   addLink: 'Adicionar link',
   linkUrl: 'Endereço (URL)',

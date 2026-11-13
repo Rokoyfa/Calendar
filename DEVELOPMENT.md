@@ -493,7 +493,8 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 
 Der Dialog ist in Tabs aufgeteilt (`components/Tabs.tsx`), damit er kompakt bleibt:
 
-- **Allgemein:** Titel, Ganztägig, Beginn, Ende, Zeitzone, Erinnerung, Farbe
+- **Allgemein:** Titel, Ganztägig, Beginn, Ende, Zeitzone, Erinnerung
+- **Darstellung:** Farbe und Kategorien (mit „+ Neue Kategorie“)
 - **Wiederholung:** Wiederholungsregel
 - **Teilnehmer:** nur in Teamkalendern mit Mitgliedern, mit Anzahl im Tab
 - **Details:** Ort, Webseite & Links, Beschreibung
@@ -661,7 +662,8 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 ### Kategorien
 
 - Kategorien gehören zu einem Kalender (`utils/category.ts`, höchstens 30 pro Kalender, Namen ohne Groß-/Kleinschreibung eindeutig). Termine tragen bis zu 5 davon in `categoryIds`.
-- Verwaltung in den Kalender-Einstellungen (`CategoriesSection`, braucht `manage_calendars`), Zuordnung im Termin-Dialog (`CategoryField`), Filter im Kopf (`CategoryFilterModal`). Der Filter lebt nur im Zustand von `Calendar` und kennt zusätzlich „Ohne Kategorie“. Unbekannte Ids (gelöschte Kategorien) zählen als „ohne“.
+- Verwaltung in den Kalender-Einstellungen (`CategoriesSection`), Zuordnung im Termin-Dialog (`CategoryField`, dort auch „+ Neue Kategorie“). Verwalten darf, wer `manage_calendars` hat, und im persönlichen Kalender immer der Besitzer (`canManageCategories` in `permissions.ts`, weil der lokale persönliche Kalender kein `manage_calendars` hat), Filter im Kopf (`CategoryFilterModal`). Der Filter lebt nur im Zustand von `Calendar` und kennt zusätzlich „Ohne Kategorie“. Unbekannte Ids (gelöschte Kategorien) zählen als „ohne“.
+- Export und Import: `toICalendar` schreibt die Namen als `CATEGORIES`, `parseICalendar` liefert sie als `categoryNames`. Beim Import ordnet `createCategoryResolver` (`features/events/utils/icalExchange.ts`) sie über den Namen zu und legt fehlende an, wenn man den Kalender verwalten darf. Hat die Datei keine Kategorien, behält ein bekannter Termin seine.
 - Speicherung über `CategoryRepository` (lokal `LocalCategoryRepository`, sonst `RemoteCategoryRepository`). Fehlt das Repository im Daten-Adapter, gibt es die Funktion nicht.
 
 ### Nur-Lesen-Modus und öffentliche Links

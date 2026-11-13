@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { SettingsIcon } from '../components/Icons.tsx'
 import { ROUTES } from '../config/routes.ts'
@@ -13,6 +13,7 @@ import {
   hasPermission,
   isPersonalCalendar,
   useCalendars,
+  canManageCategories,
 } from '../features/calendars/index.ts'
 import { usePreferences } from '../features/preferences/index.ts'
 import { LocalImportPrompt } from '../features/storage/index.ts'
@@ -100,6 +101,13 @@ export function CalendarPage() {
   const initialView =
     host.initialView ?? nearestView(getStartView(preferences, isCompactWidth(root.clientWidth)), host.views)
 
+  const mayManageCategories = useCallback(
+    (calendarId: string) => {
+      const calendar = calendars.find((entry) => entry.id === calendarId)
+      return calendar !== undefined && canManageCategories(calendar)
+    },
+    [calendars],
+  )
   const calendarNames = useMemo(() => new Map(calendars.map((calendar) => [calendar.id, calendar.name])), [calendars])
 
   return (
@@ -111,6 +119,7 @@ export function CalendarPage() {
         canCreate={hasPermission(activeCalendar, 'create_entry')}
         eventSources={eventSources}
         calendarNames={calendarNames}
+        canManageCategories={mayManageCategories}
         initialView={initialView}
         headerContext={<ActiveCalendarIndicator />}
         currentUserEmail={user?.email ?? null}

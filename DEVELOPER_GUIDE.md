@@ -736,7 +736,7 @@ Before editing "following" or "all" of a series, the component loads its detache
 - **Errors:** always `{ code, message }`. Known codes such as `invalidCredentials`, `emailTaken`, `forbidden`, `lastOwner` are shown translated, others with `message`.
 - **Language:** every request carries `Accept-Language`. Use it, or the stored `locale`, for emails.
 - **Emails about events** (your backend sends them, the component only stores the user's choice): an invitation with yes / maybe / no links to `/respond?status=accepted&token=…` when someone is added as attendee (`emailInvites`), a notice when title, time, place or repetition change or the event is cancelled (`emailChanges`), and reminders at the user's own reminder times even while the calendar is closed (`emailReminders`, off by default). Only to verified addresses, never to the person who made the change.
-- **Subscriptions:** `GET /feeds/:token.ics` answers without a session with the calendar as iCalendar (RFC 5545) and the subscriber's own reminders. Keep one secret token per user and calendar, a new one replaces the old. Stop serving it when the user leaves the calendar.
+- **Subscriptions:** `GET /feeds/:token.ics` answers without a session with the calendar as iCalendar (RFC 5545), the subscriber's own reminders and the category names as `CATEGORIES` (comma-separated, with `,` and `;` inside a name escaped as `\,` and `\;`). Keep one secret token per user and calendar, a new one replaces the old. Stop serving it when the user leaves the calendar.
 - **Categories:** belong to one calendar, names are unique per calendar without regard to case. Reject an event whose `categoryIds` are not from its calendar, and remove a deleted category from all events.
 - **Public links:** one unguessable token per calendar. `GET /shared/:token/events` must leave out everything personal: empty `attendees` and `reminders`, no `createdBy`, and never chat messages. A new link, or stopping the share, must make the old token fail at once.
 - **Email links:** point them at the host page with the screen as parameter, e.g. `https://host.example/calendar?calendarPath=%2Freset-password%3Ftoken%3D…`.
@@ -798,12 +798,13 @@ Without the feed endpoints, turn the feature off: `features: { subscriptions: fa
 
 Every calendar can have its own categories, for example "Training" and "Match". Events get up to five of them, and a filter in the header shows only the chosen ones.
 
-- **Managing.** Categories are created, renamed and deleted in the calendar's settings, by members with `manage_calendars`. A calendar holds up to 30.
-- **Assigning.** The event dialog shows the categories of the event's calendar as chips. Anyone who may edit the event may assign them.
+- **Managing.** Categories are created, renamed and deleted in the calendar's settings, by members with `manage_calendars` and by the owner of a personal calendar. A calendar holds up to 30.
+- **Assigning.** The event dialog shows the categories of the event's calendar as chips. Anyone who may edit the event may assign them. Whoever may manage the categories can also create a new one right there with "+ New category"; it is selected at once.
 - **Filtering.** The filter button appears as soon as one of the shown calendars has categories. It also offers "Without category". The choice lasts until the page is reloaded.
 - **Deleting.** A deleted category disappears from its events.
 - **Local mode.** Categories work without a backend, stored in the browser.
-- **Not included.** Categories are not written to exported `.ics` files or subscription feeds.
+- **Export and subscriptions.** Exported `.ics` files carry the category names as `CATEGORIES`, which Google Calendar, Outlook and Apple Calendar understand. Your subscription feed should do the same.
+- **Import.** Categories in an imported file are matched to the calendar's categories by name, without regard to case. Missing ones are created if the importing member may manage the calendar and the limit of 30 is not reached, otherwise they are left out. When a known event is imported again from a file without categories, it keeps its own.
 
 Turn the feature off with `features: { categories: false }`.
 

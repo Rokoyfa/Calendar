@@ -84,7 +84,7 @@ describe('iCalendar', () => {
       seriesId: series.id,
       originalDate: '2026-12-07',
     })
-    const text = toICalendar([series, detached], 'Test', new Date('2026-11-11T12:00:00Z'))
+    const text = toICalendar([series, detached], 'Test', { now: new Date('2026-11-11T12:00:00Z') })
     expect(text.split('\r\n').every((line) => new TextEncoder().encode(line).length <= 75)).toBe(true)
     const [again, exception] = parseICalendar(text)!.events
     expect(again.input).toMatchObject({
@@ -100,5 +100,38 @@ describe('iCalendar', () => {
       reminders: [30, 1440],
     })
     expect(exception).toMatchObject({ recurrenceId: '2026-12-07', input: { uid: 'series-uid', start: '11:00' } })
+  })
+
+  it('writes categories by name and reads them back', () => {
+    const event = calendarEvent({ categoryIds: ['a', 'b', 'gone'] })
+    const categoryNames = new Map([
+      ['a', 'Training, Halle'],
+      ['b', 'Spiel; Heim'],
+    ])
+    const text = toICalendar([event], 'Test', { categoryNames })
+    expect(text).toContain('CATEGORIES:Training\\, Halle,Spiel\\; Heim')
+    expect(parseICalendar(text)!.events[0]).toMatchObject({
+      categoryNames: ['Training, Halle', 'Spiel; Heim'],
+      input: { categoryIds: [] },
+    })
+  })
+
+  it('merges category lines, trims names and drops duplicates', () => {
+    const text = [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'UID:x',
+      'DTSTART;VALUE=DATE:20261201',
+      'SUMMARY:Feier',
+      'CATEGORIES:Feier,  Verein ,',
+      'CATEGORIES:verein,Feier,Extra',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n')
+    expect(parseICalendar(text)!.events[0].categoryNames).toEqual(['Feier', 'Verein', 'Extra'])
+  })
+
+  it('exports no categories line without names', () => {
+    expect(toICalendar([calendarEvent({ categoryIds: ['a'] })], 'Test')).not.toContain('CATEGORIES')
   })
 })

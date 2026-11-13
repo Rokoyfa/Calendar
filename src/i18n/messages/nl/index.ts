@@ -190,7 +190,13 @@ const events: Messages['events'] = {
   removeColor: (label) => `Kleur ${label} verwijderen`,
   deleteTitle: 'Afspraak verwijderen?',
   viewTitle: 'Afspraak',
-  categories: { label: 'Categorieën' },
+  categories: {
+    label: 'Categorieën',
+    add: 'Nieuwe categorie',
+    newLabel: 'Naam van de nieuwe categorie',
+    create: 'Aanmaken',
+    empty: 'Nog geen categorieën. Maak de eerste hier aan.',
+  },
   deleteMessage: (title) => `‘${title}’ wordt verwijderd. Dit kan niet ongedaan worden gemaakt.`,
   deleteSeriesMessage: (title) =>
     `‘${title}’ is een terugkerende afspraak. Wat moet er worden verwijderd? Dit kan niet ongedaan worden gemaakt.`,
@@ -235,7 +241,7 @@ const events: Messages['events'] = {
   respond: { accepted: 'Ja', tentative: 'Misschien', declined: 'Nee' },
   attendeeSummary: (accepted, total) => `${accepted} van ${total} geaccepteerd`,
   tabsLabel: 'Onderdelen van de afspraak',
-  tabs: { general: 'Algemeen', recurrence: 'Herhaling', attendees: 'Deelnemers', details: 'Details' },
+  tabs: { general: 'Algemeen', appearance: 'Weergave', recurrence: 'Herhaling', attendees: 'Deelnemers', details: 'Details' },
   links: 'Website en links',
   addLink: 'Link toevoegen',
   linkUrl: 'Adres (URL)',

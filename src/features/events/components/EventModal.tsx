@@ -52,10 +52,11 @@ import { TimeZoneField } from './TimeZoneField.tsx'
 const DEFAULT_START = '09:00'
 const DEFAULT_END = '10:00'
 
-export type EventTab = 'general' | 'recurrence' | 'attendees' | 'details' | 'chat'
+export type EventTab = 'general' | 'appearance' | 'recurrence' | 'attendees' | 'details' | 'chat'
 
 const TAB_FIELDS: Record<EventTab, readonly (keyof EventValidationErrors)[]> = {
-  general: ['title', 'startDate', 'start', 'endDate', 'end', 'timeZone', 'reminders', 'color'],
+  general: ['title', 'startDate', 'start', 'endDate', 'end', 'timeZone', 'reminders'],
+  appearance: ['color'],
   recurrence: ['recurrence', 'excludedDates'],
   attendees: ['attendees'],
   details: ['location', 'links', 'description'],
@@ -90,6 +91,7 @@ type EventModalProps = {
   chat?: { key: ChatKey; calendarId: string }
   initialTab?: EventTab
   categories?: readonly Category[]
+  onCreateCategory?: (name: string) => Promise<Category>
   readOnly?: boolean
   onClose: () => void
 }
@@ -111,6 +113,7 @@ export function EventModal({
   chat,
   initialTab = 'general',
   categories = NO_CATEGORIES,
+  onCreateCategory,
   readOnly = false,
   onClose,
 }: EventModalProps) {
@@ -266,13 +269,20 @@ export function EventModal({
           {features.reminders && !readOnly && (
             <ReminderField value={values.reminders} onChange={(reminders) => setField('reminders', reminders)} />
           )}
-
+        </>
+      ),
+    },
+    {
+      value: 'appearance',
+      label: m.events.tabs.appearance,
+      content: (
+        <>
           <ColorPicker value={values.color} onChange={(color) => setField('color', color)} />
-
           <CategoryField
             categories={categories}
             value={values.categoryIds}
             onChange={(categoryIds) => setField('categoryIds', categoryIds)}
+            onCreate={readOnly ? undefined : onCreateCategory}
           />
         </>
       ),

@@ -1,4 +1,4 @@
-import { useCallback, useState, type ChangeEvent } from 'react'
+import { useCallback, useMemo, useState, type ChangeEvent } from 'react'
 import { Button } from '../../../../components/Button.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
@@ -7,10 +7,11 @@ import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
 import { useI18n } from '../../../../i18n/index.ts'
 import { classNames } from '../../../../utils/classNames.ts'
 import { parseICalendar, toICalendar } from '../../../../utils/ical.ts'
-import { importEvents, listAllEvents } from '../../../events/index.ts'
+import { useCategories } from '../../../categories/index.ts'
+import { createCategoryResolver, importEvents, listAllEvents } from '../../../events/index.ts'
 import { useStorage } from '../../../storage/index.ts'
 import type { CalendarSummary } from '../../types/calendar.ts'
-import { hasPermission } from '../../utils/permissions.ts'
+import { canManageCategories, hasPermission } from '../../utils/permissions.ts'
 
 const toFileName = (name: string) => `${name.replace(/[\\/:*?"<>|]+/g, '').trim() || 'calendar'}.ics`
 
@@ -30,7 +31,10 @@ export function ExchangeSection({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
   const { ical } = m.calendars
   const { readOnly = false } = useHost()
-  const { events: repository, invalidate } = useStorage()
+  const { events: repository, categories: categoryRepository, invalidate } = useStorage()
+  const calendarIds = useMemo(() => [calendar.id], [calendar.id])
+  const { isAvailable: hasCategories, categories } = useCategories(calendarIds)
+  const canManage = canManageCategories(calendar)
   const [result, setResult] = useState<string | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
 
@@ -42,8 +46,9 @@ export function ExchangeSection({ calendar }: { calendar: CalendarSummary }) {
       setResult(ical.noEvents)
       return
     }
-    download(toICalendar(events, calendar.name), toFileName(calendar.name))
-  }, [repository, calendar, ical])
+    const categoryNames = new Map(categories.map((category) => [category.id, category.name]))
+    download(toICalendar(events, calendar.name, { categoryNames }), toFileName(calendar.name))
+  }, [repository, calendar, ical, categories])
 
   const importFile = useCallback(
     async (file: File) => {
@@ -54,7 +59,14 @@ export function ExchangeSection({ calendar }: { calendar: CalendarSummary }) {
         setFileError(ical.importFailed)
         return
       }
-      const summary = await importEvents(repository, calendar.id, parsed.events, m)
+      const resolver =
+        hasCategories && categoryRepository
+          ? createCategoryResolver(
+              await categoryRepository.list([calendar.id]),
+              canManage ? (name) => categoryRepository.create(calendar.id, name) : null,
+            )
+          : undefined
+      const summary = await importEvents(repository, calendar.id, parsed.events, m, resolver)
       invalidate()
       const skipped = parsed.skipped + summary.skipped
       setResult(
@@ -63,7 +75,7 @@ export function ExchangeSection({ calendar }: { calendar: CalendarSummary }) {
           .join(' '),
       )
     },
-    [repository, calendar.id, invalidate, ical, m],
+    [repository, categoryRepository, hasCategories, canManage, calendar.id, invalidate, ical, m],
   )
 
   const exporting = useAsyncAction(exportEvents)

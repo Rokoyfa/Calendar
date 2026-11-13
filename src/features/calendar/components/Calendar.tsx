@@ -74,6 +74,7 @@ type CalendarProps = {
   canCreate?: boolean
   readOnly?: boolean
   calendarNames?: ReadonlyMap<string, string>
+  canManageCategories?: (calendarId: string) => boolean
   eventSources?: EventSources
   initialView?: CalendarView
   headerContext?: ReactNode
@@ -99,6 +100,7 @@ type PendingDrop = {
 
 const NO_SHORTCUTS = {}
 const NO_NAMES: ReadonlyMap<string, string> = new Map()
+const ALWAYS = () => true
 
 type UndoOffer = { id: number; message: string; undo: () => Promise<void> }
 
@@ -108,6 +110,7 @@ export function Calendar({
   canCreate: mayCreate = true,
   readOnly: forcedReadOnly = false,
   calendarNames = NO_NAMES,
+  canManageCategories = ALWAYS,
   eventSources = NO_EVENT_SOURCES,
   initialView,
   headerContext,
@@ -136,7 +139,7 @@ export function Calendar({
   })
   const holidays = useHolidays(range)
   const viewerTimeZone = useViewerTimeZone()
-  const { categories } = useCategories(calendarIds)
+  const { isAvailable: hasCategories, categories, create: createCategory } = useCategories(calendarIds)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const activeFilter = categories.length > 0 ? categoryFilter : null
@@ -451,6 +454,11 @@ export function Calendar({
                 <EventModal
                   readOnly={readOnly}
                   categories={categories.filter((category) => category.calendarId === editorCalendarId)}
+                  onCreateCategory={
+                    hasCategories && editorCalendarId && canManageCategories(editorCalendarId)
+                      ? (name) => createCategory(editorCalendarId, name)
+                      : undefined
+                  }
                   key={shownEditor.occurrence?.occurrenceKey ?? 'new'}
                   initialValue={shownEditor.initialValue}
                   occurrence={shownEditor.occurrence}

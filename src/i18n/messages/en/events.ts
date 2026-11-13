@@ -20,7 +20,13 @@ export const events = {
   removeColor: (label: string) => `Remove color ${label}`,
   deleteTitle: 'Delete event?',
   viewTitle: 'Event',
-  categories: { label: 'Categories' },
+  categories: {
+    label: 'Categories',
+    add: 'New category',
+    newLabel: 'Name of the new category',
+    create: 'Create',
+    empty: 'No categories yet. Create the first one right here.',
+  },
   deleteMessage: (title: string) => `“${title}” will be deleted. This cannot be undone.`,
   deleteSeriesMessage: (title: string) =>
     `“${title}” is a recurring event. What should be deleted? This cannot be undone.`,
@@ -59,7 +65,7 @@ export const events = {
   respond: { accepted: 'Yes', tentative: 'Maybe', declined: 'No' },
   attendeeSummary: (accepted: number, total: number) => `${accepted} of ${total} accepted`,
   tabsLabel: 'Event sections',
-  tabs: { general: 'General', recurrence: 'Repeat', attendees: 'Attendees', details: 'Details' },
+  tabs: { general: 'General', appearance: 'Appearance', recurrence: 'Repeat', attendees: 'Attendees', details: 'Details' },
   links: 'Website & links',
   addLink: 'Add link',
   linkUrl: 'Address (URL)',
