@@ -12,6 +12,7 @@ type ApiRequestOptions = {
   headers?: HeadersInit
   signal?: AbortSignal
   timeoutMs?: number
+  responseType?: 'json' | 'blob'
 }
 
 export type ApiClientOptions = {
@@ -53,8 +54,7 @@ const buildQueryString = (query: QueryParams = {}) => {
   return queryString ? `?${queryString}` : ''
 }
 
-const joinUrl = (baseUrl: string, path: string) =>
-  `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
+const joinUrl = (baseUrl: string, path: string) => `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 
 export const encodePathSegment = (value: string | number) => encodeURIComponent(String(value))
 
@@ -78,7 +78,7 @@ export function createApiClient({
   const request = async <T>(
     method: HttpMethod,
     path: string,
-    { query, body, headers, signal, timeoutMs = defaultTimeoutMs }: ApiRequestOptions = {},
+    { query, body, headers, signal, timeoutMs = defaultTimeoutMs, responseType = 'json' }: ApiRequestOptions = {},
   ): Promise<T> => {
     const timeoutSignal = AbortSignal.timeout(timeoutMs)
     const requestHeaders = new Headers(defaultHeaders)
@@ -114,6 +114,14 @@ export function createApiClient({
       if (timeoutSignal.aborted) throw ApiError.fromKind('timeout', error)
       if (signal?.aborted) throw ApiError.fromKind('aborted', error)
       throw ApiError.fromKind('network', error)
+    }
+
+    if (responseType === 'blob' && response.ok) {
+      try {
+        return (await response.blob()) as T
+      } catch (error) {
+        throw ApiError.fromKind(timeoutSignal.aborted ? 'timeout' : 'network', error)
+      }
     }
 
     let data: unknown

@@ -666,6 +666,12 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 - Export und Import: `toICalendar` schreibt die Namen als `CATEGORIES`, `parseICalendar` liefert sie als `categoryNames`. Beim Import ordnet `createCategoryResolver` (`features/events/utils/icalExchange.ts`) sie über den Namen zu und legt fehlende an, wenn man den Kalender verwalten darf. Hat die Datei keine Kategorien, behält ein bekannter Termin seine.
 - Speicherung über `CategoryRepository` (lokal `LocalCategoryRepository`, sonst `RemoteCategoryRepository`). Fehlt das Repository im Daten-Adapter, gibt es die Funktion nicht.
 
+### Anhänge
+
+- Modell und Prüfungen in `utils/attachment.ts` (höchstens 20 Dateien pro Termin, je 10 MB, Name ohne Pfad und Steuerzeichen). Speicherung über `AttachmentRepository`, nur mit Backend (`RemoteAttachmentRepository`: Upload als `multipart/form-data`, Download als Blob über den API-Client mit `responseType: 'blob'`, damit auch Bearer-Token funktionieren).
+- `AttachmentsField` (`features/attachments`) steht im Tab „Details“ des Termin-Dialogs, außerhalb des gesperrten `fieldset`, damit der Download auch im Nur-Lesen-Modus geht. Beim Anlegen sammelt das Feld die Dateien, `Calendar.handleSave` lädt sie nach dem Speichern hoch und meldet fehlgeschlagene über `actionError`.
+- Hochladen und Löschen nur mit Bearbeitungsrecht (`canEditEntry` in `permissions.ts`, dafür liefert `parseCalendarEvent` jetzt `createdBy`). Termine tragen `attachmentCount` für die Büroklammer in `EventTitle`.
+
 ### Nur-Lesen-Modus und öffentliche Links
 
 - `readOnly` (Option des Gastgebers) landet im `HostContext`. `Calendar` setzt damit `canCreate` auf `false`, der Termin-Dialog zeigt seine Felder in einem deaktivierten `fieldset` und nur noch „Schließen“, der Import ist ausgeblendet.

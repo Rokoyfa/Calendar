@@ -41,6 +41,8 @@ tags:
   - name: Holidays
   - name: Categories
     description: Categories belong to one calendar. Events carry their ids in `categoryIds`.
+  - name: Attachments
+    description: Files on events. Only for members of the event's calendar, never through public links or subscriptions.
   - name: Sharing
     description: Public read-only links to a calendar. The `/shared` paths need no session.
 paths:
@@ -982,6 +984,75 @@ paths:
         '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
+  /events/{eventId}/attachments:
+    parameters:
+      - { name: eventId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Attachments]
+      summary: Attachments of an event
+      description: For every member who can see the event. A series has one set of attachments for all its occurrences; a detached occurrence has its own.
+      responses:
+        '200':
+          description: Attachments in upload order
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Attachment' } }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Attachments]
+      summary: Upload an attachment
+      description: |
+        Needs `update_any_entry`, or `update_own_entry` for own events. One file per request in the form field `file`.
+        At most 10 MB per file (`413` with `attachmentTooLarge`) and 20 files per event (`409` with `tooManyAttachments`).
+        Keep only the file name from the upload, never a path.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Uploaded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Attachment' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '413': { $ref: '#/components/responses/Problem' }
+  /attachments/{attachmentId}/content:
+    parameters:
+      - { name: attachmentId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Attachments]
+      summary: Download an attachment
+      description: |
+        The file as uploaded. Uploaded files are untrusted: always answer with
+        `Content-Disposition: attachment; filename*=UTF-8''<name>`, `X-Content-Type-Options: nosniff`
+        and `Content-Security-Policy: default-src 'none'; sandbox`, so a browser never shows an uploaded HTML or SVG file as a page of your domain.
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '404': { $ref: '#/components/responses/Problem' }
+  /attachments/{attachmentId}:
+    parameters:
+      - { name: attachmentId, in: path, required: true, schema: { type: string } }
+    delete:
+      tags: [Attachments]
+      summary: Delete an attachment
+      description: Same rights as uploading. Deleting an event, calendar or team deletes its attachments too.
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
   /calendars/{calendarId}/share:
     parameters:
       - { $ref: '#/components/parameters/CalendarId' }
@@ -1284,6 +1355,27 @@ components:
             createdBy: { oneOf: [{ type: string }, { type: 'null' }] }
             createdAt: { type: string, format: date-time }
             updatedAt: { type: string, format: date-time }
+            attachmentCount:
+              type: integer
+              minimum: 0
+              default: 0
+              description: Number of attachments of this event. Read-only, ignored on input. 0 in public links.
+    Attachment:
+      type: object
+      required: [id, eventId, name, type, size, createdAt, uploadedBy]
+      properties:
+        id: { type: string }
+        eventId: { type: string }
+        name: { type: string, maxLength: 200, description: 'File name without any path' }
+        type: { type: string, description: 'Media type as uploaded, application/octet-stream when unknown' }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+        createdAt: { type: string, format: date-time }
+        uploadedBy:
+          oneOf:
+            - type: object
+              required: [id, name]
+              properties: { id: { type: string }, name: { type: string } }
+            - type: 'null'
     TeamRole:
       type: string
       enum: [owner, admin, manager, editor, member, contributor, viewer]

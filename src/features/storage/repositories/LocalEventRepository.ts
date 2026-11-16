@@ -59,6 +59,8 @@ export class LocalEventRepository implements EventRepository {
       ...input,
       id: crypto.randomUUID(),
       calendarId,
+      attachmentCount: 0,
+      createdBy: null,
       createdAt: now,
       updatedAt: now,
     }

@@ -20,6 +20,7 @@ Everything you need to put `@rokoyfa/calendar` on your page: embedding, all opti
 14. [Read-only mode and public links](#14-read-only-mode-and-public-links)
 15. [Controlling the calendar from your page](#15-controlling-the-calendar-from-your-page)
 16. [Look and feel](#16-look-and-feel)
+17. [Attachments](#17-attachments)
 
 ## 1. Embedding
 
@@ -175,6 +176,7 @@ Everything beyond the core calendar (views, creating, editing, moving and deleti
 | `timeZones` | `feature-time-zones` | on | Time zone per event and in the settings | – |
 | `customColors` | `feature-custom-colors` | on | Own event colors | `/colors` |
 | `categories` | `feature-categories` | on | Categories per calendar and the filter, see [Categories](#13-categories) | `/categories`, `/calendars/:id/categories` |
+| `attachments` | `feature-attachments` | on | Files on events, see [Attachments](#17-attachments). Not in local mode | `/events/:id/attachments`, `/attachments/:id` |
 | `publicLinks` | `feature-public-links` | on | Public read-only links and the page they open, see [Public links](#14-read-only-mode-and-public-links) | `/calendars/:id/share`, `/shared/:token` |
 
 Good to know:
@@ -532,6 +534,7 @@ type CalendarFeatures = {
   customColors: boolean
   categories: boolean
   publicLinks: boolean
+  attachments: boolean
 }
 ```
 
@@ -545,6 +548,7 @@ type CalendarFeatures = {
 | `Preferences` | A user's settings |
 | `PublicHoliday` | `{ date, name }` |
 | `Category` | `{ id, calendarId, name }` |
+| `Attachment` | `{ id, eventId, name, type, size, createdAt, uploadedBy }` |
 | `SharedCalendar` | `{ id, name, color, categories }`, what a public link shows of a calendar |
 | `ChatMessage`, `ChatKey`, `ChatPage`, `ChatUnread`, `ChatEvent` | Chat, see [Event chat](#11-event-chat) |
 
@@ -563,6 +567,7 @@ type CalendarFeatures = {
 | `ChatRepository` | Chat |
 | `CategoryRepository` | Categories |
 | `SharedCalendarRepository` | Reading a calendar through a public link |
+| `AttachmentRepository` | Files on events |
 
 ```ts
 interface CalendarDataSource {
@@ -582,6 +587,14 @@ type DataRepositories = {
   chat?: ChatRepository
   categories?: CategoryRepository
   shared?: SharedCalendarRepository
+  attachments?: AttachmentRepository
+}
+
+interface AttachmentRepository {
+  list(eventId: string): Promise<Attachment[]>
+  upload(eventId: string, file: File): Promise<Attachment>
+  download(attachment: Attachment): Promise<Blob>
+  remove(id: string): Promise<void>
 }
 
 interface CategoryRepository {
@@ -720,6 +733,7 @@ The backend stores series as one event. The component expands occurrences itself
 | Answer from an email link | `POST /events/respond` with `{ token, status }`, no session needed |
 | Event chat | `GET`/`POST /events/:id/chat?date=…`, `POST /events/:id/chat/read`, `PATCH`/`DELETE /chat/messages/:id`, `GET /chat/unread?calendarId=…`, WebSocket `/chat/socket` |
 | Categories | `GET /categories?calendarId=…` with the calendars shown, `POST /calendars/:id/categories`, `PATCH` and `DELETE /categories/:id`. Events carry `categoryIds` |
+| Attachments | `GET` and `POST /events/:id/attachments` (multipart, field `file`), `GET /attachments/:id/content`, `DELETE /attachments/:id`. Events carry a read-only `attachmentCount` |
 | Public link | `GET`, `POST` (new link), `DELETE /calendars/:id/share`. The page behind the link calls `GET /shared/:token` and `GET /shared/:token/events?from=…&to=…` without a session |
 | Subscription link | `GET`, `POST` (new link), `DELETE /calendars/:id/feed`. The link points at your `GET /feeds/:token.ics` |
 | Reminders | `GET /events` for the next four weeks of all calendars, every five minutes while the widget is open |
@@ -738,6 +752,7 @@ Before editing "following" or "all" of a series, the component loads its detache
 - **Emails about events** (your backend sends them, the component only stores the user's choice): an invitation with yes / maybe / no links to `/respond?status=accepted&token=…` when someone is added as attendee (`emailInvites`), a notice when title, time, place or repetition change or the event is cancelled (`emailChanges`), and reminders at the user's own reminder times even while the calendar is closed (`emailReminders`, off by default). Only to verified addresses, never to the person who made the change.
 - **Subscriptions:** `GET /feeds/:token.ics` answers without a session with the calendar as iCalendar (RFC 5545), the subscriber's own reminders and the category names as `CATEGORIES` (comma-separated, with `,` and `;` inside a name escaped as `\,` and `\;`). Keep one secret token per user and calendar, a new one replaces the old. Stop serving it when the user leaves the calendar.
 - **Categories:** belong to one calendar, names are unique per calendar without regard to case. Reject an event whose `categoryIds` are not from its calendar, and remove a deleted category from all events.
+- **Attachments:** at most 10 MB per file and 20 per event. Store the files outside the database, keep only the file name, and serve them with `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`, because uploaded files are untrusted. Delete them together with their event, calendar or team. Never hand them out through public links or subscription feeds.
 - **Public links:** one unguessable token per calendar. `GET /shared/:token/events` must leave out everything personal: empty `attendees` and `reminders`, no `createdBy`, and never chat messages. A new link, or stopping the share, must make the old token fail at once.
 - **Email links:** point them at the host page with the screen as parameter, e.g. `https://host.example/calendar?calendarPath=%2Freset-password%3Ftoken%3D…`.
 
@@ -933,3 +948,18 @@ Colors you set apply in light and dark mode alike. To give each its own value, u
 | `density` | `density` | `comfortable` (default) or `compact` with smaller text, rows and spacing |
 
 The option wins over the CSS properties. The colors of events are not affected by the accent color, they keep the color the user gave them.
+
+## 17. Attachments
+
+Files can be attached to events, for example an agenda or a flyer.
+
+- **Where.** In the event dialog under "Details", with a button or by dragging files onto the section. Events with attachments show a paperclip.
+- **New events.** Files chosen while creating an event are uploaded right after it is saved. If one fails, the event is kept and a message names the files that are missing.
+- **Limits.** Up to 20 files per event, each at most 10 MB. Empty and larger files are refused before anything is sent.
+- **Who may do what.** Everyone who can see the event can download its files. Uploading and deleting needs the right to edit the event. In read-only mode files can only be downloaded.
+- **Series.** A recurring event has one set of attachments for all its occurrences. An occurrence changed on its own gets its own set.
+- **Not included.** Attachments are not copied when duplicating an event, and they are not part of `.ics` exports, subscription feeds or public links.
+- **Local mode.** Without a backend there are no attachments, because browser storage is too small for files.
+
+Turn the feature off with `features: { attachments: false }`.
+

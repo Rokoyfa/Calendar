@@ -40,6 +40,7 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
       chat: repositories.chat,
       categories: repositories.categories,
       shared: repositories.shared,
+      attachments: repositories.attachments,
     }),
     [repositories, eventCallbacks],
   )

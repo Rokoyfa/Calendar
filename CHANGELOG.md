@@ -4,6 +4,7 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ## Unreleased
 
+- Attachments: files can be uploaded to events in the event dialog (also while creating one and by drag and drop), downloaded by everyone who can see the event and deleted by those who may edit it. Events with attachments show a paperclip. New feature switch `attachments`, new endpoints in `api/openapi.yaml`, and events carry `attachmentCount` and `createdBy`
 - Categories per calendar: managed in the calendar settings, assigned in the event dialog, with a filter in the header. Events carry `categoryIds`. New feature switch `categories`
 - Public read-only links: a calendar can be shared with anyone without sign-in, opened at `/shared/:token`. New feature switch `publicLinks`
 - Read-only mode: `readOnly` / `read-only` shows events without letting anyone change them

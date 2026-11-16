@@ -97,7 +97,11 @@
     "categories": true,
 
     // Public read-only links to a calendar, and the page they open. Needs the share endpoints.
-    "publicLinks": true
+    "publicLinks": true,
+
+    // Files on events: upload in the event dialog, download by anyone who can see the event.
+    // Needs the attachment endpoints. Not available in local mode.
+    "attachments": true
   },
 
   // Shows events without letting anyone create, change, move, delete or import them.

@@ -1,4 +1,4 @@
-import { useState, type SubmitEventHandler } from 'react'
+import { useState, type ReactNode, type SubmitEventHandler } from 'react'
 import { Switch } from '../../../components/Switch.tsx'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
@@ -43,6 +43,7 @@ import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
 import { AttendeesField, type AttendeeCandidate } from './AttendeesField.tsx'
 import { LinksField } from './LinksField.tsx'
 import type { Category } from '../../../utils/category.ts'
+import { AttachmentsField, useAttachmentRepository } from '../../attachments/index.ts'
 import { CategoryField } from '../../categories/index.ts'
 import { ChatPanel, useUnreadCount } from '../../chat/index.ts'
 import type { ChatKey } from '../../../utils/chat.ts'
@@ -84,7 +85,7 @@ type EventModalProps = {
   attendeeOptions?: AttendeeOptions
   occurrence?: EventOccurrence | null
   notice?: string
-  onSave: (input: EventInput, scope: EditScope) => Promise<void>
+  onSave: (input: EventInput, scope: EditScope, attachments: readonly File[]) => Promise<void>
   onDelete?: () => void | Promise<void>
   onDuplicate?: (input: EventInput) => void
   onRemindersChange?: (reminders: number[]) => Promise<void>
@@ -93,6 +94,7 @@ type EventModalProps = {
   categories?: readonly Category[]
   onCreateCategory?: (name: string) => Promise<Category>
   readOnly?: boolean
+  canEditAttachments?: boolean
   onClose: () => void
 }
 
@@ -115,6 +117,7 @@ export function EventModal({
   categories = NO_CATEGORIES,
   onCreateCategory,
   readOnly = false,
+  canEditAttachments = !readOnly,
   onClose,
 }: EventModalProps) {
   const i18n = useI18n()
@@ -126,6 +129,8 @@ export function EventModal({
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const attachmentRepository = useAttachmentRepository()
   const [activeTab, setActiveTab] = useState<EventTab>(chat || initialTab !== 'chat' ? initialTab : 'general')
   const unreadChat = useUnreadCount(chat?.key ?? NO_CHAT)
   const {
@@ -135,7 +140,7 @@ export function EventModal({
   } = useAsyncAction(async (input: EventInput, scope: EditScope) => {
     if (occurrence && onRemindersChange && changesOnlyReminders(initialValue, input))
       await onRemindersChange(input.reminders)
-    else await onSave(input, scope)
+    else await onSave(input, scope, pendingFiles)
   })
   const { run: remove, isPending: isDeleting, error: deleteError } = useAsyncAction(async () => onDelete?.())
 
@@ -215,7 +220,7 @@ export function EventModal({
 
   const locationUrl = getLocationUrl(values.location)
 
-  const tabDefinitions: TabDefinition<EventTab>[] = [
+  const tabDefinitions: (TabDefinition<EventTab> & { after?: ReactNode })[] = [
     {
       value: 'general',
       label: m.events.tabs.general,
@@ -359,6 +364,14 @@ export function EventModal({
         </FormField>
       </>
     ),
+    after: attachmentRepository && (
+      <AttachmentsField
+        eventId={occurrence?.id ?? null}
+        canEdit={canEditAttachments}
+        pending={pendingFiles}
+        onPendingChange={setPendingFiles}
+      />
+    ),
   })
   if (chat)
     tabDefinitions.push({
@@ -366,16 +379,20 @@ export function EventModal({
       label: m.calendars.settings.withCount(m.events.chat.tab, unreadChat),
       content: <ChatPanel chatKey={chat.key} calendarId={chat.calendarId} isActive={activeTab === 'chat'} />,
     })
-  const tabs = tabDefinitions.map((tab) => ({
+  const tabs = tabDefinitions.map(({ after, ...tab }) => ({
     ...tab,
-    content:
-      readOnly && tab.value !== 'chat' ? (
-        <fieldset className="readOnlyFields" disabled>
-          {tab.content}
-        </fieldset>
-      ) : (
-        tab.content
-      ),
+    content: (
+      <>
+        {readOnly && tab.value !== 'chat' ? (
+          <fieldset className="readOnlyFields" disabled>
+            {tab.content}
+          </fieldset>
+        ) : (
+          tab.content
+        )}
+        {after}
+      </>
+    ),
     invalid: hasTabErrors(errors, tab.value),
   }))
 

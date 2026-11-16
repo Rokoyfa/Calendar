@@ -13,8 +13,10 @@ import {
   hasPermission,
   isPersonalCalendar,
   useCalendars,
+  canEditEntry,
   canManageCategories,
 } from '../features/calendars/index.ts'
+import type { CalendarEvent } from '../utils/event.ts'
 import { usePreferences } from '../features/preferences/index.ts'
 import { LocalImportPrompt } from '../features/storage/index.ts'
 import { useI18n } from '../i18n/index.ts'
@@ -101,6 +103,13 @@ export function CalendarPage() {
   const initialView =
     host.initialView ?? nearestView(getStartView(preferences, isCompactWidth(root.clientWidth)), host.views)
 
+  const mayEditEvent = useCallback(
+    (event: CalendarEvent) => {
+      const calendar = calendars.find((entry) => entry.id === event.calendarId)
+      return calendar === undefined || canEditEntry(calendar, event.createdBy, user?.id ?? null)
+    },
+    [calendars, user],
+  )
   const mayManageCategories = useCallback(
     (calendarId: string) => {
       const calendar = calendars.find((entry) => entry.id === calendarId)
@@ -120,6 +129,7 @@ export function CalendarPage() {
         eventSources={eventSources}
         calendarNames={calendarNames}
         canManageCategories={mayManageCategories}
+        canEditEvent={mayEditEvent}
         initialView={initialView}
         headerContext={<ActiveCalendarIndicator />}
         currentUserEmail={user?.email ?? null}

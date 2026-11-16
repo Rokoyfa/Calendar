@@ -10,9 +10,11 @@ export { RemotePreferencesRepository } from './repositories/RemotePreferencesRep
 export { RemoteHolidayRepository } from './repositories/RemoteHolidayRepository.ts'
 export { LocalCategoryRepository } from './repositories/LocalCategoryRepository.ts'
 export { RemoteCategoryRepository } from './repositories/RemoteCategoryRepository.ts'
+export { RemoteAttachmentRepository } from './repositories/RemoteAttachmentRepository.ts'
 export { RemoteSharedCalendarRepository } from './repositories/RemoteSharedCalendarRepository.ts'
 export { RemoteChatRepository } from './repositories/RemoteChatRepository.ts'
 export type {
+  AttachmentRepository,
   CategoryRepository,
   ColorRepository,
   EventQuery,

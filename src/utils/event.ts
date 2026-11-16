@@ -72,6 +72,8 @@ export type CalendarEvent = {
   originalDate: string | null
   reminders: number[]
   attendees: Attendee[]
+  attachmentCount: number
+  createdBy: string | null
   createdAt: string
   updatedAt: string
 }
@@ -282,6 +284,9 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
     originalDate,
     reminders: parseReminders(rest.reminders),
     attendees: parseAttendees(rest.attendees),
+    createdBy: typeof rest.createdBy === 'string' && rest.createdBy !== '' ? rest.createdBy : null,
+    attachmentCount:
+      typeof rest.attachmentCount === 'number' && rest.attachmentCount > 0 ? Math.floor(rest.attachmentCount) : 0,
     createdAt: typeof rest.createdAt === 'string' ? rest.createdAt : '',
     updatedAt: typeof rest.updatedAt === 'string' ? rest.updatedAt : '',
   }

@@ -6,6 +6,7 @@ import type { CalendarController, CalendarState } from '../../../context/HostBri
 import { nearestView } from '../../../utils/calendarView.ts'
 import { matchesCategoryFilter, type CategoryFilter } from '../../../utils/category.ts'
 import { isISODate, isTime } from '../../../utils/date.ts'
+import { useAttachmentRepository } from '../../attachments/index.ts'
 import { CategoryFilterModal, useCategories } from '../../categories/index.ts'
 import { useStorage } from '../../storage/index.ts'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
@@ -75,6 +76,7 @@ type CalendarProps = {
   readOnly?: boolean
   calendarNames?: ReadonlyMap<string, string>
   canManageCategories?: (calendarId: string) => boolean
+  canEditEvent?: (event: CalendarEvent) => boolean
   eventSources?: EventSources
   initialView?: CalendarView
   headerContext?: ReactNode
@@ -111,6 +113,7 @@ export function Calendar({
   readOnly: forcedReadOnly = false,
   calendarNames = NO_NAMES,
   canManageCategories = ALWAYS,
+  canEditEvent = ALWAYS,
   eventSources = NO_EVENT_SOURCES,
   initialView,
   headerContext,
@@ -124,6 +127,7 @@ export function Calendar({
   const i18n = useI18n()
   const { features, views, readOnly: hostReadOnly = false } = useHost()
   const { invalidate } = useStorage()
+  const attachmentRepository = useAttachmentRepository()
   const readOnly = forcedReadOnly || hostReadOnly
   const canCreate = mayCreate && !readOnly
   const [hostRequest, setHostRequest] = useState<OpenEventRequest | null>(null)
@@ -296,9 +300,23 @@ export function Calendar({
     else await removeEvent(occurrence, 'all')
   }
 
-  const handleSave = async (input: EventInput, scope: EditScope) => {
+  const uploadAttachments = async (eventId: string, files: readonly File[]) => {
+    if (!attachmentRepository || files.length === 0) return
+    const failed: string[] = []
+    for (const file of files) {
+      try {
+        await attachmentRepository.upload(eventId, file)
+      } catch {
+        failed.push(file.name)
+      }
+    }
+    invalidate()
+    if (failed.length > 0) setActionError(i18n.m.events.attachments.notUploaded(failed.join(', ')))
+  }
+
+  const handleSave = async (input: EventInput, scope: EditScope, attachments: readonly File[]) => {
     if (shownEditor?.occurrence) await updateEvent(shownEditor.occurrence, input, scope)
-    else await createEvent(input)
+    else await uploadAttachments((await createEvent(input)).id, attachments)
     closeEditor()
     goToDate(toViewerPeriod(input, input.timeZone, viewerTimeZone).startDate)
   }
@@ -453,6 +471,7 @@ export function Calendar({
               {shownEditor && (
                 <EventModal
                   readOnly={readOnly}
+                  canEditAttachments={!readOnly && (!shownEditor.occurrence || canEditEvent(shownEditor.occurrence))}
                   categories={categories.filter((category) => category.calendarId === editorCalendarId)}
                   onCreateCategory={
                     hasCategories && editorCalendarId && canManageCategories(editorCalendarId)

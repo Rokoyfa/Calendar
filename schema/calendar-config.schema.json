@@ -137,6 +137,11 @@
           "type": "boolean",
           "default": true,
           "description": "Public read-only links to a calendar, and the page they open. Needs the share endpoints."
+        },
+        "attachments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Uploading and downloading files on events. Needs a backend with the attachment endpoints; not available in local mode."
         }
       }
     },

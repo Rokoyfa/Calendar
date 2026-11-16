@@ -5,6 +5,7 @@ import {
 } from '../features/authorization/index.ts'
 import { RemoteCalendarRepository } from '../features/calendars/index.ts'
 import {
+  RemoteAttachmentRepository,
   RemoteCategoryRepository,
   RemoteColorRepository,
   RemoteChatRepository,
@@ -72,6 +73,7 @@ export function restDataSource({
       holidays: holidaySource === 'backend' ? new RemoteHolidayRepository(api) : undefined,
       categories: new RemoteCategoryRepository(api),
       shared: new RemoteSharedCalendarRepository(api),
+      attachments: new RemoteAttachmentRepository(api),
       chat: chat ? new RemoteChatRepository(api, getSocketUrl()) : undefined,
     }
   }

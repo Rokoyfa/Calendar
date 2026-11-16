@@ -1,3 +1,4 @@
+import type { Attachment } from '../../../utils/attachment.ts'
 import type { Category } from '../../../utils/category.ts'
 import type { HexColor } from '../../../utils/color.ts'
 import type { DateRange } from '../../../utils/date.ts'
@@ -32,6 +33,13 @@ export interface CategoryRepository {
   list(calendarIds: readonly string[]): Promise<Category[]>
   create(calendarId: string, name: string): Promise<Category>
   rename(id: string, name: string): Promise<Category>
+  remove(id: string): Promise<void>
+}
+
+export interface AttachmentRepository {
+  list(eventId: string): Promise<Attachment[]>
+  upload(eventId: string, file: File): Promise<Attachment>
+  download(attachment: Attachment): Promise<Blob>
   remove(id: string): Promise<void>
 }
 
@@ -72,6 +80,7 @@ export type StorageRepositories = {
   chat?: ChatRepository
   categories?: CategoryRepository
   shared?: SharedCalendarRepository
+  attachments?: AttachmentRepository
 }
 
 export type StorageContextValue = StorageRepositories & {

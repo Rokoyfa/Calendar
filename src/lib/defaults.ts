@@ -29,6 +29,7 @@ export const DEFAULT_FEATURES = {
   customColors: true,
   categories: true,
   publicLinks: true,
+  attachments: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES

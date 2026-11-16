@@ -15,6 +15,10 @@ export const getVisibleCalendarIds = (calendars: readonly CalendarSummary[], act
 export const hasPermission = (calendar: CalendarSummary, permission: Permission) =>
   calendar.permissions.includes(permission)
 
+export const canEditEntry = (calendar: CalendarSummary, createdBy: string | null, userId: string | null) =>
+  hasPermission(calendar, 'update_any_entry') ||
+  (hasPermission(calendar, 'update_own_entry') && (createdBy === null || createdBy === userId))
+
 export const canManageCategories = (calendar: CalendarSummary) =>
   isPersonalCalendar(calendar) || hasPermission(calendar, 'manage_calendars')
 
