@@ -2,8 +2,13 @@ import { encodePathSegment, type ApiClient, type QueryParams } from '../../../ut
 import { AppError } from '../../../utils/appError.ts'
 import { parseCalendarEvent, type AttendeeStatus, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
 import type { EventQuery, EventRepository, EventSearchQuery } from '../types/storage.ts'
+import { parseEventChange, type EventChange } from '../../../utils/eventChange.ts'
+import type { LiveSocket } from '../utils/liveSocket.ts'
 
 const EVENTS_PATH = '/events'
+
+const ifMatch = (version: number | undefined): HeadersInit | undefined =>
+  version === undefined ? undefined : { 'If-Match': `"${version}"` }
 
 const parseEvents = (values: unknown[]) =>
   values.map(parseCalendarEvent).filter((event): event is CalendarEvent => event !== null)
@@ -16,9 +21,16 @@ const parseEvent = (value: unknown) => {
 
 export class RemoteEventRepository implements EventRepository {
   readonly #api: ApiClient
+  readonly subscribe?: (listener: (change: EventChange) => void) => () => void
 
-  constructor(api: ApiClient) {
+  constructor(api: ApiClient, socket?: LiveSocket) {
     this.#api = api
+    if (socket)
+      this.subscribe = (listener) =>
+        socket.subscribe((message) => {
+          const change = parseEventChange(message)
+          if (change) listener(change)
+        })
   }
 
   list({ from, to, calendarIds }: EventQuery) {
@@ -39,8 +51,8 @@ export class RemoteEventRepository implements EventRepository {
     return parseEvent(await this.#api.post<unknown>(EVENTS_PATH, { ...input, calendarId }))
   }
 
-  async update(id: string, input: EventInput) {
-    return parseEvent(await this.#api.put<unknown>(this.#eventPath(id), input))
+  async update(id: string, input: EventInput, version?: number) {
+    return parseEvent(await this.#api.put<unknown>(this.#eventPath(id), input, { headers: ifMatch(version) }))
   }
 
   async respond(id: string, status: AttendeeStatus) {
@@ -51,15 +63,15 @@ export class RemoteEventRepository implements EventRepository {
     return parseEvent(await this.#api.put<unknown>(`${this.#eventPath(id)}/reminders`, { reminders }))
   }
 
-  remove(id: string) {
-    return this.#api.delete(this.#eventPath(id))
-  }
-
   async #query(query: QueryParams) {
     return parseEvents(await this.#api.get<unknown[]>(EVENTS_PATH, { query }))
   }
 
   #eventPath(id: string) {
     return `${EVENTS_PATH}/${encodePathSegment(id)}`
+  }
+
+  remove(id: string, version?: number) {
+    return this.#api.delete(this.#eventPath(id), { headers: ifMatch(version) })
   }
 }

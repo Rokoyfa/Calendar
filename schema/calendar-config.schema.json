@@ -142,6 +142,11 @@
           "type": "boolean",
           "default": true,
           "description": "Uploading and downloading files on events. Needs a backend with the attachment endpoints; not available in local mode."
+        },
+        "liveUpdates": {
+          "type": "boolean",
+          "default": true,
+          "description": "Shows changes by other people or in other tabs at once, without reloading. Uses the WebSocket of the backend; in local mode it follows other tabs."
         }
       }
     },

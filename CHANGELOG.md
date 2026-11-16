@@ -4,6 +4,8 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ## Unreleased
 
+- Live updates: changes by other people, or in other tabs, show up at once. The backend sends `event.changed` over the existing WebSocket, and an open dialog says when its event was changed or deleted in the meantime. New feature switch `liveUpdates`, new `restDataSource` option `liveUpdates` and optional `events.subscribe` for custom adapters
+- Protection against editing at the same time: events carry a `version`, saving and deleting send it as `If-Match`, and the backend answers `412` with `eventChanged` when someone else changed the event in the meantime. The dialog then offers to save anyway or to load the current version, and undo no longer overwrites other people's changes. Custom adapters receive the version in `events.update` and `events.remove`
 - Attachments: files can be uploaded to events in the event dialog (also while creating one and by drag and drop), downloaded by everyone who can see the event and deleted by those who may edit it. Events with attachments show a paperclip. New feature switch `attachments`, new endpoints in `api/openapi.yaml`, and events carry `attachmentCount` and `createdBy`
 - Categories per calendar: managed in the calendar settings, assigned in the event dialog, with a filter in the header. Events carry `categoryIds`. New feature switch `categories`
 - Public read-only links: a calendar can be shared with anyone without sign-in, opened at `/shared/:token`. New feature switch `publicLinks`

@@ -16,6 +16,16 @@ import { recordChanges, type Undo } from '../utils/undo.ts'
 
 const NO_EVENTS: CalendarEvent[] = []
 
+export type SaveOptions = { force?: boolean }
+
+const ignoreVersions = (repository: EventRepository): EventRepository => ({
+  list: (query) => repository.list(query),
+  listSeries: (seriesId) => repository.listSeries(seriesId),
+  create: (calendarId, input) => repository.create(calendarId, input),
+  update: (id, input) => repository.update(id, input),
+  remove: (id) => repository.remove(id),
+})
+
 type UseEventsOptions = EventQuery & { targetCalendarId: string }
 
 export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEventsOptions) {
@@ -37,7 +47,7 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
     (occurrence: EventOccurrence) => {
       const series = events.find((event) => event.id === occurrence.id)
       if (!series) throw new AppError('eventNotFound')
-      return series
+      return { ...series, version: occurrence.version }
     },
     [events],
   )
@@ -54,9 +64,9 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
   )
 
   const withUndo = useCallback(
-    (operation: (repository: EventRepository) => Promise<unknown>) =>
+    (operation: (repository: EventRepository) => Promise<unknown>, force = false) =>
       withReload(async (): Promise<Undo | null> => {
-        const recorder = recordChanges(repository, events)
+        const recorder = recordChanges(force ? ignoreVersions(repository) : repository, events)
         await operation(recorder.repository)
         const undo = recorder.undo()
         return undo && (() => withReload(undo))
@@ -70,9 +80,10 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
   )
 
   const updateEvent = useCallback(
-    (occurrence: EventOccurrence, input: EventInput, scope: EditScope) =>
-      withUndo((recording) =>
-        updateOccurrence(recording, findSeries(occurrence), occurrence.occurrenceDate, input, scope),
+    (occurrence: EventOccurrence, input: EventInput, scope: EditScope, { force = false }: SaveOptions = {}) =>
+      withUndo(
+        (recording) => updateOccurrence(recording, findSeries(occurrence), occurrence.occurrenceDate, input, scope),
+        force,
       ),
     [withUndo, findSeries],
   )

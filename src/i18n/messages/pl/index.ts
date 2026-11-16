@@ -41,6 +41,7 @@ const errors: Messages['errors'] = {
   shareNotFound: 'Ten kalendarz nie jest udostępniony lub link został wyłączony.',
   attachmentNotFound: 'Ten załącznik już nie istnieje.',
   attachmentTooLarge: 'Plik jest za duży.',
+  eventChanged: 'Ktoś inny zmienił w międzyczasie to wydarzenie.',
   tooManyAttachments: 'To wydarzenie ma już maksymalną liczbę załączników.',
   saveDecisionFailed: 'Nie udało się zapisać Twojego wyboru w tej przeglądarce.',
   invalidLink: 'Ten link jest nieprawidłowy lub wygasł.',
@@ -201,6 +202,17 @@ const events: Messages['events'] = {
   removeColor: (label) => `Usuń kolor ${label}`,
   deleteTitle: 'Usunąć wydarzenie?',
   viewTitle: 'Wydarzenie',
+  remoteChange: {
+    updated: 'Ktoś inny właśnie zmienił to wydarzenie. Wczytaj je ponownie, zanim będziesz kontynuować.',
+    deleted: 'Ktoś inny właśnie usunął to wydarzenie.',
+    reload: 'Wczytaj ponownie',
+  },
+  conflict: {
+    message:
+      'Ktoś inny zmienił to wydarzenie podczas Twojej edycji. Możesz mimo to zapisać swoją wersję lub wczytać aktualną.',
+    overwrite: 'Zapisz mimo to',
+    reload: 'Odrzuć i wczytaj ponownie',
+  },
   attachments: {
     title: 'Załączniki',
     add: 'Dołącz plik',
@@ -262,7 +274,13 @@ const events: Messages['events'] = {
   respond: { accepted: 'Tak', tentative: 'Może', declined: 'Nie' },
   attendeeSummary: (accepted, total) => `Zaakceptowało: ${accepted} z ${total}`,
   tabsLabel: 'Sekcje wydarzenia',
-  tabs: { general: 'Ogólne', appearance: 'Wygląd', recurrence: 'Powtarzanie', attendees: 'Uczestnicy', details: 'Szczegóły' },
+  tabs: {
+    general: 'Ogólne',
+    appearance: 'Wygląd',
+    recurrence: 'Powtarzanie',
+    attendees: 'Uczestnicy',
+    details: 'Szczegóły',
+  },
   links: 'Strona i linki',
   addLink: 'Dodaj link',
   linkUrl: 'Adres (URL)',

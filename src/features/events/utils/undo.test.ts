@@ -4,6 +4,7 @@ import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
 import type { EventRepository } from '../../storage/index.ts'
 import { deleteOccurrence, updateOccurrence } from './seriesActions.ts'
 import { recordChanges } from './undo.ts'
+import { AppError } from '../../../utils/appError.ts'
 
 const memoryRepository = (initial: CalendarEvent[]) => {
   let events = [...initial]
@@ -86,5 +87,27 @@ describe('undo', () => {
     const recorder = recordChanges(store.repository, [])
     await recorder.repository.remove('x')
     expect(recorder.undo()).toBeNull()
+  })
+
+  it('does not overwrite a change someone else made after the action', async () => {
+    const event = calendarEvent({ id: 'v', title: 'Alt', version: 1 })
+    let stored = event
+    const repository: EventRepository = {
+      list: async () => [stored],
+      listSeries: async () => [stored],
+      create: async () => stored,
+      update: async (_id, input, version) => {
+        if (version !== undefined && version !== stored.version) throw new AppError('eventChanged')
+        stored = { ...stored, ...input, version: stored.version + 1 }
+        return stored
+      },
+      remove: async () => {},
+    }
+    const recorder = recordChanges(repository, [event])
+    await recorder.repository.update('v', { ...event, title: 'Meins' }, event.version)
+    stored = { ...stored, title: 'Fremd', version: stored.version + 1 }
+
+    await expect(recorder.undo()!()).rejects.toMatchObject({ code: 'eventChanged' })
+    expect(stored.title).toBe('Fremd')
   })
 })

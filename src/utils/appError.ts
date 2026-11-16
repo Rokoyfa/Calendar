@@ -11,6 +11,7 @@ const ERROR_CODES = [
   'categoryNotFound',
   'shareNotFound',
   'attachmentNotFound',
+  'eventChanged',
   'attachmentTooLarge',
   'tooManyAttachments',
   'saveDecisionFailed',

@@ -22,6 +22,17 @@ export const events: Messages['events'] = {
   removeColor: (label) => `Farbe ${label} entfernen`,
   deleteTitle: 'Termin löschen?',
   viewTitle: 'Termin',
+  remoteChange: {
+    updated: 'Jemand anderes hat diesen Termin gerade geändert. Lade ihn neu, bevor du weiterarbeitest.',
+    deleted: 'Jemand anderes hat diesen Termin gerade gelöscht.',
+    reload: 'Neu laden',
+  },
+  conflict: {
+    message:
+      'Jemand anderes hat diesen Termin geändert, während du ihn bearbeitet hast. Du kannst deine Version trotzdem speichern oder die aktuelle Version laden.',
+    overwrite: 'Trotzdem speichern',
+    reload: 'Verwerfen und neu laden',
+  },
   attachments: {
     title: 'Anhänge',
     add: 'Datei anhängen',
@@ -35,8 +46,9 @@ export const events: Messages['events'] = {
     tooLarge: (name, size) => `„${name}“ ist größer als ${size}.`,
     emptyFile: (name) => `„${name}“ ist leer.`,
     tooMany: (name, count) => `„${name}“ passt nicht mehr: höchstens ${count} Dateien pro Termin.`,
-    notUploaded: (names) => `Der Termin wurde gespeichert, aber diese Anhänge konnten nicht hochgeladen werden: ${names}`,
-    count: (count) => count === 1 ? '1 Anhang' : `${count} Anhänge`,
+    notUploaded: (names) =>
+      `Der Termin wurde gespeichert, aber diese Anhänge konnten nicht hochgeladen werden: ${names}`,
+    count: (count) => (count === 1 ? '1 Anhang' : `${count} Anhänge`),
   },
   categories: {
     label: 'Kategorien',
@@ -84,7 +96,13 @@ export const events: Messages['events'] = {
   respond: { accepted: 'Ja', tentative: 'Vielleicht', declined: 'Nein' },
   attendeeSummary: (accepted, total) => `${accepted} von ${total} zugesagt`,
   tabsLabel: 'Bereiche des Termins',
-  tabs: { general: 'Allgemein', appearance: 'Darstellung', recurrence: 'Wiederholung', attendees: 'Teilnehmer', details: 'Details' },
+  tabs: {
+    general: 'Allgemein',
+    appearance: 'Darstellung',
+    recurrence: 'Wiederholung',
+    attendees: 'Teilnehmer',
+    details: 'Details',
+  },
   links: 'Webseite & Links',
   addLink: 'Link hinzufügen',
   linkUrl: 'Adresse (URL)',

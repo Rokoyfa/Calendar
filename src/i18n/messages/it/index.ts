@@ -32,6 +32,7 @@ const errors: Messages['errors'] = {
   shareNotFound: 'Questo calendario non è condiviso oppure il link è stato disattivato.',
   attachmentNotFound: 'Questo allegato non esiste più.',
   attachmentTooLarge: 'Il file è troppo grande.',
+  eventChanged: 'Qualcun altro ha modificato questo evento nel frattempo.',
   tooManyAttachments: 'Questo evento ha già il numero massimo di allegati.',
   saveDecisionFailed: 'Non è stato possibile salvare la tua scelta in questo browser.',
   invalidLink: 'Questo link non è valido o è scaduto.',
@@ -195,6 +196,17 @@ const events: Messages['events'] = {
   removeColor: (label) => `Rimuovi il colore ${label}`,
   deleteTitle: 'Eliminare l’evento?',
   viewTitle: 'Evento',
+  remoteChange: {
+    updated: 'Qualcun altro ha appena modificato questo evento. Ricaricalo prima di continuare.',
+    deleted: 'Qualcun altro ha appena eliminato questo evento.',
+    reload: 'Ricarica',
+  },
+  conflict: {
+    message:
+      'Qualcun altro ha modificato questo evento mentre lo stavi modificando. Puoi salvare comunque la tua versione o caricare quella attuale.',
+    overwrite: 'Salva comunque',
+    reload: 'Scarta e ricarica',
+  },
   attachments: {
     title: 'Allegati',
     add: 'Allega file',
@@ -209,7 +221,7 @@ const events: Messages['events'] = {
     emptyFile: (name) => `«${name}» è vuoto.`,
     tooMany: (name, count) => `«${name}» non può essere aggiunto: massimo ${count} file per evento.`,
     notUploaded: (names) => `L’evento è stato salvato, ma questi allegati non sono stati caricati: ${names}`,
-    count: (count) => count === 1 ? '1 allegato' : `${count} allegati`,
+    count: (count) => (count === 1 ? '1 allegato' : `${count} allegati`),
   },
   categories: {
     label: 'Categorie',
@@ -257,7 +269,13 @@ const events: Messages['events'] = {
   respond: { accepted: 'Sì', tentative: 'Forse', declined: 'No' },
   attendeeSummary: (accepted, total) => `${accepted} su ${total} hanno accettato`,
   tabsLabel: 'Sezioni dell’evento',
-  tabs: { general: 'Generale', appearance: 'Aspetto', recurrence: 'Ripetizione', attendees: 'Partecipanti', details: 'Dettagli' },
+  tabs: {
+    general: 'Generale',
+    appearance: 'Aspetto',
+    recurrence: 'Ripetizione',
+    attendees: 'Partecipanti',
+    details: 'Dettagli',
+  },
   links: 'Sito web e link',
   addLink: 'Aggiungi link',
   linkUrl: 'Indirizzo (URL)',

@@ -7,6 +7,7 @@ import {
   type CalendarEvent,
   type EventInput,
 } from '../../../utils/event.ts'
+import { ANY_EVENT_CHANGE, type EventChange } from '../../../utils/eventChange.ts'
 import type { EventQuery, EventRepository, EventSearchQuery } from '../types/storage.ts'
 import { LocalStorageList } from '../utils/localStorageList.ts'
 
@@ -20,13 +21,20 @@ const parseLocalEvent = (value: unknown) => {
 
 export class LocalEventRepository implements EventRepository {
   readonly #events: LocalStorageList<CalendarEvent>
+  readonly #storageKey: string
 
   constructor(storageKey = DEFAULT_STORAGE_KEY) {
-    this.#events = new LocalStorageList(
-      storageKey,
-      parseLocalEvent,
-      'saveEventsFailed',
-    )
+    this.#storageKey = storageKey
+    this.#events = new LocalStorageList(storageKey, parseLocalEvent, 'saveEventsFailed')
+  }
+
+  subscribe(listener: (change: EventChange) => void) {
+    if (typeof window === 'undefined') return () => {}
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === this.#storageKey || event.key === null) listener(ANY_EVENT_CHANGE)
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }
 
   async list({ from, to, calendarIds }: EventQuery) {
@@ -60,6 +68,7 @@ export class LocalEventRepository implements EventRepository {
       id: crypto.randomUUID(),
       calendarId,
       attachmentCount: 0,
+      version: 1,
       createdBy: null,
       createdAt: now,
       updatedAt: now,
@@ -68,16 +77,27 @@ export class LocalEventRepository implements EventRepository {
     return event
   }
 
-  async update(id: string, input: EventInput) {
-    const existing = this.#events.read().find((event) => event.id === id)
-    if (!existing) throw new AppError('eventNotFound')
-
-    const updated: CalendarEvent = { ...existing, ...input, updatedAt: new Date().toISOString() }
+  async update(id: string, input: EventInput, version?: number) {
+    const existing = this.#find(id, version)
+    const updated: CalendarEvent = {
+      ...existing,
+      ...input,
+      version: existing.version + 1,
+      updatedAt: new Date().toISOString(),
+    }
     this.#events.update((events) => events.map((event) => (event.id === id ? updated : event)))
     return updated
   }
 
-  async remove(id: string) {
+  #find(id: string, version: number | undefined) {
+    const existing = this.#events.read().find((event) => event.id === id)
+    if (!existing) throw new AppError('eventNotFound')
+    if (version !== undefined && existing.version !== version) throw new AppError('eventChanged')
+    return existing
+  }
+
+  async remove(id: string, version?: number) {
+    if (version !== undefined) this.#find(id, version)
     this.#events.update((events) => events.filter((event) => event.id !== id))
   }
 }

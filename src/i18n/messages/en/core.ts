@@ -38,6 +38,7 @@ export const errors: Record<ErrorCode, string> & {
   shareNotFound: 'This calendar is not shared, or the link was turned off.',
   attachmentNotFound: 'This attachment no longer exists.',
   attachmentTooLarge: 'The file is too large.',
+  eventChanged: 'Someone else has changed this event in the meantime.',
   tooManyAttachments: 'This event already has the maximum number of attachments.',
   saveDecisionFailed: 'Your choice could not be saved in this browser.',
   invalidLink: 'This link is invalid or has expired.',

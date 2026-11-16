@@ -40,6 +40,7 @@ export const calendarEvent = (overrides: Partial<CalendarEvent> = {}): CalendarE
   id: `event-${nextId++}`,
   calendarId: 'personal',
   attachmentCount: 0,
+  version: 1,
   createdBy: null,
   createdAt: '2026-11-01T00:00:00.000Z',
   updatedAt: '2026-11-01T00:00:00.000Z',

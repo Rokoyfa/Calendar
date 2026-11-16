@@ -11,7 +11,16 @@ export function createMemoryEventRepository(initial: CalendarEvent[] = []) {
     listSeries: async (seriesId) =>
       [...events.values()].filter((event) => event.id === seriesId || event.seriesId === seriesId),
     create: async (calendarId, input) => {
-      const event: CalendarEvent = { ...input, id: `new-${nextId++}`, calendarId, attachmentCount: 0, createdBy: null, createdAt: '', updatedAt: '' }
+      const event: CalendarEvent = {
+        ...input,
+        id: `new-${nextId++}`,
+        calendarId,
+        attachmentCount: 0,
+        version: 1,
+        createdBy: null,
+        createdAt: '',
+        updatedAt: '',
+      }
       events.set(event.id, event)
       calls.push(`create ${event.id}`)
       return event

@@ -55,16 +55,16 @@ export const updateOccurrence = (
 ) => {
   const shift = getShift(occurrenceDate, input)
   const relinkAll = (events: readonly CalendarEvent[], seriesId: string | null) =>
-    forEachInOrder(events, (event) => repository.update(event.id, relink(event, seriesId, shift)))
+    forEachInOrder(events, (event) => repository.update(event.id, relink(event, seriesId, shift), event.version))
 
   return applyScope(repository, series, occurrenceDate, scope, {
-    plain: () => repository.update(series.id, input),
+    plain: () => repository.update(series.id, input, series.version),
     single: async () => {
-      await repository.update(series.id, excludeOccurrence(series, occurrenceDate))
+      await repository.update(series.id, excludeOccurrence(series, occurrenceDate), series.version)
       await repository.create(series.calendarId, detachOccurrence(series, occurrenceDate, input))
     },
     following: async (detached) => {
-      await repository.update(series.id, truncateSeries(series, occurrenceDate))
+      await repository.update(series.id, truncateSeries(series, occurrenceDate), series.version)
       const created = await repository.create(series.calendarId, continueSeries(series, occurrenceDate, input))
       await relinkAll(
         detached.filter((event) => isDetachedFrom(event, occurrenceDate)),
@@ -72,7 +72,7 @@ export const updateOccurrence = (
       )
     },
     all: async (detached) => {
-      await repository.update(series.id, changeWholeSeries(series, occurrenceDate, input))
+      await repository.update(series.id, changeWholeSeries(series, occurrenceDate, input), series.version)
       if (!input.recurrence) await relinkAll(detached, null)
       else if (shift !== 0) await relinkAll(detached, series.id)
     },
@@ -85,18 +85,19 @@ export const deleteOccurrence = (
   occurrenceDate: string,
   scope: EditScope,
 ) => {
-  const removeAll = (events: readonly CalendarEvent[]) => forEachInOrder(events, (event) => repository.remove(event.id))
+  const removeAll = (events: readonly CalendarEvent[]) =>
+    forEachInOrder(events, (event) => repository.remove(event.id, event.version))
 
   return applyScope(repository, series, occurrenceDate, scope, {
-    plain: () => repository.remove(series.id),
-    single: () => repository.update(series.id, excludeOccurrence(series, occurrenceDate)),
+    plain: () => repository.remove(series.id, series.version),
+    single: () => repository.update(series.id, excludeOccurrence(series, occurrenceDate), series.version),
     following: async (detached) => {
-      await repository.update(series.id, truncateSeries(series, occurrenceDate))
+      await repository.update(series.id, truncateSeries(series, occurrenceDate), series.version)
       await removeAll(detached.filter((event) => isDetachedFrom(event, occurrenceDate)))
     },
     all: async (detached) => {
       await removeAll(detached)
-      await repository.remove(series.id)
+      await repository.remove(series.id, series.version)
     },
   })
 }

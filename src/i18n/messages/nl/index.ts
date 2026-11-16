@@ -32,6 +32,7 @@ const errors: Messages['errors'] = {
   shareNotFound: 'Deze kalender is niet gedeeld of de link is uitgeschakeld.',
   attachmentNotFound: 'Deze bijlage bestaat niet meer.',
   attachmentTooLarge: 'Het bestand is te groot.',
+  eventChanged: 'Iemand anders heeft deze afspraak inmiddels gewijzigd.',
   tooManyAttachments: 'Deze afspraak heeft al het maximale aantal bijlagen.',
   saveDecisionFailed: 'Je keuze kon niet in deze browser worden opgeslagen.',
   invalidLink: 'Deze link is ongeldig of verlopen.',
@@ -193,6 +194,17 @@ const events: Messages['events'] = {
   removeColor: (label) => `Kleur ${label} verwijderen`,
   deleteTitle: 'Afspraak verwijderen?',
   viewTitle: 'Afspraak',
+  remoteChange: {
+    updated: 'Iemand anders heeft deze afspraak net gewijzigd. Laad hem opnieuw voordat je verdergaat.',
+    deleted: 'Iemand anders heeft deze afspraak net verwijderd.',
+    reload: 'Opnieuw laden',
+  },
+  conflict: {
+    message:
+      'Iemand anders heeft deze afspraak gewijzigd terwijl jij hem bewerkte. Je kunt jouw versie toch opslaan of de huidige versie laden.',
+    overwrite: 'Toch opslaan',
+    reload: 'Verwerpen en opnieuw laden',
+  },
   attachments: {
     title: 'Bijlagen',
     add: 'Bestand toevoegen',
@@ -207,7 +219,7 @@ const events: Messages['events'] = {
     emptyFile: (name) => `‘${name}’ is leeg.`,
     tooMany: (name, count) => `‘${name}’ past niet meer: maximaal ${count} bestanden per afspraak.`,
     notUploaded: (names) => `De afspraak is opgeslagen, maar deze bijlagen konden niet worden geüpload: ${names}`,
-    count: (count) => count === 1 ? '1 bijlage' : `${count} bijlagen`,
+    count: (count) => (count === 1 ? '1 bijlage' : `${count} bijlagen`),
   },
   categories: {
     label: 'Categorieën',
@@ -260,7 +272,13 @@ const events: Messages['events'] = {
   respond: { accepted: 'Ja', tentative: 'Misschien', declined: 'Nee' },
   attendeeSummary: (accepted, total) => `${accepted} van ${total} geaccepteerd`,
   tabsLabel: 'Onderdelen van de afspraak',
-  tabs: { general: 'Algemeen', appearance: 'Weergave', recurrence: 'Herhaling', attendees: 'Deelnemers', details: 'Details' },
+  tabs: {
+    general: 'Algemeen',
+    appearance: 'Weergave',
+    recurrence: 'Herhaling',
+    attendees: 'Deelnemers',
+    details: 'Details',
+  },
   links: 'Website en links',
   addLink: 'Link toevoegen',
   linkUrl: 'Adres (URL)',

@@ -64,7 +64,7 @@ function ConfiguredCalendar({
     () => resolveViews(viewKey ? (viewKey.split(',') as CalendarOptions['views']) : undefined),
     [viewKey],
   )
-  const { auth, chat } = features
+  const { auth, chat, liveUpdates } = features
   const holidayBackend = features.holidays ? holidaySource : 'library'
   const dataSource = useMemo(() => {
     if (providedDataSource) return providedDataSource
@@ -74,10 +74,22 @@ function ConfiguredCalendar({
       getUserToken,
       holidaySource: holidayBackend,
       chat,
+      liveUpdates,
     }
     if (tenant) return tenantDataSource({ ...rest, tenant })
     return auth || storageMode === 'remote' ? restDataSource({ ...rest, auth }) : localDataSource()
-  }, [providedDataSource, tenant, getUserToken, auth, chat, storageMode, apiBaseUrl, apiTimeoutMs, holidayBackend])
+  }, [
+    providedDataSource,
+    tenant,
+    getUserToken,
+    auth,
+    chat,
+    liveUpdates,
+    storageMode,
+    apiBaseUrl,
+    apiTimeoutMs,
+    holidayBackend,
+  ])
   const viewerTimeZone = timeZone && isTimeZone(timeZone) ? timeZone : undefined
   const holidayRegion = holidays?.trim().toUpperCase()
   const hostHolidays =

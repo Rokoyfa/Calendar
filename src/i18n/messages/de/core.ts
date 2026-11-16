@@ -32,6 +32,7 @@ export const errors: Messages['errors'] = {
   shareNotFound: 'Dieser Kalender ist nicht freigegeben oder der Link wurde abgeschaltet.',
   attachmentNotFound: 'Diesen Anhang gibt es nicht mehr.',
   attachmentTooLarge: 'Die Datei ist zu groß.',
+  eventChanged: 'Dieser Termin wurde inzwischen von jemand anderem geändert.',
   tooManyAttachments: 'Dieser Termin hat bereits die maximale Anzahl an Anhängen.',
   saveDecisionFailed: 'Die Entscheidung konnte nicht gespeichert werden.',
   invalidLink: 'Der Link ist ungültig oder abgelaufen.',

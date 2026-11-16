@@ -32,6 +32,7 @@ const errors: Messages['errors'] = {
   shareNotFound: 'Ce calendrier n’est pas partagé ou le lien a été désactivé.',
   attachmentNotFound: 'Cette pièce jointe n’existe plus.',
   attachmentTooLarge: 'Le fichier est trop volumineux.',
+  eventChanged: "Quelqu'un d'autre a modifié cet événement entre-temps.",
   tooManyAttachments: 'Cet événement a déjà le nombre maximal de pièces jointes.',
   saveDecisionFailed: 'Votre choix n’a pas pu être enregistré dans ce navigateur.',
   invalidLink: 'Ce lien n’est pas valide ou a expiré.',
@@ -198,6 +199,17 @@ const events: Messages['events'] = {
   removeColor: (label) => `Supprimer la couleur ${label}`,
   deleteTitle: 'Supprimer l’événement ?',
   viewTitle: 'Événement',
+  remoteChange: {
+    updated: "Quelqu'un d'autre vient de modifier cet événement. Rechargez-le avant de continuer.",
+    deleted: "Quelqu'un d'autre vient de supprimer cet événement.",
+    reload: 'Recharger',
+  },
+  conflict: {
+    message:
+      "Quelqu'un d'autre a modifié cet événement pendant que vous le modifiiez. Vous pouvez enregistrer votre version quand même ou charger la version actuelle.",
+    overwrite: 'Enregistrer quand même',
+    reload: 'Annuler et recharger',
+  },
   attachments: {
     title: 'Pièces jointes',
     add: 'Joindre un fichier',
@@ -211,8 +223,9 @@ const events: Messages['events'] = {
     tooLarge: (name, size) => `« ${name} » dépasse ${size}.`,
     emptyFile: (name) => `« ${name} » est vide.`,
     tooMany: (name, count) => `« ${name} » ne peut pas être ajouté : ${count} fichiers maximum par événement.`,
-    notUploaded: (names) => `L’événement a été enregistré, mais ces pièces jointes n’ont pas pu être envoyées : ${names}`,
-    count: (count) => count === 1 ? '1 pièce jointe' : `${count} pièces jointes`,
+    notUploaded: (names) =>
+      `L’événement a été enregistré, mais ces pièces jointes n’ont pas pu être envoyées : ${names}`,
+    count: (count) => (count === 1 ? '1 pièce jointe' : `${count} pièces jointes`),
   },
   categories: {
     label: 'Catégories',
@@ -260,7 +273,13 @@ const events: Messages['events'] = {
   respond: { accepted: 'Oui', tentative: 'Peut-être', declined: 'Non' },
   attendeeSummary: (accepted, total) => `${accepted} sur ${total} ont accepté`,
   tabsLabel: 'Sections de l’événement',
-  tabs: { general: 'Général', appearance: 'Apparence', recurrence: 'Répétition', attendees: 'Participants', details: 'Détails' },
+  tabs: {
+    general: 'Général',
+    appearance: 'Apparence',
+    recurrence: 'Répétition',
+    attendees: 'Participants',
+    details: 'Détails',
+  },
   links: 'Site web et liens',
   addLink: 'Ajouter un lien',
   linkUrl: 'Adresse (URL)',

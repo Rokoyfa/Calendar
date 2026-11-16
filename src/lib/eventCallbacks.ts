@@ -23,19 +23,20 @@ export const withEventCallbacks = (
       getCallbacks().onEventUpdate?.(event)
       return event
     }),
+  subscribe: repository.subscribe && ((listener) => repository.subscribe!(listener)),
   setReminders: repository.setReminders && ((id, reminders) => repository.setReminders!(id, reminders)),
   async create(calendarId, input) {
     const event = await repository.create(calendarId, input)
     getCallbacks().onEventCreate?.(event)
     return event
   },
-  async update(id, input) {
-    const event = await repository.update(id, input)
+  async update(id, input, version) {
+    const event = await repository.update(id, input, version)
     getCallbacks().onEventUpdate?.(event)
     return event
   },
-  async remove(id) {
-    await repository.remove(id)
+  async remove(id, version) {
+    await repository.remove(id, version)
     getCallbacks().onEventDelete?.({ id })
   },
 })

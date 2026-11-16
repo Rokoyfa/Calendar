@@ -34,6 +34,7 @@ const errors: Messages['errors'] = {
   shareNotFound: 'Este calendário não está compartilhado ou o link foi desativado.',
   attachmentNotFound: 'Este anexo não existe mais.',
   attachmentTooLarge: 'O arquivo é grande demais.',
+  eventChanged: 'Outra pessoa alterou este evento entretanto.',
   tooManyAttachments: 'Este evento já tem o número máximo de anexos.',
   saveDecisionFailed: 'Não foi possível salvar sua escolha neste navegador.',
   invalidLink: 'Este link é inválido ou expirou.',
@@ -197,6 +198,17 @@ const events: Messages['events'] = {
   removeColor: (label) => `Remover a cor ${label}`,
   deleteTitle: 'Excluir evento?',
   viewTitle: 'Evento',
+  remoteChange: {
+    updated: 'Outra pessoa acabou de alterar este evento. Recarregue-o antes de continuar.',
+    deleted: 'Outra pessoa acabou de eliminar este evento.',
+    reload: 'Recarregar',
+  },
+  conflict: {
+    message:
+      'Outra pessoa alterou este evento enquanto o editava. Pode guardar a sua versão mesmo assim ou carregar a versão atual.',
+    overwrite: 'Guardar mesmo assim',
+    reload: 'Descartar e recarregar',
+  },
   attachments: {
     title: 'Anexos',
     add: 'Anexar arquivo',
@@ -211,7 +223,7 @@ const events: Messages['events'] = {
     emptyFile: (name) => `“${name}” está vazio.`,
     tooMany: (name, count) => `“${name}” não cabe: no máximo ${count} arquivos por evento.`,
     notUploaded: (names) => `O evento foi salvo, mas estes anexos não puderam ser enviados: ${names}`,
-    count: (count) => count === 1 ? '1 anexo' : `${count} anexos`,
+    count: (count) => (count === 1 ? '1 anexo' : `${count} anexos`),
   },
   categories: {
     label: 'Categorias',
@@ -259,7 +271,13 @@ const events: Messages['events'] = {
   respond: { accepted: 'Sim', tentative: 'Talvez', declined: 'Não' },
   attendeeSummary: (accepted, total) => `${accepted} de ${total} aceitaram`,
   tabsLabel: 'Secções do evento',
-  tabs: { general: 'Geral', appearance: 'Aparência', recurrence: 'Repetição', attendees: 'Participantes', details: 'Detalhes' },
+  tabs: {
+    general: 'Geral',
+    appearance: 'Aparência',
+    recurrence: 'Repetição',
+    attendees: 'Participantes',
+    details: 'Detalhes',
+  },
   links: 'Site e links',
   addLink: 'Adicionar link',
   linkUrl: 'Endereço (URL)',

@@ -32,6 +32,7 @@ const errors: Messages['errors'] = {
   shareNotFound: 'Este calendario no está compartido o el enlace se ha desactivado.',
   attachmentNotFound: 'Este archivo adjunto ya no existe.',
   attachmentTooLarge: 'El archivo es demasiado grande.',
+  eventChanged: 'Otra persona ha modificado este evento mientras tanto.',
   tooManyAttachments: 'Este evento ya tiene el número máximo de archivos adjuntos.',
   saveDecisionFailed: 'No se ha podido guardar tu elección en este navegador.',
   invalidLink: 'Este enlace no es válido o ha caducado.',
@@ -193,6 +194,17 @@ const events: Messages['events'] = {
   removeColor: (label) => `Quitar el color ${label}`,
   deleteTitle: '¿Eliminar el evento?',
   viewTitle: 'Evento',
+  remoteChange: {
+    updated: 'Otra persona acaba de modificar este evento. Recárgalo antes de continuar.',
+    deleted: 'Otra persona acaba de eliminar este evento.',
+    reload: 'Recargar',
+  },
+  conflict: {
+    message:
+      'Otra persona modificó este evento mientras lo editabas. Puedes guardar tu versión de todos modos o cargar la versión actual.',
+    overwrite: 'Guardar de todos modos',
+    reload: 'Descartar y recargar',
+  },
   attachments: {
     title: 'Archivos adjuntos',
     add: 'Adjuntar archivo',
@@ -207,7 +219,7 @@ const events: Messages['events'] = {
     emptyFile: (name) => `«${name}» está vacío.`,
     tooMany: (name, count) => `«${name}» no cabe: como máximo ${count} archivos por evento.`,
     notUploaded: (names) => `El evento se guardó, pero no se pudieron subir estos archivos: ${names}`,
-    count: (count) => count === 1 ? '1 archivo adjunto' : `${count} archivos adjuntos`,
+    count: (count) => (count === 1 ? '1 archivo adjunto' : `${count} archivos adjuntos`),
   },
   categories: {
     label: 'Categorías',
@@ -254,7 +266,13 @@ const events: Messages['events'] = {
   respond: { accepted: 'Sí', tentative: 'Quizás', declined: 'No' },
   attendeeSummary: (accepted, total) => `${accepted} de ${total} han aceptado`,
   tabsLabel: 'Secciones del evento',
-  tabs: { general: 'General', appearance: 'Apariencia', recurrence: 'Repetición', attendees: 'Participantes', details: 'Detalles' },
+  tabs: {
+    general: 'General',
+    appearance: 'Apariencia',
+    recurrence: 'Repetición',
+    attendees: 'Participantes',
+    details: 'Detalles',
+  },
   links: 'Sitio web y enlaces',
   addLink: 'Añadir enlace',
   linkUrl: 'Dirección (URL)',

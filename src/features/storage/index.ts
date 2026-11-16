@@ -13,6 +13,7 @@ export { RemoteCategoryRepository } from './repositories/RemoteCategoryRepositor
 export { RemoteAttachmentRepository } from './repositories/RemoteAttachmentRepository.ts'
 export { RemoteSharedCalendarRepository } from './repositories/RemoteSharedCalendarRepository.ts'
 export { RemoteChatRepository } from './repositories/RemoteChatRepository.ts'
+export { LiveSocket, type LiveMessage } from './utils/liveSocket.ts'
 export type {
   AttachmentRepository,
   CategoryRepository,

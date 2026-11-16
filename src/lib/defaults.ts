@@ -30,6 +30,7 @@ export const DEFAULT_FEATURES = {
   categories: true,
   publicLinks: true,
   attachments: true,
+  liveUpdates: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES

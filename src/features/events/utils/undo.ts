@@ -32,27 +32,31 @@ export function recordChanges(repository: EventRepository, known: readonly Calen
       byId.set(created.id, created)
       return created
     },
-    update: async (id, input) => {
+    update: async (id, input, version) => {
       const before = previous(id)
-      const updated = await repository.update(id, input)
+      const updated = await repository.update(id, input, version)
       if (before) changes.push({ type: 'updated', before })
       byId.set(id, updated)
       return updated
     },
-    remove: async (id) => {
+    remove: async (id, version) => {
       const before = previous(id)
-      await repository.remove(id)
+      await repository.remove(id, version)
       if (before) changes.push({ type: 'removed', before })
       byId.delete(id)
     },
   }
 
-  const undo = (): Undo | null => (complete && changes.length > 0 ? () => undoChanges(repository, changes) : null)
+  const undo = (): Undo | null => {
+    if (!complete || changes.length === 0) return null
+    const versions = new Map([...byId].map(([id, event]) => [id, event.version]))
+    return () => undoChanges(repository, changes, versions)
+  }
 
   return { repository: recording, undo }
 }
 
-async function undoChanges(repository: EventRepository, changes: readonly Change[]) {
+async function undoChanges(repository: EventRepository, changes: readonly Change[], versions: Map<string, number>) {
   const replacedIds = new Map<string, string>()
   const currentId = (id: string) => replacedIds.get(id) ?? id
   const restore = (event: CalendarEvent) => ({
@@ -61,11 +65,17 @@ async function undoChanges(repository: EventRepository, changes: readonly Change
   })
 
   for (const change of changes.toReversed()) {
-    if (change.type === 'created') await repository.remove(currentId(change.event.id))
-    else if (change.type === 'updated') await repository.update(currentId(change.before.id), restore(change.before))
-    else {
+    if (change.type === 'created') {
+      const id = currentId(change.event.id)
+      await repository.remove(id, versions.get(id))
+    } else if (change.type === 'updated') {
+      const id = currentId(change.before.id)
+      const restored = await repository.update(id, restore(change.before), versions.get(id))
+      versions.set(id, restored.version)
+    } else {
       const recreated = await repository.create(change.before.calendarId, restore(change.before))
       replacedIds.set(change.before.id, recreated.id)
+      versions.set(recreated.id, recreated.version)
     }
   }
 }

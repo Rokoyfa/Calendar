@@ -12,6 +12,7 @@ export type TenantDataSourceOptions = {
   getUserToken?: UserTokenProvider
   holidaySource?: HolidaySource
   chat?: boolean
+  liveUpdates?: boolean
 }
 
 export const tenantDataSource = ({
@@ -21,6 +22,7 @@ export const tenantDataSource = ({
   getUserToken,
   holidaySource,
   chat,
+  liveUpdates,
 }: TenantDataSourceOptions): CalendarDataSource =>
   restDataSource({
     baseUrl,
@@ -30,4 +32,5 @@ export const tenantDataSource = ({
     getUserToken,
     holidaySource,
     chat,
+    liveUpdates,
   })

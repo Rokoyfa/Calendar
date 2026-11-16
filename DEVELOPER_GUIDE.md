@@ -21,6 +21,7 @@ Everything you need to put `@rokoyfa/calendar` on your page: embedding, all opti
 15. [Controlling the calendar from your page](#15-controlling-the-calendar-from-your-page)
 16. [Look and feel](#16-look-and-feel)
 17. [Attachments](#17-attachments)
+18. [Live updates](#18-live-updates)
 
 ## 1. Embedding
 
@@ -177,6 +178,7 @@ Everything beyond the core calendar (views, creating, editing, moving and deleti
 | `customColors` | `feature-custom-colors` | on | Own event colors | `/colors` |
 | `categories` | `feature-categories` | on | Categories per calendar and the filter, see [Categories](#13-categories) | `/categories`, `/calendars/:id/categories` |
 | `attachments` | `feature-attachments` | on | Files on events, see [Attachments](#17-attachments). Not in local mode | `/events/:id/attachments`, `/attachments/:id` |
+| `liveUpdates` | `feature-live-updates` | on | Changes by others, or in other tabs, show up at once, see [Live updates](#18-live-updates) | WebSocket `/chat/socket` with `event.changed` messages |
 | `publicLinks` | `feature-public-links` | on | Public read-only links and the page they open, see [Public links](#14-read-only-mode-and-public-links) | `/calendars/:id/share`, `/shared/:token` |
 
 Good to know:
@@ -401,8 +403,9 @@ import { Calendar, localDataSource, restDataSource, tenantDataSource } from '@ro
 | `getAccessToken` | – | Returns a bearer token for the `Authorization` header |
 | `getUserToken` | – | Sign-in through your page, see above |
 | `holidaySource` | `library` | `backend` asks `GET /holidays` |
-| `chat` | `true` | `false` creates no chat connection |
-| `chatSocketUrl` | from `baseUrl` | Address of the chat WebSocket |
+| `chat` | `true` | `false` turns the chat off |
+| `liveUpdates` | `true` | `false` turns live updates of events off. Without chat and live updates no WebSocket is opened |
+| `chatSocketUrl` | from `baseUrl` | Address of the WebSocket, used by the chat and live updates |
 
 Note that `restDataSource` defaults to `auth: true`, while the `auth` feature of the component defaults to off.
 
@@ -433,9 +436,10 @@ const myDataSource: CalendarDataSource = {
 - `createAuthRepository` is optional. Without it there is no sign-in in the widget.
 - `holidays`, `chat`, `categories` and `shared` are optional. Without `chat` there is no chat, without `categories` no categories, without `shared` public links cannot be opened, and without `holidays` they are computed in the browser.
 - `mode: 'remote'` makes the calendar offer to move local events into the account after sign-in.
-- Optional methods switch their feature on: `events.search`, `events.respond`, `events.setReminders`, `calendars.getFeed` / `createFeed` / `deleteFeed`, `calendars.getShare` / `createShare` / `deleteShare`. Without `search` the calendar searches the last and next year itself.
+- Optional methods switch their feature on: `events.search`, `events.respond`, `events.setReminders`, `events.subscribe` (live updates), `calendars.getFeed` / `createFeed` / `deleteFeed`, `calendars.getShare` / `createShare` / `deleteShare`. Without `search` the calendar searches the last and next year itself.
 - Call `onUnauthorized` when a session has run out. `getLanguage` returns the current language for your requests.
 - Errors with a known `code` are shown translated, others with their `message`.
+- `events.update(id, input, version)` and `events.remove(id, version)` get the `version` the user saw. Throw an error with code `eventChanged` if the stored event is newer; without `version`, save without checking.
 
 A simple start is to take most repositories from `localDataSource()` and replace only `events`:
 
@@ -613,12 +617,18 @@ interface EventRepository {
   list(query: { from: string; to: string; calendarIds: readonly string[] }): Promise<CalendarEvent[]>
   listSeries(seriesId: string): Promise<CalendarEvent[]>
   create(calendarId: string, input: EventInput): Promise<CalendarEvent>
-  update(id: string, input: EventInput): Promise<CalendarEvent>
-  remove(id: string): Promise<void>
+  update(id: string, input: EventInput, version?: number): Promise<CalendarEvent>
+  remove(id: string, version?: number): Promise<void>
   search?(query: { text: string; calendarIds: readonly string[] }): Promise<CalendarEvent[]>
   respond?(id: string, status: AttendeeStatus): Promise<CalendarEvent>
   setReminders?(id: string, reminders: number[]): Promise<CalendarEvent>
+  subscribe?(listener: (change: EventChange) => void): () => void
 }
+
+type EventChange =
+  | { type: 'connected' }
+  | { type: 'disconnected' }
+  | { type: 'event.changed'; calendarId: string | null; eventId: string | null; version: number | null; changedBy: string | null }
 
 interface ChatRepository {
   list(key: ChatKey, options?: { before?: string }): Promise<ChatPage>
@@ -657,6 +667,7 @@ type CalendarEvent = EventInput & {
   calendarId: string
   createdAt: string             // ISO date-time
   updatedAt: string
+  version: number               // starts at 1, goes up on every change, read-only
 }
 
 type EventInput = {
@@ -731,6 +742,7 @@ The backend stores series as one event. The component expands occurrences itself
 | Answer as attendee | `POST /events/:id/response` with `{ status }` |
 | Change only own reminders | `PUT /events/:id/reminders` with `{ reminders }` (also for members without edit rights) |
 | Answer from an email link | `POST /events/respond` with `{ token, status }`, no session needed |
+| Live updates | WebSocket `/chat/socket`, opened while the calendar is shown. After an `event.changed` message for a shown calendar, the component reloads the events of the visible range |
 | Event chat | `GET`/`POST /events/:id/chat?date=…`, `POST /events/:id/chat/read`, `PATCH`/`DELETE /chat/messages/:id`, `GET /chat/unread?calendarId=…`, WebSocket `/chat/socket` |
 | Categories | `GET /categories?calendarId=…` with the calendars shown, `POST /calendars/:id/categories`, `PATCH` and `DELETE /categories/:id`. Events carry `categoryIds` |
 | Attachments | `GET` and `POST /events/:id/attachments` (multipart, field `file`), `GET /attachments/:id/content`, `DELETE /attachments/:id`. Events carry a read-only `attachmentCount` |
@@ -746,14 +758,16 @@ Before editing "following" or "all" of a series, the component loads its detache
 
 ### Rules for the backend
 
-- **Sessions:** requests use `credentials: 'include'`. Set an `HttpOnly` cookie on sign-in. If the widget runs on another domain: CORS for that origin with `Access-Control-Allow-Credentials: true`, allowed headers `Content-Type`, `Accept`, `Accept-Language`, `Authorization`, `X-Calendar-Tenant`, and the cookie as `SameSite=None; Secure`. Answer `401` when the session is gone.
+- **Sessions:** requests use `credentials: 'include'`. Set an `HttpOnly` cookie on sign-in. If the widget runs on another domain: CORS for that origin with `Access-Control-Allow-Credentials: true`, allowed headers `Content-Type`, `Accept`, `Accept-Language`, `Authorization`, `If-Match`, `X-Calendar-Tenant`, and the cookie as `SameSite=None; Secure`. Answer `401` when the session is gone.
 - **Errors:** always `{ code, message }`. Known codes such as `invalidCredentials`, `emailTaken`, `forbidden`, `lastOwner` are shown translated, others with `message`.
 - **Language:** every request carries `Accept-Language`. Use it, or the stored `locale`, for emails.
 - **Emails about events** (your backend sends them, the component only stores the user's choice): an invitation with yes / maybe / no links to `/respond?status=accepted&token=…` when someone is added as attendee (`emailInvites`), a notice when title, time, place or repetition change or the event is cancelled (`emailChanges`), and reminders at the user's own reminder times even while the calendar is closed (`emailReminders`, off by default). Only to verified addresses, never to the person who made the change.
 - **Subscriptions:** `GET /feeds/:token.ics` answers without a session with the calendar as iCalendar (RFC 5545), the subscriber's own reminders and the category names as `CATEGORIES` (comma-separated, with `,` and `;` inside a name escaped as `\,` and `\;`). Keep one secret token per user and calendar, a new one replaces the old. Stop serving it when the user leaves the calendar.
+- **Editing at the same time:** every event has a `version` that starts at 1. Raise it on every `PUT`, attendee response and removed category, but not when someone only changes their own reminders. `PUT` and `DELETE /events/:id` send `If-Match: "<version>"` with the version the user saw. If the event has a newer version, answer `412` with `eventChanged` and change nothing. The dialog then offers to save anyway (sent without `If-Match`) or to load the current version. Without `If-Match`, or with `*`, skip the check.
 - **Categories:** belong to one calendar, names are unique per calendar without regard to case. Reject an event whose `categoryIds` are not from its calendar, and remove a deleted category from all events.
 - **Attachments:** at most 10 MB per file and 20 per event. Store the files outside the database, keep only the file name, and serve them with `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`, because uploaded files are untrusted. Delete them together with their event, calendar or team. Never hand them out through public links or subscription feeds.
 - **Public links:** one unguessable token per calendar. `GET /shared/:token/events` must leave out everything personal: empty `attendees` and `reminders`, no `createdBy`, and never chat messages. A new link, or stopping the share, must make the old token fail at once.
+- **Live updates:** after every change to an event (create, `PUT`, `DELETE`, attendee response, attachment added or removed, category removed) send `{ "type": "event.changed", "calendarId", "eventId", "version", "changedBy" }` over the WebSocket to every connected member of the calendar's team. `version` is the new version, `null` when the event was deleted. `changedBy` is the user id, or `null` for changes without a session such as answers from an email link. Send one message per event, also for detached events deleted with their series.
 - **Email links:** point them at the host page with the screen as parameter, e.g. `https://host.example/calendar?calendarPath=%2Freset-password%3Ftoken%3D…`.
 
 ## 11. Event chat
@@ -770,7 +784,7 @@ Messages go over REST (see the OpenAPI file, tag *Chat*). New, edited and delete
 
 Emails link to the host page with `?calendar=…&event=…&date=…&tab=chat`, which opens the event with the chat.
 
-Without a WebSocket on your backend, turn the feature off: `features: { chat: false }`. The calendar then opens no connection and shows no chat.
+Without a WebSocket on your backend, turn the feature off: `features: { chat: false }`. The calendar then shows no chat. The same WebSocket also carries [live updates](#18-live-updates); with both off, no connection is opened.
 
 ## 12. Calendar subscriptions
 
@@ -963,3 +977,14 @@ Files can be attached to events, for example an agenda or a flyer.
 
 Turn the feature off with `features: { attachments: false }`.
 
+## 18. Live updates
+
+When someone changes an event in a calendar that is shown, everyone else sees it at once, without reloading.
+
+- **How.** The backend sends an `event.changed` message over the WebSocket that the chat uses too (see [Event chat](#11-event-chat) for address, sign-in and pings, and [Rules for the backend](#rules-for-the-backend) for the message). The component then reloads the events of the visible range, several messages in a row only once.
+- **Open dialog.** If another person changes or deletes the event that is open in the dialog, the dialog says so and offers to reload it. Saving anyway is still protected by `If-Match` (see [Rules for the backend](#rules-for-the-backend)).
+- **Connection lost.** The component reconnects with growing pauses and reloads the events once it is back, so nothing is missed.
+- **Local mode.** Without a backend, changes made in another tab of the same browser show up at once.
+- **Own adapter.** Implement `events.subscribe(listener)` and call the listener with an `EventChange`. Return a function that ends the subscription. Without `subscribe` there are no live updates.
+
+Without a WebSocket on your backend, turn chat and live updates off: `features: { chat: false, liveUpdates: false }`. The calendar then opens no connection.

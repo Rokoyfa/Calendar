@@ -10,81 +10,9 @@ import {
 } from '../../../utils/chat.ts'
 import { AppError } from '../../../utils/appError.ts'
 import type { ChatRepository } from '../types/storage.ts'
-
-const RETRY_MIN_MS = 1000
-const RETRY_MAX_MS = 30_000
-const PING_INTERVAL_MS = 25_000
+import { LiveSocket } from '../utils/liveSocket.ts'
 
 type Listener = (event: ChatEvent) => void
-
-class ChatSocket {
-  readonly #url: string
-  readonly #listeners = new Set<Listener>()
-  #socket: WebSocket | null = null
-  #retryMs = RETRY_MIN_MS
-  #retryTimer: ReturnType<typeof setTimeout> | null = null
-  #pingTimer: ReturnType<typeof setInterval> | null = null
-
-  constructor(url: string) {
-    this.#url = url
-  }
-
-  subscribe(listener: Listener) {
-    this.#listeners.add(listener)
-    if (this.#listeners.size === 1) this.#connect()
-    return () => {
-      this.#listeners.delete(listener)
-      if (this.#listeners.size === 0) this.#close()
-    }
-  }
-
-  #emit(event: ChatEvent) {
-    for (const listener of this.#listeners) listener(event)
-  }
-
-  #connect() {
-    if (typeof WebSocket === 'undefined' || this.#socket) return
-    const socket = new WebSocket(this.#url)
-    this.#socket = socket
-    socket.addEventListener('open', () => {
-      if (this.#socket !== socket) return
-      this.#retryMs = RETRY_MIN_MS
-      this.#pingTimer = setInterval(() => socket.send('{"type":"ping"}'), PING_INTERVAL_MS)
-      this.#emit({ type: 'connected' })
-    })
-    socket.addEventListener('message', ({ data }) => {
-      if (this.#socket !== socket) return
-      try {
-        const event = parseChatEvent(JSON.parse(String(data)))
-        if (event) this.#emit(event)
-      } catch {
-        return
-      }
-    })
-    socket.addEventListener('close', () => {
-      if (this.#socket !== socket) return
-      this.#stopPing()
-      this.#socket = null
-      if (this.#listeners.size === 0) return
-      this.#emit({ type: 'disconnected' })
-      this.#retryTimer = setTimeout(() => this.#connect(), this.#retryMs)
-      this.#retryMs = Math.min(this.#retryMs * 2, RETRY_MAX_MS)
-    })
-  }
-
-  #stopPing() {
-    if (this.#pingTimer) clearInterval(this.#pingTimer)
-    this.#pingTimer = null
-  }
-
-  #close() {
-    if (this.#retryTimer) clearTimeout(this.#retryTimer)
-    this.#retryTimer = null
-    this.#stopPing()
-    this.#socket?.close()
-    this.#socket = null
-  }
-}
 
 const parseMessage = (value: unknown): ChatMessage => {
   const message = parseChatMessage(value)
@@ -94,11 +22,11 @@ const parseMessage = (value: unknown): ChatMessage => {
 
 export class RemoteChatRepository implements ChatRepository {
   readonly #api: ApiClient
-  readonly #socket: ChatSocket
+  readonly #socket: LiveSocket
 
-  constructor(api: ApiClient, socketUrl: string) {
+  constructor(api: ApiClient, socket: LiveSocket | string) {
     this.#api = api
-    this.#socket = new ChatSocket(socketUrl)
+    this.#socket = typeof socket === 'string' ? new LiveSocket(socket) : socket
   }
 
   async list(key: ChatKey, { before }: { before?: string } = {}) {
@@ -130,7 +58,13 @@ export class RemoteChatRepository implements ChatRepository {
   }
 
   subscribe(listener: Listener) {
-    return this.#socket.subscribe(listener)
+    return this.#socket.subscribe((message) => {
+      if (message.type === 'connected' || message.type === 'disconnected') listener({ type: message.type })
+      else {
+        const event = parseChatEvent(message)
+        if (event) listener(event)
+      }
+    })
   }
 
   #chatPath({ eventId }: ChatKey) {

@@ -4,6 +4,7 @@ import type { HexColor } from '../../../utils/color.ts'
 import type { DateRange } from '../../../utils/date.ts'
 import type { AttendeeStatus, CalendarEvent, EventInput } from '../../../utils/event.ts'
 import type { ChatEvent, ChatKey, ChatMessage, ChatPage, ChatUnread } from '../../../utils/chat.ts'
+import type { EventChange } from '../../../utils/eventChange.ts'
 import type { PublicHoliday } from '../../../utils/holidays.ts'
 import type { Preferences } from '../../../utils/preferences.ts'
 import type { SharedCalendar } from '../../../utils/sharedCalendar.ts'
@@ -16,11 +17,12 @@ export interface EventRepository {
   list(query: EventQuery): Promise<CalendarEvent[]>
   listSeries(seriesId: string): Promise<CalendarEvent[]>
   create(calendarId: string, input: EventInput): Promise<CalendarEvent>
-  update(id: string, input: EventInput): Promise<CalendarEvent>
-  remove(id: string): Promise<void>
+  update(id: string, input: EventInput, version?: number): Promise<CalendarEvent>
+  remove(id: string, version?: number): Promise<void>
   search?(query: EventSearchQuery): Promise<CalendarEvent[]>
   respond?(id: string, status: AttendeeStatus): Promise<CalendarEvent>
   setReminders?(id: string, reminders: number[]): Promise<CalendarEvent>
+  subscribe?(listener: (change: EventChange) => void): () => void
 }
 
 export interface ColorRepository {

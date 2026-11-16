@@ -130,6 +130,7 @@ export function CalendarPage() {
         calendarNames={calendarNames}
         canManageCategories={mayManageCategories}
         canEditEvent={mayEditEvent}
+        currentUserId={user?.id ?? null}
         initialView={initialView}
         headerContext={<ActiveCalendarIndicator />}
         currentUserEmail={user?.email ?? null}

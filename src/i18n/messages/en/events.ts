@@ -20,6 +20,17 @@ export const events = {
   removeColor: (label: string) => `Remove color ${label}`,
   deleteTitle: 'Delete event?',
   viewTitle: 'Event',
+  remoteChange: {
+    updated: 'Someone else has just changed this event. Reload it before you continue.',
+    deleted: 'Someone else has just deleted this event.',
+    reload: 'Reload',
+  },
+  conflict: {
+    message:
+      'Someone else changed this event while you were editing it. You can save your version anyway or load the current version.',
+    overwrite: 'Save anyway',
+    reload: 'Discard and reload',
+  },
   attachments: {
     title: 'Attachments',
     add: 'Attach file',
@@ -34,7 +45,7 @@ export const events = {
     emptyFile: (name: string) => `“${name}” is empty.`,
     tooMany: (name: string, count: number) => `“${name}” does not fit: at most ${count} files per event.`,
     notUploaded: (names: string) => `The event was saved, but these attachments could not be uploaded: ${names}`,
-    count: (count: number) => count === 1 ? '1 attachment' : `${count} attachments`,
+    count: (count: number) => (count === 1 ? '1 attachment' : `${count} attachments`),
   },
   categories: {
     label: 'Categories',
@@ -81,7 +92,13 @@ export const events = {
   respond: { accepted: 'Yes', tentative: 'Maybe', declined: 'No' },
   attendeeSummary: (accepted: number, total: number) => `${accepted} of ${total} accepted`,
   tabsLabel: 'Event sections',
-  tabs: { general: 'General', appearance: 'Appearance', recurrence: 'Repeat', attendees: 'Attendees', details: 'Details' },
+  tabs: {
+    general: 'General',
+    appearance: 'Appearance',
+    recurrence: 'Repeat',
+    attendees: 'Attendees',
+    details: 'Details',
+  },
   links: 'Website & links',
   addLink: 'Add link',
   linkUrl: 'Address (URL)',

@@ -34,6 +34,7 @@ import {
   RecurrenceScopeModal,
   useEvents,
   type EventTab,
+  type SaveOptions,
 } from '../../events/index.ts'
 import { ChatProvider, type ChatAccess } from '../../chat/index.ts'
 import { getChatKey } from '../../../utils/chat.ts'
@@ -48,6 +49,7 @@ import { VIEW_SHORTCUTS } from '../constants/views.ts'
 import { EventSourcesContext, NO_EVENT_SOURCES } from '../context/EventSourcesContext.ts'
 import { useCalendarView } from '../hooks/useCalendarView.ts'
 import { useHostController } from '../hooks/useHostController.ts'
+import { useLiveEvents } from '../hooks/useLiveEvents.ts'
 import { useEventDrag, type DragPreview } from '../hooks/useEventDrag.ts'
 import { useNow } from '../hooks/useNow.ts'
 import type { EditorState } from '../types/editor.ts'
@@ -69,6 +71,8 @@ const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = 
   year: YearView,
 }
 
+type RemoteChange = { eventId: string; version: number | null }
+
 type CalendarProps = {
   calendarIds: readonly string[]
   targetCalendarId: string
@@ -77,6 +81,7 @@ type CalendarProps = {
   calendarNames?: ReadonlyMap<string, string>
   canManageCategories?: (calendarId: string) => boolean
   canEditEvent?: (event: CalendarEvent) => boolean
+  currentUserId?: string | null
   eventSources?: EventSources
   initialView?: CalendarView
   headerContext?: ReactNode
@@ -114,6 +119,7 @@ export function Calendar({
   calendarNames = NO_NAMES,
   canManageCategories = ALWAYS,
   canEditEvent = ALWAYS,
+  currentUserId = null,
   eventSources = NO_EVENT_SOURCES,
   initialView,
   headerContext,
@@ -193,6 +199,24 @@ export function Calendar({
       initialTab: openEvent?.tab,
     })
 
+  const [remoteChange, setRemoteChange] = useState<RemoteChange | null>(null)
+  useLiveEvents({
+    enabled: features.liveUpdates,
+    calendarIds,
+    onChange: ({ eventId, version, changedBy }) => {
+      if (eventId === null || (changedBy !== null && changedBy === currentUserId)) return
+      if (shownEditor?.occurrence?.id === eventId) setRemoteChange({ eventId, version })
+    },
+  })
+  const editorRemoteChange =
+    shownEditor?.occurrence && remoteChange?.eventId === shownEditor.occurrence.id
+      ? remoteChange.version === null
+        ? 'deleted'
+        : remoteChange.version > shownEditor.occurrence.version
+          ? 'updated'
+          : null
+      : null
+
   const [eventToDelete, setEventToDelete] = useState<EventOccurrence | null>(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const editorCalendarId = shownEditor ? (shownEditor.occurrence?.calendarId ?? targetCalendarId) : null
@@ -264,6 +288,7 @@ export function Calendar({
 
   const closeEditor = () => {
     setEditor(null)
+    setRemoteChange(null)
     finishRequest()
   }
 
@@ -314,8 +339,13 @@ export function Calendar({
     if (failed.length > 0) setActionError(i18n.m.events.attachments.notUploaded(failed.join(', ')))
   }
 
-  const handleSave = async (input: EventInput, scope: EditScope, attachments: readonly File[]) => {
-    if (shownEditor?.occurrence) await updateEvent(shownEditor.occurrence, input, scope)
+  const handleSave = async (
+    input: EventInput,
+    scope: EditScope,
+    attachments: readonly File[],
+    options?: SaveOptions,
+  ) => {
+    if (shownEditor?.occurrence) await updateEvent(shownEditor.occurrence, input, scope, options)
     else await uploadAttachments((await createEvent(input)).id, attachments)
     closeEditor()
     goToDate(toViewerPeriod(input, input.timeZone, viewerTimeZone).startDate)
@@ -498,6 +528,11 @@ export function Calendar({
                     (editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n)))
                   }
                   onSave={handleSave}
+                  remoteChange={editorRemoteChange}
+                  onReload={() => {
+                    closeEditor()
+                    invalidate()
+                  }}
                   onDelete={shownEditor.occurrence ? () => requestDelete(shownEditor.occurrence!) : undefined}
                   chat={
                     shownEditor.occurrence && chat?.isAvailable(shownEditor.occurrence.calendarId)

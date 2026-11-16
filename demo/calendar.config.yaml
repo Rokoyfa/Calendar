@@ -99,6 +99,10 @@ features:
   # Needs the attachment endpoints. Not available in local mode.
   attachments: true
 
+  # Shows changes made by other people, or in other tabs, at once without reloading.
+  # Uses the WebSocket of the backend (the same one as the chat). In local mode it follows other tabs.
+  liveUpdates: true
+
 # Shows events without letting anyone create, change, move, delete or import them.
 readOnly: false
 

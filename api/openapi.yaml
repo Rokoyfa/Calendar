@@ -38,6 +38,8 @@ tags:
     description: |
       One chat per event in team calendars, for recurring events one per occurrence (`date` = original date of the occurrence).
       Live updates come over a WebSocket at `{base}/chat/socket`, see the Developer Guide section “Event chat”.
+      The same WebSocket carries `{ type: 'event.changed', calendarId, eventId, version, changedBy }` after every change
+      to an event (`version` is `null` when it was deleted), see the Developer Guide section “Live updates”.
   - name: Holidays
   - name: Categories
     description: Categories belong to one calendar. Events carry their ids in `categoryIds`.
@@ -381,6 +383,9 @@ paths:
       description: |
         The calendar stays the same. Needs `update_any_entry` or, for own events, `update_own_entry`.
         `409` with `seriesHasDetached` when the recurrence is removed while detached events exist.
+        `412` with `eventChanged` when `If-Match` names an older `version`. The response carries the new `version`.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
         content:
@@ -392,14 +397,20 @@ paths:
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Events]
       summary: Delete an event
-      description: Also deletes detached events of a series. Needs `delete_any_entry` or, for own events, `delete_own_entry`.
+      description: |
+        Also deletes detached events of a series. Needs `delete_any_entry` or, for own events, `delete_own_entry`.
+        `412` with `eventChanged` when `If-Match` names an older `version`.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
       responses:
         '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
   /calendars:
     get:
       tags: [Calendars]
@@ -1138,6 +1149,14 @@ components:
       required: false
       description: Public tenant id. Sent by `tenantDataSource` on every request.
       schema: { type: string }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      description: |
+        The `version` the client last saw, in quotes (`"3"`). The server answers `412` with `eventChanged`
+        when the event has a newer version. Missing or `*` skips the check, for example for "save anyway".
+      schema: { type: string, example: '"3"' }
     CalendarId:
       name: calendarId
       in: path
@@ -1348,9 +1367,15 @@ components:
       allOf:
         - $ref: '#/components/schemas/EventInput'
         - type: object
-          required: [id, calendarId, createdBy, createdAt, updatedAt]
+          required: [id, calendarId, createdBy, createdAt, updatedAt, version]
           properties:
             id: { type: string }
+            version:
+              type: integer
+              minimum: 1
+              description: |
+                Starts at 1 and goes up on every change by a person (PUT, attendee response, removed category).
+                Own reminders do not change it. Read-only, ignored on input.
             calendarId: { type: string }
             createdBy: { oneOf: [{ type: string }, { type: 'null' }] }
             createdAt: { type: string, format: date-time }

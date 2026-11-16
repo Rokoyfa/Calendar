@@ -43,6 +43,8 @@ import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
 import { AttendeesField, type AttendeeCandidate } from './AttendeesField.tsx'
 import { LinksField } from './LinksField.tsx'
 import type { Category } from '../../../utils/category.ts'
+import { isEventChanged } from '../../../utils/conflict.ts'
+import type { SaveOptions } from '../hooks/useEvents.ts'
 import { AttachmentsField, useAttachmentRepository } from '../../attachments/index.ts'
 import { CategoryField } from '../../categories/index.ts'
 import { ChatPanel, useUnreadCount } from '../../chat/index.ts'
@@ -85,7 +87,9 @@ type EventModalProps = {
   attendeeOptions?: AttendeeOptions
   occurrence?: EventOccurrence | null
   notice?: string
-  onSave: (input: EventInput, scope: EditScope, attachments: readonly File[]) => Promise<void>
+  onSave: (input: EventInput, scope: EditScope, attachments: readonly File[], options?: SaveOptions) => Promise<void>
+  onReload?: () => void
+  remoteChange?: 'updated' | 'deleted' | null
   onDelete?: () => void | Promise<void>
   onDuplicate?: (input: EventInput) => void
   onRemindersChange?: (reminders: number[]) => Promise<void>
@@ -109,6 +113,8 @@ export function EventModal({
   occurrence = null,
   notice,
   onSave,
+  onReload,
+  remoteChange = null,
   onDelete,
   onDuplicate,
   onRemindersChange,
@@ -133,14 +139,21 @@ export function EventModal({
   const attachmentRepository = useAttachmentRepository()
   const [activeTab, setActiveTab] = useState<EventTab>(chat || initialTab !== 'chat' ? initialTab : 'general')
   const unreadChat = useUnreadCount(chat?.key ?? NO_CHAT)
+  const [conflict, setConflict] = useState<{ input: EventInput; scope: EditScope } | null>(null)
   const {
     run: save,
     isPending,
     error: submitError,
-  } = useAsyncAction(async (input: EventInput, scope: EditScope) => {
-    if (occurrence && onRemindersChange && changesOnlyReminders(initialValue, input))
-      await onRemindersChange(input.reminders)
-    else await onSave(input, scope, pendingFiles)
+  } = useAsyncAction(async (input: EventInput, scope: EditScope, options: SaveOptions = {}) => {
+    setConflict(null)
+    try {
+      if (occurrence && onRemindersChange && changesOnlyReminders(initialValue, input))
+        await onRemindersChange(input.reminders)
+      else await onSave(input, scope, pendingFiles, options)
+    } catch (error) {
+      if (!isEventChanged(error)) throw error
+      setConflict({ input, scope })
+    }
   })
   const { run: remove, isPending: isDeleting, error: deleteError } = useAsyncAction(async () => onDelete?.())
 
@@ -407,6 +420,37 @@ export function EventModal({
           <Tabs label={m.events.tabsLabel} tabs={tabs} value={activeTab} stable onChange={setActiveTab} />
 
           <ErrorMessage message={submitError ?? deleteError} />
+          {remoteChange && !conflict && (
+            <div className="eventConflict" role="status">
+              <p>{remoteChange === 'deleted' ? m.events.remoteChange.deleted : m.events.remoteChange.updated}</p>
+              {onReload && (
+                <div className="buttonRow">
+                  <Button variant="secondary" onClick={onReload}>
+                    {m.events.remoteChange.reload}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+          {conflict && (
+            <div className="eventConflict" role="alert">
+              <p>{m.events.conflict.message}</p>
+              <div className="buttonRow">
+                <Button
+                  variant="outline"
+                  isPending={isPending}
+                  onClick={() => void save(conflict.input, conflict.scope, { force: true })}
+                >
+                  {m.events.conflict.overwrite}
+                </Button>
+                {onReload && (
+                  <Button variant="secondary" onClick={onReload}>
+                    {m.events.conflict.reload}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="modalActions">
             {!readOnly && (
