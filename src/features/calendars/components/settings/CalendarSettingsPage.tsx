@@ -32,6 +32,7 @@ function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
 }
 
 type TeamTab = 'general' | 'members' | 'invitations' | 'exchange' | 'trash' | 'danger'
+type PersonalTab = 'general' | 'exchange' | 'trash'
 
 function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
@@ -127,20 +128,42 @@ function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
   const { settings } = m.calendars
   const { subscriptions, importExport, publicLinks, trash } = useFeatures()
   const canManage = hasPermission(calendar, 'manage_calendars')
+  const tabs: TabDefinition<PersonalTab>[] = [
+    {
+      value: 'general',
+      label: settings.tabs.general,
+      content: (
+        <>
+          {canManage && <GeneralSection calendar={calendar} />}
+          <CategoriesSection calendarId={calendar.id} canManage={canManageCategories(calendar)} />
+          {publicLinks && canManage && <ShareSection calendar={calendar} />}
+          <PageSection title={settings.personalTitle}>
+            <p className="formHint">{settings.personalHint}</p>
+          </PageSection>
+        </>
+      ),
+    },
+    ...(subscriptions || importExport
+      ? [
+          {
+            value: 'exchange' as const,
+            label: settings.tabs.exchange,
+            content: (
+              <>
+                {subscriptions && <SubscribeSection calendar={calendar} />}
+                {importExport && <ExchangeSection calendar={calendar} />}
+              </>
+            ),
+          },
+        ]
+      : []),
+    ...(trash
+      ? [{ value: 'trash' as const, label: settings.tabs.trash, content: <TrashSection calendar={calendar} /> }]
+      : []),
+  ]
+  const [active, select] = useTabParam(tabs)
 
-  return (
-    <>
-      {canManage && <GeneralSection calendar={calendar} />}
-      <CategoriesSection calendarId={calendar.id} canManage={canManageCategories(calendar)} />
-      {publicLinks && canManage && <ShareSection calendar={calendar} />}
-      {subscriptions && <SubscribeSection calendar={calendar} />}
-      {importExport && <ExchangeSection calendar={calendar} />}
-      {trash && <TrashSection calendar={calendar} />}
-      <PageSection title={settings.personalTitle}>
-        <p className="formHint">{settings.personalHint}</p>
-      </PageSection>
-    </>
-  )
+  return <Tabs label={settings.tabsLabel} tabs={tabs} value={active} onChange={select} />
 }
 
 export function CalendarSettingsPage() {

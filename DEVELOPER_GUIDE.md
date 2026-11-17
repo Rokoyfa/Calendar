@@ -1014,7 +1014,7 @@ Without a WebSocket on your backend, turn chat and live updates off: `features: 
 
 Deleted events are not gone at once. They stay in the trash of their calendar for 30 days.
 
-- **Where.** In the calendar settings: the **Trash** tab for team calendars, a section on the settings page for the personal calendar. Each entry shows when and by whom it was deleted and when it will be gone for good.
+- **Where.** In the calendar settings, in the **Trash** tab (team and personal calendars). Each entry shows when and by whom it was deleted and when it will be gone for good. The list shows 20 entries at a time with **Show more**, and from 8 entries on a search by title, place or who deleted it.
 - **Restore.** Brings the event back with the same id, so attachments, chat and email links work again. A series comes back with the detached events deleted together with it. A detached event can only come back while its series exists.
 - **Delete for good.** Removes the event with attachments and chat at once, after a confirmation.
 - **Undo.** The undo notice after deleting uses the trash too, so nothing is lost on the way back.

@@ -5,6 +5,7 @@ import { ErrorMessage } from '../../../../components/StatusMessage.tsx'
 import { useAsyncResource } from '../../../../hooks/useAsyncResource.ts'
 import { getErrorMessage, useI18n } from '../../../../i18n/index.ts'
 import { Modal } from '../../../../components/Modal.tsx'
+import { TextField } from '../../../../components/TextField.tsx'
 import { timeToMinutes, toISODate } from '../../../../utils/date.ts'
 import type { TrashedEvent } from '../../../../utils/trash.ts'
 import { useAuth } from '../../../authorization/index.ts'
@@ -16,6 +17,15 @@ import { canDeleteEntry } from '../../utils/permissions.ts'
 type TrashRepository = EventRepository & Required<Pick<EventRepository, 'listTrash' | 'restore' | 'purge'>>
 
 const NO_ENTRIES: TrashedEvent[] = []
+const PAGE_SIZE = 20
+const SEARCH_FROM = 8
+
+const matches = (entry: TrashedEvent, query: string, locale: string) => {
+  const needle = query.trim().toLocaleLowerCase(locale)
+  if (!needle) return true
+  const { title, location } = entry.event
+  return [title, location, entry.deletedByName ?? ''].some((value) => value.toLocaleLowerCase(locale).includes(needle))
+}
 
 const hasTrash = (repository: EventRepository): repository is TrashRepository =>
   Boolean(repository.listTrash && repository.restore && repository.purge)
@@ -26,8 +36,10 @@ export function TrashSection({ calendar }: { calendar: CalendarSummary }) {
 }
 
 function TrashList({ calendar, repository }: { calendar: CalendarSummary; repository: TrashRepository }) {
-  const { m, format } = useI18n()
+  const { m, format, locale } = useI18n()
   const text = m.calendars.trash
+  const [query, setQuery] = useState('')
+  const [limit, setLimit] = useState(PAGE_SIZE)
   const { user } = useAuth()
   const { version, invalidate } = useStorage()
   const [pendingId, setPendingId] = useState<string | null>(null)
@@ -49,20 +61,39 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
     }
   }
 
+  const found = entries.filter((entry) => matches(entry, query, locale))
+  const shown = found.slice(0, limit)
+
   const describe = ({ event }: TrashedEvent) =>
     event.allDay
       ? format.longDate(event.startDate)
       : `${format.longDate(event.startDate)}, ${format.time(timeToMinutes(event.start))}`
-  const dayOf = (timestamp: string) => format.longDate(toISODate(new Date(timestamp)))
+  const dayOf = (timestamp: string) => format.fullDay(toISODate(new Date(timestamp)))
 
   return (
     <PageSection title={text.title} description={text.description}>
       <ErrorMessage message={error ?? actionError} />
+      {entries.length >= SEARCH_FROM && (
+        <TextField
+          label={text.search}
+          name="trashSearch"
+          type="search"
+          autoComplete="off"
+          placeholder={text.searchPlaceholder}
+          value={query}
+          onChange={(value) => {
+            setQuery(value)
+            setLimit(PAGE_SIZE)
+          }}
+        />
+      )}
       {!isLoading && entries.length === 0 ? (
         <p className="emptyHint">{text.empty}</p>
+      ) : found.length === 0 ? (
+        <p className="emptyHint">{text.noResults}</p>
       ) : (
         <ul className="itemList">
-          {entries.map((entry) => {
+          {shown.map((entry) => {
             const { event } = entry
             const mayChange = canDeleteEntry(calendar, event.createdBy, user?.id ?? null)
             const isPending = pendingId === event.id
@@ -92,7 +123,7 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
                       {text.restore}
                     </Button>
                     <Button
-                      variant="danger"
+                      variant="outline"
                       disabled={pendingId !== null}
                       aria-label={text.deleteForeverLabel(event.title)}
                       onClick={() => setToDelete(entry)}
@@ -105,6 +136,13 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
             )
           })}
         </ul>
+      )}
+      {found.length > shown.length && (
+        <div className="buttonRow">
+          <Button variant="secondary" onClick={() => setLimit((current) => current + PAGE_SIZE)}>
+            {text.showMore(shown.length, found.length)}
+          </Button>
+        </div>
       )}
       {toDelete && (
         <Modal title={text.confirmTitle} variant="danger" onClose={() => setToDelete(null)}>
