@@ -699,6 +699,12 @@ const calendars: Messages['calendars'] = {
     searchPlaceholder: 'Tytuł, miejsce lub kto usunął',
     noResults: 'Brak pasujących wpisów.',
     showMore: (shown, total) => `Pokaż więcej (${shown} z ${total})`,
+    emptyAction: 'Opróżnij kosz',
+    emptyTitle: 'Opróżnić kosz?',
+    emptyConfirm: (count) =>
+      `Wpisy w koszu (${count}) zostaną usunięte na zawsze, razem z załącznikami i czatem. Tego nie można cofnąć.`,
+    emptyConfirmOwn: (own, total) =>
+      `${own} z ${total} wpisów zostanie usuniętych na zawsze – te, które możesz usunąć. Tego nie można cofnąć.`,
     restore: 'Przywróć',
     deleteForever: 'Usuń na zawsze',
     deleteForeverLabel: (title) => `Usuń „${title}” na zawsze`,

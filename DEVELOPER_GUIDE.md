@@ -182,7 +182,7 @@ Everything beyond the core calendar (views, creating, editing, moving and deleti
 | `categories` | `feature-categories` | on | Categories per calendar and the filter, see [Categories](#13-categories) | `/categories`, `/calendars/:id/categories` |
 | `attachments` | `feature-attachments` | on | Files on events, see [Attachments](#17-attachments). Not in local mode | `/events/:id/attachments`, `/attachments/:id` |
 | `liveUpdates` | `feature-live-updates` | on | Changes by others, or in other tabs, show up at once, see [Live updates](#18-live-updates) | WebSocket `/chat/socket` with `event.changed` messages |
-| `trash` | `feature-trash` | on | Trash in the calendar settings, see [Trash](#19-trash) | `/calendars/:id/trash`, `/events/:id/restore`, `/trash/:id` |
+| `trash` | `feature-trash` | on | Trash in the calendar settings, see [Trash](#19-trash) | `GET`/`DELETE /calendars/:id/trash`, `/events/:id/restore`, `/trash/:id` |
 | `dataExport` | `feature-data-export` | on | "Data" tab in the settings to download one's own data, see [Data export](#20-data-export) | `GET /auth/me/export` |
 | `publicLinks` | `feature-public-links` | on | Public read-only links and the page they open, see [Public links](#14-read-only-mode-and-public-links) | `/calendars/:id/share`, `/shared/:token` |
 
@@ -631,6 +631,7 @@ interface EventRepository {
   listTrash?(calendarId: string): Promise<TrashedEvent[]>
   restore?(id: string): Promise<CalendarEvent>
   purge?(id: string): Promise<void>
+  emptyTrash?(calendarId: string): Promise<number>
 }
 
 type TrashedEvent = {
@@ -760,7 +761,7 @@ The backend stores series as one event. The component expands occurrences itself
 | Change only own reminders | `PUT /events/:id/reminders` with `{ reminders }` (also for members without edit rights) |
 | Answer from an email link | `POST /events/respond` with `{ token, status }`, no session needed |
 | Data export | `GET /auth/me/export` from the "Data" tab in the settings, answered with a JSON file |
-| Trash | `GET /calendars/:id/trash` in the calendar settings, `POST /events/:id/restore`, `DELETE /trash/:id`. Undo after deleting also calls `POST /events/:id/restore` |
+| Trash | `GET /calendars/:id/trash` in the calendar settings, `POST /events/:id/restore`, `DELETE /trash/:id`, `DELETE /calendars/:id/trash` to empty it. Undo after deleting also calls `POST /events/:id/restore` |
 | Live updates | WebSocket `/chat/socket`, opened while the calendar is shown. After an `event.changed` message for a shown calendar, the component reloads the events of the visible range |
 | Event chat | `GET`/`POST /events/:id/chat?date=…`, `POST /events/:id/chat/read`, `PATCH`/`DELETE /chat/messages/:id`, `GET /chat/unread?calendarId=…`, WebSocket `/chat/socket` |
 | Categories | `GET /categories?calendarId=…` with the calendars shown, `POST /calendars/:id/categories`, `PATCH` and `DELETE /categories/:id`. Events carry `categoryIds` |
@@ -782,7 +783,7 @@ Before editing "following" or "all" of a series, the component loads its detache
 - **Language:** every request carries `Accept-Language`. Use it, or the stored `locale`, for emails.
 - **Emails about events** (your backend sends them, the component only stores the user's choice): an invitation with yes / maybe / no links to `/respond?status=accepted&token=…` when someone is added as attendee (`emailInvites`), a notice when title, time, place or repetition change or the event is cancelled (`emailChanges`), and reminders at the user's own reminder times even while the calendar is closed (`emailReminders`, off by default). Only to verified addresses, never to the person who made the change.
 - **Subscriptions:** `GET /feeds/:token.ics` answers without a session with the calendar as iCalendar (RFC 5545), the subscriber's own reminders and the category names as `CATEGORIES` (comma-separated, with `,` and `;` inside a name escaped as `\,` and `\;`). Keep one secret token per user and calendar, a new one replaces the old. Stop serving it when the user leaves the calendar.
-- **Editing at the same time:** every event has a `version` that starts at 1. Raise it on every `PUT`, attendee response and removed category, but not when someone only changes their own reminders. `PUT` and `DELETE /events/:id` send `If-Match: "<version>"` with the version the user saw. If the event has a newer version, answer `412` with `eventChanged` and change nothing. The dialog then offers to save anyway (sent without `If-Match`) or to load the current version. Without `If-Match`, or with `*`, skip the check.
+- **Editing at the same time:** every event has a `version` that starts at 1. Raise it on every `PUT`, attendee response and removed category, but not when someone only changes their own reminders. `PUT` and `DELETE /events/:id` send `If-Match: "<version>"` with the version the user saw, but only when your events carry a `version`; without it nothing changes for your backend. If the event has a newer version, answer `412` with `eventChanged` and change nothing. The dialog then offers to save anyway (sent without `If-Match`) or to load the current version. Without `If-Match`, or with `*`, skip the check.
 - **Categories:** belong to one calendar, names are unique per calendar without regard to case. Reject an event whose `categoryIds` are not from its calendar, and remove a deleted category from all events.
 - **Attachments:** at most 10 MB per file and 20 per event. Store the files outside the database, keep only the file name, and serve them with `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`, because uploaded files are untrusted. Delete them together with their event, calendar or team. Never hand them out through public links or subscription feeds.
 - **Public links:** one unguessable token per calendar. `GET /shared/:token/events` must leave out everything personal: empty `attendees` and `reminders`, no `createdBy`, and never chat messages. A new link, or stopping the share, must make the old token fail at once.
@@ -1004,7 +1005,7 @@ When someone changes an event in a calendar that is shown, everyone else sees it
 
 - **How.** The backend sends an `event.changed` message over the WebSocket that the chat uses too (see [Event chat](#11-event-chat) for address, sign-in and pings, and [Rules for the backend](#rules-for-the-backend) for the message). The component then reloads the events of the visible range, several messages in a row only once.
 - **Open dialog.** If another person changes or deletes the event that is open in the dialog, the dialog says so and offers to reload it. Saving anyway is still protected by `If-Match` (see [Rules for the backend](#rules-for-the-backend)).
-- **Connection lost.** The component reconnects with growing pauses and reloads the events once it is back, so nothing is missed.
+- **Connection lost.** The component reconnects with growing pauses and reloads the events once it is back, so nothing is missed. If the very first five attempts fail, for example because your backend has no WebSocket, it stops trying until the calendar is opened again.
 - **Local mode.** Without a backend, changes made in another tab of the same browser show up at once.
 - **Own adapter.** Implement `events.subscribe(listener)` and call the listener with an `EventChange`. Return a function that ends the subscription. Without `subscribe` there are no live updates.
 
@@ -1017,10 +1018,11 @@ Deleted events are not gone at once. They stay in the trash of their calendar fo
 - **Where.** In the calendar settings, in the **Trash** tab (team and personal calendars). Each entry shows when and by whom it was deleted and when it will be gone for good. The list shows 20 entries at a time with **Show more**, and from 8 entries on a search by title, place or who deleted it.
 - **Restore.** Brings the event back with the same id, so attachments, chat and email links work again. A series comes back with the detached events deleted together with it. A detached event can only come back while its series exists.
 - **Delete for good.** Removes the event with attachments and chat at once, after a confirmation.
+- **Empty the trash.** Deletes every entry the user may delete for good, after a confirmation that says how many. With only `delete_own_entry`, entries of others stay.
 - **Undo.** The undo notice after deleting uses the trash too, so nothing is lost on the way back.
 - **Who.** Everyone who may delete an event may restore it or delete it for good: with `delete_any_entry` every event, with `delete_own_entry` their own.
 - **Local mode.** Without a backend the trash lives in the browser (`localStorage`) and works the same way.
-- **Own adapter.** Implement `events.listTrash`, `events.restore` and `events.purge`. Without them there is no trash and undo creates a copy of the deleted event.
+- **Own adapter.** Implement `events.listTrash`, `events.restore` and `events.purge`, and optionally `events.emptyTrash` for the **Empty trash** button. Without them there is no trash and undo creates a copy of the deleted event. The same happens when `restore` answers `404`, `405` or `501`.
 
 Turn the trash off with `features: { trash: false }`. Undo still restores from the trash when the backend has one.
 

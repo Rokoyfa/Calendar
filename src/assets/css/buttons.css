@@ -32,6 +32,16 @@
   color: var(--color-text);
 }
 
+.button--dangerOutline {
+  border: 1px solid color-mix(in srgb, var(--color-red) 55%, transparent);
+  background-color: transparent;
+  color: var(--color-red);
+}
+
+.button--dangerOutline:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-red) 10%, transparent);
+}
+
 .button--small {
   padding: var(--space-1) var(--space-3);
   font-size: var(--font-size-sm);
@@ -52,7 +62,9 @@
   color: var(--color-muted);
   font-size: 16px;
   line-height: 1;
-  transition: color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .iconButton:hover,
@@ -111,4 +123,13 @@
 .closeButton:hover,
 .closeButton:focus-visible {
   color: var(--color-text);
+}
+
+.trashRestore {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+  color: var(--color-accent);
+}
+
+.trashActions {
+  justify-content: flex-end;
 }

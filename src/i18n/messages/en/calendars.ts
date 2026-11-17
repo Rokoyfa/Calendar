@@ -218,6 +218,14 @@ export const calendars = {
     searchPlaceholder: 'Title, place or who deleted it',
     noResults: 'No matching entries.',
     showMore: (shown: number, total: number) => `Show more (${shown} of ${total})`,
+    emptyAction: 'Empty trash',
+    emptyTitle: 'Empty the trash?',
+    emptyConfirm: (count: number) =>
+      count === 1
+        ? 'The entry in the trash will be deleted for good, with its attachments and chat. This cannot be undone.'
+        : `All ${count} entries in the trash will be deleted for good, with their attachments and chat. This cannot be undone.`,
+    emptyConfirmOwn: (own: number, total: number) =>
+      `${own} of ${total} entries will be deleted for good, the ones you may delete. This cannot be undone.`,
     restore: 'Restore',
     deleteForever: 'Delete for good',
     deleteForeverLabel: (title: string) => `Delete “${title}” for good`,

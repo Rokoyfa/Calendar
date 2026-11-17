@@ -5,6 +5,7 @@ import type { EventRepository } from '../../storage/index.ts'
 import { deleteOccurrence, updateOccurrence } from './seriesActions.ts'
 import { recordChanges } from './undo.ts'
 import { AppError } from '../../../utils/appError.ts'
+import { ApiError } from '../../../utils/apiError.ts'
 
 const memoryRepository = (initial: CalendarEvent[]) => {
   let events = [...initial]
@@ -137,5 +138,20 @@ describe('undo', () => {
     await recorder.undo()!()
     expect(trash.size).toBe(0)
     expect(create).toHaveBeenCalledTimes(1)
+  })
+
+  it('creates a copy when the backend has no restore endpoint', async () => {
+    const event = calendarEvent({ id: 'old', title: 'Ohne Papierkorb' })
+    const store = memoryRepository([event])
+    const repository: EventRepository = {
+      ...store.repository,
+      restore: async () => {
+        throw ApiError.fromResponse(404, { code: 'notFound' })
+      },
+    }
+    const recorder = recordChanges(repository, [event])
+    await recorder.repository.remove('old')
+    await recorder.undo()!()
+    expect(store.all().map((entry) => entry.title)).toEqual(['Ohne Papierkorb'])
   })
 })

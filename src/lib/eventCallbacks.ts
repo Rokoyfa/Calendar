@@ -26,6 +26,7 @@ export const withEventCallbacks = (
   subscribe: repository.subscribe && ((listener) => repository.subscribe!(listener)),
   listTrash: repository.listTrash && ((calendarId) => repository.listTrash!(calendarId)),
   purge: repository.purge && ((id) => repository.purge!(id)),
+  emptyTrash: repository.emptyTrash && ((calendarId) => repository.emptyTrash!(calendarId)),
   restore:
     repository.restore &&
     (async (id) => {

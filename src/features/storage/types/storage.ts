@@ -27,6 +27,7 @@ export interface EventRepository {
   listTrash?(calendarId: string): Promise<TrashedEvent[]>
   restore?(id: string): Promise<CalendarEvent>
   purge?(id: string): Promise<void>
+  emptyTrash?(calendarId: string): Promise<number>
 }
 
 export interface ColorRepository {

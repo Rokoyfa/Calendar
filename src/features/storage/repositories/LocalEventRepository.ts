@@ -142,6 +142,12 @@ export class LocalEventRepository implements EventRepository {
     this.#trash.update((entries) => entries.filter((entry) => entry.event.id !== id))
   }
 
+  async emptyTrash(calendarId: string) {
+    const removed = this.#current(this.#trash.read()).filter((entry) => entry.event.calendarId === calendarId)
+    this.#trash.update((entries) => entries.filter((entry) => entry.event.calendarId !== calendarId))
+    return removed.length
+  }
+
   #current(entries: readonly TrashedEvent[]) {
     const now = Date.now()
     return entries.filter((entry) => !isExpired(entry, now))

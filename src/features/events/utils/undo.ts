@@ -1,3 +1,5 @@
+import { isApiError } from '../../../utils/apiError.ts'
+import { isAppError } from '../../../utils/appError.ts'
 import { toEventInput, type CalendarEvent } from '../../../utils/event.ts'
 import type { EventRepository } from '../../storage/index.ts'
 
@@ -5,6 +7,20 @@ type Change =
   | { type: 'created'; event: CalendarEvent }
   | { type: 'updated'; before: CalendarEvent }
   | { type: 'removed'; before: CalendarEvent }
+
+const isMissing = (error: unknown) =>
+  (isApiError(error) && (error.status === 404 || error.status === 405 || error.status === 501)) ||
+  (isAppError(error) && error.code === 'eventNotFound')
+
+const restoreFromTrash = async (repository: EventRepository, id: string) => {
+  if (!repository.restore) return null
+  try {
+    return await repository.restore(id)
+  } catch (error) {
+    if (isMissing(error)) return null
+    throw error
+  }
+}
 
 export type Undo = () => Promise<void>
 
@@ -72,10 +88,12 @@ async function undoChanges(repository: EventRepository, changes: readonly Change
       const id = currentId(change.before.id)
       const restored = await repository.update(id, restore(change.before), versions.get(id))
       versions.set(id, restored.version)
-    } else if (repository.restore) {
-      const restored = await repository.restore(change.before.id)
-      versions.set(restored.id, restored.version)
     } else {
+      const restored = await restoreFromTrash(repository, change.before.id)
+      if (restored) {
+        versions.set(restored.id, restored.version)
+        continue
+      }
       const recreated = await repository.create(change.before.calendarId, restore(change.before))
       replacedIds.set(change.before.id, recreated.id)
       versions.set(recreated.id, recreated.version)

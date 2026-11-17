@@ -450,6 +450,23 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/TrashedEvent' }
         '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Trash]
+      summary: Empty the trash of a calendar
+      description: |
+        Deletes for good every entry the user may delete (all with `delete_any_entry`, own ones with
+        `delete_own_entry`), with detached events, attachments and chat. Other entries stay.
+      responses:
+        '200':
+          description: Number of deleted entries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted]
+                properties:
+                  deleted: { type: integer, minimum: 0 }
+        '404': { $ref: '#/components/responses/Problem' }
   /events/{id}/restore:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }

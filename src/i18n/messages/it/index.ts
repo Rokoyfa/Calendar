@@ -696,6 +696,12 @@ const calendars: Messages['calendars'] = {
     searchPlaceholder: 'Titolo, luogo o chi l’ha eliminato',
     noResults: 'Nessuna voce corrispondente.',
     showMore: (shown, total) => `Mostra altri (${shown} di ${total})`,
+    emptyAction: 'Svuota cestino',
+    emptyTitle: 'Svuotare il cestino?',
+    emptyConfirm: (count) =>
+      `${count} voci del cestino verranno eliminate definitivamente, con allegati e chat. Non si può annullare.`,
+    emptyConfirmOwn: (own, total) =>
+      `${own} voci su ${total} verranno eliminate definitivamente, quelle che puoi eliminare. Non si può annullare.`,
     restore: 'Ripristina',
     deleteForever: 'Elimina definitivamente',
     deleteForeverLabel: (title) => `Elimina «${title}» definitivamente`,

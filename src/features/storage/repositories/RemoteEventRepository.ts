@@ -9,7 +9,7 @@ import type { LiveSocket } from '../utils/liveSocket.ts'
 const EVENTS_PATH = '/events'
 
 const ifMatch = (version: number | undefined): HeadersInit | undefined =>
-  version === undefined ? undefined : { 'If-Match': `"${version}"` }
+  version === undefined || version < 1 ? undefined : { 'If-Match': `"${version}"` }
 
 const parseEvents = (values: unknown[]) =>
   values.map(parseCalendarEvent).filter((event): event is CalendarEvent => event !== null)
@@ -74,6 +74,13 @@ export class RemoteEventRepository implements EventRepository {
 
   async restore(id: string) {
     return parseEvent(await this.#api.post<unknown>(`${this.#eventPath(id)}/restore`))
+  }
+
+  async emptyTrash(calendarId: string) {
+    const result = await this.#api.delete<{ deleted?: unknown } | undefined>(
+      `/calendars/${encodePathSegment(calendarId)}/trash`,
+    )
+    return typeof result?.deleted === 'number' ? result.deleted : 0
   }
 
   purge(id: string) {

@@ -217,6 +217,14 @@ export const calendars: Messages['calendars'] = {
     searchPlaceholder: 'Titel, Ort oder wer gelöscht hat',
     noResults: 'Keine passenden Einträge.',
     showMore: (shown: number, total: number) => `Weitere anzeigen (${shown} von ${total})`,
+    emptyAction: 'Papierkorb leeren',
+    emptyTitle: 'Papierkorb leeren?',
+    emptyConfirm: (count: number) =>
+      count === 1
+        ? 'Der Eintrag im Papierkorb wird mit Anhängen und Chat endgültig gelöscht. Das lässt sich nicht rückgängig machen.'
+        : `Alle ${count} Einträge im Papierkorb werden mit Anhängen und Chat endgültig gelöscht. Das lässt sich nicht rückgängig machen.`,
+    emptyConfirmOwn: (own: number, total: number) =>
+      `${own} von ${total} Einträgen werden endgültig gelöscht, nämlich die, die du löschen darfst. Das lässt sich nicht rückgängig machen.`,
     restore: 'Wiederherstellen',
     deleteForever: 'Endgültig löschen',
     deleteForeverLabel: (title: string) => `„${title}“ endgültig löschen`,

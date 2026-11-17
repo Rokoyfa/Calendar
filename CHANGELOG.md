@@ -4,6 +4,10 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ## Unreleased
 
+- Empty the trash with one button (`DELETE /calendars/:id/trash`, optional `events.emptyTrash` for custom adapters). Restore and delete for good now look different: restore in the accent color, delete in red, through the new button variant `dangerOutline`
+
+## 1.3.0 – 2026-11-17
+
 - Accessibility: arrow keys, `Home` and `End` move between events, days and month cells are labelled groups, events are announced with time, place, calendar, own response and attachments, and the period title is announced when it changes. Contrast now meets WCAG AA in both themes: darker muted text, no faded days outside the month, and dark text on event colors and the accent in dark mode (`--calendar-on-accent` defaults to dark there)
 - Data export (GDPR Art. 20): a "Data" tab in the settings downloads the user's own data as JSON, from `GET /auth/me/export` when signed in or from the browser storage in local mode. New feature switch `dataExport` and optional `AuthRepository.exportData()`
 - Trash: deleted events stay in the trash of their calendar for 30 days and can be restored in the calendar settings, or deleted for good. Undo after deleting now restores the event with the same id, so attachments and chat are kept. `DELETE /events/:id` moves to the trash, new endpoints `GET /calendars/:id/trash`, `POST /events/:id/restore` and `DELETE /trash/:id`, the trash is its own tab also for the personal calendar (whose settings now have tabs), with 20 entries at a time and a search from 8 entries on, new feature switch `trash` and optional `events.listTrash`, `restore` and `purge` for custom adapters
@@ -18,6 +22,19 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - New REST endpoints for categories and sharing in `api/openapi.yaml`
 - The event dialog has an Appearance tab for color and categories; categories can be created right there. The dialog is 620 px wide on larger screens
 - Categories are exported to `.ics` files as `CATEGORIES` and matched by name on import, creating missing ones when allowed
+- Backwards compatible with 1.2 backends: `If-Match` is only sent when the backend returns a `version` for events, undo creates a copy when `POST /events/:id/restore` is missing, and the WebSocket gives up after five failed starts
+
+### Upgrade notes
+
+- Backends with versions must allow `If-Match` in `Access-Control-Allow-Headers` when the calendar runs on another origin
+- `DELETE /events/:id` should now move events to the trash. Without the trash endpoints, set `features: { trash: false }`; undo then falls back to creating a copy as before
+- Live updates are on by default. Without a WebSocket on the backend, set `features: { liveUpdates: false }` (and `chat: false`) to avoid the connection attempts
+- In dark mode, text on event colors and the accent is now dark. Set `--calendar-on-accent` to keep white text with a dark accent
+
+## 1.2.1 – 2026-11-13
+
+Includes the changes of 1.2.0 (2026-11-12).
+
 - Every optional feature can be switched off through `features` or `feature-*` attributes: chat, attendees, recurrence, reminders, links, map links, holidays, search, undo, duplicate, shortcuts, subscriptions, import and export, e-mail settings, time zones and custom colors. A feature that is off makes no backend calls, so no WebSocket is opened without chat
 - `views` limits the views a user can switch between
 - Configuration file: `config` takes the URL of a JSON or YAML file, or an object, with all serializable options. Props and attributes win over the file. A JSON Schema is included as `@rokoyfa/calendar/config.schema.json`

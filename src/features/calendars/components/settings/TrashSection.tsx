@@ -18,6 +18,7 @@ type TrashRepository = EventRepository & Required<Pick<EventRepository, 'listTra
 
 const NO_ENTRIES: TrashedEvent[] = []
 const PAGE_SIZE = 20
+const EMPTY_ID = '*'
 const SEARCH_FROM = 8
 
 const matches = (entry: TrashedEvent, query: string, locale: string) => {
@@ -45,6 +46,7 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [toDelete, setToDelete] = useState<TrashedEvent | null>(null)
+  const [confirmEmpty, setConfirmEmpty] = useState(false)
   const load = useCallback(() => repository.listTrash(calendar.id), [repository, calendar.id])
   const { data: entries, error, isLoading } = useAsyncResource(load, NO_ENTRIES, version)
 
@@ -61,6 +63,8 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
     }
   }
 
+  const deletable = entries.filter((entry) => canDeleteEntry(calendar, entry.event.createdBy, user?.id ?? null))
+  const emptyTrash = repository.emptyTrash
   const found = entries.filter((entry) => matches(entry, query, locale))
   const shown = found.slice(0, limit)
 
@@ -73,6 +77,13 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
   return (
     <PageSection title={text.title} description={text.description}>
       <ErrorMessage message={error ?? actionError} />
+      {emptyTrash && deletable.length > 0 && (
+        <div className="buttonRow trashActions">
+          <Button variant="dangerOutline" disabled={pendingId !== null} onClick={() => setConfirmEmpty(true)}>
+            {text.emptyAction}
+          </Button>
+        </div>
+      )}
       {entries.length >= SEARCH_FROM && (
         <TextField
           label={text.search}
@@ -116,6 +127,7 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
                   <span className="buttonRow">
                     <Button
                       variant="outline"
+                      className="trashRestore"
                       isPending={isPending}
                       disabled={pendingId !== null && !isPending}
                       onClick={() => void run(event.id, () => repository.restore(event.id))}
@@ -123,7 +135,7 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
                       {text.restore}
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="dangerOutline"
                       disabled={pendingId !== null}
                       aria-label={text.deleteForeverLabel(event.title)}
                       onClick={() => setToDelete(entry)}
@@ -159,6 +171,29 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
               {text.deleteForever}
             </Button>
             <Button variant="secondary" onClick={() => setToDelete(null)} data-autofocus>
+              {m.common.cancel}
+            </Button>
+          </div>
+        </Modal>
+      )}
+      {confirmEmpty && emptyTrash && (
+        <Modal title={text.emptyTitle} variant="danger" onClose={() => setConfirmEmpty(false)}>
+          <p className="modalMessage">
+            {deletable.length === entries.length
+              ? text.emptyConfirm(deletable.length)
+              : text.emptyConfirmOwn(deletable.length, entries.length)}
+          </p>
+          <div className="modalActions">
+            <Button
+              variant="danger"
+              onClick={() => {
+                setConfirmEmpty(false)
+                void run(EMPTY_ID, () => emptyTrash(calendar.id))
+              }}
+            >
+              {text.emptyAction}
+            </Button>
+            <Button variant="secondary" onClick={() => setConfirmEmpty(false)} data-autofocus>
               {m.common.cancel}
             </Button>
           </div>

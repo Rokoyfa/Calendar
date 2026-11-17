@@ -692,6 +692,12 @@ const calendars: Messages['calendars'] = {
     searchPlaceholder: 'Título, lugar o quién lo eliminó',
     noResults: 'No hay entradas que coincidan.',
     showMore: (shown, total) => `Mostrar más (${shown} de ${total})`,
+    emptyAction: 'Vaciar papelera',
+    emptyTitle: '¿Vaciar la papelera?',
+    emptyConfirm: (count) =>
+      `Se eliminarán definitivamente ${count} entradas de la papelera, con sus adjuntos y el chat. No se puede deshacer.`,
+    emptyConfirmOwn: (own, total) =>
+      `Se eliminarán definitivamente ${own} de ${total} entradas, las que puedes eliminar. No se puede deshacer.`,
     restore: 'Restaurar',
     deleteForever: 'Eliminar definitivamente',
     deleteForeverLabel: (title) => `Eliminar «${title}» definitivamente`,

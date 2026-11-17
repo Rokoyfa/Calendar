@@ -89,4 +89,16 @@ describe('LocalEventRepository trash', () => {
     await repository.purge(recent.id)
     expect(await repository.listTrash('personal')).toEqual([])
   })
+
+  it('empties the trash of one calendar only', async () => {
+    const repository = new LocalEventRepository('test.events')
+    const own = await repository.create('personal', eventInput({ title: 'Eigen' }))
+    const other = await repository.create('team', eventInput({ title: 'Team' }))
+    await repository.remove(own.id)
+    await repository.remove(other.id)
+    expect(await repository.emptyTrash('personal')).toBe(1)
+    expect(await repository.listTrash('personal')).toEqual([])
+    expect((await repository.listTrash('team')).map((entry) => entry.event.title)).toEqual(['Team'])
+  })
 })
+

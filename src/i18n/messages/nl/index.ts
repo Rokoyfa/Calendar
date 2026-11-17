@@ -692,6 +692,12 @@ const calendars: Messages['calendars'] = {
     searchPlaceholder: 'Titel, plaats of wie het verwijderde',
     noResults: 'Geen overeenkomende items.',
     showMore: (shown, total) => `Meer tonen (${shown} van ${total})`,
+    emptyAction: 'Prullenbak legen',
+    emptyTitle: 'Prullenbak legen?',
+    emptyConfirm: (count) =>
+      `${count} item(s) in de prullenbak worden definitief verwijderd, met bijlagen en chat. Dit kan niet ongedaan worden gemaakt.`,
+    emptyConfirmOwn: (own, total) =>
+      `${own} van ${total} items worden definitief verwijderd, de items die jij mag verwijderen. Dit kan niet ongedaan worden gemaakt.`,
     restore: 'Herstellen',
     deleteForever: 'Definitief verwijderen',
     deleteForeverLabel: (title) => `‘${title}’ definitief verwijderen`,

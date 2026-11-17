@@ -687,6 +687,12 @@ const calendars: Messages['calendars'] = {
     searchPlaceholder: 'Título, local ou quem eliminou',
     noResults: 'Nenhuma entrada corresponde.',
     showMore: (shown, total) => `Mostrar mais (${shown} de ${total})`,
+    emptyAction: 'Esvaziar lixo',
+    emptyTitle: 'Esvaziar o lixo?',
+    emptyConfirm: (count) =>
+      `${count} entrada(s) do lixo serão eliminadas definitivamente, com anexos e chat. Não é possível anular.`,
+    emptyConfirmOwn: (own, total) =>
+      `${own} de ${total} entradas serão eliminadas definitivamente, as que pode eliminar. Não é possível anular.`,
     restore: 'Restaurar',
     deleteForever: 'Eliminar definitivamente',
     deleteForeverLabel: (title) => `Eliminar «${title}» definitivamente`,

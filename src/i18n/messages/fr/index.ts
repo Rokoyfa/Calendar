@@ -705,6 +705,12 @@ const calendars: Messages['calendars'] = {
     searchPlaceholder: 'Titre, lieu ou auteur de la suppression',
     noResults: 'Aucune entrée correspondante.',
     showMore: (shown, total) => `Afficher plus (${shown} sur ${total})`,
+    emptyAction: 'Vider la corbeille',
+    emptyTitle: 'Vider la corbeille ?',
+    emptyConfirm: (count) =>
+      `${count} entrée(s) de la corbeille seront supprimées définitivement, avec leurs pièces jointes et leur discussion. Cette action est irréversible.`,
+    emptyConfirmOwn: (own, total) =>
+      `${own} entrée(s) sur ${total} seront supprimées définitivement, celles que vous pouvez supprimer. Cette action est irréversible.`,
     restore: 'Restaurer',
     deleteForever: 'Supprimer définitivement',
     deleteForeverLabel: (title) => `Supprimer « ${title} » définitivement`,
