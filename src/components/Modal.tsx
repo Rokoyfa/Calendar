@@ -40,14 +40,14 @@ export function Modal({ title, onClose, children, variant = 'default', size = 'd
       }}
     >
       <div className="modalContent">
-        <header className="modalHeader">
+        <div className="modalHeader">
           <h2 id={titleId} className="modalTitle">
             {title}
           </h2>
           <button type="button" className="closeButton" aria-label={m.common.close} onClick={onClose}>
             ×
           </button>
-        </header>
+        </div>
         {children}
       </div>
     </dialog>,

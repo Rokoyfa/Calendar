@@ -147,6 +147,16 @@
           "type": "boolean",
           "default": true,
           "description": "Shows changes by other people or in other tabs at once, without reloading. Uses the WebSocket of the backend; in local mode it follows other tabs."
+        },
+        "trash": {
+          "type": "boolean",
+          "default": true,
+          "description": "Shows the trash in the calendar settings, where deleted events can be restored for 30 days. Needs the trash endpoints with a backend."
+        },
+        "dataExport": {
+          "type": "boolean",
+          "default": true,
+          "description": "Lets users download their data as a JSON file in the settings. Signed in it needs GET /auth/me/export; in local mode it exports the browser storage."
         }
       }
     },

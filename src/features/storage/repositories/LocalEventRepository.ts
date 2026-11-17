@@ -7,6 +7,7 @@ import {
   type CalendarEvent,
   type EventInput,
 } from '../../../utils/event.ts'
+import { addTrashDays, isExpired, parseTrashedEvent, type TrashedEvent } from '../../../utils/trash.ts'
 import { ANY_EVENT_CHANGE, type EventChange } from '../../../utils/eventChange.ts'
 import type { EventQuery, EventRepository, EventSearchQuery } from '../types/storage.ts'
 import { LocalStorageList } from '../utils/localStorageList.ts'
@@ -21,17 +22,20 @@ const parseLocalEvent = (value: unknown) => {
 
 export class LocalEventRepository implements EventRepository {
   readonly #events: LocalStorageList<CalendarEvent>
+  readonly #trash: LocalStorageList<TrashedEvent>
   readonly #storageKey: string
 
   constructor(storageKey = DEFAULT_STORAGE_KEY) {
     this.#storageKey = storageKey
+    this.#trash = new LocalStorageList(`${storageKey}.trash`, parseTrashedEvent, 'saveEventsFailed')
     this.#events = new LocalStorageList(storageKey, parseLocalEvent, 'saveEventsFailed')
   }
 
   subscribe(listener: (change: EventChange) => void) {
     if (typeof window === 'undefined') return () => {}
     const onStorage = (event: StorageEvent) => {
-      if (event.key === this.#storageKey || event.key === null) listener(ANY_EVENT_CHANGE)
+      if (event.key === this.#storageKey || event.key === `${this.#storageKey}.trash` || event.key === null)
+        listener(ANY_EVENT_CHANGE)
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
@@ -55,6 +59,7 @@ export class LocalEventRepository implements EventRepository {
 
   async clear() {
     this.#events.write([])
+    this.#trash.write([])
   }
 
   async listSeries(seriesId: string) {
@@ -97,7 +102,48 @@ export class LocalEventRepository implements EventRepository {
   }
 
   async remove(id: string, version?: number) {
-    if (version !== undefined) this.#find(id, version)
+    const existing = this.#find(id, version)
+    const deletedAt = new Date().toISOString()
+    this.#trash.update((entries) => [
+      {
+        event: existing,
+        deletedAt,
+        deletedBy: null,
+        deletedByName: null,
+        expiresAt: addTrashDays(deletedAt),
+        detachedCount: 0,
+      },
+      ...this.#current(entries).filter((entry) => entry.event.id !== id),
+    ])
     this.#events.update((events) => events.filter((event) => event.id !== id))
+  }
+
+  async listTrash(calendarId: string) {
+    return this.#current(this.#trash.read()).filter((entry) => entry.event.calendarId === calendarId)
+  }
+
+  async restore(id: string) {
+    const entry = this.#current(this.#trash.read()).find((candidate) => candidate.event.id === id)
+    if (!entry) throw new AppError('eventNotFound')
+    const events = this.#events.read()
+    if (entry.event.seriesId && !events.some((event) => event.id === entry.event.seriesId))
+      throw new AppError('seriesDeleted')
+    const restored: CalendarEvent = {
+      ...entry.event,
+      version: entry.event.version + 1,
+      updatedAt: new Date().toISOString(),
+    }
+    this.#events.write([...events.filter((event) => event.id !== id), restored])
+    this.#trash.update((entries) => entries.filter((candidate) => candidate.event.id !== id))
+    return restored
+  }
+
+  async purge(id: string) {
+    this.#trash.update((entries) => entries.filter((entry) => entry.event.id !== id))
+  }
+
+  #current(entries: readonly TrashedEvent[]) {
+    const now = Date.now()
+    return entries.filter((entry) => !isExpired(entry, now))
   }
 }

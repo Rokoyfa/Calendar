@@ -8,9 +8,11 @@ import { sortSegments } from '../utils/layoutEvents.ts'
 import { EventChip } from './EventChip.tsx'
 import { MonthGrid } from './MonthGrid.tsx'
 import { useHolidayMap } from '../context/HolidaysContext.ts'
+import { getDayLabel } from '../utils/eventLabels.ts'
 
 export function MonthView({ anchor, today, segmentsByDate, onCreate, onEventSelect, onShowDay }: CalendarViewProps) {
-  const { m, format } = useI18n()
+  const i18n = useI18n()
+  const { m, format } = i18n
   const holidays = useHolidayMap()
   return (
     <MonthGrid
@@ -33,6 +35,8 @@ export function MonthView({ anchor, today, segmentsByDate, onCreate, onEventSele
               holidayText && 'holiday',
             )}
             data-date={date}
+            role="group"
+            aria-label={getDayLabel(date, date === today, holidays.get(date) ?? [], i18n)}
             onClick={() => onCreate(date, DEFAULT_EVENT_HOUR)}
           >
             <button

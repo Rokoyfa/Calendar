@@ -7,6 +7,7 @@ import { getVisibleDuration } from '../utils/eventGeometry.ts'
 import { EventLinks } from './EventLinks.tsx'
 import { EventLocation } from './EventLocation.tsx'
 import { EventTitle } from './EventTitle.tsx'
+import { EVENT_NAVIGATION_KEYS } from '../hooks/useEventNavigation.ts'
 import { UnreadBadge } from '../../chat/index.ts'
 import { getChatKey } from '../../../utils/chat.ts'
 
@@ -30,7 +31,11 @@ const getLinkLines = (duration: number, withSource: boolean) =>
 export function EventBlock({ segment, column, columns, onSelect }: EventBlockProps) {
   const { event, start } = segment
   const duration = getVisibleDuration(segment)
-  const { i18n, source, isDragging, style, attributes } = useSegmentAttributes(segment, 'event', getSizeClass(duration))
+  const { i18n, source, isDragging, style, attributes, label } = useSegmentAttributes(
+    segment,
+    'event',
+    getSizeClass(duration),
+  )
   const features = useFeatures()
   const showDetails = duration >= DETAILS_MIN_DURATION
   const showSource = Boolean(source) && duration >= SOURCE_MIN_DURATION
@@ -45,7 +50,14 @@ export function EventBlock({ segment, column, columns, onSelect }: EventBlockPro
   return (
     <div {...attributes} style={blockStyle}>
       <UnreadBadge chatKey={getChatKey(event)} />
-      <button type="button" className="eventOpen" aria-label={attributes.title} onClick={() => onSelect(event)} />
+      <button
+        type="button"
+        className="eventOpen"
+        aria-label={label}
+        aria-keyshortcuts={EVENT_NAVIGATION_KEYS}
+        data-event-target=""
+        onClick={() => onSelect(event)}
+      />
       <EventTitle event={event} source={source} withLocation={!showDetails} />
       {event.location && showDetails && <EventLocation location={event.location} />}
       {!isDragging && features.links && <EventLinks links={event.links} lines={getLinkLines(duration, showSource)} />}

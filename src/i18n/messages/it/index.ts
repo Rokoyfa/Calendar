@@ -33,6 +33,7 @@ const errors: Messages['errors'] = {
   attachmentNotFound: 'Questo allegato non esiste più.',
   attachmentTooLarge: 'Il file è troppo grande.',
   eventChanged: 'Qualcun altro ha modificato questo evento nel frattempo.',
+  seriesDeleted: 'La serie di questo evento è stata eliminata. Ripristina prima la serie.',
   tooManyAttachments: 'Questo evento ha già il numero massimo di allegati.',
   saveDecisionFailed: 'Non è stato possibile salvare la tua scelta in questo browser.',
   invalidLink: 'Questo link non è valido o è scaduto.',
@@ -144,6 +145,8 @@ const calendar: Messages['calendar'] = {
   today: 'Oggi',
   newEvent: 'Nuovo evento',
   now: (time) => `Adesso: ${time}`,
+  ownResponse: (status) => `La tua risposta: ${status}`,
+  todayMark: 'oggi',
   openDay: (date) => `Apri ${date}`,
   moreEvents: (count) => `altri ${count}`,
   moreLinks: (count) => `+${count} altri link`,
@@ -196,6 +199,7 @@ const events: Messages['events'] = {
   removeColor: (label) => `Rimuovi il colore ${label}`,
   deleteTitle: 'Eliminare l’evento?',
   viewTitle: 'Evento',
+  deleteTrashHint: "L'evento finisce nel cestino, dove può essere ripristinato per 30 giorni.",
   remoteChange: {
     updated: 'Qualcun altro ha appena modificato questo evento. Ricaricalo prima di continuare.',
     deleted: 'Qualcun altro ha appena eliminato questo evento.',
@@ -326,6 +330,15 @@ const settings: Messages['settings'] = {
     appearance: 'Aspetto',
     account: 'Account',
     notifications: 'Notifiche',
+    data: 'Dati',
+  },
+  dataExport: {
+    title: 'I tuoi dati',
+    accountDescription:
+      'Scarica tutto ciò che è salvato per il tuo account: profilo, impostazioni, colori, iscrizioni, i tuoi eventi, risposte, messaggi della chat e i dati dei tuoi allegati. Il file è in formato JSON.',
+    localDescription:
+      'Scarica tutti gli eventi e le impostazioni salvati da questo browser. Il file è in formato JSON.',
+    download: 'Scarica i dati',
   },
   languageTitle: 'Lingua e regione',
   languageDescription: 'Determina la lingua, i formati di data e ora e il primo giorno della settimana.',
@@ -600,6 +613,7 @@ const calendars: Messages['calendars'] = {
       invitations: 'Inviti',
       danger: 'Zona pericolosa',
       exchange: 'Importa ed esporta',
+      trash: 'Cestino',
     },
     displayTitle: 'Visualizzazione',
     displayDescription: 'Vale solo per te. Gli altri membri lo impostano da soli.',
@@ -667,6 +681,23 @@ const calendars: Messages['calendars'] = {
     add: 'Aggiungi',
     rename: 'Rinomina',
     remove: (name) => `Rimuovi la categoria ${name}`,
+  },
+  trash: {
+    title: 'Cestino',
+    description:
+      'Gli eventi eliminati restano qui 30 giorni. Poi vengono eliminati definitivamente, con allegati e chat.',
+    empty: 'Il cestino è vuoto.',
+    withDetached: (count) =>
+      count === 1 ? 'con 1 evento modificato a parte' : `con ${count} eventi modificati a parte`,
+    deletedBy: (name, date) => `Eliminato da ${name} il ${date}`,
+    deletedAt: (date) => `Eliminato il ${date}`,
+    expires: (date) => `eliminato definitivamente il ${date}`,
+    restore: 'Ripristina',
+    deleteForever: 'Elimina definitivamente',
+    deleteForeverLabel: (title) => `Elimina «${title}» definitivamente`,
+    confirmTitle: 'Eliminare definitivamente?',
+    confirmDelete: (title) =>
+      `«${title}» verrà eliminato definitivamente, con tutti gli allegati e la chat. Non si può annullare.`,
   },
   share: {
     title: 'Link pubblico',

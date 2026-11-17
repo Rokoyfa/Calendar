@@ -72,6 +72,9 @@ async function undoChanges(repository: EventRepository, changes: readonly Change
       const id = currentId(change.before.id)
       const restored = await repository.update(id, restore(change.before), versions.get(id))
       versions.set(id, restored.version)
+    } else if (repository.restore) {
+      const restored = await repository.restore(change.before.id)
+      versions.set(restored.id, restored.version)
     } else {
       const recreated = await repository.create(change.before.calendarId, restore(change.before))
       replacedIds.set(change.before.id, recreated.id)

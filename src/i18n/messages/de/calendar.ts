@@ -14,6 +14,8 @@ export const calendar: Messages['calendar'] = {
   today: 'Heute',
   newEvent: 'Neuer Termin',
   now: (time) => `Jetzt: ${time}`,
+  ownResponse: (status: string) => `Deine Antwort: ${status}`,
+  todayMark: 'heute',
   openDay: (date) => `${date} öffnen`,
   moreEvents: (count) => `+${count} weitere`,
   moreLinks: (count) => `+${count} weitere Links`,

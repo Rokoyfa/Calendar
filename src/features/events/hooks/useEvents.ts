@@ -24,6 +24,7 @@ const ignoreVersions = (repository: EventRepository): EventRepository => ({
   create: (calendarId, input) => repository.create(calendarId, input),
   update: (id, input) => repository.update(id, input),
   remove: (id) => repository.remove(id),
+  restore: repository.restore && ((id) => repository.restore!(id)),
 })
 
 type UseEventsOptions = EventQuery & { targetCalendarId: string }

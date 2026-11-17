@@ -5,6 +5,7 @@ import type { DateRange } from '../../../utils/date.ts'
 import type { AttendeeStatus, CalendarEvent, EventInput } from '../../../utils/event.ts'
 import type { ChatEvent, ChatKey, ChatMessage, ChatPage, ChatUnread } from '../../../utils/chat.ts'
 import type { EventChange } from '../../../utils/eventChange.ts'
+import type { TrashedEvent } from '../../../utils/trash.ts'
 import type { PublicHoliday } from '../../../utils/holidays.ts'
 import type { Preferences } from '../../../utils/preferences.ts'
 import type { SharedCalendar } from '../../../utils/sharedCalendar.ts'
@@ -23,6 +24,9 @@ export interface EventRepository {
   respond?(id: string, status: AttendeeStatus): Promise<CalendarEvent>
   setReminders?(id: string, reminders: number[]): Promise<CalendarEvent>
   subscribe?(listener: (change: EventChange) => void): () => void
+  listTrash?(calendarId: string): Promise<TrashedEvent[]>
+  restore?(id: string): Promise<CalendarEvent>
+  purge?(id: string): Promise<void>
 }
 
 export interface ColorRepository {

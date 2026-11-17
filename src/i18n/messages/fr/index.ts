@@ -33,6 +33,7 @@ const errors: Messages['errors'] = {
   attachmentNotFound: 'Cette pièce jointe n’existe plus.',
   attachmentTooLarge: 'Le fichier est trop volumineux.',
   eventChanged: "Quelqu'un d'autre a modifié cet événement entre-temps.",
+  seriesDeleted: "La série de cet événement est supprimée. Restaurez d'abord la série.",
   tooManyAttachments: 'Cet événement a déjà le nombre maximal de pièces jointes.',
   saveDecisionFailed: 'Votre choix n’a pas pu être enregistré dans ce navigateur.',
   invalidLink: 'Ce lien n’est pas valide ou a expiré.',
@@ -147,6 +148,8 @@ const calendar: Messages['calendar'] = {
   today: 'Aujourd’hui',
   newEvent: 'Nouvel événement',
   now: (time) => `Maintenant : ${time}`,
+  ownResponse: (status) => `Votre réponse : ${status}`,
+  todayMark: 'aujourd’hui',
   openDay: (date) => `Ouvrir le ${date}`,
   moreEvents: (count) => `+${count} de plus`,
   moreLinks: (count) => `+${count} autres liens`,
@@ -199,6 +202,7 @@ const events: Messages['events'] = {
   removeColor: (label) => `Supprimer la couleur ${label}`,
   deleteTitle: 'Supprimer l’événement ?',
   viewTitle: 'Événement',
+  deleteTrashHint: "L'événement va dans la corbeille, où il peut être restauré pendant 30 jours.",
   remoteChange: {
     updated: "Quelqu'un d'autre vient de modifier cet événement. Rechargez-le avant de continuer.",
     deleted: "Quelqu'un d'autre vient de supprimer cet événement.",
@@ -330,6 +334,15 @@ const settings: Messages['settings'] = {
     appearance: 'Apparence',
     account: 'Compte',
     notifications: 'Notifications',
+    data: 'Données',
+  },
+  dataExport: {
+    title: 'Vos données',
+    accountDescription:
+      'Téléchargez tout ce qui est enregistré pour votre compte : profil, paramètres, couleurs, adhésions, vos événements, réponses, messages de discussion et les informations sur vos pièces jointes. Le fichier est au format JSON.',
+    localDescription:
+      'Téléchargez tous les événements et paramètres enregistrés par ce navigateur. Le fichier est au format JSON.',
+    download: 'Télécharger les données',
   },
   languageTitle: 'Langue et région',
   languageDescription: 'Définit la langue, les formats de date et d’heure et le premier jour de la semaine.',
@@ -606,6 +619,7 @@ const calendars: Messages['calendars'] = {
       invitations: 'Invitations',
       danger: 'Zone de danger',
       exchange: 'Import et export',
+      trash: 'Corbeille',
     },
     displayTitle: 'Affichage',
     displayDescription: 'S’applique uniquement à vous. Les autres membres règlent cela eux-mêmes.',
@@ -676,6 +690,23 @@ const calendars: Messages['calendars'] = {
     add: 'Ajouter',
     rename: 'Renommer',
     remove: (name) => `Supprimer la catégorie ${name}`,
+  },
+  trash: {
+    title: 'Corbeille',
+    description:
+      'Les événements supprimés restent ici 30 jours. Ensuite, ils sont supprimés définitivement, avec leurs pièces jointes et leur discussion.',
+    empty: 'La corbeille est vide.',
+    withDetached: (count) =>
+      count === 1 ? 'avec 1 événement modifié à part' : `avec ${count} événements modifiés à part`,
+    deletedBy: (name, date) => `Supprimé par ${name} le ${date}`,
+    deletedAt: (date) => `Supprimé le ${date}`,
+    expires: (date) => `supprimé définitivement le ${date}`,
+    restore: 'Restaurer',
+    deleteForever: 'Supprimer définitivement',
+    deleteForeverLabel: (title) => `Supprimer « ${title} » définitivement`,
+    confirmTitle: 'Supprimer définitivement ?',
+    confirmDelete: (title) =>
+      `« ${title} » sera supprimé définitivement, avec toutes les pièces jointes et la discussion. Cette action est irréversible.`,
   },
   share: {
     title: 'Lien public',

@@ -33,6 +33,7 @@ const errors: Messages['errors'] = {
   attachmentNotFound: 'Deze bijlage bestaat niet meer.',
   attachmentTooLarge: 'Het bestand is te groot.',
   eventChanged: 'Iemand anders heeft deze afspraak inmiddels gewijzigd.',
+  seriesDeleted: 'De reeks van deze afspraak is verwijderd. Herstel eerst de reeks.',
   tooManyAttachments: 'Deze afspraak heeft al het maximale aantal bijlagen.',
   saveDecisionFailed: 'Je keuze kon niet in deze browser worden opgeslagen.',
   invalidLink: 'Deze link is ongeldig of verlopen.',
@@ -142,6 +143,8 @@ const calendar: Messages['calendar'] = {
   today: 'Vandaag',
   newEvent: 'Nieuwe afspraak',
   now: (time) => `Nu: ${time}`,
+  ownResponse: (status) => `Jouw antwoord: ${status}`,
+  todayMark: 'vandaag',
   openDay: (date) => `${date} openen`,
   moreEvents: (count) => `nog ${count}`,
   moreLinks: (count) => `+${count} andere links`,
@@ -194,6 +197,7 @@ const events: Messages['events'] = {
   removeColor: (label) => `Kleur ${label} verwijderen`,
   deleteTitle: 'Afspraak verwijderen?',
   viewTitle: 'Afspraak',
+  deleteTrashHint: 'De afspraak gaat naar de prullenbak en kan daar 30 dagen worden hersteld.',
   remoteChange: {
     updated: 'Iemand anders heeft deze afspraak net gewijzigd. Laad hem opnieuw voordat je verdergaat.',
     deleted: 'Iemand anders heeft deze afspraak net verwijderd.',
@@ -329,6 +333,15 @@ const settings: Messages['settings'] = {
     appearance: 'Weergave',
     account: 'Account',
     notifications: 'Meldingen',
+    data: 'Gegevens',
+  },
+  dataExport: {
+    title: 'Jouw gegevens',
+    accountDescription:
+      'Download alles wat voor je account is opgeslagen: profiel, instellingen, kleuren, lidmaatschappen, je afspraken, antwoorden, chatberichten en de gegevens van je bijlagen. Het bestand is in JSON-formaat.',
+    localDescription:
+      'Download alle afspraken en instellingen die deze browser opslaat. Het bestand is in JSON-formaat.',
+    download: 'Gegevens downloaden',
   },
   languageTitle: 'Taal en regio',
   languageDescription: 'Bepaalt de taal, de datum- en tijdnotatie en de eerste dag van de week.',
@@ -595,6 +608,7 @@ const calendars: Messages['calendars'] = {
       invitations: 'Uitnodigingen',
       danger: 'Gevarenzone',
       exchange: 'Import en export',
+      trash: 'Prullenbak',
     },
     displayTitle: 'Weergave',
     displayDescription: 'Geldt alleen voor jou. Andere leden stellen dit zelf in.',
@@ -663,6 +677,23 @@ const calendars: Messages['calendars'] = {
     add: 'Toevoegen',
     rename: 'Hernoemen',
     remove: (name) => `Categorie ${name} verwijderen`,
+  },
+  trash: {
+    title: 'Prullenbak',
+    description:
+      'Verwijderde afspraken blijven hier 30 dagen. Daarna worden ze definitief verwijderd, samen met bijlagen en chat.',
+    empty: 'De prullenbak is leeg.',
+    withDetached: (count) =>
+      count === 1 ? 'met 1 apart gewijzigde afspraak' : `met ${count} apart gewijzigde afspraken`,
+    deletedBy: (name, date) => `Verwijderd door ${name} op ${date}`,
+    deletedAt: (date) => `Verwijderd op ${date}`,
+    expires: (date) => `definitief weg op ${date}`,
+    restore: 'Herstellen',
+    deleteForever: 'Definitief verwijderen',
+    deleteForeverLabel: (title) => `‘${title}’ definitief verwijderen`,
+    confirmTitle: 'Definitief verwijderen?',
+    confirmDelete: (title) =>
+      `‘${title}’ wordt definitief verwijderd, met alle bijlagen en de chat. Dit kan niet ongedaan worden gemaakt.`,
   },
   share: {
     title: 'Openbare link',

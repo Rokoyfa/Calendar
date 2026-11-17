@@ -11,7 +11,8 @@ import { useCalendars } from '../../hooks/useCalendars.ts'
 import { useTeam } from '../../hooks/useTeam.ts'
 import type { CalendarSummary } from '../../types/calendar.ts'
 import { ShowInPersonalSwitch } from '../ShowInPersonalSwitch.tsx'
-import { canManageCategories, hasPermission, isPersonalCalendar } from '../../utils/permissions.ts'
+import { canManageCategories, canUseTrash, hasPermission, isPersonalCalendar } from '../../utils/permissions.ts'
+import { TrashSection } from './TrashSection.tsx'
 import { DangerSection } from './DangerSection.tsx'
 import { ExchangeSection } from './ExchangeSection.tsx'
 import { SubscribeSection } from './SubscribeSection.tsx'
@@ -30,7 +31,7 @@ function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
   )
 }
 
-type TeamTab = 'general' | 'members' | 'invitations' | 'exchange' | 'danger'
+type TeamTab = 'general' | 'members' | 'invitations' | 'exchange' | 'trash' | 'danger'
 
 function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
@@ -38,7 +39,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
   const { withCount } = settings
   const { user } = useAuth()
   const team = useTeam(calendar)
-  const { subscriptions, importExport, publicLinks } = useFeatures()
+  const { subscriptions, importExport, publicLinks, trash } = useFeatures()
   const canManage = hasPermission(calendar, 'manage_calendars')
   const tabs: TabDefinition<TeamTab>[] = [
     {
@@ -100,6 +101,9 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
           },
         ]
       : []),
+    ...(trash && canUseTrash(calendar)
+      ? [{ value: 'trash' as const, label: settings.tabs.trash, content: <TrashSection calendar={calendar} /> }]
+      : []),
     {
       value: 'danger',
       label: settings.tabs.danger,
@@ -121,7 +125,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
 function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
   const { settings } = m.calendars
-  const { subscriptions, importExport, publicLinks } = useFeatures()
+  const { subscriptions, importExport, publicLinks, trash } = useFeatures()
   const canManage = hasPermission(calendar, 'manage_calendars')
 
   return (
@@ -131,6 +135,7 @@ function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
       {publicLinks && canManage && <ShareSection calendar={calendar} />}
       {subscriptions && <SubscribeSection calendar={calendar} />}
       {importExport && <ExchangeSection calendar={calendar} />}
+      {trash && <TrashSection calendar={calendar} />}
       <PageSection title={settings.personalTitle}>
         <p className="formHint">{settings.personalHint}</p>
       </PageSection>

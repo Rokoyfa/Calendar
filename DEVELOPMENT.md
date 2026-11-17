@@ -374,6 +374,8 @@ Angemeldet zeigt `/settings` zusätzlich:
 - **Passwort ändern:** aktuelles Passwort und neues Passwort zweimal. Das neue muss sich vom aktuellen unterscheiden.
 - **Konto löschen:** Bestätigung im Fenster mit Passwort, danach zurück zum Kalender (abgemeldet)
 
+Der Tab **Daten** lädt die eigenen Daten als JSON herunter (DSGVO Art. 20): angemeldet über `GET /auth/me/export`, im lokalen Modus alles, was der Browser unter `calendar.*` speichert. Code: `DataExportSection.tsx`, `utils/dataExport.ts`. Schalter: `dataExport`.
+
 ### Backend-Vertrag
 
 Die Anmeldung läuft über ein **HttpOnly-Cookie**, das ausschließlich das Backend setzt und liest. Die App speichert keine Tokens. Alle Pfade liegen unter `VITE_API_BASE_URL`.
@@ -470,6 +472,7 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 - Ein Klick auf 23:00 legt einen Termin bis 00:00 des Folgetags an
 - **Gleichzeitiges Bearbeiten:** Jeder Termin hat eine `version`, die bei jeder Änderung steigt. Beim Speichern und Löschen schickt der Kalender die Version mit, die beim Öffnen des Dialogs galt (`If-Match`). Hat inzwischen jemand anderes den Termin geändert, antwortet der Server mit `412` und `eventChanged`. Der Dialog zeigt dann „Trotzdem speichern“ (ohne Prüfung) und „Verwerfen und neu laden“. Auch Rückgängig überschreibt keine fremden Änderungen. Lokal prüft `LocalEventRepository` dasselbe.
 - **Live-Updates:** Ändert jemand einen Termin in einem angezeigten Kalender, schickt der Server `event.changed` über den WebSocket. `useLiveEvents` lädt dann die Termine neu (mehrere Meldungen kurz hintereinander nur einmal) und nach einem Verbindungsabbruch einmal zum Nachholen. Ist der geänderte oder gelöschte Termin gerade im Dialog offen, zeigt der Dialog einen Hinweis mit „Neu laden“. Eigene Änderungen (`changedBy` = eigene ID) lösen keinen Hinweis aus. Im lokalen Modus hört `LocalEventRepository` auf das `storage`-Ereignis anderer Tabs. Schalter: `liveUpdates`.
+- **Papierkorb:** Löschen verschiebt Termine in den Papierkorb ihres Kalenders (`DELETE /events/:id`, lokal unter `calendar.events.v1.trash`). In den Kalender-Einstellungen gibt es dafür den Tab „Papierkorb“ (Team) bzw. einen Abschnitt (persönlich) mit „Wiederherstellen“ und „Endgültig löschen“. Nach 30 Tagen ist ein Termin endgültig weg. Rückgängig nach dem Löschen nutzt `restore`, dadurch bleiben ID, Anhänge und Chat erhalten. Eine herausgelöste Ausnahme lässt sich nur wiederherstellen, solange ihre Serie existiert (`seriesDeleted`). Code: `TrashSection.tsx`, `utils/trash.ts`. Schalter: `trash`.
 
 ### Wiederkehrende Termine
 
@@ -633,8 +636,11 @@ Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, r
 | Suche                            | `/` oder Lupe im Header            |
 | Letzte Aktion rückgängig         | `Strg+Z` / `⌘Z`, solange der Hinweis sichtbar ist |
 | Fenster schließen                | `Esc` oder Klick neben das Fenster |
+| Zwischen Terminen wechseln       | Auf einem Termin: `↑` / `↓` im selben Tag, `←` / `→` zum nächsten Tag mit Terminen, `Pos1` / `Ende` zum ersten / letzten Termin |
 
 Die Kürzel wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt nach dem Laden oder nach dem Schließen eines Fensters). Sind mehrere Kalender auf der Seite, reagiert der zuletzt benutzte, anfangs der erste. Solange ein Eingabefeld, ein Fenster oder ein Element der Host-Seite den Fokus hat, sind sie aus. So bleibt z. B. `Strg+Z` in Eingabefeldern das normale Rückgängig des Browsers (`hooks/useKeyboardShortcuts.ts`, die Tasten stehen in `Calendar.tsx`, die Ansichtstasten in `VIEW_SHORTCUTS`). Die Tooltips der Buttons im Header nennen die Taste.
+
+**Barrierefreiheit:** Die Pfeiltasten auf einem Termin übernimmt `useEventNavigation` (vor den globalen Kürzeln, deshalb blättert `←` / `→` dort nicht den Zeitraum). Tage und Monatszellen sind Gruppen mit Datum, „heute“ und Feiertag als Namen (`getDayLabel`), Termine haben einen vollständigen Namen (`getEventLabel`, bei Chips sichtbarer Text plus versteckte Details). Der Titel im Header ist eine Live-Region. Gedämpfter Text ist `#616161` (hell), im Dunkelmodus steht dunkler Text auf Eventfarben und Akzent. Geprüft mit axe-core in allen Ansichten, im Dialog und in den Einstellungen, hell und dunkel.
 
 ### Feiertage
 

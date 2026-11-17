@@ -11,9 +11,10 @@ type DeleteEventModalProps = {
   occurrence: EventOccurrence
   onConfirm: (scope: EditScope) => Promise<void>
   onClose: () => void
+  movesToTrash?: boolean
 }
 
-export function DeleteEventModal({ occurrence, onConfirm, onClose }: DeleteEventModalProps) {
+export function DeleteEventModal({ occurrence, onConfirm, onClose, movesToTrash = false }: DeleteEventModalProps) {
   const { m } = useI18n()
   const { run, isPending, error } = useAsyncAction(onConfirm)
   const options = getScopeOptions(occurrence)
@@ -24,6 +25,7 @@ export function DeleteEventModal({ occurrence, onConfirm, onClose }: DeleteEvent
       <p className="modalMessage">
         {isSeries ? m.events.deleteSeriesMessage(occurrence.title) : m.events.deleteMessage(occurrence.title)}
       </p>
+      {movesToTrash && <p className="formHint">{m.events.deleteTrashHint}</p>}
       <ErrorMessage message={error} />
       {isSeries ? (
         <ScopeButtons

@@ -12,6 +12,8 @@ export const calendar = {
   today: 'Today',
   newEvent: 'New event',
   now: (time: string) => `Now: ${time}`,
+  ownResponse: (status: string) => `Your response: ${status}`,
+  todayMark: 'today',
   openDay: (date: string) => `Open ${date}`,
   moreEvents: (count: number) => `+${count} more`,
   moreLinks: (count: number) => `+${count} more links`,

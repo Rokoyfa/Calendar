@@ -22,6 +22,9 @@ Everything you need to put `@rokoyfa/calendar` on your page: embedding, all opti
 16. [Look and feel](#16-look-and-feel)
 17. [Attachments](#17-attachments)
 18. [Live updates](#18-live-updates)
+19. [Trash](#19-trash)
+20. [Data export](#20-data-export)
+21. [Accessibility](#21-accessibility)
 
 ## 1. Embedding
 
@@ -179,6 +182,8 @@ Everything beyond the core calendar (views, creating, editing, moving and deleti
 | `categories` | `feature-categories` | on | Categories per calendar and the filter, see [Categories](#13-categories) | `/categories`, `/calendars/:id/categories` |
 | `attachments` | `feature-attachments` | on | Files on events, see [Attachments](#17-attachments). Not in local mode | `/events/:id/attachments`, `/attachments/:id` |
 | `liveUpdates` | `feature-live-updates` | on | Changes by others, or in other tabs, show up at once, see [Live updates](#18-live-updates) | WebSocket `/chat/socket` with `event.changed` messages |
+| `trash` | `feature-trash` | on | Trash in the calendar settings, see [Trash](#19-trash) | `/calendars/:id/trash`, `/events/:id/restore`, `/trash/:id` |
+| `dataExport` | `feature-data-export` | on | "Data" tab in the settings to download one's own data, see [Data export](#20-data-export) | `GET /auth/me/export` |
 | `publicLinks` | `feature-public-links` | on | Public read-only links and the page they open, see [Public links](#14-read-only-mode-and-public-links) | `/calendars/:id/share`, `/shared/:token` |
 
 Good to know:
@@ -436,7 +441,7 @@ const myDataSource: CalendarDataSource = {
 - `createAuthRepository` is optional. Without it there is no sign-in in the widget.
 - `holidays`, `chat`, `categories` and `shared` are optional. Without `chat` there is no chat, without `categories` no categories, without `shared` public links cannot be opened, and without `holidays` they are computed in the browser.
 - `mode: 'remote'` makes the calendar offer to move local events into the account after sign-in.
-- Optional methods switch their feature on: `events.search`, `events.respond`, `events.setReminders`, `events.subscribe` (live updates), `calendars.getFeed` / `createFeed` / `deleteFeed`, `calendars.getShare` / `createShare` / `deleteShare`. Without `search` the calendar searches the last and next year itself.
+- Optional methods switch their feature on: `events.search`, `events.respond`, `events.setReminders`, `events.subscribe` (live updates), `events.listTrash` / `restore` / `purge` (trash), `calendars.getFeed` / `createFeed` / `deleteFeed`, `calendars.getShare` / `createShare` / `deleteShare`. Without `search` the calendar searches the last and next year itself.
 - Call `onUnauthorized` when a session has run out. `getLanguage` returns the current language for your requests.
 - Errors with a known `code` are shown translated, others with their `message`.
 - `events.update(id, input, version)` and `events.remove(id, version)` get the `version` the user saw. Throw an error with code `eventChanged` if the stored event is newer; without `version`, save without checking.
@@ -623,6 +628,18 @@ interface EventRepository {
   respond?(id: string, status: AttendeeStatus): Promise<CalendarEvent>
   setReminders?(id: string, reminders: number[]): Promise<CalendarEvent>
   subscribe?(listener: (change: EventChange) => void): () => void
+  listTrash?(calendarId: string): Promise<TrashedEvent[]>
+  restore?(id: string): Promise<CalendarEvent>
+  purge?(id: string): Promise<void>
+}
+
+type TrashedEvent = {
+  event: CalendarEvent
+  deletedAt: string
+  deletedBy: string | null
+  deletedByName: string | null
+  expiresAt: string
+  detachedCount: number
 }
 
 type EventChange =
@@ -653,7 +670,7 @@ type ChatPage = { messages: ChatMessage[]; hasMore: boolean }
 type ChatUnread = ChatKey & { count: number }
 ```
 
-The other interfaces (`CalendarRepository`, `AuthRepository`, `ColorRepository`, `PreferencesRepository`, `HolidayRepository`) are best read in your editor from the package's type definitions.
+`AuthRepository` has an optional `exportData(): Promise<Blob>` for the data export. The other interfaces (`CalendarRepository`, `AuthRepository`, `ColorRepository`, `PreferencesRepository`, `HolidayRepository`) are best read in your editor from the package's type definitions.
 
 ## 10. Backend
 
@@ -742,6 +759,8 @@ The backend stores series as one event. The component expands occurrences itself
 | Answer as attendee | `POST /events/:id/response` with `{ status }` |
 | Change only own reminders | `PUT /events/:id/reminders` with `{ reminders }` (also for members without edit rights) |
 | Answer from an email link | `POST /events/respond` with `{ token, status }`, no session needed |
+| Data export | `GET /auth/me/export` from the "Data" tab in the settings, answered with a JSON file |
+| Trash | `GET /calendars/:id/trash` in the calendar settings, `POST /events/:id/restore`, `DELETE /trash/:id`. Undo after deleting also calls `POST /events/:id/restore` |
 | Live updates | WebSocket `/chat/socket`, opened while the calendar is shown. After an `event.changed` message for a shown calendar, the component reloads the events of the visible range |
 | Event chat | `GET`/`POST /events/:id/chat?date=…`, `POST /events/:id/chat/read`, `PATCH`/`DELETE /chat/messages/:id`, `GET /chat/unread?calendarId=…`, WebSocket `/chat/socket` |
 | Categories | `GET /categories?calendarId=…` with the calendars shown, `POST /calendars/:id/categories`, `PATCH` and `DELETE /categories/:id`. Events carry `categoryIds` |
@@ -767,6 +786,8 @@ Before editing "following" or "all" of a series, the component loads its detache
 - **Categories:** belong to one calendar, names are unique per calendar without regard to case. Reject an event whose `categoryIds` are not from its calendar, and remove a deleted category from all events.
 - **Attachments:** at most 10 MB per file and 20 per event. Store the files outside the database, keep only the file name, and serve them with `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`, because uploaded files are untrusted. Delete them together with their event, calendar or team. Never hand them out through public links or subscription feeds.
 - **Public links:** one unguessable token per calendar. `GET /shared/:token/events` must leave out everything personal: empty `attendees` and `reminders`, no `createdBy`, and never chat messages. A new link, or stopping the share, must make the old token fail at once.
+- **Data export:** `GET /auth/me/export` returns everything stored about the signed-in user as JSON (see `AccountExport` in the OpenAPI file). Leave out password hashes, sessions, tokens and secret links, and never include other people's events or messages.
+- **Trash:** `DELETE /events/:id` moves the event to the trash instead of deleting it, together with the detached events of a series. Keep attachments, chat and email response links. Deleted events must no longer appear anywhere else: lists, search, feeds, public links, reminders. Restoring keeps the id and raises `version`; refuse a detached event whose series is still in the trash with `409 seriesDeleted`. After 30 days delete the event for good with its attachments and chat, and do the same at once when its calendar or team is deleted.
 - **Live updates:** after every change to an event (create, `PUT`, `DELETE`, attendee response, attachment added or removed, category removed) send `{ "type": "event.changed", "calendarId", "eventId", "version", "changedBy" }` over the WebSocket to every connected member of the calendar's team. `version` is the new version, `null` when the event was deleted. `changedBy` is the user id, or `null` for changes without a session such as answers from an email link. Send one message per event, also for detached events deleted with their series.
 - **Email links:** point them at the host page with the screen as parameter, e.g. `https://host.example/calendar?calendarPath=%2Freset-password%3Ftoken%3D…`.
 
@@ -932,7 +953,7 @@ With the React component, set them on the element you give a `className` or `sty
 | Property | Default | |
 | --- | --- | --- |
 | `--calendar-accent` | blue | Buttons, links, the active view, today, selection and focus ring |
-| `--calendar-on-accent` | white | Text on the accent color. Set it when your accent is light |
+| `--calendar-on-accent` | white, dark in dark mode | Text on the accent color. Set it when your accent is light (or dark in dark mode) |
 | `--calendar-font` | Segoe UI, sans-serif | Font family. Your page has to load the font |
 | `--calendar-radius` | `10px` | Corner radius of dialogs, buttons and fields. `0px` gives square corners |
 | `--calendar-bg` | white / near black | Background |
@@ -988,3 +1009,37 @@ When someone changes an event in a calendar that is shown, everyone else sees it
 - **Own adapter.** Implement `events.subscribe(listener)` and call the listener with an `EventChange`. Return a function that ends the subscription. Without `subscribe` there are no live updates.
 
 Without a WebSocket on your backend, turn chat and live updates off: `features: { chat: false, liveUpdates: false }`. The calendar then opens no connection.
+
+## 19. Trash
+
+Deleted events are not gone at once. They stay in the trash of their calendar for 30 days.
+
+- **Where.** In the calendar settings: the **Trash** tab for team calendars, a section on the settings page for the personal calendar. Each entry shows when and by whom it was deleted and when it will be gone for good.
+- **Restore.** Brings the event back with the same id, so attachments, chat and email links work again. A series comes back with the detached events deleted together with it. A detached event can only come back while its series exists.
+- **Delete for good.** Removes the event with attachments and chat at once, after a confirmation.
+- **Undo.** The undo notice after deleting uses the trash too, so nothing is lost on the way back.
+- **Who.** Everyone who may delete an event may restore it or delete it for good: with `delete_any_entry` every event, with `delete_own_entry` their own.
+- **Local mode.** Without a backend the trash lives in the browser (`localStorage`) and works the same way.
+- **Own adapter.** Implement `events.listTrash`, `events.restore` and `events.purge`. Without them there is no trash and undo creates a copy of the deleted event.
+
+Turn the trash off with `features: { trash: false }`. Undo still restores from the trash when the backend has one.
+
+## 20. Data export
+
+Users can download their own data in the settings, in the **Data** tab, as required by Art. 20 GDPR (right to data portability).
+
+- **Signed in.** The file comes from `GET /auth/me/export` on your backend. What belongs into it is listed in [Rules for the backend](#rules-for-the-backend). With your own `AuthRepository`, implement `exportData()`; without it the tab is not shown to signed-in users.
+- **Local mode.** The file contains everything the calendar stores in this browser (`localStorage` keys starting with `calendar.`), with the format `calendar-browser-export`.
+- **File.** JSON, named `calendar-export-YYYY-MM-DD.json`.
+
+Turn it off with `features: { dataExport: false }`, for example when your page already offers its own export.
+
+## 21. Accessibility
+
+The calendar aims at WCAG 2.2 AA and is checked with axe-core in light and dark mode.
+
+- **Keyboard.** Every event is a button and can be reached with `Tab`. On an event, `↑` and `↓` move to the previous or next event of the same day, `←` and `→` to the nearest event on the previous or next day with events, `Home` and `End` to the first and last event in view, `Enter` opens it. The other shortcuts are listed in the tooltips of the header buttons.
+- **Screen readers.** Each day column and month cell is a group named after its date, with "today" and public holidays. Events are announced with title, time, place, repetition, calendar, the user's own response and the number of attachments. The period title in the header is a live region, so moving to the next week is announced. Dialogs are labelled by their title and move the focus into the dialog.
+- **Contrast.** Text and event colors meet 4.5:1 in both themes. In dark mode, text on the built-in event colors and the accent is dark. If you change colors with `--calendar-*` properties, check the contrast of your own colors.
+- **Creating events.** Clicking a time slot needs a mouse; with the keyboard, use the **+** button or `N`.
+

@@ -105,7 +105,15 @@
 
     // Shows changes made by other people, or in other tabs, at once without reloading.
     // Uses the WebSocket of the backend (the same one as the chat). In local mode it follows other tabs.
-    "liveUpdates": true
+    "liveUpdates": true,
+
+    // Trash in the calendar settings: deleted events can be restored for 30 days.
+    // Needs the trash endpoints with a backend.
+    "trash": true,
+
+    // "Data" tab in the settings to download one's own data as a JSON file (GDPR Art. 20).
+    // Signed in it needs GET /auth/me/export; in local mode it exports what the browser stores.
+    "dataExport": true
   },
 
   // Shows events without letting anyone create, change, move, delete or import them.

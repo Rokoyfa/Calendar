@@ -31,6 +31,8 @@ export const DEFAULT_FEATURES = {
   publicLinks: true,
   attachments: true,
   liveUpdates: true,
+  trash: true,
+  dataExport: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES

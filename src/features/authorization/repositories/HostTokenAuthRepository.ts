@@ -33,6 +33,10 @@ export class HostTokenAuthRepository implements AuthRepository {
     await this.#api.post<void>(`${AUTH_PATH}/logout`)
   }
 
+  exportData() {
+    return this.#api.get<Blob>(`${AUTH_PATH}/me/export`, { responseType: 'blob' })
+  }
+
   login = notAvailable
   register = notAvailable
   updateProfile = notAvailable

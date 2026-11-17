@@ -115,6 +115,7 @@ export function AuthProvider({ repository: configuredRepository, children }: Aut
       resendVerificationEmail: () => repository.resendVerificationEmail(),
       respondToEvent: (token: string, status: EventReply) =>
         repository.respondToEvent ? repository.respondToEvent(token, status) : unavailable(),
+      exportData: repository.exportData ? () => repository.exportData!() : null,
     }),
     [repository],
   )

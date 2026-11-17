@@ -22,6 +22,7 @@ export const events: Messages['events'] = {
   removeColor: (label) => `Farbe ${label} entfernen`,
   deleteTitle: 'Termin löschen?',
   viewTitle: 'Termin',
+  deleteTrashHint: 'Der Termin kommt in den Papierkorb und lässt sich dort 30 Tage lang wiederherstellen.',
   remoteChange: {
     updated: 'Jemand anderes hat diesen Termin gerade geändert. Lade ihn neu, bevor du weiterarbeitest.',
     deleted: 'Jemand anderes hat diesen Termin gerade gelöscht.',

@@ -24,6 +24,15 @@ export const withEventCallbacks = (
       return event
     }),
   subscribe: repository.subscribe && ((listener) => repository.subscribe!(listener)),
+  listTrash: repository.listTrash && ((calendarId) => repository.listTrash!(calendarId)),
+  purge: repository.purge && ((id) => repository.purge!(id)),
+  restore:
+    repository.restore &&
+    (async (id) => {
+      const event = await repository.restore!(id)
+      getCallbacks().onEventCreate?.(event)
+      return event
+    }),
   setReminders: repository.setReminders && ((id, reminders) => repository.setReminders!(id, reminders)),
   async create(calendarId, input) {
     const event = await repository.create(calendarId, input)

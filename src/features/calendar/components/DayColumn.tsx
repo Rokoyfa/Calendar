@@ -11,6 +11,7 @@ import { EventBlock } from './EventBlock.tsx'
 import { EventChip } from './EventChip.tsx'
 import { NowIndicator } from './NowIndicator.tsx'
 import { useHolidayNames } from '../context/HolidaysContext.ts'
+import { getDayLabel } from '../utils/eventLabels.ts'
 
 type DayColumnProps = {
   date: string
@@ -39,7 +40,8 @@ export function DayColumn({
   onEventSelect,
   onHeaderSelect,
 }: DayColumnProps) {
-  const { m, format } = useI18n()
+  const i18n = useI18n()
+  const { m, format } = i18n
   const day = fromISODate(date)
   const dayLabel = format.longDate(date)
   const positionedSegments = useMemo(() => layoutEvents(segments), [segments])
@@ -59,7 +61,12 @@ export function DayColumn({
   )
 
   return (
-    <div className={classNames('day', isToday && 'currentDay', holidayText && 'holiday')} data-date={date}>
+    <div
+      className={classNames('day', isToday && 'currentDay', holidayText && 'holiday')}
+      data-date={date}
+      role="group"
+      aria-label={getDayLabel(date, isToday, holidayNames, i18n)}
+    >
       {onHeaderSelect ? (
         <button
           type="button"

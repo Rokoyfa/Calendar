@@ -39,6 +39,7 @@ export const errors: Record<ErrorCode, string> & {
   attachmentNotFound: 'This attachment no longer exists.',
   attachmentTooLarge: 'The file is too large.',
   eventChanged: 'Someone else has changed this event in the meantime.',
+  seriesDeleted: 'The series of this event is deleted. Restore the series first.',
   tooManyAttachments: 'This event already has the maximum number of attachments.',
   saveDecisionFailed: 'Your choice could not be saved in this browser.',
   invalidLink: 'This link is invalid or has expired.',

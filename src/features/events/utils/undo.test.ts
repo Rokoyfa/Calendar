@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { calendarEvent, recurrence } from '../../../test/fixtures.ts'
 import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
 import type { EventRepository } from '../../storage/index.ts'
@@ -109,5 +109,33 @@ describe('undo', () => {
 
     await expect(recorder.undo()!()).rejects.toMatchObject({ code: 'eventChanged' })
     expect(stored.title).toBe('Fremd')
+  })
+
+  it('restores a deleted event from the trash instead of creating a copy', async () => {
+    const event = calendarEvent({ id: 'keep', title: 'Mit Anhang' })
+    const trash = new Map<string, CalendarEvent>()
+    const store = memoryRepository([event])
+    const repository: EventRepository = {
+      ...store.repository,
+      remove: async (id) => {
+        trash.set(
+          id,
+          store.all().find((entry) => entry.id === id)!,
+        )
+        await store.repository.remove(id)
+      },
+      restore: async (id) => {
+        const restored = trash.get(id)!
+        trash.delete(id)
+        await store.repository.create(restored.calendarId, restored)
+        return restored
+      },
+    }
+    const create = vi.spyOn(store.repository, 'create')
+    const recorder = recordChanges(repository, [event])
+    await recorder.repository.remove('keep')
+    await recorder.undo()!()
+    expect(trash.size).toBe(0)
+    expect(create).toHaveBeenCalledTimes(1)
   })
 })

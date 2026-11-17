@@ -1,5 +1,11 @@
 import type { I18n } from '../../../i18n/index.ts'
-import { formatEventPeriod, getEventColorAttributes, getLinkName, type EventOccurrence } from '../../../utils/event.ts'
+import {
+  formatEventPeriod,
+  getEventColorAttributes,
+  getLinkName,
+  type AttendeeStatus,
+  type EventOccurrence,
+} from '../../../utils/event.ts'
 import { formatRecurrence } from '../../../utils/recurrence.ts'
 import type { ClassNameValue } from '../../../utils/classNames.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
@@ -22,6 +28,47 @@ const getEventTooltip = (event: EventOccurrence, source: EventSource | undefined
   ]
     .filter(Boolean)
     .join('\n')
+
+export const getEventLabel = (
+  event: EventOccurrence,
+  source: EventSource | undefined,
+  attendance: AttendeeStatus | undefined,
+  i18n: LabelI18n,
+) =>
+  [
+    `${event.title}, ${formatEventPeriod(event, i18n)}`,
+    event.location,
+    getRecurrenceText(event, i18n),
+    source && getSourceText(source, i18n),
+    attendance && i18n.m.calendar.ownResponse(i18n.m.events.attendeeStatus[attendance]),
+    event.attachmentCount > 0 && i18n.m.events.attachments.count(event.attachmentCount),
+  ]
+    .filter(Boolean)
+    .join(', ')
+
+export const getEventDetails = (
+  event: EventOccurrence,
+  source: EventSource | undefined,
+  attendance: AttendeeStatus | undefined,
+  i18n: LabelI18n,
+) =>
+  [
+    formatEventPeriod(event, i18n),
+    getRecurrenceText(event, i18n),
+    source && getSourceText(source, i18n),
+    attendance && i18n.m.calendar.ownResponse(i18n.m.events.attendeeStatus[attendance]),
+  ]
+    .filter(Boolean)
+    .join(', ')
+
+export const getDayLabel = (date: string, isToday: boolean, holidays: readonly string[], i18n: LabelI18n) =>
+  [
+    i18n.format.longDate(date),
+    isToday && i18n.m.calendar.todayMark,
+    holidays.length > 0 && i18n.m.calendar.holiday(holidays.join(', ')),
+  ]
+    .filter(Boolean)
+    .join(', ')
 
 export const getSegmentAttributes = (
   { event, continuesBefore, continuesAfter }: EventSegment,

@@ -50,6 +50,7 @@ import { EventSourcesContext, NO_EVENT_SOURCES } from '../context/EventSourcesCo
 import { useCalendarView } from '../hooks/useCalendarView.ts'
 import { useHostController } from '../hooks/useHostController.ts'
 import { useLiveEvents } from '../hooks/useLiveEvents.ts'
+import { useEventNavigation } from '../hooks/useEventNavigation.ts'
 import { useEventDrag, type DragPreview } from '../hooks/useEventDrag.ts'
 import { useNow } from '../hooks/useNow.ts'
 import type { EditorState } from '../types/editor.ts'
@@ -132,7 +133,7 @@ export function Calendar({
 }: CalendarProps) {
   const i18n = useI18n()
   const { features, views, readOnly: hostReadOnly = false } = useHost()
-  const { invalidate } = useStorage()
+  const { invalidate, events: eventRepository } = useStorage()
   const attachmentRepository = useAttachmentRepository()
   const readOnly = forcedReadOnly || hostReadOnly
   const canCreate = mayCreate && !readOnly
@@ -452,6 +453,7 @@ export function Calendar({
     refresh: invalidate,
   }
   useHostController(controller, state)
+  useEventNavigation(mainRef)
 
   const ViewComponent = VIEW_COMPONENTS[view]
   const editorSource = shownEditor?.occurrence ? eventSources.get(shownEditor.occurrence.calendarId) : undefined
@@ -591,6 +593,7 @@ export function Calendar({
                   occurrence={eventToDelete}
                   onConfirm={(scope) => removeEvent(eventToDelete, scope)}
                   onClose={() => setEventToDelete(null)}
+                  movesToTrash={features.trash && Boolean(eventRepository.restore)}
                 />
               )}
               {undoOffer && (

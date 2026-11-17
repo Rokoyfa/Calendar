@@ -53,6 +53,7 @@ export interface AuthRepository {
   verifyEmail(token: string): Promise<void>
   resendVerificationEmail(): Promise<void>
   respondToEvent?(token: string, status: EventReply): Promise<EventResponse>
+  exportData?(): Promise<Blob>
 }
 
 type AccountActions = Pick<
@@ -71,6 +72,7 @@ type AccountActions = Pick<
 
 export type AuthContextValue = AccountActions & {
   respondToEvent: (token: string, status: EventReply) => Promise<EventResponse>
+  exportData: (() => Promise<Blob>) | null
   enabled: boolean
   method: AuthMethod
   status: AuthStatus

@@ -134,6 +134,7 @@ export const calendars = {
       invitations: 'Invitations',
       danger: 'Danger zone',
       exchange: 'Import & export',
+      trash: 'Trash',
     },
     displayTitle: 'Display',
     displayDescription: 'Applies only to you. Other members set this themselves.',
@@ -202,6 +203,23 @@ export const calendars = {
     add: 'Add',
     rename: 'Rename',
     remove: (name: string) => `Remove category ${name}`,
+  },
+  trash: {
+    title: 'Trash',
+    description:
+      'Deleted events stay here for 30 days. After that they are deleted for good, together with their attachments and chat.',
+    empty: 'The trash is empty.',
+    withDetached: (count: number) =>
+      count === 1 ? 'with 1 separately changed event' : `with ${count} separately changed events`,
+    deletedBy: (name: string, date: string) => `Deleted by ${name} on ${date}`,
+    deletedAt: (date: string) => `Deleted on ${date}`,
+    expires: (date: string) => `gone for good on ${date}`,
+    restore: 'Restore',
+    deleteForever: 'Delete for good',
+    deleteForeverLabel: (title: string) => `Delete “${title}” for good`,
+    confirmTitle: 'Delete for good?',
+    confirmDelete: (title: string) =>
+      `“${title}” will be deleted for good, with all attachments and the chat. This cannot be undone.`,
   },
   share: {
     title: 'Public link',

@@ -20,6 +20,7 @@ export const events = {
   removeColor: (label: string) => `Remove color ${label}`,
   deleteTitle: 'Delete event?',
   viewTitle: 'Event',
+  deleteTrashHint: 'The event goes to the trash, where it can be restored for 30 days.',
   remoteChange: {
     updated: 'Someone else has just changed this event. Reload it before you continue.',
     deleted: 'Someone else has just deleted this event.',

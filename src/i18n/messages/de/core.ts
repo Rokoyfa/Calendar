@@ -33,6 +33,7 @@ export const errors: Messages['errors'] = {
   attachmentNotFound: 'Diesen Anhang gibt es nicht mehr.',
   attachmentTooLarge: 'Die Datei ist zu groß.',
   eventChanged: 'Dieser Termin wurde inzwischen von jemand anderem geändert.',
+  seriesDeleted: 'Die Serie dieses Termins ist gelöscht. Stelle zuerst die Serie wieder her.',
   tooManyAttachments: 'Dieser Termin hat bereits die maximale Anzahl an Anhängen.',
   saveDecisionFailed: 'Die Entscheidung konnte nicht gespeichert werden.',
   invalidLink: 'Der Link ist ungültig oder abgelaufen.',

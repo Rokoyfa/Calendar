@@ -41,6 +41,8 @@ tags:
       The same WebSocket carries `{ type: 'event.changed', calendarId, eventId, version, changedBy }` after every change
       to an event (`version` is `null` when it was deleted), see the Developer Guide section “Live updates”.
   - name: Holidays
+  - name: Trash
+    description: Deleted events stay in the trash of their calendar for 30 days and can be restored.
   - name: Categories
     description: Categories belong to one calendar. Events carry their ids in `categoryIds`.
   - name: Attachments
@@ -48,6 +50,23 @@ tags:
   - name: Sharing
     description: Public read-only links to a calendar. The `/shared` paths need no session.
 paths:
+  /auth/me/export:
+    get:
+      tags: [Auth]
+      summary: Download the own data (GDPR Art. 20)
+      description: |
+        Everything stored for the signed-in user as one JSON file: profile, preferences, colors, memberships,
+        calendars, the categories of the personal calendar, the events of the personal calendar and those the user
+        created elsewhere (also in the trash), own reminders on other events, attendee responses, own chat messages
+        and the details of own attachments (without their content). Never password hashes, sessions or tokens,
+        and no events or messages of other people. Served with `Content-Disposition: attachment`.
+      responses:
+        '200':
+          description: The export
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountExport' }
+        '401': { $ref: '#/components/responses/Problem' }
   /auth/me:
     get:
       tags: [Auth]
@@ -402,7 +421,9 @@ paths:
       tags: [Events]
       summary: Delete an event
       description: |
-        Also deletes detached events of a series. Needs `delete_any_entry` or, for own events, `delete_own_entry`.
+        Moves the event, and the detached events of a series, to the trash of its calendar. They can be restored
+        for 30 days, then they are deleted for good with their attachments and chat.
+        Needs `delete_any_entry` or, for own events, `delete_own_entry`.
         `412` with `eventChanged` when `If-Match` names an older `version`.
       parameters:
         - $ref: '#/components/parameters/IfMatch'
@@ -411,6 +432,54 @@ paths:
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
         '412': { $ref: '#/components/responses/Problem' }
+  /calendars/{calendarId}/trash:
+    parameters:
+      - $ref: '#/components/parameters/CalendarId'
+    get:
+      tags: [Trash]
+      summary: Deleted events of a calendar
+      description: |
+        Newest first, one entry per deletion. Detached events deleted together with their series are not listed on
+        their own but counted in `detachedCount`. Entries older than 30 days are deleted for good and no longer listed.
+      responses:
+        '200':
+          description: Deleted events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TrashedEvent' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /events/{id}/restore:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Trash]
+      summary: Restore an event from the trash
+      description: |
+        Restores the event with the same id, its attachments and chat, together with the detached events deleted with it.
+        `version` goes up by one. Needs the right to delete the event.
+        `409` with `seriesDeleted` when the event is a detached occurrence whose series is still in the trash.
+      responses:
+        '200': { $ref: '#/components/responses/Event' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /trash/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Id of the deleted event.
+        schema: { type: string }
+    delete:
+      tags: [Trash]
+      summary: Delete an event for good
+      description: Removes it from the trash with its detached events, attachments and chat. Needs the right to delete the event.
+      responses:
+        '204': { description: Deleted for good }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
   /calendars:
     get:
       tags: [Calendars]
@@ -1385,6 +1454,42 @@ components:
               minimum: 0
               default: 0
               description: Number of attachments of this event. Read-only, ignored on input. 0 in public links.
+    AccountExport:
+      type: object
+      required: [format, version, exportedAt, user]
+      properties:
+        format: { type: string, const: calendar-account-export }
+        version: { type: integer, const: 1 }
+        exportedAt: { type: string, format: date-time }
+        user: { $ref: '#/components/schemas/User' }
+        preferences: { type: object }
+        colors: { type: array, items: { type: string } }
+        memberships: { type: array, items: { type: object } }
+        calendars: { type: array, items: { type: object } }
+        categories: { type: array, items: { type: object } }
+        events: { type: array, items: { $ref: '#/components/schemas/CalendarEvent' } }
+        trash: { type: array, items: { type: object } }
+        reminders: { type: array, items: { type: object } }
+        responses: { type: array, items: { type: object } }
+        chatMessages: { type: array, items: { type: object } }
+        attachments: { type: array, items: { type: object } }
+      additionalProperties: true
+    TrashedEvent:
+      type: object
+      required: [event, deletedAt, deletedBy, deletedByName, expiresAt, detachedCount]
+      properties:
+        event: { $ref: '#/components/schemas/CalendarEvent' }
+        deletedAt: { type: string, format: date-time }
+        deletedBy: { oneOf: [{ type: string }, { type: 'null' }] }
+        deletedByName: { oneOf: [{ type: string }, { type: 'null' }] }
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the event is deleted for good, 30 days after `deletedAt`.
+        detachedCount:
+          type: integer
+          minimum: 0
+          description: Detached events that were deleted together with this series and come back with it.
     Attachment:
       type: object
       required: [id, eventId, name, type, size, createdAt, uploadedBy]

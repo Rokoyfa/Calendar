@@ -2,7 +2,22 @@ import type { Messages } from '../types.ts'
 
 export const settings: Messages['settings'] = {
   tabsLabel: 'Bereiche der Einstellungen',
-  tabs: { calendars: 'Kalender', invitations: 'Einladungen', appearance: 'Darstellung', account: 'Konto', notifications: 'Benachrichtigungen' },
+  tabs: {
+    calendars: 'Kalender',
+    invitations: 'Einladungen',
+    appearance: 'Darstellung',
+    account: 'Konto',
+    notifications: 'Benachrichtigungen',
+    data: 'Daten',
+  },
+  dataExport: {
+    title: 'Deine Daten',
+    accountDescription:
+      'Lade alles herunter, was zu deinem Konto gespeichert ist: Profil, Einstellungen, Farben, Mitgliedschaften, deine Termine, Antworten, Chat-Nachrichten und die Angaben zu deinen Anhängen. Die Datei ist im JSON-Format.',
+    localDescription:
+      'Lade alle Termine und Einstellungen herunter, die dieser Browser speichert. Die Datei ist im JSON-Format.',
+    download: 'Daten herunterladen',
+  },
   languageTitle: 'Sprache und Region',
   languageDescription: 'Bestimmt Sprache, Datums- und Zeitformate und den ersten Tag der Woche.',
   languageLabel: 'Sprache',
@@ -20,7 +35,8 @@ export const settings: Messages['settings'] = {
   holidaysWholeCountry: 'Ganzes Land',
   notifications: {
     title: 'E-Mails zu Terminen',
-    description: 'E-Mails an deine bestätigte Adresse. Erinnerungen per E-Mail kommen auch, wenn der Kalender geschlossen ist.',
+    description:
+      'E-Mails an deine bestätigte Adresse. Erinnerungen per E-Mail kommen auch, wenn der Kalender geschlossen ist.',
     unverified: 'Bestätige deine E-Mail-Adresse, um E-Mails zu erhalten.',
     emailInvites: 'Wenn mich jemand zu einem Termin einlädt',
     emailChanges: 'Wenn sich ein Termin ändert, zu dem ich eingeladen bin, oder abgesagt wird',

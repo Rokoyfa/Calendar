@@ -1,6 +1,20 @@
 export const settings = {
   tabsLabel: 'Settings sections',
-  tabs: { calendars: 'Calendars', invitations: 'Invitations', appearance: 'Appearance', account: 'Account', notifications: 'Notifications' },
+  tabs: {
+    calendars: 'Calendars',
+    invitations: 'Invitations',
+    appearance: 'Appearance',
+    account: 'Account',
+    notifications: 'Notifications',
+    data: 'Data',
+  },
+  dataExport: {
+    title: 'Your data',
+    accountDescription:
+      'Download everything stored for your account: profile, settings, colors, memberships, your events, responses, chat messages and the details of your attachments. The file is in JSON format.',
+    localDescription: 'Download all events and settings this browser stores. The file is in JSON format.',
+    download: 'Download data',
+  },
   languageTitle: 'Language and region',
   languageDescription: 'Controls the language, date and time formats and the first day of the week.',
   languageLabel: 'Language',

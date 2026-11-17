@@ -19,6 +19,16 @@ export const canEditEntry = (calendar: CalendarSummary, createdBy: string | null
   hasPermission(calendar, 'update_any_entry') ||
   (hasPermission(calendar, 'update_own_entry') && (createdBy === null || createdBy === userId))
 
+export const canDeleteEntry = (calendar: CalendarSummary, createdBy: string | null, userId: string | null) =>
+  isPersonalCalendar(calendar) ||
+  hasPermission(calendar, 'delete_any_entry') ||
+  (hasPermission(calendar, 'delete_own_entry') && (createdBy === null || createdBy === userId))
+
+export const canUseTrash = (calendar: CalendarSummary) =>
+  isPersonalCalendar(calendar) ||
+  hasPermission(calendar, 'delete_any_entry') ||
+  hasPermission(calendar, 'delete_own_entry')
+
 export const canManageCategories = (calendar: CalendarSummary) =>
   isPersonalCalendar(calendar) || hasPermission(calendar, 'manage_calendars')
 

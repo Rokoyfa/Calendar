@@ -84,6 +84,10 @@ export class RemoteAuthRepository implements AuthRepository {
     })
   }
 
+  exportData() {
+    return this.#api.get<Blob>(`${ME_PATH}/export`, { responseType: 'blob' })
+  }
+
   async requestPasswordReset(input: PasswordResetRequestInput) {
     await this.#api.post<void>(`${AUTH_PATH}/password-reset`, input)
   }

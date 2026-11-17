@@ -59,7 +59,7 @@ export function CalendarHeader({
       </div>
 
       <div className="headerCenter">
-        <h1 className="headerTitle">
+        <h1 className="headerTitle" aria-live="polite">
           {title}
           {subtitle && <span className="headerSubtitle">{subtitle}</span>}
         </h1>

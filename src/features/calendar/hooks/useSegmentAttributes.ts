@@ -3,7 +3,7 @@ import type { ClassNameValue } from '../../../utils/classNames.ts'
 import { useOwnAttendance } from '../context/CurrentUserContext.ts'
 import { useIsDragging } from '../context/DragContext.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
-import { getSegmentAttributes } from '../utils/eventLabels.ts'
+import { getEventDetails, getEventLabel, getSegmentAttributes } from '../utils/eventLabels.ts'
 import { useEventSource } from './useEventSource.ts'
 
 export function useSegmentAttributes(segment: EventSegment, ...classNames: ClassNameValue[]) {
@@ -20,5 +20,7 @@ export function useSegmentAttributes(segment: EventSegment, ...classNames: Class
     attendance === 'declined' && 'eventDeclined',
     attendance === 'needsAction' && 'eventUnanswered',
   )
-  return { i18n, source, isDragging, style, attributes }
+  const label = getEventLabel(segment.event, source, attendance, i18n)
+  const details = getEventDetails(segment.event, source, attendance, i18n)
+  return { i18n, source, isDragging, style, attributes, label, details }
 }

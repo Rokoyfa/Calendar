@@ -4,6 +4,7 @@ export { HostTokenAuthRepository } from './repositories/HostTokenAuthRepository.
 export { RemoteAuthRepository } from './repositories/RemoteAuthRepository.ts'
 export { AccountMenu } from './components/AccountMenu.tsx'
 export { AccountSettings } from './components/account/AccountSettings.tsx'
+export { DataExportSection } from './components/account/DataExportSection.tsx'
 export { AuthGate } from './components/AuthGate.tsx'
 export { EmailVerificationBanner } from './components/EmailVerificationBanner.tsx'
 export { ForgotPasswordPage } from './components/ForgotPasswordPage.tsx'

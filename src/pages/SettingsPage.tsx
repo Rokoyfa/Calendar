@@ -1,7 +1,7 @@
 import { PageLayout } from '../components/PageLayout.tsx'
 import { Tabs, type TabDefinition } from '../components/Tabs.tsx'
 import { useTabParam } from '../hooks/useTabParam.ts'
-import { AccountSettings, useAuth } from '../features/authorization/index.ts'
+import { AccountSettings, DataExportSection, useAuth } from '../features/authorization/index.ts'
 import { CalendarSettings, InvitationList, useCalendars } from '../features/calendars/index.ts'
 import { useFeatures } from '../context/HostContext.ts'
 import { CustomColorSettings } from '../features/events/index.ts'
@@ -9,12 +9,13 @@ import { NotificationSettings, PreferencesSettings } from '../features/preferenc
 import { HolidaySettings } from '../features/holidays/index.ts'
 import { useI18n } from '../i18n/index.ts'
 
-type SettingsTab = 'calendars' | 'invitations' | 'appearance' | 'notifications' | 'account'
+type SettingsTab = 'calendars' | 'invitations' | 'appearance' | 'notifications' | 'account' | 'data'
 
 export function SettingsPage() {
   const { m } = useI18n()
   const { enabled, method, user } = useAuth()
-  const { teams, holidays, customColors, emailNotifications } = useFeatures()
+  const { teams, holidays, customColors, emailNotifications, dataExport } = useFeatures()
+  const { exportData } = useAuth()
   const { invitations } = useCalendars()
   const tabs: TabDefinition<SettingsTab>[] = [
     {
@@ -51,6 +52,12 @@ export function SettingsPage() {
       value: 'account',
       label: m.settings.tabs.account,
       content: <AccountSettings />,
+    })
+  if (dataExport && (!user || exportData))
+    tabs.push({
+      value: 'data',
+      label: m.settings.tabs.data,
+      content: <DataExportSection />,
     })
   const [active, select] = useTabParam(tabs)
 

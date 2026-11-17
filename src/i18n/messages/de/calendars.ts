@@ -134,6 +134,7 @@ export const calendars: Messages['calendars'] = {
       invitations: 'Einladungen',
       danger: 'Gefahrenbereich',
       exchange: 'Import & Export',
+      trash: 'Papierkorb',
     },
     displayTitle: 'Anzeige',
     displayDescription: 'Gilt nur für dich. Andere Mitglieder stellen das selbst ein.',
@@ -202,6 +203,22 @@ export const calendars: Messages['calendars'] = {
     add: 'Hinzufügen',
     rename: 'Umbenennen',
     remove: (name) => `Kategorie ${name} entfernen`,
+  },
+  trash: {
+    title: 'Papierkorb',
+    description: 'Gelöschte Termine bleiben hier 30 Tage, danach werden sie mit Anhängen und Chat endgültig gelöscht.',
+    empty: 'Der Papierkorb ist leer.',
+    withDetached: (count: number) =>
+      count === 1 ? 'mit 1 einzeln geändertem Termin' : `mit ${count} einzeln geänderten Terminen`,
+    deletedBy: (name: string, date: string) => `Gelöscht von ${name} am ${date}`,
+    deletedAt: (date: string) => `Gelöscht am ${date}`,
+    expires: (date: string) => `endgültig weg am ${date}`,
+    restore: 'Wiederherstellen',
+    deleteForever: 'Endgültig löschen',
+    deleteForeverLabel: (title: string) => `„${title}“ endgültig löschen`,
+    confirmTitle: 'Endgültig löschen?',
+    confirmDelete: (title: string) =>
+      `„${title}“ wird mit allen Anhängen und dem Chat endgültig gelöscht. Das lässt sich nicht rückgängig machen.`,
   },
   share: {
     title: 'Öffentlicher Link',

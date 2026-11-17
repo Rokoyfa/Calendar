@@ -2,6 +2,7 @@ import { encodePathSegment, type ApiClient, type QueryParams } from '../../../ut
 import { AppError } from '../../../utils/appError.ts'
 import { parseCalendarEvent, type AttendeeStatus, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
 import type { EventQuery, EventRepository, EventSearchQuery } from '../types/storage.ts'
+import { parseTrashedEvents } from '../../../utils/trash.ts'
 import { parseEventChange, type EventChange } from '../../../utils/eventChange.ts'
 import type { LiveSocket } from '../utils/liveSocket.ts'
 
@@ -65,6 +66,18 @@ export class RemoteEventRepository implements EventRepository {
 
   async #query(query: QueryParams) {
     return parseEvents(await this.#api.get<unknown[]>(EVENTS_PATH, { query }))
+  }
+
+  async listTrash(calendarId: string) {
+    return parseTrashedEvents(await this.#api.get<unknown>(`/calendars/${encodePathSegment(calendarId)}/trash`))
+  }
+
+  async restore(id: string) {
+    return parseEvent(await this.#api.post<unknown>(`${this.#eventPath(id)}/restore`))
+  }
+
+  purge(id: string) {
+    return this.#api.delete(`/trash/${encodePathSegment(id)}`)
   }
 
   #eventPath(id: string) {
