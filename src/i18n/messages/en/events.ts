@@ -55,9 +55,9 @@ export const events = {
     create: 'Create',
     empty: 'No categories yet. Create the first one right here.',
   },
-  deleteMessage: (title: string) => `“${title}” will be deleted. This cannot be undone.`,
-  deleteSeriesMessage: (title: string) =>
-    `“${title}” is a recurring event. What should be deleted? This cannot be undone.`,
+  deleteMessage: (title: string) => `“${title}” will be deleted.`,
+  deleteSeriesMessage: (title: string) => `“${title}” is a recurring event. What should be deleted?`,
+  deleteIrreversible: 'This cannot be undone.',
   scopeTitle: 'Change recurring event',
   scopeMessage: 'Which events in the series should the changes apply to?',
   scopes: {

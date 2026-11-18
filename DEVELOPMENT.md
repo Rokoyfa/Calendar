@@ -28,7 +28,9 @@ Unter Windows (PowerShell) statt `cp`: `Copy-Item .example.env .env`. Ohne `.env
 | `npm run preview` | Produktions-Build lokal ansehen             |
 | `npm run lint`    | ESLint ausführen                            |
 | `npm run build:lib` | Bibliothek bauen: npm-Paket nach `dist-lib/npm/`, Script-Datei nach `dist-lib/cdn/` |
-| `npm run typecheck` | Nur Typprüfung |
+| `npm run typecheck` | Nur Typprüfung (App und Browser-Tests) |
+| `npm test` | Unit-Tests (Vitest) |
+| `npm run test:e2e` | Browser-Tests (Playwright) gegen das TestBE, siehe [Browser-Tests](#browser-tests) |
 | `npm publish` | Veröffentlichen, prüft vorher Lint und Typen und baut die Bibliothek (siehe [Veröffentlichen](#veröffentlichen)) |
 
 **Technik:** React 19, React Router 8, TypeScript 6, Vite 8, ESLint. Voraussetzung ist **Node.js 22.22 oder neuer** (verlangt von React Router 8).
@@ -202,6 +204,28 @@ Wochenbeginn und Zählweise liefert `Intl.Locale#getWeekInfo`, wo es fehlt, eine
 - Prüfungen (`validateEventInput`, `validateEmail`, Formular-Validierung) bekommen `m` übergeben.
 
 ---
+
+## Browser-Tests
+
+Die Browser-Tests in `e2e/` spielen die wichtigsten Abläufe in Chromium durch: Anmelden und lokaler Modus, Termin anlegen, ändern, löschen und rückgängig machen, einzelnen Termin einer Serie ändern, Live-Updates und Konfliktschutz mit zwei Nutzern, Anhänge, Papierkorb, Datenexport und Tastaturbedienung.
+
+**Einmalig:**
+
+```bash
+npm install
+npx playwright install chromium
+cd ../TestBE && npm install
+```
+
+**Starten:** `npm run test:e2e`. Playwright startet dafür selbst ein TestBE (Port 3998) und den Entwicklungsserver (Port 5198), jeweils mit eigenen, leeren Daten in einem temporären Ordner. Laufende Server auf 3999 und 5173 stören nicht, `data.json` des TestBE bleibt unberührt.
+
+| Variable | Standard | Bedeutung |
+| --- | --- | --- |
+| `E2E_BACKEND_DIR` | `../TestBE` | Ordner des TestBE |
+| `E2E_API_PORT` / `E2E_APP_PORT` | `3998` / `5198` | Ports der beiden Server |
+| `E2E_DEBUG` | – | Zeigt auch die Ausgaben des Entwicklungsservers |
+
+Schlägt ein Test fehl, liegt unter `test-results/` ein Trace, den `npx playwright show-trace <Datei>` Schritt für Schritt abspielt. Jeder Test legt eigene Nutzer mit zufälliger E-Mail an, die Tests laufen deshalb unabhängig voneinander und parallel.
 
 ## Veröffentlichen
 
@@ -636,6 +660,7 @@ Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, r
 | Suche                            | `/` oder Lupe im Header            |
 | Letzte Aktion rückgängig         | `Strg+Z` / `⌘Z`, solange der Hinweis sichtbar ist |
 | Fenster schließen                | `Esc` oder Klick neben das Fenster |
+| Termin per Tastatur anlegen      | Mit `Tab` ins Raster der Tages- oder Wochenansicht, mit den Pfeiltasten die Uhrzeit wählen (`↑` / `↓` eine Stunde, `←` / `→` ein Tag, `Pos1` / `Ende` 0 bzw. 23 Uhr), `Enter` öffnet den Dialog |
 | Zwischen Terminen wechseln       | Auf einem Termin: `↑` / `↓` im selben Tag, `←` / `→` zum nächsten Tag mit Terminen, `Pos1` / `Ende` zum ersten / letzten Termin |
 
 Die Kürzel wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt nach dem Laden oder nach dem Schließen eines Fensters). Sind mehrere Kalender auf der Seite, reagiert der zuletzt benutzte, anfangs der erste. Solange ein Eingabefeld, ein Fenster oder ein Element der Host-Seite den Fokus hat, sind sie aus. So bleibt z. B. `Strg+Z` in Eingabefeldern das normale Rückgängig des Browsers (`hooks/useKeyboardShortcuts.ts`, die Tasten stehen in `Calendar.tsx`, die Ansichtstasten in `VIEW_SHORTCUTS`). Die Tooltips der Buttons im Header nennen die Taste.

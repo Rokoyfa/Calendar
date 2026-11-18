@@ -24,6 +24,7 @@ export function DeleteEventModal({ occurrence, onConfirm, onClose, movesToTrash 
     <Modal title={m.events.deleteTitle} variant="danger" onClose={onClose}>
       <p className="modalMessage">
         {isSeries ? m.events.deleteSeriesMessage(occurrence.title) : m.events.deleteMessage(occurrence.title)}
+        {!movesToTrash && ` ${m.events.deleteIrreversible}`}
       </p>
       {movesToTrash && <p className="formHint">{m.events.deleteTrashHint}</p>}
       <ErrorMessage message={error} />

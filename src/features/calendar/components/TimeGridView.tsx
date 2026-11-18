@@ -10,6 +10,7 @@ import { getHoursOnDate, toSlotRange } from '../utils/slotSelection.ts'
 import { DayColumn } from './DayColumn.tsx'
 import { useHolidayMap } from '../context/HolidaysContext.ts'
 import { TimeColumn } from './TimeColumn.tsx'
+import { useSlotNavigation } from '../hooks/useSlotNavigation.ts'
 
 const NO_SEGMENTS: readonly EventSegment[] = []
 const NO_ALL_DAY: readonly AllDaySegment[] = []
@@ -35,6 +36,13 @@ export function TimeGridView({
   const lanes = useMemo(() => splitAllDay(dates, segmentsByDate), [dates, segmentsByDate])
   const showsToday = dates.includes(today)
   const holidays = useHolidayMap()
+  const focusSlot = useSlotNavigation(
+    containerRef,
+    dates,
+    showsToday ? today : (dates[0] ?? today),
+    canCreate,
+    onCreate,
+  )
   const holidayRows = dates.some((date) => holidays.has(date)) ? 1 : 0
   const hasAllDayEvents = [...lanes.allDay.values()].some((segments) => segments.length > 0)
   const allDayRows = holidayRows + (hasAllDayEvents || holidayRows === 0 ? lanes.rows : 0)
@@ -64,6 +72,7 @@ export function TimeGridView({
             }}
             onEventSelect={onEventSelect}
             onHeaderSelect={isSingleDay ? undefined : onShowDay}
+            focusHour={canCreate ? (focusSlot.date === date ? focusSlot.hour : null) : undefined}
           />
         )
       })}

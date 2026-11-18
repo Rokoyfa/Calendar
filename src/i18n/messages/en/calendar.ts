@@ -13,6 +13,7 @@ export const calendar = {
   newEvent: 'New event',
   now: (time: string) => `Now: ${time}`,
   ownResponse: (status: string) => `Your response: ${status}`,
+  newEventAt: (day: string, time: string) => `New event: ${day}, ${time}`,
   todayMark: 'today',
   openDay: (date: string) => `Open ${date}`,
   moreEvents: (count: number) => `+${count} more`,

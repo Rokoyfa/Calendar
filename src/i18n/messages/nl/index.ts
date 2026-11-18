@@ -144,6 +144,7 @@ const calendar: Messages['calendar'] = {
   newEvent: 'Nieuwe afspraak',
   now: (time) => `Nu: ${time}`,
   ownResponse: (status) => `Jouw antwoord: ${status}`,
+  newEventAt: (day, time) => `Nieuwe afspraak: ${day}, ${time}`,
   todayMark: 'vandaag',
   openDay: (date) => `${date} openen`,
   moreEvents: (count) => `nog ${count}`,
@@ -232,9 +233,9 @@ const events: Messages['events'] = {
     create: 'Aanmaken',
     empty: 'Nog geen categorieën. Maak de eerste hier aan.',
   },
-  deleteMessage: (title) => `‘${title}’ wordt verwijderd. Dit kan niet ongedaan worden gemaakt.`,
-  deleteSeriesMessage: (title) =>
-    `‘${title}’ is een terugkerende afspraak. Wat moet er worden verwijderd? Dit kan niet ongedaan worden gemaakt.`,
+  deleteMessage: (title) => `‘${title}’ wordt verwijderd.`,
+  deleteSeriesMessage: (title) => `‘${title}’ is een terugkerende afspraak. Wat moet er worden verwijderd?`,
+  deleteIrreversible: 'Dit kan niet ongedaan worden gemaakt.',
   scopeTitle: 'Terugkerende afspraak wijzigen',
   scopeMessage: 'Op welke afspraken in de reeks moeten de wijzigingen van toepassing zijn?',
   scopes: {

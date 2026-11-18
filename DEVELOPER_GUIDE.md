@@ -48,7 +48,7 @@ calendar.getUserToken = async () => (await fetch('/calendar-token')).text()
 calendar.config = { features: { chat: false } }
 ```
 
-When hosting the script yourself, copy the whole `dist-lib/cdn` folder. Languages other than English, the holiday data and the YAML parser are separate files next to `calendar-widget.js` that are loaded on demand.
+When hosting the script yourself, copy the whole `dist-lib/cdn` folder. Languages other than English, the holiday data, the YAML parser and parts that are not needed at start (event dialog, settings, sign-in pages, shared calendars) are separate files next to `calendar-widget.js` that are loaded on demand.
 
 To register the element under another name, or to control when it is registered, use the npm package:
 
@@ -1043,5 +1043,6 @@ The calendar aims at WCAG 2.2 AA and is checked with axe-core in light and dark 
 - **Keyboard.** Every event is a button and can be reached with `Tab`. On an event, `↑` and `↓` move to the previous or next event of the same day, `←` and `→` to the nearest event on the previous or next day with events, `Home` and `End` to the first and last event in view, `Enter` opens it. The other shortcuts are listed in the tooltips of the header buttons.
 - **Screen readers.** Each day column and month cell is a group named after its date, with "today" and public holidays. Events are announced with title, time, place, repetition, calendar, the user's own response and the number of attachments. The period title in the header is a live region, so moving to the next week is announced. Dialogs are labelled by their title and move the focus into the dialog.
 - **Contrast.** Text and event colors meet 4.5:1 in both themes. In dark mode, text on the built-in event colors and the accent is dark. If you change colors with `--calendar-*` properties, check the contrast of your own colors.
-- **Creating events.** Clicking a time slot needs a mouse; with the keyboard, use the **+** button or `N`.
+- **Creating events.** In the day and week view, `Tab` reaches the time grid. The arrow keys pick the hour (`↑` / `↓`) and the day (`←` / `→`), `Home` and `End` jump to 0:00 and 23:00, `Enter` or `Space` opens the dialog for that time. Only one slot is a tab stop, so the grid costs a single `Tab`. The **+** button and `N` work as before.
+- **Focus.** Closing a dialog returns the focus to where it was, for example to the event or slot that opened it.
 

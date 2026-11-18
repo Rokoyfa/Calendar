@@ -12,6 +12,7 @@ import { EventChip } from './EventChip.tsx'
 import { NowIndicator } from './NowIndicator.tsx'
 import { useHolidayNames } from '../context/HolidaysContext.ts'
 import { getDayLabel } from '../utils/eventLabels.ts'
+import { SLOT_NAVIGATION_KEYS } from '../hooks/useSlotNavigation.ts'
 
 type DayColumnProps = {
   date: string
@@ -25,6 +26,7 @@ type DayColumnProps = {
   onAllDaySelect: (date: string) => void
   onEventSelect: (event: EventOccurrence) => void
   onHeaderSelect?: (date: string) => void
+  focusHour?: number | null
 }
 
 export function DayColumn({
@@ -39,6 +41,7 @@ export function DayColumn({
   onAllDaySelect,
   onEventSelect,
   onHeaderSelect,
+  focusHour,
 }: DayColumnProps) {
   const i18n = useI18n()
   const { m, format } = i18n
@@ -102,6 +105,10 @@ export function DayColumn({
             className="slot"
             data-hour={hour}
             title={`${dayLabel} ${format.hour(hour)}`}
+            role={focusHour === undefined ? undefined : 'button'}
+            tabIndex={focusHour === undefined ? undefined : hour === focusHour ? 0 : -1}
+            aria-label={focusHour === undefined ? undefined : m.calendar.newEventAt(dayLabel, format.hour(hour))}
+            aria-keyshortcuts={focusHour === undefined ? undefined : SLOT_NAVIGATION_KEYS}
             onClick={() => onSlotSelect(date, hour)}
           />
         ))}

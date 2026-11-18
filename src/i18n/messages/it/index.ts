@@ -146,6 +146,7 @@ const calendar: Messages['calendar'] = {
   newEvent: 'Nuovo evento',
   now: (time) => `Adesso: ${time}`,
   ownResponse: (status) => `La tua risposta: ${status}`,
+  newEventAt: (day, time) => `Nuovo evento: ${day}, ${time}`,
   todayMark: 'oggi',
   openDay: (date) => `Apri ${date}`,
   moreEvents: (count) => `altri ${count}`,
@@ -234,9 +235,9 @@ const events: Messages['events'] = {
     create: 'Crea',
     empty: 'Ancora nessuna categoria. Crea la prima direttamente qui.',
   },
-  deleteMessage: (title) => `«${title}» verrà eliminato. L’operazione è irreversibile.`,
-  deleteSeriesMessage: (title) =>
-    `«${title}» è un evento ricorrente. Cosa vuoi eliminare? L’operazione è irreversibile.`,
+  deleteMessage: (title) => `«${title}» verrà eliminato.`,
+  deleteSeriesMessage: (title) => `«${title}» è un evento ricorrente. Cosa vuoi eliminare?`,
+  deleteIrreversible: 'L’operazione è irreversibile.',
   scopeTitle: 'Modifica evento ricorrente',
   scopeMessage: 'A quali eventi della serie vuoi applicare le modifiche?',
   scopes: {

@@ -148,6 +148,7 @@ const calendar: Messages['calendar'] = {
   newEvent: 'Novo evento',
   now: (time) => `Agora: ${time}`,
   ownResponse: (status) => `A sua resposta: ${status}`,
+  newEventAt: (day, time) => `Novo evento: ${day}, ${time}`,
   todayMark: 'hoje',
   openDay: (date) => `Abrir ${date}`,
   moreEvents: (count) => `mais ${count}`,
@@ -236,9 +237,9 @@ const events: Messages['events'] = {
     create: 'Criar',
     empty: 'Ainda não há categorias. Crie a primeira aqui mesmo.',
   },
-  deleteMessage: (title) => `“${title}” será excluído. Isso não pode ser desfeito.`,
-  deleteSeriesMessage: (title) =>
-    `“${title}” é um evento recorrente. O que deve ser excluído? Isso não pode ser desfeito.`,
+  deleteMessage: (title) => `“${title}” será excluído.`,
+  deleteSeriesMessage: (title) => `“${title}” é um evento recorrente. O que deve ser excluído?`,
+  deleteIrreversible: 'Isso não pode ser desfeito.',
   scopeTitle: 'Alterar evento recorrente',
   scopeMessage: 'A quais eventos da série as alterações devem ser aplicadas?',
   scopes: {

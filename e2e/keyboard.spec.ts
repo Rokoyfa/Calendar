@@ -1,0 +1,31 @@
+import { api, createUser, eventInput, openAs, showView, expect, test } from './helpers.ts'
+
+test('creates an event at a time slot with the keyboard', async ({ browser }) => {
+  const user = await createUser('Anna')
+  const page = await openAs(browser, user)
+  await showView(page, 'Tag')
+  const slot = page.locator('.slot[tabindex="0"]')
+  await expect(slot).toHaveCount(1)
+  await slot.focus()
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('ArrowDown')
+  await expect(page.locator('.slot:focus')).toHaveAttribute('aria-label', /11:00$/)
+  await page.keyboard.press('Enter')
+  const dialog = page.locator('dialog[open]')
+  await expect(dialog.locator('input[name=start]')).toHaveValue('11:00')
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.slot:focus')).toHaveCount(1)
+})
+
+test('moves between events with the arrow keys', async ({ browser }) => {
+  const user = await createUser('Anna')
+  await api(user, 'POST', '/events', eventInput('personal', { title: 'Erster', start: '09:00', end: '10:00' }))
+  await api(user, 'POST', '/events', eventInput('personal', { title: 'Zweiter', start: '14:00', end: '15:00' }))
+  const page = await openAs(browser, user)
+  await showView(page, 'Tag')
+  await page.locator('.eventOpen[aria-label^="Erster,"]').focus()
+  await page.keyboard.press('ArrowDown')
+  await expect(page.locator('.eventOpen:focus')).toHaveAttribute('aria-label', /^Zweiter,/)
+  await page.keyboard.press('Home')
+  await expect(page.locator('.eventOpen:focus')).toHaveAttribute('aria-label', /^Erster,/)
+})

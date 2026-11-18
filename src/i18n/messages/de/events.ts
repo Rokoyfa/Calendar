@@ -58,9 +58,9 @@ export const events: Messages['events'] = {
     create: 'Anlegen',
     empty: 'Noch keine Kategorien. Lege die erste direkt hier an.',
   },
-  deleteMessage: (title) => `„${title}“ wird gelöscht. Das kann nicht rückgängig gemacht werden.`,
-  deleteSeriesMessage: (title) =>
-    `„${title}“ ist ein wiederkehrender Termin. Was soll gelöscht werden? Das kann nicht rückgängig gemacht werden.`,
+  deleteMessage: (title) => `„${title}“ wird gelöscht.`,
+  deleteSeriesMessage: (title) => `„${title}“ ist ein wiederkehrender Termin. Was soll gelöscht werden?`,
+  deleteIrreversible: 'Das kann nicht rückgängig gemacht werden.',
   scopeTitle: 'Wiederkehrenden Termin ändern',
   scopeMessage: 'Für welche Termine der Serie sollen die Änderungen gelten?',
   scopes: {

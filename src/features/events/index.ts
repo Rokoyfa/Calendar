@@ -1,5 +1,5 @@
 export { useEvents, type SaveOptions } from './hooks/useEvents.ts'
-export { EventModal, type AttendeeOptions, type EventTab } from './components/EventModal.tsx'
+export type { AttendeeOptions, EventTab } from './components/EventModal.tsx'
 export type { AttendeeCandidate } from './components/AttendeesField.tsx'
 export { DeleteEventModal } from './components/DeleteEventModal.tsx'
 export { RecurrenceScopeModal } from './components/RecurrenceScopeModal.tsx'

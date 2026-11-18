@@ -126,6 +126,14 @@ button.columnHeader:hover {
   transition: background-color var(--transition-fast);
 }
 
+.slot:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+  background-color: var(--color-surface-hover);
+}
+
 .slot:hover {
   background-color: var(--color-surface-hover);
 }

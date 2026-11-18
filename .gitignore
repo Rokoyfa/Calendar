@@ -29,3 +29,8 @@ dist-lib
 
 # Datenbankschema (nicht öffentlich)
 database/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/

@@ -63,10 +63,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "build:lib": "node -e \"require('fs').rmSync('dist-lib',{recursive:true,force:true})\" && vite build -c vite.lib.config.ts && vite build -c vite.lib.config.ts --mode element && tsc -p tsconfig.lib.json && node scripts/collect-types.mjs",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && tsc -p e2e/tsconfig.json --noEmit",
     "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build:lib",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -74,6 +75,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

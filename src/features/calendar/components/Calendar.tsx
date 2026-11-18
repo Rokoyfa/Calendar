@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useHost } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
@@ -29,7 +29,6 @@ import {
 } from '../../../utils/event.ts'
 import {
   DeleteEventModal,
-  EventModal,
   getScopeOptions,
   RecurrenceScopeModal,
   useEvents,
@@ -71,6 +70,8 @@ const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = 
   month: MonthView,
   year: YearView,
 }
+
+const EventModal = lazy(async () => ({ default: (await import('../../events/components/EventModal.tsx')).EventModal }))
 
 type RemoteChange = { eventId: string; version: number | null }
 
@@ -501,61 +502,63 @@ export function Calendar({
               </main>
 
               {shownEditor && (
-                <EventModal
-                  readOnly={readOnly}
-                  canEditAttachments={!readOnly && (!shownEditor.occurrence || canEditEvent(shownEditor.occurrence))}
-                  categories={categories.filter((category) => category.calendarId === editorCalendarId)}
-                  onCreateCategory={
-                    hasCategories && editorCalendarId && canManageCategories(editorCalendarId)
-                      ? (name) => createCategory(editorCalendarId, name)
-                      : undefined
-                  }
-                  key={shownEditor.occurrence?.occurrenceKey ?? 'new'}
-                  initialValue={shownEditor.initialValue}
-                  occurrence={shownEditor.occurrence}
-                  attendeeOptions={
-                    features.attendees
-                      ? {
-                          candidates: attendeeCandidates,
-                          ownEmail: currentUserEmail,
-                          onRespond:
-                            respond && shownEditor.occurrence
-                              ? (status) => respond(shownEditor.occurrence!, status)
-                              : undefined,
-                        }
-                      : undefined
-                  }
-                  notice={
-                    shownEditor.notice ??
-                    (editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n)))
-                  }
-                  onSave={handleSave}
-                  remoteChange={editorRemoteChange}
-                  onReload={() => {
-                    closeEditor()
-                    invalidate()
-                  }}
-                  onDelete={shownEditor.occurrence ? () => requestDelete(shownEditor.occurrence!) : undefined}
-                  chat={
-                    shownEditor.occurrence && chat?.isAvailable(shownEditor.occurrence.calendarId)
-                      ? {
-                          key: getChatKey(shownEditor.occurrence),
-                          calendarId: shownEditor.occurrence.calendarId,
-                        }
-                      : undefined
-                  }
-                  initialTab={shownEditor.initialTab}
-                  onDuplicate={features.duplicate && shownEditor.occurrence && canCreate ? duplicate : undefined}
-                  onRemindersChange={
-                    setReminders && shownEditor.occurrence
-                      ? async (reminders) => {
-                          await setReminders(shownEditor.occurrence!, reminders)
-                          closeEditor()
-                        }
-                      : undefined
-                  }
-                  onClose={closeEditor}
-                />
+                <Suspense fallback={null}>
+                  <EventModal
+                    readOnly={readOnly}
+                    canEditAttachments={!readOnly && (!shownEditor.occurrence || canEditEvent(shownEditor.occurrence))}
+                    categories={categories.filter((category) => category.calendarId === editorCalendarId)}
+                    onCreateCategory={
+                      hasCategories && editorCalendarId && canManageCategories(editorCalendarId)
+                        ? (name) => createCategory(editorCalendarId, name)
+                        : undefined
+                    }
+                    key={shownEditor.occurrence?.occurrenceKey ?? 'new'}
+                    initialValue={shownEditor.initialValue}
+                    occurrence={shownEditor.occurrence}
+                    attendeeOptions={
+                      features.attendees
+                        ? {
+                            candidates: attendeeCandidates,
+                            ownEmail: currentUserEmail,
+                            onRespond:
+                              respond && shownEditor.occurrence
+                                ? (status) => respond(shownEditor.occurrence!, status)
+                                : undefined,
+                          }
+                        : undefined
+                    }
+                    notice={
+                      shownEditor.notice ??
+                      (editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n)))
+                    }
+                    onSave={handleSave}
+                    remoteChange={editorRemoteChange}
+                    onReload={() => {
+                      closeEditor()
+                      invalidate()
+                    }}
+                    onDelete={shownEditor.occurrence ? () => requestDelete(shownEditor.occurrence!) : undefined}
+                    chat={
+                      shownEditor.occurrence && chat?.isAvailable(shownEditor.occurrence.calendarId)
+                        ? {
+                            key: getChatKey(shownEditor.occurrence),
+                            calendarId: shownEditor.occurrence.calendarId,
+                          }
+                        : undefined
+                    }
+                    initialTab={shownEditor.initialTab}
+                    onDuplicate={features.duplicate && shownEditor.occurrence && canCreate ? duplicate : undefined}
+                    onRemindersChange={
+                      setReminders && shownEditor.occurrence
+                        ? async (reminders) => {
+                            await setReminders(shownEditor.occurrence!, reminders)
+                            closeEditor()
+                          }
+                        : undefined
+                    }
+                    onClose={closeEditor}
+                  />
+                </Suspense>
               )}
 
               {isFilterOpen && (

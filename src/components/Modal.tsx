@@ -21,9 +21,14 @@ export function Modal({ title, onClose, children, variant = 'default', size = 'd
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
+    const rootNode = dialog.getRootNode() as Document | ShadowRoot
+    const previous = rootNode.activeElement instanceof HTMLElement ? rootNode.activeElement : null
     dialog.showModal()
     dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus()
-    return () => dialog.close()
+    return () => {
+      dialog.close()
+      if (previous?.isConnected) previous.focus({ preventScroll: true })
+    }
   }, [])
 
   return createPortal(
