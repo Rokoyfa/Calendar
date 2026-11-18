@@ -43,7 +43,7 @@ info:
     | `sub` | Stable user id at the host, at most 255 characters |
     | `iat`, `exp` | `exp` at most 300 seconds after `iat`, `iat` not in the future; 30 seconds clock skew at most |
     | `jti` | Random, at least 16 characters. Each `jti` is accepted once per tenant (store it until `exp`) |
-    | `email`, `name` | The user's address and name at the host; they update the account on every sign-in |
+    | `email`, `name` | The user's address and name at the host; they update the account on every sign-in. The address is not taken as confirmed: the backend sends a confirmation link to a new or changed address, and until it is confirmed `GET /invitations` returns nothing and accepting an invitation answers `403` `emailNotVerified` |
 
     **Sessions.**
     - The session is a random value of at least 256 bits in an `HttpOnly; Secure; SameSite=None` cookie with the
@@ -97,6 +97,7 @@ info:
     | `wrongPassword` | 403 | The password confirming a change is wrong |
     | `wrongCurrentPassword` | 403 | The current password is wrong when changing it |
     | `unknownTenant` | 403 | `X-Calendar-Tenant` names no known tenant |
+    | `emailNotVerified` | 403 | The email address must be confirmed first (accepting an invitation) |
     | `featureDisabled` | 403 | The tenant turned the feature off (`registration`, `attachments`, `publicLinks`, `subscriptions`, `dataExport`, …) |
     | `originNotAllowed` | 403 | `Origin` is not allowed for the tenant |
     | `routeNotFound` | 404 | The path does not exist |
@@ -122,6 +123,8 @@ info:
     | `seriesDeleted` | 409 | A detached event is restored while its series is in the trash |
     | `tooManyColors` | 409 | More than 12 custom colors |
     | `categoryExists` | 409 | A category with this name exists in the calendar |
+    | `uidTaken` | 409 | Another event in the calendar already has this `uid` |
+    | `tenantLimitReached` | 409 | The tenant reached its limit of users, teams or attachment storage |
     | `tooManyCategories` | 409 | More than 30 categories in a calendar |
     | `tooManyAttachments` | 409 | More than 20 attachments on an event |
     | `invalidLink` | 410 | The link from an email is invalid or expired |
@@ -257,6 +260,7 @@ paths:
       description: |
         Creates the account with a personal team and calendar, starts a session and sends a confirmation link.
         `409` with `emailTaken`. `403` with `featureDisabled` when the tenant turned `registration` off.
+        `409` with `tenantLimitReached` when the tenant has no room for another user.
       security: []
       requestBody:
         required: true
@@ -303,6 +307,7 @@ paths:
         Checks the token as described under "Host token sign-in", creates the user on first use (linked to `sub`) and
         starts a new session. `401` with `invalidUserToken` for any failed check, `403` with `unknownTenant` or
         `originNotAllowed`.
+        `409` with `tenantLimitReached` when a new account would exceed the user limit of the tenant.
       security: []
       parameters:
         - { $ref: '#/components/parameters/Tenant' }
@@ -319,6 +324,7 @@ paths:
         '200': { $ref: '#/components/responses/User' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
   /auth/logout:
     post:
       tags: [Auth]
@@ -423,7 +429,9 @@ paths:
       tags: [Events]
       x-feature: core
       summary: Create an event
-      description: Needs `create_entry`.
+      description: |
+        Needs `create_entry`.
+        `409` with `uidTaken` when another event of the calendar has the same `uid`.
       requestBody:
         required: true
         content:
@@ -441,6 +449,7 @@ paths:
         '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
   /events/search:
     get:
       tags: [Events]
@@ -546,6 +555,7 @@ paths:
         The calendar stays the same. Needs `update_any_entry` or, for own events, `update_own_entry`.
         `409` with `seriesHasDetached` when the recurrence is removed while detached events exist.
         `412` with `eventChanged` when `If-Match` names an older `version`. The response carries the new `version`.
+        `409` with `uidTaken` when the new `uid` belongs to another event of the calendar.
       parameters:
         - $ref: '#/components/parameters/IfMatch'
       requestBody:
@@ -661,7 +671,9 @@ paths:
       tags: [Calendars]
       x-feature: teams
       summary: Create a team with its first calendar
-      description: The caller becomes owner. `400` with `selfInvite` when the own address is in `invitations`.
+      description: |
+        The caller becomes owner. `400` with `selfInvite` when the own address is in `invitations`.
+        `409` with `tenantLimitReached` when the tenant has no room for another team.
       requestBody:
         required: true
         content:
@@ -681,6 +693,7 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '201': { $ref: '#/components/responses/CalendarSummary' }
         '400': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
   /events/{eventId}/chat:
     parameters:
       - { name: eventId, in: path, required: true, description: 'Event id, for detached occurrences the id of their series', schema: { type: string } }
@@ -1084,6 +1097,8 @@ paths:
       tags: [Invitations]
       x-feature: teams
       summary: Open invitations to the own email address
+      description: |
+        Empty while the own email address is not confirmed.
       responses:
         '401': { $ref: '#/components/responses/Problem' }
         '200':
@@ -1096,7 +1111,9 @@ paths:
       tags: [Invitations]
       x-feature: teams
       summary: Accept an invitation with the token from the mail
-      description: '`410` with `invitationExpired`.'
+      description: |
+        '`410` with `invitationExpired`.'
+        `403` with `emailNotVerified` while the own email address is not confirmed.
       requestBody:
         required: true
         content:
@@ -1111,6 +1128,7 @@ paths:
         '200': { $ref: '#/components/responses/CalendarSummaries' }
         '404': { $ref: '#/components/responses/Problem' }
         '410': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
   /invitations/{invitationId}/accept:
     parameters:
       - { $ref: '#/components/parameters/InvitationId' }
@@ -1118,13 +1136,16 @@ paths:
       tags: [Invitations]
       x-feature: teams
       summary: Accept an invitation
-      description: '`409` with `alreadyMember`, `410` with `invitationExpired`.'
+      description: |
+        '`409` with `alreadyMember`, `410` with `invitationExpired`.'
+        `403` with `emailNotVerified` while the own email address is not confirmed.
       responses:
         '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/CalendarSummaries' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
         '410': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
   /invitations/{invitationId}/decline:
     parameters:
       - { $ref: '#/components/parameters/InvitationId' }
@@ -1355,6 +1376,7 @@ paths:
         Needs `update_any_entry`, or `update_own_entry` for own events. One file per request in the form field `file`.
         At most 10 MB per file (`413` with `attachmentTooLarge`) and 20 files per event (`409` with `tooManyAttachments`).
         Keep only the file name from the upload, never a path.
+        `409` with `tenantLimitReached` when the attachment storage of the tenant is full.
       requestBody:
         required: true
         content:

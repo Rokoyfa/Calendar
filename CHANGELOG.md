@@ -22,6 +22,8 @@ Version 2 of the REST contract. Three endpoints have clearer paths, and host tok
 - New feature switch `registration` to hide the sign-up page, and the error code `featureDisabled` for features a tenant turned off
 - Rate limits: a `429` from any endpoint is shown as "Too many requests" with the waiting time from `Retry-After`, new code `rateLimited`
 - `x-feature` on every operation in `api/openapi.yaml` and a table in the developer guide: a self-hosted backend only needs the core endpoints and those of the features it turns on
+- New error codes `uidTaken` (another event in the calendar has the same `uid`), `tenantLimitReached` (user, team or attachment limit of a tenant) and `emailNotVerified` (invitations need a confirmed address), translated in all languages
+- `GET /invitations` is empty and accepting an invitation answers `403` `emailNotVerified` while the own address is not confirmed; this also applies to addresses from host tokens
 - Security rules for the public tenant service in `api/openapi.yaml` (recommendations for self-hosted backends): host token checks, sessions bound to their tenant with fixed lifetimes, `Origin` check on every change, `404` for items of other tenants, rate limits on sign-in, hashed link tokens, attachments only after a malware scan
 - Developer guide: how a host signs user tokens (key pair, claims, example with `jose`) and keeps its tenant safe
 - `api/openapi.yaml`: table of all error codes with status and meaning, `401` on every endpoint that needs a session, consistent path parameter names (`eventId` instead of `id`), and a note on serving the API under a versioned base path such as `/api/v2`

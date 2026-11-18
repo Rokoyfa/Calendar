@@ -54,6 +54,10 @@ const errors: Messages['errors'] = {
   invitationExpired: 'Esta invitación ya no es válida.',
   tooManyLoginAttempts: 'Demasiados intentos fallidos. Espera unos minutos.',
   featureDisabled: 'Esta función está desactivada para este calendario.',
+  uidTaken:
+    'Otro evento de este calendario ya usa este identificador. Impórtalo en otro calendario o elimina el otro evento.',
+  tenantLimitReached: 'Este calendario ha alcanzado su límite. Ponte en contacto con el responsable de esta página.',
+  emailNotVerified: 'Confirma primero tu dirección de correo electrónico. Te hemos enviado un enlace.',
   rateLimited: 'Demasiadas solicitudes. Espera un momento.',
   rateLimitedFor: (seconds) =>
     seconds < 60

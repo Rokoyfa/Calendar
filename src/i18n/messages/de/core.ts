@@ -54,6 +54,10 @@ export const errors: Messages['errors'] = {
   invitationExpired: 'Die Einladung ist nicht mehr gültig.',
   tooManyLoginAttempts: 'Zu viele Fehlversuche. Bitte warte ein paar Minuten.',
   featureDisabled: 'Diese Funktion ist für diesen Kalender ausgeschaltet.',
+  uidTaken:
+    'Ein anderer Termin in diesem Kalender hat bereits diese Kennung. Importiere ihn in einen anderen Kalender oder entferne den anderen Termin.',
+  tenantLimitReached: 'Dieser Kalender hat seine Grenze erreicht. Bitte wende dich an den Betreiber dieser Seite.',
+  emailNotVerified: 'Bitte bestätige zuerst deine E-Mail-Adresse. Wir haben dir einen Link geschickt.',
   rateLimited: 'Zu viele Anfragen. Bitte kurz warten.',
   rateLimitedFor: (seconds: number) =>
     seconds < 60

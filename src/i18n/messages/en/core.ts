@@ -61,6 +61,10 @@ export const errors: Record<ErrorCode, string> & {
   invitationExpired: 'This invitation is no longer valid.',
   tooManyLoginAttempts: 'Too many failed attempts. Please wait a few minutes.',
   featureDisabled: 'This feature is turned off for this calendar.',
+  uidTaken:
+    'A different event in this calendar already uses this ID. Import it into another calendar or remove the other event.',
+  tenantLimitReached: 'This calendar has reached its limit. Please contact the operator of this page.',
+  emailNotVerified: 'Please confirm your email address first. We sent you a link.',
   rateLimited: 'Too many requests. Please wait a moment.',
   rateLimitedFor: (seconds: number) =>
     seconds < 60

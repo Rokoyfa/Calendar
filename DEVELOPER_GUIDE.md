@@ -422,6 +422,10 @@ There are three ways to handle users.
 
 Every token is accepted once and for at most five minutes, so a token that shows up in a log or a browser history is useless. The full rules are in the OpenAPI file under "Host token sign-in".
 
+The address in `email` is not taken as confirmed. The first time it shows up, and after every change, the user gets a confirmation link. Until then the user can use the calendar but cannot see or accept team invitations.
+
+**Deleting users.** When a user asks you to delete their data, open the host dashboard, go to the users of your tenant and enter the user's email address and name. The dashboard checks that the user belongs to your tenant and removes the account with everything that belongs only to it; teams the user led get the next member as owner. Admins and owners can do this, viewers cannot, and every deletion is recorded in the audit log. There is no public API for it.
+
 **Keeping your tenant safe.**
 
 - Enter only your own HTTPS origins as allowed origins (`http://localhost` only for development). The backend refuses changes from other origins.

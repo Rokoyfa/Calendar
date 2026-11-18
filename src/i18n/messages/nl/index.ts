@@ -54,6 +54,10 @@ const errors: Messages['errors'] = {
   invitationExpired: 'Deze uitnodiging is niet meer geldig.',
   tooManyLoginAttempts: 'Te veel mislukte pogingen. Wacht een paar minuten.',
   featureDisabled: 'Deze functie is uitgeschakeld voor deze agenda.',
+  uidTaken:
+    'Een andere afspraak in deze agenda gebruikt deze ID al. Importeer hem in een andere agenda of verwijder de andere afspraak.',
+  tenantLimitReached: 'Deze agenda heeft zijn limiet bereikt. Neem contact op met de beheerder van deze pagina.',
+  emailNotVerified: 'Bevestig eerst je e-mailadres. We hebben je een link gestuurd.',
   rateLimited: 'Te veel verzoeken. Wacht even.',
   rateLimitedFor: (seconds) =>
     seconds < 60
