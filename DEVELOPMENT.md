@@ -225,6 +225,8 @@ cd ../TestBE && npm install
 | `E2E_API_PORT` / `E2E_APP_PORT` | `3998` / `5198` | Ports der beiden Server |
 | `E2E_DEBUG` | – | Zeigt auch die Ausgaben des Entwicklungsservers |
 
+**Mit einem eigenen Backend:** `E2E_BACKEND_DIR` auf dessen Ordner setzen. Playwright startet dort `npx tsx src/server.ts`; wird das Backend anders gestartet, den Befehl unter `webServer` in `playwright.config.ts` anpassen. Das Backend muss `PORT`, `APP_URL`, `DATA_FILE` und `ATTACHMENTS_DIR` aus der Umgebung lesen. Außerdem lesen die Tests die Bestätigungs-E-Mails über `GET /api/dev/mails` aus. Diesen Endpunkt gibt es nur im TestBE, er gehört nicht zur API in `api/openapi.yaml`. Ein eigenes Backend braucht für die Tests also einen solchen Entwicklungs-Endpunkt (Antwort: Liste von `{ to, subject, link }`) oder muss neue Konten in der Testumgebung direkt als bestätigt anlegen.
+
 Schlägt ein Test fehl, liegt unter `test-results/` ein Trace, den `npx playwright show-trace <Datei>` Schritt für Schritt abspielt. Jeder Test legt eigene Nutzer mit zufälliger E-Mail an, die Tests laufen deshalb unabhängig voneinander und parallel.
 
 ## Veröffentlichen
