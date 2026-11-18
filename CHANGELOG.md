@@ -4,11 +4,18 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ## Unreleased
 
+## 1.4.0 – 2026-11-18
+
+- Empty the trash with one button (`DELETE /calendars/:id/trash`, optional `events.emptyTrash` for custom adapters). Restore and delete for good now look different: restore in the accent color, delete in red, through the new button variant `dangerOutline`
 - Keyboard: in the day and week view the time grid is reachable with `Tab`, the arrow keys pick hour and day and `Enter` creates an event there. Closing a dialog returns the focus to where it was
 - Smaller start: the event dialog, settings, sign-in pages and shared calendars are loaded on demand. The npm build loads about a quarter less JavaScript at start (552 instead of 720 kB, gzip 140 instead of 169 kB). With the script tag, keep all files of `dist-lib/cdn` together
 - The delete dialog no longer says "cannot be undone" when the event goes to the trash
+- Browser tests with Playwright in `e2e/` (`npm run test:e2e`), run against the test backend. They are not part of the npm package
 
-- Empty the trash with one button (`DELETE /calendars/:id/trash`, optional `events.emptyTrash` for custom adapters). Restore and delete for good now look different: restore in the accent color, delete in red, through the new button variant `dangerOutline`
+### Upgrade notes
+
+- Backends can offer `DELETE /calendars/:id/trash` for the new "Empty trash" button. Without it the button is not shown
+- With the script tag, the calendar now loads more files on demand. When hosting `dist-lib/cdn` yourself, copy the whole folder as before
 
 ## 1.3.0 – 2026-11-17
 
