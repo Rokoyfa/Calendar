@@ -157,6 +157,11 @@
           "type": "boolean",
           "default": true,
           "description": "Lets users download their data as a JSON file in the settings. Signed in it needs GET /auth/me/export; in local mode it exports the browser storage."
+        },
+        "registration": {
+          "type": "boolean",
+          "default": true,
+          "description": "Shows the sign-up page. Turn it off when users only sign in through the host (getUserToken) or are created by an admin. The backend must refuse POST /auth/register too."
         }
       }
     },

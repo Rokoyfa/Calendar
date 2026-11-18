@@ -15,6 +15,8 @@ import { IsolatedRoot } from './IsolatedRoot.tsx'
 import { DEFAULT_LINK_PARAM, readLinkedPath } from './linkParam.ts'
 import { mergeCalendarOptions, type CalendarOptions } from './options.ts'
 import { useCalendarOptions } from './useCalendarOptions.ts'
+import { applyTenantConfig, usesTenant } from './tenantConfig.ts'
+import { useTenantConfig } from './useTenantConfig.ts'
 
 type ConfiguredCalendarProps = EventCallbacks &
   Pick<CalendarProps, 'dataSource' | 'getUserToken'> & {
@@ -154,13 +156,19 @@ export function CalendarWidget({
     bridge.listen(onViewChange ?? null)
   }, [bridge, onViewChange])
   const state = useCalendarOptions(config)
-  const options = state.status === 'ready' ? mergeCalendarOptions(state.options, direct) : direct
+  const pageOptions = state.status === 'ready' ? mergeCalendarOptions(state.options, direct) : direct
+  const tenantState = useTenantConfig(
+    pageOptions.tenant,
+    pageOptions.apiBaseUrl ?? DEFAULT_CONFIG.apiBaseUrl,
+    state.status === 'ready' && !dataSource && usesTenant(pageOptions),
+  )
+  const options = dataSource ? pageOptions : applyTenantConfig(pageOptions, tenantState.options ?? null)
   const routing = options.routing ?? 'memory'
 
   return (
     <IsolatedRoot className={className} style={style} autoFocus={routing === 'browser'} appearance={options.appearance}>
       <I18nProvider locale={options.locale} messages={options.messages}>
-        {state.status === 'ready' ? (
+        {state.status === 'ready' && tenantState.status === 'ready' ? (
           <ConfiguredCalendar
             options={options}
             bridge={bridge}

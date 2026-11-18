@@ -33,6 +33,7 @@ export const DEFAULT_FEATURES = {
   liveUpdates: true,
   trash: true,
   dataExport: true,
+  registration: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES

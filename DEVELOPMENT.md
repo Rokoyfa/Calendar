@@ -118,6 +118,8 @@ Getestet in einem frischen React-Projekt mit strenger Typprüfung: ein Adapter, 
 
 ### Tenants und Anmeldung über den Gastgeber
 
+**Einstellungen pro Tenant:** Mit `tenant` lädt der Kalender beim Start einmal `GET /tenant/config` (`useTenantConfig`, `lib/tenantConfig.ts`) und legt das über die Einstellungen der Seite: Standardwerte → Attribute/Props/Config-Datei → Tenant (`applyTenantConfig`). Was das Backend nicht setzt, kommt weiter von der Seite. Nicht vom Backend setzbar sind `tenant`, `storageMode`, `apiBaseUrl`, `routing` und das Feature `auth`; mit Tenant ist die Anmeldung immer an. Mit `storageMode="local"` wird `tenant` ignoriert. Schlägt die Anfrage fehl, startet der Kalender mit den Einstellungen der Seite. Der Schalter `registration` blendet die Registrierung aus (Link auf der Anmeldeseite, `/register` leitet zur Anmeldung). Das Backend muss abgeschaltete Features zusätzlich mit `403` `featureDisabled` ablehnen. Im TestBE kommt die Tenant-Konfiguration aus `tenant-config.json` (Vorlage: `tenant-config.example.json`).
+
 Mit `tenant` spricht das Widget ein Backend an, das mehrere Gastgeber bedient. Jede Anfrage trägt dann den Header `X-Calendar-Tenant`.
 
 ```html

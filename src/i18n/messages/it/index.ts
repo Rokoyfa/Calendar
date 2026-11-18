@@ -53,6 +53,7 @@ const errors: Messages['errors'] = {
   invitationNotFound: 'L’invito non è stato trovato.',
   invitationExpired: 'Questo invito non è più valido.',
   tooManyLoginAttempts: 'Troppi tentativi non riusciti. Attendi qualche minuto.',
+  featureDisabled: 'Questa funzione è disattivata per questo calendario.',
   rateLimited: 'Troppe richieste. Attendi un momento.',
   rateLimitedFor: (seconds) =>
     seconds < 60

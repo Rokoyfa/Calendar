@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { useFeatures } from '../../../context/HostContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
 import { Form } from '../../../components/Form.tsx'
@@ -17,6 +18,7 @@ const EMPTY_LOGIN: LoginInput = { email: '', password: '' }
 export function LoginPage() {
   const { m } = useI18n()
   const { login } = useAuth()
+  const { registration } = useFeatures()
   const { redirectTo, continueToTarget } = useRedirectTarget()
   const { bind, handleSubmit, isPending, error } = useForm({
     initialValues: EMPTY_LOGIN,
@@ -32,19 +34,17 @@ export function LoginPage() {
     <PageLayout
       title={m.auth.login.title}
       footer={
-        <>
-          {m.auth.login.noAccount} <Link to={withRedirect(ROUTES.register, redirectTo)}>{m.auth.login.registerLink}</Link>
-        </>
+        registration && (
+          <>
+            {m.auth.login.noAccount}{' '}
+            <Link to={withRedirect(ROUTES.register, redirectTo)}>{m.auth.login.registerLink}</Link>
+          </>
+        )
       }
     >
       <Form onSubmit={handleSubmit}>
-        <EmailField
-          {...bind('email')}
-          autoFocus
-        />
-        <CurrentPasswordField
-          {...bind('password')}
-        />
+        <EmailField {...bind('email')} autoFocus />
+        <CurrentPasswordField {...bind('password')} />
         <Link to={ROUTES.forgotPassword} className="formLink">
           {m.auth.login.forgotPassword}
         </Link>

@@ -60,6 +60,7 @@ export const errors: Record<ErrorCode, string> & {
   invitationNotFound: 'The invitation could not be found.',
   invitationExpired: 'This invitation is no longer valid.',
   tooManyLoginAttempts: 'Too many failed attempts. Please wait a few minutes.',
+  featureDisabled: 'This feature is turned off for this calendar.',
   rateLimited: 'Too many requests. Please wait a moment.',
   rateLimitedFor: (seconds: number) =>
     seconds < 60

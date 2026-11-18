@@ -1,4 +1,5 @@
-import { Link } from 'react-router'
+import { Link, Navigate } from 'react-router'
+import { useFeatures } from '../../../context/HostContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { Button } from '../../../components/Button.tsx'
 import { Form } from '../../../components/Form.tsx'
@@ -14,6 +15,13 @@ import { EmailField, NameField, NewPasswordFields } from './AuthFields.tsx'
 const EMPTY_REGISTRATION: RegisterFormValues = { name: '', email: '', password: '', passwordConfirmation: '' }
 
 export function RegisterPage() {
+  const { registration } = useFeatures()
+  const { redirectTo } = useRedirectTarget()
+  if (!registration) return <Navigate to={withRedirect(ROUTES.login, redirectTo)} replace />
+  return <RegisterForm />
+}
+
+function RegisterForm() {
   const { m } = useI18n()
   const { register } = useAuth()
   const { redirectTo, continueToTarget } = useRedirectTarget()
@@ -32,16 +40,14 @@ export function RegisterPage() {
       title={m.auth.register.title}
       footer={
         <>
-          {m.auth.register.hasAccount} <Link to={withRedirect(ROUTES.login, redirectTo)}>{m.auth.register.loginLink}</Link>
+          {m.auth.register.hasAccount}{' '}
+          <Link to={withRedirect(ROUTES.login, redirectTo)}>{m.auth.register.loginLink}</Link>
         </>
       }
     >
       <Form onSubmit={handleSubmit}>
         <NameField {...bind('name')} autoFocus />
-        <EmailField
-          isNewAccount
-          {...bind('email')}
-        />
+        <EmailField isNewAccount {...bind('email')} />
         <NewPasswordFields values={values} errors={errors} onChange={setField} />
         <ActionFeedback error={error} />
         <Button type="submit" block isPending={isPending} pendingLabel={m.auth.register.pending}>

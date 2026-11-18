@@ -17,6 +17,8 @@ Version 2 of the REST contract. Three endpoints have clearer paths; everything e
 
 ### Added
 
+- Tenant settings from the backend: with `tenant` set, the calendar loads `GET /tenant/config`, and what it sets wins over the page settings (features, look, language, views). Storage, connection and link settings stay with the page, and sign-in is always on. With `storageMode="local"` the tenant is ignored
+- New feature switch `registration` to hide the sign-up page, and the error code `featureDisabled` for features a tenant turned off
 - Rate limits: a `429` from any endpoint is shown as "Too many requests" with the waiting time from `Retry-After`, new code `rateLimited`
 - `api/openapi.yaml`: table of all error codes with status and meaning, `401` on every endpoint that needs a session, consistent path parameter names (`eventId` instead of `id`), and a note on serving the API under a versioned base path such as `/api/v2`
 

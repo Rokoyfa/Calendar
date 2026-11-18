@@ -35,6 +35,7 @@ export default defineConfig({
         APP_URL,
         DATA_FILE: join(dataDir, 'data.json'),
         ATTACHMENTS_DIR: join(dataDir, 'attachments'),
+        TENANT_CONFIG_FILE: join(dataDir, 'tenant-config.json'),
       },
     },
     {

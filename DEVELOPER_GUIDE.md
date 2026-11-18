@@ -184,6 +184,7 @@ Everything beyond the core calendar (views, creating, editing, moving and deleti
 | `liveUpdates` | `feature-live-updates` | on | Changes by others, or in other tabs, show up at once, see [Live updates](#18-live-updates) | WebSocket `/chat/socket` with `event.changed` messages |
 | `trash` | `feature-trash` | on | Trash in the calendar settings, see [Trash](#19-trash) | `GET`/`DELETE /calendars/:id/trash`, `DELETE /calendars/:id/trash/:eventId`, `/events/:id/restore` |
 | `dataExport` | `feature-data-export` | on | "Data" tab in the settings to download one's own data, see [Data export](#20-data-export) | `GET /auth/me/export` |
+| `registration` | `feature-registration` | on | Sign-up page and the link to it on the sign-in page | `POST /auth/register` |
 | `publicLinks` | `feature-public-links` | on | Public read-only links and the page they open, see [Public links](#14-read-only-mode-and-public-links) | `/calendars/:id/share`, `/shared/:token` |
 
 Good to know:
@@ -376,7 +377,13 @@ There are three ways to handle users.
 - In this mode there are no sign-in, registration or password pages, no sign-out button and no account tab. The account belongs to your site.
 - With `null` the calendar works like for guests, in the browser.
 
-**Tenants.** `tenant` is for a backend that serves several host pages. Every request then carries the header `X-Calendar-Tenant`, and sign-in is on. What the backend has to check is described in the OpenAPI file.
+**Tenants.** `tenant` is for a backend that serves several host pages. Every request then carries the header `X-Calendar-Tenant`, and sign-in is always on, whatever the `auth` feature says. With `storageMode="local"` the tenant is ignored and everything stays in the browser. What the backend has to check is described in the OpenAPI file.
+
+- **The tenant id is public.** It only says which tenant a request belongs to and is no secret. The secret is the key your server signs the `getUserToken` tokens with; it never goes into the page.
+- **Settings from the backend.** With `tenant` set, the calendar loads `GET /tenant/config` once at start. What the backend sets there wins over the page: built-in defaults, then the settings on the page (attributes, props or config file), then the tenant settings. Whatever the backend leaves out still comes from the page. So a host can change features, look, language and views in an admin dashboard without touching the page. Without `tenant` nothing changes: the page alone decides.
+- **What stays with the page.** Where the data goes and how to reach it (`storageMode`, `apiBaseUrl`, `apiTimeoutMs`, `tenant`), the links (`routing`, `basename`, `linkParam`) and `getUserToken` cannot be set by the backend. The `auth` feature is ignored in both places, because a tenant always signs in. If the request fails, the calendar starts with the page settings only.
+- **Turning features off for real.** The calendar only hides a feature. Your backend must also refuse it, with `403` and the code `featureDisabled`.
+- **No open sign-up.** When users only come through your page, turn `registration` off in the tenant settings. The sign-up page then disappears, and the backend refuses `POST /auth/register`. Otherwise anyone who knows the public tenant id could create accounts in your tenant.
 
 ## 8. Data adapters
 

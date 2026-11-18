@@ -49,6 +49,7 @@ info:
     | `wrongPassword` | 403 | The password confirming a change is wrong |
     | `wrongCurrentPassword` | 403 | The current password is wrong when changing it |
     | `unknownTenant` | 403 | `X-Calendar-Tenant` names no known tenant |
+    | `featureDisabled` | 403 | The tenant turned the feature off (`registration`, `attachments`, `publicLinks`, `subscriptions`, `dataExport`, …) |
     | `originNotAllowed` | 403 | `Origin` is not allowed for the tenant |
     | `routeNotFound` | 404 | The path does not exist |
     | `methodNotAllowed` | 405 | The method is not allowed on this path |
@@ -104,6 +105,8 @@ tags:
       Live updates come over a WebSocket at `{base}/chat/socket`, see the Developer Guide section “Event chat”.
       The same WebSocket carries `{ type: 'event.changed', calendarId, eventId, version, changedBy }` after every change
       to an event (`version` is `null` when it was deleted), see the Developer Guide section “Live updates”.
+  - name: Tenant
+    description: Settings that the host sets for its tenant, for example in an admin dashboard.
   - name: Holidays
   - name: Trash
     description: Deleted events stay in the trash of their calendar for 30 days and can be restored.
@@ -199,7 +202,7 @@ paths:
       summary: Register
       description: |
         Creates the account with a personal team and calendar, starts a session and sends a confirmation link.
-        `409` with `emailTaken`.
+        `409` with `emailTaken`. `403` with `featureDisabled` when the tenant turned `registration` off.
       security: []
       requestBody:
         required: true
@@ -1029,6 +1032,25 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Declined }
         '404': { $ref: '#/components/responses/Problem' }
+  /tenant/config:
+    get:
+      tags: [Tenant]
+      summary: Settings of the tenant
+      description: |
+        Public, no session. The tenant comes from `X-Calendar-Tenant`. The component loads this once at start when
+        `tenant` is set. What this sets wins over the page: built-in defaults, then the settings on the page, then
+        this. Fields left out still come from the page. Storage, connection and link settings (`tenant`,
+        `storageMode`, `apiBaseUrl`, `routing`) and the `auth` feature are ignored here; a tenant always signs in.
+        Answer `404` or an empty object when the tenant has no settings. May be cached for a short time.
+      security: []
+      responses:
+        '200':
+          description: Settings, the same fields as the configuration file (see `schema/calendar-config.schema.json`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantConfig' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { description: The tenant has no settings }
   /holidays:
     get:
       tags: [Holidays]
@@ -1787,6 +1809,32 @@ components:
       type: string
       default: auto
       description: '`auto` (zone given by the host, otherwise the system zone) or an IANA zone such as `Europe/Berlin`. Events are shown in this zone.'
+    TenantConfig:
+      type: object
+      description: |
+        Subset of the configuration file. A feature turned off here must also be refused by the backend with `403`
+        `featureDisabled`, the component only hides it.
+      properties:
+        features:
+          type: object
+          additionalProperties: { type: boolean }
+          examples: [{ registration: false, attachments: true, publicLinks: false }]
+        views: { type: array, items: { $ref: '#/components/schemas/CalendarView' } }
+        initialView: { $ref: '#/components/schemas/CalendarView' }
+        locale: { type: string, examples: ['de-DE'] }
+        theme: { type: string, enum: [light, dark] }
+        timeZone: { type: string }
+        holidays: { type: string }
+        mapUrl: { type: string }
+        readOnly: { type: boolean }
+        appearance:
+          type: object
+          properties:
+            accentColor: { type: string }
+            fontFamily: { type: string }
+            radius: { type: number, minimum: 0, maximum: 24 }
+            density: { type: string, enum: [comfortable, compact] }
+        messages: { type: object, description: Text overrides per language }
     Preferences:
       type: object
       required: [theme, defaultView, mobileDefaultView, locale, timeZone, holidays, emailInvites, emailChanges, emailReminders, emailChat]

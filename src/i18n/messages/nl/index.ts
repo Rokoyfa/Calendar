@@ -53,6 +53,7 @@ const errors: Messages['errors'] = {
   invitationNotFound: 'De uitnodiging is niet gevonden.',
   invitationExpired: 'Deze uitnodiging is niet meer geldig.',
   tooManyLoginAttempts: 'Te veel mislukte pogingen. Wacht een paar minuten.',
+  featureDisabled: 'Deze functie is uitgeschakeld voor deze agenda.',
   rateLimited: 'Te veel verzoeken. Wacht even.',
   rateLimitedFor: (seconds) =>
     seconds < 60

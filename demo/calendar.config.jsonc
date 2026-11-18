@@ -113,7 +113,11 @@
 
     // "Data" tab in the settings to download one's own data as a JSON file (GDPR Art. 20).
     // Signed in it needs GET /auth/me/export; in local mode it exports what the browser stores.
-    "dataExport": true
+    "dataExport": true,
+
+    // Sign-up page. Turn it off when users only sign in through the host page or are created by an admin.
+    // The backend must refuse POST /auth/register as well.
+    "registration": true
   },
 
   // Shows events without letting anyone create, change, move, delete or import them.
