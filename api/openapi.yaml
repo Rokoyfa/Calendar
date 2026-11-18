@@ -13,15 +13,63 @@ info:
       recipient's stored `locale`, otherwise this header, otherwise English.
     - Errors are `Problem` objects. The component translates known `code` values itself and otherwise shows `message`.
 
+    **What a backend needs.** Every operation carries `x-feature`. `core` is needed as soon as the component talks to
+    a backend (`storageMode: remote` or the `auth` feature). Every other value is only needed when that feature is on
+    (see the feature table in the Developer Guide): with `features: { chat: false }` the chat endpoints are never
+    called. `getUserToken` is only needed for sign-in through the host page, `tenant` only for a tenant backend.
+
+    **Public tenant service.** The following sections (tenants, host tokens, sessions, protection on every request)
+    are binding for the public multi-tenant service that `tenantDataSource` talks to. A self-hosted backend may follow
+    them as recommendations; it only has to answer each endpoint as described below, and may use its own token format
+    for `POST /auth/token`.
+
     **Tenants** (public multi-tenant backend, `tenantDataSource`): every request carries the header
     `X-Calendar-Tenant: <public tenant id>`. A backend with exactly one tenant may ignore it. A multi-tenant backend
-    answers `403` with `unknownTenant` for an unknown id and `403` with `originNotAllowed` when `Origin` is not in the
-    tenant's allowed domains, and scopes every query to the tenant.
+    answers `403` with `unknownTenant` for an unknown or suspended id and `403` with `originNotAllowed` when `Origin` is
+    not in the tenant's allowed origins. The tenant id is public; it never proves anything on its own.
 
     **Host token sign-in** (`getUserToken`): when `GET /auth/me` answers `401`, the component asks the host page for a
-    short-lived token (a JWT signed with the tenant key, claims `tenant`, `sub`, `name`, `email`, `exp`) and exchanges it at
-    `POST /auth/token` for a normal session. The same happens when any request answers `401` later. Password endpoints
-    are not used in this mode.
+    token and exchanges it at `POST /auth/token` for a session. The same happens when any request answers `401` later.
+    Password endpoints are not used in this mode. The token is a JWT that the host's server signs; the private key
+    never leaves the host's server. The backend accepts it only if all of these hold, and otherwise answers `401`
+    `invalidUserToken` without saying which check failed:
+
+    | Part | Rule |
+    | --- | --- |
+    | `alg` | `ES256`, `EdDSA` or `RS256` (at least 2048 bit). Never `none` or a shared secret (`HS*`) |
+    | `kid` | Id of an active, not revoked, not expired key of this tenant; `alg` must match that key |
+    | `iss` | The public tenant id, equal to `X-Calendar-Tenant` |
+    | `aud` | `rokoyfa-calendar` |
+    | `sub` | Stable user id at the host, at most 255 characters |
+    | `iat`, `exp` | `exp` at most 300 seconds after `iat`, `iat` not in the future; 30 seconds clock skew at most |
+    | `jti` | Random, at least 16 characters. Each `jti` is accepted once per tenant (store it until `exp`) |
+    | `email`, `name` | The user's address and name at the host; they update the account on every sign-in |
+
+    **Sessions.**
+    - The session is a random value of at least 256 bits in an `HttpOnly; Secure; SameSite=None` cookie with the
+      `__Host-` prefix. Only its hash is stored.
+    - A new session is created on every sign-in; any session sent along is ended.
+    - A session from a host token ends after 30 minutes without use and after 12 hours at the latest; the component
+      then signs in again by itself. A password session ends after 7 days without use and after 30 days at the latest.
+    - A session belongs to the tenant it was created in. A request whose session belongs to another tenant than
+      `X-Calendar-Tenant` gets `401` as if there were no session.
+
+    **Protection on every request.**
+    - Every query is limited to the tenant of the request and to what the user may see. Items of other tenants or
+      without access answer `404` (never `403`), so ids cannot be probed.
+    - Requests that change something (`POST`, `PUT`, `PATCH`, `DELETE`) with a session cookie need an `Origin` header
+      from the tenant's allowed origins, otherwise `403` `originNotAllowed`. Together with `Content-Type:
+      application/json` this blocks cross-site request forgery.
+    - The WebSocket (`/chat/socket`) checks `Origin`, the session and its tenant on connect, and closes when the
+      session ends.
+    - CORS headers are only sent for allowed origins. CORS only limits browsers; it is not access control.
+    - `POST /auth/token`, `POST /auth/login`, `POST /auth/register` and the password reset are rate limited per
+      tenant, IP address and account (`429`).
+    - Links in emails, public links and feed addresses carry random tokens of at least 256 bits. Only their hash is
+      used for look-ups.
+    - Attachments are only served after a malware scan, by the backend itself (never through a direct storage
+      address), with `Content-Disposition: attachment` and `X-Content-Type-Options: nosniff`.
+    - Responses carry `Cache-Control: no-store`, except `GET /tenant/config` and feeds.
 
     **Versioning.** This is version 2 of the contract. Serve it under a versioned base path such as `/api/v2` and set
     the component's `apiBaseUrl` (`api-base-url`) to it; a later major version can then run next to it. Changes within
@@ -120,6 +168,7 @@ paths:
   /auth/me/export:
     get:
       tags: [Auth]
+      x-feature: dataExport
       summary: Download the own data (GDPR Art. 20)
       description: |
         Everything stored for the signed-in user as one JSON file: profile, preferences, colors, memberships,
@@ -137,6 +186,7 @@ paths:
   /auth/me:
     get:
       tags: [Auth]
+      x-feature: auth
       summary: Current user
       security: []
       responses:
@@ -144,6 +194,7 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
     patch:
       tags: [Auth]
+      x-feature: auth
       summary: Change name
       requestBody:
         required: true
@@ -160,6 +211,7 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Auth]
+      x-feature: auth
       summary: Delete account
       description: Deletes the account, sessions, preferences, the personal team and teams the user was alone in.
       requestBody:
@@ -179,6 +231,7 @@ paths:
   /auth/me/password:
     post:
       tags: [Auth]
+      x-feature: auth
       summary: Change password
       description: Ends all other sessions of the user. `403` with `wrongCurrentPassword`.
       requestBody:
@@ -199,6 +252,7 @@ paths:
   /auth/register:
     post:
       tags: [Auth]
+      x-feature: registration
       summary: Register
       description: |
         Creates the account with a personal team and calendar, starts a session and sends a confirmation link.
@@ -222,6 +276,7 @@ paths:
   /auth/login:
     post:
       tags: [Auth]
+      x-feature: auth
       summary: Sign in
       description: '`401` with `invalidCredentials`, `429` with `tooManyLoginAttempts` after 5 failures in 15 minutes.'
       security: []
@@ -242,10 +297,12 @@ paths:
   /auth/token:
     post:
       tags: [Auth]
+      x-feature: getUserToken
       summary: Sign in with a token issued by the host page
       description: |
-        Verifies signature, expiry and tenant, creates the user on first use (linked to `sub`) and starts a session.
-        `401` with `invalidUserToken`, `403` with `unknownTenant` or when token sign-in is disabled for the tenant.
+        Checks the token as described under "Host token sign-in", creates the user on first use (linked to `sub`) and
+        starts a new session. `401` with `invalidUserToken` for any failed check, `403` with `unknownTenant` or
+        `originNotAllowed`.
       security: []
       parameters:
         - { $ref: '#/components/parameters/Tenant' }
@@ -257,7 +314,7 @@ paths:
               type: object
               required: [token]
               properties:
-                token: { type: string, description: JWT signed with a key of the tenant }
+                token: { type: string, description: JWT signed by the host's server with an asymmetric key of the tenant }
       responses:
         '200': { $ref: '#/components/responses/User' }
         '401': { $ref: '#/components/responses/Problem' }
@@ -265,6 +322,7 @@ paths:
   /auth/logout:
     post:
       tags: [Auth]
+      x-feature: auth
       summary: Sign out
       security: []
       responses:
@@ -272,6 +330,7 @@ paths:
   /auth/password-reset:
     post:
       tags: [Auth]
+      x-feature: auth
       summary: Request a password reset link
       description: Always answers 204, also for unknown addresses. The link is valid for one hour.
       security: []
@@ -289,6 +348,7 @@ paths:
   /auth/password-reset/confirm:
     post:
       tags: [Auth]
+      x-feature: auth
       summary: Set a new password with a reset token
       description: Ends all sessions. `410` with `invalidLink`.
       security: []
@@ -308,6 +368,7 @@ paths:
   /auth/verify-email:
     post:
       tags: [Auth]
+      x-feature: auth
       summary: Confirm the email address
       description: '`410` with `invalidLink`.'
       security: []
@@ -326,6 +387,7 @@ paths:
   /auth/verify-email/resend:
     post:
       tags: [Auth]
+      x-feature: auth
       summary: Send a new confirmation link
       responses:
         '204': { description: Sent }
@@ -333,6 +395,7 @@ paths:
   /events:
     get:
       tags: [Events]
+      x-feature: core
       summary: List events
       description: |
         Either `from`, `to` and at least one `calendarId` (events in the range and all series that can occur in it),
@@ -358,6 +421,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
     post:
       tags: [Events]
+      x-feature: core
       summary: Create an event
       description: Needs `create_entry`.
       requestBody:
@@ -380,6 +444,7 @@ paths:
   /events/search:
     get:
       tags: [Events]
+      x-feature: search
       summary: Search events
       description: |
         Events and series whose title, location, description or links contain `q` (case-insensitive), in the given calendars.
@@ -405,6 +470,7 @@ paths:
       - { name: eventId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Events]
+      x-feature: attendees
       summary: Answer an event invitation
       description: Sets the status of the attendee whose email is the signed-in user's. Allowed for every attendee with read access. `403` if the user is not an attendee.
       requestBody:
@@ -427,6 +493,7 @@ paths:
       - { name: eventId, in: path, required: true, schema: { type: string } }
     put:
       tags: [Events]
+      x-feature: reminders
       summary: Set the own reminders of an event
       description: Changes only the reminders of the signed-in user. Allowed with read access, so members without edit rights can be reminded too.
       requestBody:
@@ -446,6 +513,7 @@ paths:
   /events/email-response:
     post:
       tags: [Events]
+      x-feature: attendees
       summary: Answer an invitation from an email link
       description: No session needed. The token comes from the invitation email (`/respond?status=…&token=…` on the host page) and stands for one attendee of one event.
       security: []
@@ -472,6 +540,7 @@ paths:
       - { name: eventId, in: path, required: true, schema: { type: string } }
     put:
       tags: [Events]
+      x-feature: core
       summary: Replace an event
       description: |
         The calendar stays the same. Needs `update_any_entry` or, for own events, `update_own_entry`.
@@ -494,6 +563,7 @@ paths:
         '412': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Events]
+      x-feature: core
       summary: Delete an event
       description: |
         Moves the event, and the detached events of a series, to the trash of its calendar. They can be restored
@@ -513,6 +583,7 @@ paths:
       - $ref: '#/components/parameters/CalendarId'
     get:
       tags: [Trash]
+      x-feature: trash
       summary: Deleted events of a calendar
       description: |
         Newest first, one entry per deletion. Detached events deleted together with their series are not listed on
@@ -529,6 +600,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Trash]
+      x-feature: trash
       summary: Empty the trash of a calendar
       description: |
         Deletes for good every entry the user may delete (all with `delete_any_entry`, own ones with
@@ -550,6 +622,7 @@ paths:
       - { name: eventId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Trash]
+      x-feature: trash
       summary: Restore an event from the trash
       description: |
         Restores the event with the same id, its attachments and chat, together with the detached events deleted with it.
@@ -567,6 +640,7 @@ paths:
       - { name: eventId, in: path, required: true, description: 'Id of the deleted event', schema: { type: string } }
     delete:
       tags: [Trash]
+      x-feature: trash
       summary: Delete an event for good
       description: Removes it from the trash with its detached events, attachments and chat. Needs the right to delete the event.
       responses:
@@ -577,6 +651,7 @@ paths:
   /calendars:
     get:
       tags: [Calendars]
+      x-feature: core
       summary: Calendars of the user
       description: Personal calendar first, then team calendars by team name.
       responses:
@@ -584,6 +659,7 @@ paths:
         '200': { $ref: '#/components/responses/CalendarSummaries' }
     post:
       tags: [Calendars]
+      x-feature: teams
       summary: Create a team with its first calendar
       description: The caller becomes owner. `400` with `selfInvite` when the own address is in `invitations`.
       requestBody:
@@ -611,6 +687,7 @@ paths:
       - { name: date, in: query, required: false, description: 'Required for recurring events: the original date of the occurrence. Not allowed for single events.', schema: { $ref: '#/components/schemas/ISODate' } }
     get:
       tags: [Chat]
+      x-feature: chat
       summary: Messages of an event chat
       description: Oldest first. Without `before` the newest page. Every member of the team calendar may read. `400` with `personalTeam` in personal calendars.
       parameters:
@@ -627,6 +704,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
     post:
       tags: [Chat]
+      x-feature: chat
       summary: Write a message
       description: Every member of the team calendar may write. Marks the chat as read for the author, sends `message.created` over the socket to all members and an email to attendees who want it.
       requestBody:
@@ -649,6 +727,7 @@ paths:
       - { name: date, in: query, required: false, schema: { $ref: '#/components/schemas/ISODate' } }
     post:
       tags: [Chat]
+      x-feature: chat
       summary: Mark the chat as read
       responses:
         '401': { $ref: '#/components/responses/Problem' }
@@ -658,6 +737,7 @@ paths:
       - { name: messageId, in: path, required: true, schema: { type: string } }
     patch:
       tags: [Chat]
+      x-feature: chat
       summary: Edit an own message
       requestBody:
         required: true
@@ -675,6 +755,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Chat]
+      x-feature: chat
       summary: Delete a message
       description: Own messages, or any message with `manage_calendars` (owner, admin, manager). Sends `message.deleted` over the socket.
       responses:
@@ -685,6 +766,7 @@ paths:
   /chat/unread:
     get:
       tags: [Chat]
+      x-feature: chat
       summary: Unread messages per chat
       description: Messages of others newer than the user's last read time, only chats with at least one.
       parameters:
@@ -706,6 +788,7 @@ paths:
       - { $ref: '#/components/parameters/CalendarId' }
     get:
       tags: [Calendars]
+      x-feature: subscriptions
       summary: Own subscription link
       responses:
         '401': { $ref: '#/components/responses/Problem' }
@@ -717,6 +800,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
     post:
       tags: [Calendars]
+      x-feature: subscriptions
       summary: Create a new subscription link
       description: Replaces an existing link of this user for this calendar.
       responses:
@@ -729,6 +813,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Calendars]
+      x-feature: subscriptions
       summary: End the subscription
       responses:
         '401': { $ref: '#/components/responses/Problem' }
@@ -738,6 +823,7 @@ paths:
       - { name: token, in: path, required: true, schema: { type: string } }
     get:
       tags: [Calendars]
+      x-feature: subscriptions
       summary: Calendar subscription
       description: No session needed. The calendar as iCalendar with the subscriber's own reminders as alarms and the category names as `CATEGORIES`. `404` when the token is unknown or the user is no longer a member.
       security: []
@@ -753,6 +839,7 @@ paths:
       - { $ref: '#/components/parameters/CalendarId' }
     patch:
       tags: [Calendars]
+      x-feature: core
       summary: Change name or color
       description: Needs `manage_calendars`.
       requestBody:
@@ -772,6 +859,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Calendars]
+      x-feature: teams
       summary: Delete a calendar of a team
       description: Needs `manage_calendars`. `409` with `lastCalendar` for the last calendar of a team.
       responses:
@@ -784,6 +872,7 @@ paths:
       - { $ref: '#/components/parameters/CalendarId' }
     put:
       tags: [Calendars]
+      x-feature: teams
       summary: Personal display settings for a team calendar
       description: '`409` with `personalTeam` for the personal calendar.'
       requestBody:
@@ -804,6 +893,7 @@ paths:
       - { $ref: '#/components/parameters/TeamId' }
     patch:
       tags: [Teams]
+      x-feature: teams
       summary: Change team name or description
       description: Needs `manage_team`. `409` with `personalTeam`.
       requestBody:
@@ -822,6 +912,7 @@ paths:
         '409': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Teams]
+      x-feature: teams
       summary: Delete a team
       description: Needs `delete_team`. Deletes calendars, events and invitations. `409` with `personalTeam`.
       responses:
@@ -834,6 +925,7 @@ paths:
       - { $ref: '#/components/parameters/TeamId' }
     post:
       tags: [Teams]
+      x-feature: teams
       summary: Add a calendar to a team
       description: Needs `manage_calendars`.
       requestBody:
@@ -855,6 +947,7 @@ paths:
       - { $ref: '#/components/parameters/TeamId' }
     delete:
       tags: [Teams]
+      x-feature: teams
       summary: Leave a team
       description: '`409` with `personalTeam` or `lastOwner`.'
       responses:
@@ -866,6 +959,7 @@ paths:
       - { $ref: '#/components/parameters/TeamId' }
     post:
       tags: [Teams]
+      x-feature: teams
       summary: Make another member owner
       description: |
         Only for owners. The new owner gets `owner`, the caller becomes `admin`.
@@ -891,6 +985,7 @@ paths:
       - { $ref: '#/components/parameters/TeamId' }
     get:
       tags: [Teams]
+      x-feature: teams
       summary: Members of a team
       responses:
         '401': { $ref: '#/components/responses/Problem' }
@@ -905,6 +1000,7 @@ paths:
       - { name: userId, in: path, required: true, schema: { type: string } }
     patch:
       tags: [Teams]
+      x-feature: teams
       summary: Change a member's role
       description: Needs `manage_members` and a role above the target and the new role. `409` with `lastOwner`.
       requestBody:
@@ -927,6 +1023,7 @@ paths:
         '409': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Teams]
+      x-feature: teams
       summary: Remove a member
       description: Members can remove themselves. `409` with `lastOwner`.
       responses:
@@ -939,6 +1036,7 @@ paths:
       - { $ref: '#/components/parameters/TeamId' }
     get:
       tags: [Invitations]
+      x-feature: teams
       summary: Open invitations of a team
       description: Needs `invite_members`.
       responses:
@@ -950,6 +1048,7 @@ paths:
               schema: { type: array, items: { $ref: '#/components/schemas/TeamInvitation' } }
     post:
       tags: [Invitations]
+      x-feature: teams
       summary: Invite by email
       description: |
         Needs `invite_members` and a role above the invited role. Valid for 7 days.
@@ -974,6 +1073,7 @@ paths:
       - { $ref: '#/components/parameters/InvitationId' }
     delete:
       tags: [Invitations]
+      x-feature: teams
       summary: Withdraw an invitation
       responses:
         '401': { $ref: '#/components/responses/Problem' }
@@ -982,6 +1082,7 @@ paths:
   /invitations:
     get:
       tags: [Invitations]
+      x-feature: teams
       summary: Open invitations to the own email address
       responses:
         '401': { $ref: '#/components/responses/Problem' }
@@ -993,6 +1094,7 @@ paths:
   /invitations/accept:
     post:
       tags: [Invitations]
+      x-feature: teams
       summary: Accept an invitation with the token from the mail
       description: '`410` with `invitationExpired`.'
       requestBody:
@@ -1014,6 +1116,7 @@ paths:
       - { $ref: '#/components/parameters/InvitationId' }
     post:
       tags: [Invitations]
+      x-feature: teams
       summary: Accept an invitation
       description: '`409` with `alreadyMember`, `410` with `invitationExpired`.'
       responses:
@@ -1027,6 +1130,7 @@ paths:
       - { $ref: '#/components/parameters/InvitationId' }
     post:
       tags: [Invitations]
+      x-feature: teams
       summary: Decline an invitation
       responses:
         '401': { $ref: '#/components/responses/Problem' }
@@ -1035,6 +1139,7 @@ paths:
   /tenant/config:
     get:
       tags: [Tenant]
+      x-feature: tenant
       summary: Settings of the tenant
       description: |
         Public, no session. The tenant comes from `X-Calendar-Tenant`. The component loads this once at start when
@@ -1054,6 +1159,7 @@ paths:
   /holidays:
     get:
       tags: [Holidays]
+      x-feature: holidays
       summary: Public holidays of a region
       description: |
         Optional. Only called with `holiday-source="backend"`. Without it, or when this request fails, the component computes holidays itself.
@@ -1077,6 +1183,7 @@ paths:
   /preferences:
     get:
       tags: [Preferences]
+      x-feature: core
       summary: Preferences of the user
       description: Defaults until something is stored.
       responses:
@@ -1084,6 +1191,7 @@ paths:
         '200': { $ref: '#/components/responses/Preferences' }
     patch:
       tags: [Preferences]
+      x-feature: core
       summary: Change single preferences
       requestBody:
         required: true
@@ -1109,12 +1217,14 @@ paths:
   /colors:
     get:
       tags: [Preferences]
+      x-feature: customColors
       summary: Custom colors in the order they were added
       responses:
         '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Colors' }
     post:
       tags: [Preferences]
+      x-feature: customColors
       summary: Add a custom color
       description: An existing color is not added twice. `409` with `tooManyColors` from 12 colors.
       requestBody:
@@ -1134,6 +1244,7 @@ paths:
   /colors/{color}:
     delete:
       tags: [Preferences]
+      x-feature: customColors
       summary: Remove a custom color
       parameters:
         - name: color
@@ -1147,6 +1258,7 @@ paths:
   /categories:
     get:
       tags: [Categories]
+      x-feature: categories
       summary: Categories of one or more calendars
       parameters:
         - name: calendarId
@@ -1167,6 +1279,7 @@ paths:
       - { $ref: '#/components/parameters/CalendarId' }
     post:
       tags: [Categories]
+      x-feature: categories
       summary: Create a category
       description: Needs `manage_calendars`. `409` with `categoryExists` when the name is taken in this calendar (compared without case), `409` with `tooManyCategories` from 30 categories.
       requestBody:
@@ -1189,6 +1302,7 @@ paths:
       - { name: categoryId, in: path, required: true, schema: { type: string } }
     patch:
       tags: [Categories]
+      x-feature: categories
       summary: Rename a category
       description: Needs `manage_calendars`. `409` with `categoryExists` when the name is taken.
       requestBody:
@@ -1209,6 +1323,7 @@ paths:
         '409': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Categories]
+      x-feature: categories
       summary: Delete a category
       description: Needs `manage_calendars`. Also removes the category from all events.
       responses:
@@ -1221,6 +1336,7 @@ paths:
       - { name: eventId, in: path, required: true, schema: { type: string } }
     get:
       tags: [Attachments]
+      x-feature: attachments
       summary: Attachments of an event
       description: For every member who can see the event. A series has one set of attachments for all its occurrences; a detached occurrence has its own.
       responses:
@@ -1233,6 +1349,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
     post:
       tags: [Attachments]
+      x-feature: attachments
       summary: Upload an attachment
       description: |
         Needs `update_any_entry`, or `update_own_entry` for own events. One file per request in the form field `file`.
@@ -1264,6 +1381,7 @@ paths:
       - { name: attachmentId, in: path, required: true, schema: { type: string } }
     get:
       tags: [Attachments]
+      x-feature: attachments
       summary: Download an attachment
       description: |
         The file as uploaded. Uploaded files are untrusted: always answer with
@@ -1282,6 +1400,7 @@ paths:
       - { name: attachmentId, in: path, required: true, schema: { type: string } }
     delete:
       tags: [Attachments]
+      x-feature: attachments
       summary: Delete an attachment
       description: Same rights as uploading. Deleting an event, calendar or team deletes its attachments too.
       responses:
@@ -1294,6 +1413,7 @@ paths:
       - { $ref: '#/components/parameters/CalendarId' }
     get:
       tags: [Sharing]
+      x-feature: publicLinks
       summary: Public link of the calendar
       description: Needs `manage_calendars`. There is one link per calendar, shared by everyone who may manage it.
       responses:
@@ -1307,6 +1427,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
     post:
       tags: [Sharing]
+      x-feature: publicLinks
       summary: Create a new public link
       description: Replaces an existing link, which stops working at once. The token must not be guessable.
       responses:
@@ -1319,6 +1440,7 @@ paths:
         '403': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Sharing]
+      x-feature: publicLinks
       summary: Stop sharing
       responses:
         '401': { $ref: '#/components/responses/Problem' }
@@ -1329,6 +1451,7 @@ paths:
       - { name: token, in: path, required: true, schema: { type: string } }
     get:
       tags: [Sharing]
+      x-feature: publicLinks
       summary: A shared calendar
       description: No session needed. `404` with `shareNotFound` when the token is unknown or sharing was stopped.
       security: []
@@ -1344,6 +1467,7 @@ paths:
       - { name: token, in: path, required: true, schema: { type: string } }
     get:
       tags: [Sharing]
+      x-feature: publicLinks
       summary: Events of a shared calendar
       description: |
         No session needed. Same rules for the range as `GET /events`.

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useFeatures } from '../../../context/HostContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { PERSONAL_CALENDAR } from '../constants/calendars.ts'
@@ -29,7 +30,11 @@ type CalendarsProviderProps = {
 export function CalendarsProvider({ repository, storageScope, children }: CalendarsProviderProps) {
   const { m } = useI18n()
   const loadCalendars = useCallback(() => repository.list(), [repository])
-  const loadInvitations = useCallback(() => repository.listInvitations(), [repository])
+  const { teams } = useFeatures()
+  const loadInvitations = useCallback(
+    () => (teams ? repository.listInvitations() : Promise.resolve(NO_INVITATIONS)),
+    [repository, teams],
+  )
   const {
     data: storedCalendars,
     error,

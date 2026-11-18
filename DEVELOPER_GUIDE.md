@@ -159,12 +159,14 @@ Everything beyond the core calendar (views, creating, editing, moving and deleti
 <calendar-widget storage-mode="remote" feature-auth feature-chat="false" feature-subscriptions="false" views="week month"></calendar-widget>
 ```
 
+Your backend only needs the endpoints of the features that are on, plus a small core (see [Backend](#10-backend)).
+
 | Feature | Attribute | Default | What it covers | Your backend needs |
 | --- | --- | --- | --- | --- |
-| `auth` | `feature-auth` | off | Sign-in, registration, accounts | `/auth/*` |
-| `teams` | `feature-teams` | on | Team calendars, members, roles, invitations | `/calendars`, `/teams/*`, `/invitations` |
+| `auth` | `feature-auth` | off | Sign-in and accounts | `/auth/me`, `/auth/login`, `/auth/logout`, `/auth/me/password`, `/auth/password-reset*`, `/auth/verify-email*` |
+| `teams` | `feature-teams` | on | Team calendars, members, roles, invitations | `POST /calendars`, `DELETE /calendars/:id`, `PUT /calendars/:id/display`, `/teams/*`, `/invitations/*` |
 | `chat` | `feature-chat` | on | Chat per event in team calendars | Chat endpoints and the WebSocket, see [Event chat](#11-event-chat) |
-| `attendees` | `feature-attendees` | on | Inviting members to events, replies | `POST /events/:id/response` |
+| `attendees` | `feature-attendees` | on | Inviting members to events, replies | `POST /events/:id/response`, `POST /events/email-response` |
 | `recurrence` | `feature-recurrence` | on | Creating and editing recurring events | – |
 | `reminders` | `feature-reminders` | on | Reminders and their notifications | `PUT /events/:id/reminders` for members without edit rights |
 | `links` | `feature-links` | on | Website and other links on events | – |
@@ -384,6 +386,48 @@ There are three ways to handle users.
 - **What stays with the page.** Where the data goes and how to reach it (`storageMode`, `apiBaseUrl`, `apiTimeoutMs`, `tenant`), the links (`routing`, `basename`, `linkParam`) and `getUserToken` cannot be set by the backend. The `auth` feature is ignored in both places, because a tenant always signs in. If the request fails, the calendar starts with the page settings only.
 - **Turning features off for real.** The calendar only hides a feature. Your backend must also refuse it, with `403` and the code `featureDisabled`.
 - **No open sign-up.** When users only come through your page, turn `registration` off in the tenant settings. The sign-up page then disappears, and the backend refuses `POST /auth/register`. Otherwise anyone who knows the public tenant id could create accounts in your tenant.
+
+**Signing user tokens** (for the public tenant service; with your own backend you decide what the token looks like). `getUserToken` must return a token that your server signs at that moment, for the user who is signed in on your site. Never build it in the browser and never put the private key into the page.
+
+1. Create a key pair. Use `ES256` (recommended), `EdDSA` or `RS256` with at least 2048 bits. Shared secrets (`HS256`) are not accepted.
+
+   ```bash
+   openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt -out calendar-private.pem
+   openssl pkey -in calendar-private.pem -pubout -out calendar-public.pem
+   ```
+
+2. Register `calendar-public.pem` for your tenant (admin dashboard or the operator of the backend). You get a key id (`kid`). Keys are valid for one year at most; add the next key before the old one runs out and revoke a key right away if it may have leaked.
+3. Add an endpoint on your server that signs a fresh token for the current user. It must only answer for signed-in users, only to your own pages, and never be cached.
+
+   ```ts
+   import { randomUUID } from 'node:crypto'
+   import { readFile } from 'node:fs/promises'
+   import { SignJWT, importPKCS8 } from 'jose'
+
+   const privateKey = await importPKCS8(await readFile('calendar-private.pem', 'utf8'), 'ES256')
+
+   export const signCalendarToken = (user: { id: string; email: string; name: string }) =>
+     new SignJWT({ email: user.email, name: user.name })
+       .setProtectedHeader({ alg: 'ES256', kid: process.env.CALENDAR_KEY_ID! })
+       .setIssuer('acme')
+       .setAudience('rokoyfa-calendar')
+       .setSubject(user.id)
+       .setJti(randomUUID())
+       .setIssuedAt()
+       .setExpirationTime('2m')
+       .sign(privateKey)
+   ```
+
+4. Pass it on: `getUserToken={() => fetch('/calendar-token', { credentials: 'same-origin' }).then((r) => (r.ok ? r.text() : null))}`.
+
+Every token is accepted once and for at most five minutes, so a token that shows up in a log or a browser history is useless. The full rules are in the OpenAPI file under "Host token sign-in".
+
+**Keeping your tenant safe.**
+
+- Enter only your own HTTPS origins as allowed origins (`http://localhost` only for development). The backend refuses changes from other origins.
+- Turn `registration` off when users only come through your page (see above).
+- Serve the page with a Content-Security-Policy and keep third-party scripts to a minimum. A script that runs on your page can call your token endpoint like the calendar does.
+- Give admin roles sparingly: viewers see the settings, admins change them, only owners manage keys and admins. Admin accounts sign in with a second factor.
 
 ## 8. Data adapters
 
@@ -684,6 +728,17 @@ type ChatUnread = ChatKey & { count: number }
 
 The full contract is [`api/openapi.yaml`](api/openapi.yaml) (OpenAPI 3.1, also shipped as `@rokoyfa/calendar/openapi.yaml`). The essentials:
 
+**Only what you turned on.** Your own backend needs the core endpoints and the endpoints of the features you switch on in your options or configuration file, nothing else. Every operation in the OpenAPI file carries `x-feature` with the feature it belongs to; the table in [Features](#3-features) lists the same per feature.
+
+| Needed | Endpoints |
+| --- | --- |
+| Always, as soon as there is a backend (`storageMode="remote"` or `auth`) | `GET`/`POST /events`, `PUT`/`DELETE /events/:id`, `GET /calendars`, `PATCH /calendars/:id`, `GET`/`PATCH /preferences` |
+| Per feature that is on | see the column "Your backend needs" in [Features](#3-features) |
+| Sign-in through your page (`getUserToken`) | `POST /auth/token`, in a token format of your choice |
+| Only for the public tenant service | `GET /tenant/config` and the rules under "Public tenant service" in the OpenAPI file |
+
+Turn a feature off and the component never calls its endpoints: `features: { chat: false, attachments: false, trash: false }` needs neither chat, attachments nor trash on your side.
+
 ### Data types
 
 ```ts
@@ -785,6 +840,7 @@ Before editing "following" or "all" of a series, the component loads its detache
 
 ### Rules for the backend
 
+- **Security:** the rules under "Public tenant service" in `api/openapi.yaml` (host tokens, sessions, origin checks, `404` for items of others) are binding for the tenant service. For your own backend they are a good checklist, not a requirement.
 - **Sessions:** requests use `credentials: 'include'`. Set an `HttpOnly` cookie on sign-in. If the widget runs on another domain: CORS for that origin with `Access-Control-Allow-Credentials: true`, allowed headers `Content-Type`, `Accept`, `Accept-Language`, `Authorization`, `If-Match`, `X-Calendar-Tenant`, and the cookie as `SameSite=None; Secure`. Answer `401` when the session is gone.
 - **Errors:** always `{ code, message }`. Known codes such as `invalidCredentials`, `emailTaken`, `forbidden`, `lastOwner` are shown translated, others with `message`.
 - **Language:** every request carries `Accept-Language`. Use it, or the stored `locale`, for emails.

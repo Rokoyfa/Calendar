@@ -145,11 +145,11 @@ document.querySelector('calendar-widget').getUserToken = async () => (await fetc
 - Die Eigenschaft kann vor oder nach dem Laden der Script-Datei gesetzt werden.
 - Als Daten-Adapter: `tenantDataSource({ tenant, baseUrl, getUserToken })`.
 
-Was das Backend dafür tun muss (Tenant prüfen, erlaubte Domains, Token prüfen, Nutzer anlegen), steht in [`api/openapi.yaml`](api/openapi.yaml). Getestet gegen ein simuliertes Backend: Tenant-Header bei allen Aufrufen, Anmeldung per Token, Gastmodus ohne Token und erneute Anmeldung nach abgelaufener Sitzung.
+Was der öffentliche Tenant-Dienst dafür tun muss, steht in [`api/openapi.yaml`](api/openapi.yaml) unter „Public tenant service“ (für Selbst-Hoster nur Empfehlungen): Host-Token prüfen (nur `ES256`/`EdDSA`/`RS256`, `kid`, `iss` = Tenant, `aud: rokoyfa-calendar`, höchstens 5 Minuten gültig, jedes `jti` nur einmal), Sitzung an den Tenant binden, `Origin` bei jeder Änderung prüfen, fremde Daten mit `404` beantworten. Wie ein Gastgeber seine Tokens signiert, steht im DEVELOPER_GUIDE unter „Signing user tokens“. Getestet gegen ein simuliertes Backend: Tenant-Header bei allen Aufrufen, Anmeldung per Token, Gastmodus ohne Token und erneute Anmeldung nach abgelaufener Sitzung.
 
 ### REST-API (OpenAPI)
 
-Der Vertrag zwischen `restDataSource` und einem Backend liegt als **OpenAPI 3.1** in [`api/openapi.yaml`](api/openapi.yaml): alle Endpunkte mit Anfragen, Antworten, Fehlercodes und Rechten. Das Test-Backend ist die Referenz-Umsetzung. Geprüft wurde, dass das Test-Backend alle beschriebenen Endpunkte außer `POST /auth/token` (Tenants) hat und dass seine Antworten in einem Durchlauf über alle 40 Endpunkte (65 Aufrufe, auch Fehlerfälle) den Schemas entsprechen.
+Der Vertrag zwischen `restDataSource` und einem Backend liegt als **OpenAPI 3.1** in [`api/openapi.yaml`](api/openapi.yaml): alle Endpunkte mit Anfragen, Antworten, Fehlercodes und Rechten. Jede Operation trägt `x-feature` (`core`, ein Feature-Name, `getUserToken` oder `tenant`); ein eigenes Backend braucht nur `core` und die Endpunkte der eingeschalteten Features. Das Test-Backend ist die Referenz-Umsetzung. Geprüft wurde, dass das Test-Backend alle beschriebenen Endpunkte außer `POST /auth/token` (Tenants) hat und dass seine Antworten in einem Durchlauf über alle 40 Endpunkte (65 Aufrufe, auch Fehlerfälle) den Schemas entsprechen.
 
 Die Datei lässt sich z. B. mit Swagger UI oder Redocly ansehen und mit Generatoren für Server-Gerüste in anderen Sprachen nutzen.
 

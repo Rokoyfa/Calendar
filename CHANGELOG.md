@@ -4,7 +4,7 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ## Unreleased
 
-Version 2 of the REST contract. Three endpoints have clearer paths; everything else stays compatible.
+Version 2 of the REST contract. Three endpoints have clearer paths, and host tokens follow stricter rules; everything else stays compatible.
 
 ### Breaking changes
 
@@ -14,13 +14,21 @@ Version 2 of the REST contract. Three endpoints have clearer paths; everything e
 | `POST /events/respond` | `POST /events/email-response` |
 | `PUT /calendars/:calendarId/settings` | `PUT /calendars/:calendarId/display` |
 | `events.purge(id)` in custom adapters | `events.purge(calendarId, id)` |
+| Tenant service: host token claim `tenant`, any signing algorithm | Claims `iss` (tenant id), `aud: rokoyfa-calendar`, `iat`, `jti`, header `kid`; only `ES256`, `EdDSA`, `RS256`; at most 5 minutes valid and accepted once |
 
 ### Added
 
 - Tenant settings from the backend: with `tenant` set, the calendar loads `GET /tenant/config`, and what it sets wins over the page settings (features, look, language, views). Storage, connection and link settings stay with the page, and sign-in is always on. With `storageMode="local"` the tenant is ignored
 - New feature switch `registration` to hide the sign-up page, and the error code `featureDisabled` for features a tenant turned off
 - Rate limits: a `429` from any endpoint is shown as "Too many requests" with the waiting time from `Retry-After`, new code `rateLimited`
+- `x-feature` on every operation in `api/openapi.yaml` and a table in the developer guide: a self-hosted backend only needs the core endpoints and those of the features it turns on
+- Security rules for the public tenant service in `api/openapi.yaml` (recommendations for self-hosted backends): host token checks, sessions bound to their tenant with fixed lifetimes, `Origin` check on every change, `404` for items of other tenants, rate limits on sign-in, hashed link tokens, attachments only after a malware scan
+- Developer guide: how a host signs user tokens (key pair, claims, example with `jose`) and keeps its tenant safe
 - `api/openapi.yaml`: table of all error codes with status and meaning, `401` on every endpoint that needs a session, consistent path parameter names (`eventId` instead of `id`), and a note on serving the API under a versioned base path such as `/api/v2`
+
+### Fixed
+
+- With `teams` off, the component no longer loads `GET /invitations`, so a backend without teams needs no endpoint for it
 
 ## 1.4.0 – 2026-11-18
 
