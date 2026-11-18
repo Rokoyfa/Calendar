@@ -53,6 +53,11 @@ const errors: Messages['errors'] = {
   invitationNotFound: 'De uitnodiging is niet gevonden.',
   invitationExpired: 'Deze uitnodiging is niet meer geldig.',
   tooManyLoginAttempts: 'Te veel mislukte pogingen. Wacht een paar minuten.',
+  rateLimited: 'Te veel verzoeken. Wacht even.',
+  rateLimitedFor: (seconds) =>
+    seconds < 60
+      ? `Te veel verzoeken. Probeer het over ${seconds} seconden opnieuw.`
+      : `Te veel verzoeken. Probeer het over ${Math.ceil(seconds / 60)} minuten opnieuw.`,
   seriesHasDetached: 'De reeks bevat apart bewerkte afspraken. Verwijder die eerst.',
   selfInvite: 'Je kunt jezelf niet uitnodigen.',
   alreadyMember: 'Deze persoon is al lid.',

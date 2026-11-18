@@ -86,7 +86,7 @@ describe('LocalEventRepository trash', () => {
     vi.useRealTimers()
     await repository.remove(recent.id)
     expect((await repository.listTrash('personal')).map((entry) => entry.event.title)).toEqual(['Neu'])
-    await repository.purge(recent.id)
+    await repository.purge('personal', recent.id)
     expect(await repository.listTrash('personal')).toEqual([])
   })
 

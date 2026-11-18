@@ -1,4 +1,4 @@
-import { ApiError } from './apiError.ts'
+import { ApiError, parseRetryAfter } from './apiError.ts'
 
 type QueryValue = string | number | boolean | null | undefined
 
@@ -128,12 +128,13 @@ export function createApiClient({
     try {
       data = await readBody(response)
     } catch (error) {
-      if (!response.ok) throw ApiError.fromResponse(response.status, undefined)
+      if (!response.ok)
+        throw ApiError.fromResponse(response.status, undefined, parseRetryAfter(response.headers.get('Retry-After')))
       throw ApiError.fromKind('parse', error)
     }
 
     if (!response.ok) {
-      const error = ApiError.fromResponse(response.status, data)
+      const error = ApiError.fromResponse(response.status, data, parseRetryAfter(response.headers.get('Retry-After')))
       if (error.isUnauthorized) onUnauthorized?.(error)
       throw error
     }

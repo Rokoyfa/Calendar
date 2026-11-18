@@ -8,6 +8,17 @@ type ApiErrorOptions = {
   status?: number | null
   body?: unknown
   cause?: unknown
+  retryAfter?: number | null
+}
+
+const MAX_RETRY_AFTER_SECONDS = 24 * 60 * 60
+
+export const parseRetryAfter = (value: string | null | undefined, now = Date.now()) => {
+  const text = value?.trim()
+  if (!text) return null
+  const seconds = /^\d+$/.test(text) ? Number(text) : Math.ceil((Date.parse(text) - now) / 1000)
+  if (!Number.isFinite(seconds)) return null
+  return Math.min(MAX_RETRY_AFTER_SECONDS, Math.max(1, seconds))
 }
 
 const getServerMessage = (body: unknown) => {
@@ -27,26 +38,29 @@ export class ApiError extends Error {
   readonly status: number | null
   readonly body: unknown
   readonly code: ErrorCode | null
+  readonly retryAfter: number | null
 
-  constructor(message: string, { kind, code, status = null, body, cause }: ApiErrorOptions) {
+  constructor(message: string, { kind, code, status = null, body, cause, retryAfter = null }: ApiErrorOptions) {
     super(message, { cause })
     this.name = 'ApiError'
     this.kind = kind
     this.code = code ?? null
     this.status = status
     this.body = body
+    this.retryAfter = retryAfter
   }
 
   get serverMessage() {
     return getServerMessage(this.body)
   }
 
-  static fromResponse(status: number, body: unknown) {
+  static fromResponse(status: number, body: unknown, retryAfter: number | null = null) {
     return new ApiError(getServerMessage(body) ?? `Request failed with status ${status}.`, {
       kind: 'http',
-      code: getServerCode(body),
+      code: getServerCode(body) ?? (status === 429 ? 'rateLimited' : undefined),
       status,
       body,
+      retryAfter,
     })
   }
 

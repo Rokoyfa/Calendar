@@ -26,7 +26,7 @@ export interface EventRepository {
   subscribe?(listener: (change: EventChange) => void): () => void
   listTrash?(calendarId: string): Promise<TrashedEvent[]>
   restore?(id: string): Promise<CalendarEvent>
-  purge?(id: string): Promise<void>
+  purge?(calendarId: string, id: string): Promise<void>
   emptyTrash?(calendarId: string): Promise<number>
 }
 

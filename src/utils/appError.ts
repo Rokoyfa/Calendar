@@ -34,6 +34,7 @@ const ERROR_CODES = [
   'invitationNotFound',
   'invitationExpired',
   'tooManyLoginAttempts',
+  'rateLimited',
   'seriesHasDetached',
   'selfInvite',
   'alreadyMember',

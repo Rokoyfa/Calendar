@@ -138,7 +138,7 @@ export class LocalEventRepository implements EventRepository {
     return restored
   }
 
-  async purge(id: string) {
+  async purge(_calendarId: string, id: string) {
     this.#trash.update((entries) => entries.filter((entry) => entry.event.id !== id))
   }
 

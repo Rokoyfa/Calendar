@@ -48,6 +48,6 @@ export class HostTokenAuthRepository implements AuthRepository {
   resendVerificationEmail = notAvailable
 
   async respondToEvent(token: string, status: EventReply) {
-    return parseEventResponse(await this.#api.post<unknown>('/events/respond', { token, status }))
+    return parseEventResponse(await this.#api.post<unknown>('/events/email-response', { token, status }))
   }
 }

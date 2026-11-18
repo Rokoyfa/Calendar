@@ -23,6 +23,7 @@ export const errors: Record<ErrorCode, string> & {
   status: Partial<Record<number, string>>
   serverError: string
   requestFailed: (status: number) => string
+  rateLimitedFor: (seconds: number) => string
   kind: Record<Exclude<ApiErrorKind, 'http'>, string>
 } = {
   unknown: 'An unknown error occurred.',
@@ -59,6 +60,11 @@ export const errors: Record<ErrorCode, string> & {
   invitationNotFound: 'The invitation could not be found.',
   invitationExpired: 'This invitation is no longer valid.',
   tooManyLoginAttempts: 'Too many failed attempts. Please wait a few minutes.',
+  rateLimited: 'Too many requests. Please wait a moment.',
+  rateLimitedFor: (seconds: number) =>
+    seconds < 60
+      ? `Too many requests. Please try again in ${seconds} seconds.`
+      : `Too many requests. Please try again in ${Math.ceil(seconds / 60)} minutes.`,
   seriesHasDetached: 'The series has separately edited events. Please delete them first.',
   selfInvite: 'You cannot invite yourself.',
   alreadyMember: 'This person is already a member.',

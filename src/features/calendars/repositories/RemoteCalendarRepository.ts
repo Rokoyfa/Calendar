@@ -77,7 +77,7 @@ export class RemoteCalendarRepository implements CalendarRepository {
   }
 
   setShowInPersonal(calendarId: string, showInPersonal: boolean) {
-    return this.#api.put<CalendarSummary>(`/calendars/${segment(calendarId)}/settings`, { showInPersonal })
+    return this.#api.put<CalendarSummary>(`/calendars/${segment(calendarId)}/display`, { showInPersonal })
   }
 
   listInvitations() {

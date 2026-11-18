@@ -430,7 +430,7 @@ Die Links in den E-Mails zeigen auf `/reset-password?token=…` und `/verify-ema
 | ------ | ---- | ------- |
 | `GET /calendars` | – | `CalendarSummary[]`, persönlicher Kalender zuerst |
 | `POST /calendars` | `{ name, description, color, invitations: [{ email, role }] }` | `201` mit `CalendarSummary` |
-| `PUT /calendars/:id/settings` | `{ showInPersonal }` | `200` mit `CalendarSummary` |
+| `PUT /calendars/:id/display` | `{ showInPersonal }` | `200` mit `CalendarSummary` |
 | `DELETE /teams/:teamId/membership` | – | `204`, Team verlassen. `409` als letzter Owner. |
 | `POST /teams/:teamId/transfer-ownership` | `{ userId }` | `200` mit den `CalendarSummary[]` des Teams, nur für Owner |
 | `GET /invitations` | – | offene Einladungen an die eigene E-Mail-Adresse |
@@ -682,7 +682,7 @@ In den Kalender-Einstellungen (Tab „Import & Export“, beim persönlichen Kal
 
 ### E-Mails zu Terminen
 
-Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutzers: neuer Tab **Benachrichtigungen** in den Einstellungen (nur angemeldet) mit `emailInvites`, `emailChanges` und `emailReminders`. Einladungs-E-Mails enthalten Links „Ja“, „Vielleicht“, „Nein“ auf `/respond?status=…&token=…`. Die Seite `pages/RespondPage.tsx` speichert die Antwort aus dem Link ohne Anmeldung (`POST /events/respond`, über das Auth-Repository, weil das auch ohne Sitzung erreichbar ist), zeigt Titel, Zeit in der eigenen Zeitzone und Ort und lässt die Antwort ändern. Was das Test-Backend dafür tut, steht in dessen README.
+Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutzers: neuer Tab **Benachrichtigungen** in den Einstellungen (nur angemeldet) mit `emailInvites`, `emailChanges` und `emailReminders`. Einladungs-E-Mails enthalten Links „Ja“, „Vielleicht“, „Nein“ auf `/respond?status=…&token=…`. Die Seite `pages/RespondPage.tsx` speichert die Antwort aus dem Link ohne Anmeldung (`POST /events/email-response`, über das Auth-Repository, weil das auch ohne Sitzung erreichbar ist), zeigt Titel, Zeit in der eigenen Zeitzone und Ort und lässt die Antwort ändern. Was das Test-Backend dafür tut, steht in dessen README.
 
 ### Chat zu Terminen
 

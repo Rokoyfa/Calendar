@@ -53,6 +53,11 @@ const errors: Messages['errors'] = {
   invitationNotFound: 'L’invitation est introuvable.',
   invitationExpired: 'Cette invitation n’est plus valide.',
   tooManyLoginAttempts: 'Trop de tentatives échouées. Veuillez patienter quelques minutes.',
+  rateLimited: 'Trop de requêtes. Veuillez patienter un instant.',
+  rateLimitedFor: (seconds) =>
+    seconds < 60
+      ? `Trop de requêtes. Réessayez dans ${seconds} secondes.`
+      : `Trop de requêtes. Réessayez dans ${Math.ceil(seconds / 60)} minutes.`,
   seriesHasDetached: 'La série contient des événements modifiés séparément. Supprimez-les d’abord.',
   selfInvite: 'Vous ne pouvez pas vous inviter vous-même.',
   alreadyMember: 'Cette personne est déjà membre.',

@@ -83,8 +83,8 @@ export class RemoteEventRepository implements EventRepository {
     return typeof result?.deleted === 'number' ? result.deleted : 0
   }
 
-  purge(id: string) {
-    return this.#api.delete(`/trash/${encodePathSegment(id)}`)
+  purge(calendarId: string, id: string) {
+    return this.#api.delete(`/calendars/${encodePathSegment(calendarId)}/trash/${encodePathSegment(id)}`)
   }
 
   #eventPath(id: string) {

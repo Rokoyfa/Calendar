@@ -165,7 +165,7 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
               onClick={() => {
                 const { id } = toDelete.event
                 setToDelete(null)
-                void run(id, () => repository.purge(id))
+                void run(id, () => repository.purge(calendar.id, id))
               }}
             >
               {text.deleteForever}

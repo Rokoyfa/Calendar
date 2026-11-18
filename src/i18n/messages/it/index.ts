@@ -53,6 +53,11 @@ const errors: Messages['errors'] = {
   invitationNotFound: 'L’invito non è stato trovato.',
   invitationExpired: 'Questo invito non è più valido.',
   tooManyLoginAttempts: 'Troppi tentativi non riusciti. Attendi qualche minuto.',
+  rateLimited: 'Troppe richieste. Attendi un momento.',
+  rateLimitedFor: (seconds) =>
+    seconds < 60
+      ? `Troppe richieste. Riprova tra ${seconds} secondi.`
+      : `Troppe richieste. Riprova tra ${Math.ceil(seconds / 60)} minuti.`,
   seriesHasDetached: 'La serie contiene eventi modificati separatamente. Eliminali prima.',
   selfInvite: 'Non puoi invitare te stesso.',
   alreadyMember: 'Questa persona è già un membro.',

@@ -108,7 +108,7 @@ export class RemoteAuthRepository implements AuthRepository {
 
   async respondToEvent(token: string, status: EventReply) {
     return parseEventResponse(
-      await translateErrors(this.#api.post<unknown>('/events/respond', { token, status }), { 410: 'invalidLink' }),
+      await translateErrors(this.#api.post<unknown>('/events/email-response', { token, status }), { 410: 'invalidLink' }),
     )
   }
 }

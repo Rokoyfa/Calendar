@@ -4,6 +4,22 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ## Unreleased
 
+Version 2 of the REST contract. Three endpoints have clearer paths; everything else stays compatible.
+
+### Breaking changes
+
+| 1.x | 2.0 |
+| --- | --- |
+| `DELETE /trash/:id` | `DELETE /calendars/:calendarId/trash/:eventId` |
+| `POST /events/respond` | `POST /events/email-response` |
+| `PUT /calendars/:calendarId/settings` | `PUT /calendars/:calendarId/display` |
+| `events.purge(id)` in custom adapters | `events.purge(calendarId, id)` |
+
+### Added
+
+- Rate limits: a `429` from any endpoint is shown as "Too many requests" with the waiting time from `Retry-After`, new code `rateLimited`
+- `api/openapi.yaml`: table of all error codes with status and meaning, `401` on every endpoint that needs a session, consistent path parameter names (`eventId` instead of `id`), and a note on serving the API under a versioned base path such as `/api/v2`
+
 ## 1.4.0 – 2026-11-18
 
 - Empty the trash with one button (`DELETE /calendars/:id/trash`, optional `events.emptyTrash` for custom adapters). Restore and delete for good now look different: restore in the accent color, delete in red, through the new button variant `dangerOutline`

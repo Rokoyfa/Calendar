@@ -53,6 +53,11 @@ export const errors: Messages['errors'] = {
   invitationNotFound: 'Die Einladung wurde nicht gefunden.',
   invitationExpired: 'Die Einladung ist nicht mehr gültig.',
   tooManyLoginAttempts: 'Zu viele Fehlversuche. Bitte warte ein paar Minuten.',
+  rateLimited: 'Zu viele Anfragen. Bitte kurz warten.',
+  rateLimitedFor: (seconds: number) =>
+    seconds < 60
+      ? `Zu viele Anfragen. Bitte in ${seconds} Sekunden erneut versuchen.`
+      : `Zu viele Anfragen. Bitte in ${Math.ceil(seconds / 60)} Minuten erneut versuchen.`,
   seriesHasDetached: 'Die Serie hat einzeln geänderte Termine. Bitte diese zuerst löschen.',
   selfInvite: 'Du kannst dich nicht selbst einladen.',
   alreadyMember: 'Diese Person ist schon Mitglied.',

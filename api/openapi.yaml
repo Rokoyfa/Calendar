@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Calendar API
-  version: 1.0.0
+  version: 2.0.0
   description: |
     REST contract between the calendar component (`restDataSource`) and a backend.
     The test backend (`TestBE`) is the reference implementation.
@@ -22,8 +22,72 @@ info:
     short-lived token (a JWT signed with the tenant key, claims `tenant`, `sub`, `name`, `email`, `exp`) and exchanges it at
     `POST /auth/token` for a normal session. The same happens when any request answers `401` later. Password endpoints
     are not used in this mode.
+
+    **Versioning.** This is version 2 of the contract. Serve it under a versioned base path such as `/api/v2` and set
+    the component's `apiBaseUrl` (`api-base-url`) to it; a later major version can then run next to it. Changes within
+    a major version only add endpoints, fields or optional parameters.
+
+    **Rate limits.** Any endpoint may answer `429` with a `Retry-After` header (seconds or HTTP date). Send `code`
+    `rateLimited`, or a more specific one. The component then shows how long to wait. Cross-origin backends must list
+    `Retry-After` in `Access-Control-Expose-Headers`, otherwise the browser hides it.
+
+    **Error codes.** Every error is a `Problem` with one of these codes. The component translates them, except
+    `invalidInput`, `invalidJson`, `unsupportedMediaType`, `emptyFile`, `routeNotFound` and `methodNotAllowed`: for these
+    and for unknown codes it shows `message`, so write it in plain English.
+
+    | Code | Status | When |
+    | --- | --- | --- |
+    | `invalidInput` | 400 | The body or a parameter is invalid. `message` says what |
+    | `invalidJson` | 400 | The body is not a JSON object |
+    | `unsupportedMediaType` | 415 | A changing request without `Content-Type: application/json` |
+    | `selfInvite` | 400 | The own address is in the invitations |
+    | `emptyFile` | 400 | An uploaded file is empty |
+    | `unauthorized` | 401 | No valid session or token |
+    | `invalidCredentials` | 401 | Email or password is wrong on sign-in |
+    | `invalidUserToken` | 401 | The host token for `POST /auth/token` is invalid or expired |
+    | `forbidden` | 403 | The role does not allow this |
+    | `wrongPassword` | 403 | The password confirming a change is wrong |
+    | `wrongCurrentPassword` | 403 | The current password is wrong when changing it |
+    | `unknownTenant` | 403 | `X-Calendar-Tenant` names no known tenant |
+    | `originNotAllowed` | 403 | `Origin` is not allowed for the tenant |
+    | `routeNotFound` | 404 | The path does not exist |
+    | `methodNotAllowed` | 405 | The method is not allowed on this path |
+    | `notFound` | 404 | Generic: the item does not exist or is not visible |
+    | `eventNotFound` | 404 | The event does not exist, is not visible or is in the trash |
+    | `calendarNotFound` | 404 | The calendar does not exist or is not visible |
+    | `teamNotFound` | 404 | The team does not exist or is not visible |
+    | `memberNotFound` | 404 | The member does not exist |
+    | `invitationNotFound` | 404 | The invitation does not exist |
+    | `categoryNotFound` | 404 | The category does not exist |
+    | `attachmentNotFound` | 404 | The attachment does not exist |
+    | `shareNotFound` | 404 | The public link is unknown or turned off |
+    | `emailTaken` | 409 | An account with this email exists |
+    | `alreadyMember` | 409 | The invited person is already a member |
+    | `alreadyInvited` | 409 | The address is already invited |
+    | `alreadyOwner` | 409 | The member is already an owner |
+    | `personalTeam` | 409 | Not possible for the personal calendar |
+    | `lastOwner` | 409 | The last owner cannot leave or be demoted |
+    | `lastCalendar` | 409 | The last calendar of a team cannot be deleted |
+    | `soleOwner` | 409 | The account owns a team with other members |
+    | `seriesHasDetached` | 409 | The repetition is removed while detached events exist |
+    | `seriesDeleted` | 409 | A detached event is restored while its series is in the trash |
+    | `tooManyColors` | 409 | More than 12 custom colors |
+    | `categoryExists` | 409 | A category with this name exists in the calendar |
+    | `tooManyCategories` | 409 | More than 30 categories in a calendar |
+    | `tooManyAttachments` | 409 | More than 20 attachments on an event |
+    | `invalidLink` | 410 | The link from an email is invalid or expired |
+    | `invitationExpired` | 410 | The invitation is no longer valid |
+    | `eventChanged` | 412 | `If-Match` names an older `version` of the event |
+    | `payloadTooLarge` | 413 | The body is too large |
+    | `attachmentTooLarge` | 413 | The file is larger than 10 MB |
+    | `tooManyLoginAttempts` | 429 | Too many failed sign-ins, with `Retry-After` |
+    | `rateLimited` | 429 | Any other rate limit, with `Retry-After` |
+    | `serverError` | 500 | Unexpected error |
 servers:
+  - url: /api/v2
+    description: Recommended, with `apiBaseUrl` set to it
   - url: /api
+    description: Default of the component
 security:
   - sessionCookie: []
   - bearerToken: []
@@ -105,6 +169,7 @@ paths:
               properties:
                 password: { type: string }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: 'Deleted, session cookie cleared' }
         '403': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
@@ -124,6 +189,7 @@ paths:
                 currentPassword: { type: string }
                 newPassword: { $ref: '#/components/schemas/NewPassword' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Changed }
         '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
@@ -279,6 +345,7 @@ paths:
           explode: true
         - { name: seriesId, in: query, schema: { type: string } }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Events
           content:
@@ -302,6 +369,7 @@ paths:
                   properties:
                     calendarId: { type: string }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '201': { $ref: '#/components/responses/Event' }
         '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
@@ -322,15 +390,16 @@ paths:
           style: form
           explode: true
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Matching events, at most 50
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/CalendarEvent' } }
         '400': { $ref: '#/components/responses/Problem' }
-  /events/{id}/response:
+  /events/{eventId}/response:
     parameters:
-      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: eventId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Events]
       summary: Answer an event invitation
@@ -345,13 +414,14 @@ paths:
               properties:
                 status: { $ref: '#/components/schemas/AttendeeStatus' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Event' }
         '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
-  /events/{id}/reminders:
+  /events/{eventId}/reminders:
     parameters:
-      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: eventId, in: path, required: true, schema: { type: string } }
     put:
       tags: [Events]
       summary: Set the own reminders of an event
@@ -366,10 +436,11 @@ paths:
               properties:
                 reminders: { type: array, maxItems: 5, items: { type: integer, minimum: 0, maximum: 40320 } }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Event' }
         '400': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
-  /events/respond:
+  /events/email-response:
     post:
       tags: [Events]
       summary: Answer an invitation from an email link
@@ -393,9 +464,9 @@ paths:
               schema: { $ref: '#/components/schemas/EventResponse' }
         '400': { $ref: '#/components/responses/Problem' }
         '410': { $ref: '#/components/responses/Problem' }
-  /events/{id}:
+  /events/{eventId}:
     parameters:
-      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: eventId, in: path, required: true, schema: { type: string } }
     put:
       tags: [Events]
       summary: Replace an event
@@ -411,6 +482,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/EventInput' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Event' }
         '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
@@ -428,6 +500,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/IfMatch'
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -442,6 +515,7 @@ paths:
         Newest first, one entry per deletion. Detached events deleted together with their series are not listed on
         their own but counted in `detachedCount`. Entries older than 30 days are deleted for good and no longer listed.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Deleted events
           content:
@@ -457,6 +531,7 @@ paths:
         Deletes for good every entry the user may delete (all with `delete_any_entry`, own ones with
         `delete_own_entry`), with detached events, attachments and chat. Other entries stay.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Number of deleted entries
           content:
@@ -467,9 +542,9 @@ paths:
                 properties:
                   deleted: { type: integer, minimum: 0 }
         '404': { $ref: '#/components/responses/Problem' }
-  /events/{id}/restore:
+  /events/{eventId}/restore:
     parameters:
-      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: eventId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Trash]
       summary: Restore an event from the trash
@@ -478,22 +553,21 @@ paths:
         `version` goes up by one. Needs the right to delete the event.
         `409` with `seriesDeleted` when the event is a detached occurrence whose series is still in the trash.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Event' }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
-  /trash/{id}:
+  /calendars/{calendarId}/trash/{eventId}:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: Id of the deleted event.
-        schema: { type: string }
+      - { $ref: '#/components/parameters/CalendarId' }
+      - { name: eventId, in: path, required: true, description: 'Id of the deleted event', schema: { type: string } }
     delete:
       tags: [Trash]
       summary: Delete an event for good
       description: Removes it from the trash with its detached events, attachments and chat. Needs the right to delete the event.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Deleted for good }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -503,6 +577,7 @@ paths:
       summary: Calendars of the user
       description: Personal calendar first, then team calendars by team name.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/CalendarSummaries' }
     post:
       tags: [Calendars]
@@ -524,11 +599,12 @@ paths:
                   maxItems: 50
                   items: { $ref: '#/components/schemas/InvitationInput' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '201': { $ref: '#/components/responses/CalendarSummary' }
         '400': { $ref: '#/components/responses/Problem' }
-  /events/{id}/chat:
+  /events/{eventId}/chat:
     parameters:
-      - { name: id, in: path, required: true, description: 'Event id, for detached occurrences the id of their series', schema: { type: string } }
+      - { name: eventId, in: path, required: true, description: 'Event id, for detached occurrences the id of their series', schema: { type: string } }
       - { name: date, in: query, required: false, description: 'Required for recurring events: the original date of the occurrence. Not allowed for single events.', schema: { $ref: '#/components/schemas/ISODate' } }
     get:
       tags: [Chat]
@@ -538,6 +614,7 @@ paths:
         - { name: before, in: query, required: false, description: 'Message id, returns messages older than this one', schema: { type: string } }
         - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Page of messages
           content:
@@ -555,6 +632,7 @@ paths:
           application/json:
             schema: { type: object, required: [text], properties: { text: { type: string, minLength: 1, maxLength: 2000 } } }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '201':
           description: Created
           content:
@@ -562,14 +640,15 @@ paths:
               schema: { $ref: '#/components/schemas/ChatMessage' }
         '400': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
-  /events/{id}/chat/read:
+  /events/{eventId}/chat/read:
     parameters:
-      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: eventId, in: path, required: true, schema: { type: string } }
       - { name: date, in: query, required: false, schema: { $ref: '#/components/schemas/ISODate' } }
     post:
       tags: [Chat]
       summary: Mark the chat as read
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Marked }
   /chat/messages/{messageId}:
     parameters:
@@ -583,6 +662,7 @@ paths:
           application/json:
             schema: { type: object, required: [text], properties: { text: { type: string, minLength: 1, maxLength: 2000 } } }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Edited, `editedAt` is set. Sends `message.updated` over the socket.
           content:
@@ -595,6 +675,7 @@ paths:
       summary: Delete a message
       description: Own messages, or any message with `manage_calendars` (owner, admin, manager). Sends `message.deleted` over the socket.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -611,6 +692,7 @@ paths:
           explode: true
           schema: { type: array, items: { type: string } }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Counts
           content:
@@ -623,6 +705,7 @@ paths:
       tags: [Calendars]
       summary: Own subscription link
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Link or null
           content:
@@ -634,6 +717,7 @@ paths:
       summary: Create a new subscription link
       description: Replaces an existing link of this user for this calendar.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '201':
           description: New link
           content:
@@ -644,6 +728,7 @@ paths:
       tags: [Calendars]
       summary: End the subscription
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Ended }
   /feeds/{token}.ics:
     parameters:
@@ -677,6 +762,7 @@ paths:
                 name: { $ref: '#/components/schemas/CalendarName' }
                 color: { $ref: '#/components/schemas/EventColor' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/CalendarSummary' }
         '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
@@ -686,10 +772,11 @@ paths:
       summary: Delete a calendar of a team
       description: Needs `manage_calendars`. `409` with `lastCalendar` for the last calendar of a team.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Deleted with its events }
         '403': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
-  /calendars/{calendarId}/settings:
+  /calendars/{calendarId}/display:
     parameters:
       - { $ref: '#/components/parameters/CalendarId' }
     put:
@@ -706,6 +793,7 @@ paths:
               properties:
                 showInPersonal: { type: boolean }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/CalendarSummary' }
         '409': { $ref: '#/components/responses/Problem' }
   /teams/{teamId}:
@@ -725,6 +813,7 @@ paths:
                 name: { $ref: '#/components/schemas/CalendarName' }
                 description: { $ref: '#/components/schemas/Description' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/CalendarSummaries' }
         '403': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
@@ -733,6 +822,7 @@ paths:
       summary: Delete a team
       description: Needs `delete_team`. Deletes calendars, events and invitations. `409` with `personalTeam`.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
@@ -754,6 +844,7 @@ paths:
                 name: { $ref: '#/components/schemas/CalendarName' }
                 color: { $ref: '#/components/schemas/EventColor' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '201': { $ref: '#/components/responses/CalendarSummary' }
         '403': { $ref: '#/components/responses/Problem' }
   /teams/{teamId}/membership:
@@ -764,6 +855,7 @@ paths:
       summary: Leave a team
       description: '`409` with `personalTeam` or `lastOwner`.'
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Left }
         '409': { $ref: '#/components/responses/Problem' }
   /teams/{teamId}/transfer-ownership:
@@ -785,6 +877,7 @@ paths:
               properties:
                 userId: { type: string }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/CalendarSummaries' }
         '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
@@ -797,6 +890,7 @@ paths:
       tags: [Teams]
       summary: Members of a team
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Members
           content:
@@ -820,6 +914,7 @@ paths:
               properties:
                 role: { $ref: '#/components/schemas/TeamRole' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Member
           content:
@@ -832,6 +927,7 @@ paths:
       summary: Remove a member
       description: Members can remove themselves. `409` with `lastOwner`.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Removed }
         '403': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
@@ -843,6 +939,7 @@ paths:
       summary: Open invitations of a team
       description: Needs `invite_members`.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Invitations
           content:
@@ -860,6 +957,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/InvitationInput' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '201':
           description: Invitation
           content:
@@ -875,6 +973,7 @@ paths:
       tags: [Invitations]
       summary: Withdraw an invitation
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Withdrawn }
         '403': { $ref: '#/components/responses/Problem' }
   /invitations:
@@ -882,6 +981,7 @@ paths:
       tags: [Invitations]
       summary: Open invitations to the own email address
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Invitations
           content:
@@ -902,6 +1002,7 @@ paths:
               properties:
                 token: { type: string }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/CalendarSummaries' }
         '404': { $ref: '#/components/responses/Problem' }
         '410': { $ref: '#/components/responses/Problem' }
@@ -913,6 +1014,7 @@ paths:
       summary: Accept an invitation
       description: '`409` with `alreadyMember`, `410` with `invitationExpired`.'
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/CalendarSummaries' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
@@ -924,6 +1026,7 @@ paths:
       tags: [Invitations]
       summary: Decline an invitation
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Declined }
         '404': { $ref: '#/components/responses/Problem' }
   /holidays:
@@ -943,6 +1046,7 @@ paths:
           schema: { type: string, pattern: '^[A-Z]{2}(-[A-Z0-9]{1,6})?$' }
         - { name: lang, in: query, required: true, schema: { type: string, examples: [de] } }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Holidays
           content:
@@ -954,6 +1058,7 @@ paths:
       summary: Preferences of the user
       description: Defaults until something is stored.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Preferences' }
     patch:
       tags: [Preferences]
@@ -976,6 +1081,7 @@ paths:
                 emailReminders: { type: boolean }
                 emailChat: { type: boolean }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Preferences' }
         '400': { $ref: '#/components/responses/Problem' }
   /colors:
@@ -983,6 +1089,7 @@ paths:
       tags: [Preferences]
       summary: Custom colors in the order they were added
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Colors' }
     post:
       tags: [Preferences]
@@ -998,6 +1105,7 @@ paths:
               properties:
                 color: { $ref: '#/components/schemas/HexColor' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Colors' }
         '400': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
@@ -1012,6 +1120,7 @@ paths:
           description: Color without `#`, e.g. `ff8800`
           schema: { type: string, pattern: '^[0-9a-fA-F]{6}$' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Colors' }
   /categories:
     get:
@@ -1024,6 +1133,7 @@ paths:
           description: Repeat the parameter for several calendars.
           schema: { type: array, items: { type: string } }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Categories
           content:
@@ -1043,6 +1153,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/CategoryName' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '201':
           description: Created
           content:
@@ -1064,6 +1175,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/CategoryName' }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Renamed
           content:
@@ -1078,6 +1190,7 @@ paths:
       summary: Delete a category
       description: Needs `manage_calendars`. Also removes the category from all events.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -1089,6 +1202,7 @@ paths:
       summary: Attachments of an event
       description: For every member who can see the event. A series has one set of attachments for all its occurrences; a detached occurrence has its own.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Attachments in upload order
           content:
@@ -1112,6 +1226,7 @@ paths:
               properties:
                 file: { type: string, format: binary }
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '201':
           description: Uploaded
           content:
@@ -1133,6 +1248,7 @@ paths:
         `Content-Disposition: attachment; filename*=UTF-8''<name>`, `X-Content-Type-Options: nosniff`
         and `Content-Security-Policy: default-src 'none'; sandbox`, so a browser never shows an uploaded HTML or SVG file as a page of your domain.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: File content
           content:
@@ -1147,6 +1263,7 @@ paths:
       summary: Delete an attachment
       description: Same rights as uploading. Deleting an event, calendar or team deletes its attachments too.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -1158,6 +1275,7 @@ paths:
       summary: Public link of the calendar
       description: Needs `manage_calendars`. There is one link per calendar, shared by everyone who may manage it.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '200':
           description: Token or null
           content:
@@ -1170,6 +1288,7 @@ paths:
       summary: Create a new public link
       description: Replaces an existing link, which stops working at once. The token must not be guessable.
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '201':
           description: New token
           content:
@@ -1180,6 +1299,7 @@ paths:
       tags: [Sharing]
       summary: Stop sharing
       responses:
+        '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Stopped }
         '403': { $ref: '#/components/responses/Problem' }
   /shared/{token}:

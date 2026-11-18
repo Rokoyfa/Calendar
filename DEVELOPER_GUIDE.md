@@ -182,7 +182,7 @@ Everything beyond the core calendar (views, creating, editing, moving and deleti
 | `categories` | `feature-categories` | on | Categories per calendar and the filter, see [Categories](#13-categories) | `/categories`, `/calendars/:id/categories` |
 | `attachments` | `feature-attachments` | on | Files on events, see [Attachments](#17-attachments). Not in local mode | `/events/:id/attachments`, `/attachments/:id` |
 | `liveUpdates` | `feature-live-updates` | on | Changes by others, or in other tabs, show up at once, see [Live updates](#18-live-updates) | WebSocket `/chat/socket` with `event.changed` messages |
-| `trash` | `feature-trash` | on | Trash in the calendar settings, see [Trash](#19-trash) | `GET`/`DELETE /calendars/:id/trash`, `/events/:id/restore`, `/trash/:id` |
+| `trash` | `feature-trash` | on | Trash in the calendar settings, see [Trash](#19-trash) | `GET`/`DELETE /calendars/:id/trash`, `DELETE /calendars/:id/trash/:eventId`, `/events/:id/restore` |
 | `dataExport` | `feature-data-export` | on | "Data" tab in the settings to download one's own data, see [Data export](#20-data-export) | `GET /auth/me/export` |
 | `publicLinks` | `feature-public-links` | on | Public read-only links and the page they open, see [Public links](#14-read-only-mode-and-public-links) | `/calendars/:id/share`, `/shared/:token` |
 
@@ -630,7 +630,7 @@ interface EventRepository {
   subscribe?(listener: (change: EventChange) => void): () => void
   listTrash?(calendarId: string): Promise<TrashedEvent[]>
   restore?(id: string): Promise<CalendarEvent>
-  purge?(id: string): Promise<void>
+  purge?(calendarId: string, id: string): Promise<void>
   emptyTrash?(calendarId: string): Promise<number>
 }
 
@@ -759,9 +759,9 @@ The backend stores series as one event. The component expands occurrences itself
 | Search | `GET /events/search?q=…&calendarId=…` (optional: without it the component searches the last and next year via `GET /events`) |
 | Answer as attendee | `POST /events/:id/response` with `{ status }` |
 | Change only own reminders | `PUT /events/:id/reminders` with `{ reminders }` (also for members without edit rights) |
-| Answer from an email link | `POST /events/respond` with `{ token, status }`, no session needed |
+| Answer from an email link | `POST /events/email-response` with `{ token, status }`, no session needed |
 | Data export | `GET /auth/me/export` from the "Data" tab in the settings, answered with a JSON file |
-| Trash | `GET /calendars/:id/trash` in the calendar settings, `POST /events/:id/restore`, `DELETE /trash/:id`, `DELETE /calendars/:id/trash` to empty it. Undo after deleting also calls `POST /events/:id/restore` |
+| Trash | `GET /calendars/:id/trash` in the calendar settings, `POST /events/:id/restore`, `DELETE /calendars/:id/trash/:eventId`, `DELETE /calendars/:id/trash` to empty it. Undo after deleting also calls `POST /events/:id/restore` |
 | Live updates | WebSocket `/chat/socket`, opened while the calendar is shown. After an `event.changed` message for a shown calendar, the component reloads the events of the visible range |
 | Event chat | `GET`/`POST /events/:id/chat?date=…`, `POST /events/:id/chat/read`, `PATCH`/`DELETE /chat/messages/:id`, `GET /chat/unread?calendarId=…`, WebSocket `/chat/socket` |
 | Categories | `GET /categories?calendarId=…` with the calendars shown, `POST /calendars/:id/categories`, `PATCH` and `DELETE /categories/:id`. Events carry `categoryIds` |
@@ -783,6 +783,9 @@ Before editing "following" or "all" of a series, the component loads its detache
 - **Language:** every request carries `Accept-Language`. Use it, or the stored `locale`, for emails.
 - **Emails about events** (your backend sends them, the component only stores the user's choice): an invitation with yes / maybe / no links to `/respond?status=accepted&token=…` when someone is added as attendee (`emailInvites`), a notice when title, time, place or repetition change or the event is cancelled (`emailChanges`), and reminders at the user's own reminder times even while the calendar is closed (`emailReminders`, off by default). Only to verified addresses, never to the person who made the change.
 - **Subscriptions:** `GET /feeds/:token.ics` answers without a session with the calendar as iCalendar (RFC 5545), the subscriber's own reminders and the category names as `CATEGORIES` (comma-separated, with `,` and `;` inside a name escaped as `\,` and `\;`). Keep one secret token per user and calendar, a new one replaces the old. Stop serving it when the user leaves the calendar.
+- **Version:** this is version 2 of the REST contract (`api/openapi.yaml`, `info.version`). Serve it under a versioned base path such as `/api/v2` and set `apiBaseUrl` / `api-base-url` to it, so a later major version can run next to it.
+- **Error codes:** every error is a `Problem` with a `code` from the table in `api/openapi.yaml` (status and meaning per code). The component translates them; for unknown codes it shows `message`.
+- **Rate limits:** any endpoint may answer `429` with `Retry-After` (seconds or HTTP date) and the code `rateLimited` or a more specific one. The component shows how long to wait. Cross-origin backends must list `Retry-After` in `Access-Control-Expose-Headers`.
 - **Editing at the same time:** every event has a `version` that starts at 1. Raise it on every `PUT`, attendee response and removed category, but not when someone only changes their own reminders. `PUT` and `DELETE /events/:id` send `If-Match: "<version>"` with the version the user saw, but only when your events carry a `version`; without it nothing changes for your backend. If the event has a newer version, answer `412` with `eventChanged` and change nothing. The dialog then offers to save anyway (sent without `If-Match`) or to load the current version. Without `If-Match`, or with `*`, skip the check.
 - **Categories:** belong to one calendar, names are unique per calendar without regard to case. Reject an event whose `categoryIds` are not from its calendar, and remove a deleted category from all events.
 - **Attachments:** at most 10 MB per file and 20 per event. Store the files outside the database, keep only the file name, and serve them with `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`, because uploaded files are untrusted. Delete them together with their event, calendar or team. Never hand them out through public links or subscription feeds.
