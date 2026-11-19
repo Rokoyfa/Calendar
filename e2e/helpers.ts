@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto'
 import { test as base, expect, type Browser, type Page } from '@playwright/test'
 import { API_URL } from './env.ts'
 
@@ -114,7 +115,7 @@ export const showCalendar = async (page: Page, name: string) => {
   await expect(page.locator('dialog[open]')).toHaveCount(0)
 }
 
-export const showView = async (page: Page, view: 'Tag' | 'Woche' | 'Monat' | 'Jahr') => {
+export const showView = async (page: Page, view: 'Tag' | 'Woche' | 'Monat' | 'Jahr' | 'Agenda') => {
   await page.locator('.segment', { hasText: view }).click()
 }
 
@@ -123,4 +124,16 @@ export const openEvent = async (page: Page, title: string) => {
   const dialog = page.locator('dialog[open]')
   await expect(dialog).toBeVisible()
   return dialog
+}
+
+const BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+
+export const totp = (secret: string, time = Date.now()) => {
+  const bits = [...secret.replace(/\s/g, '')].map((char) => BASE32.indexOf(char).toString(2).padStart(5, '0')).join('')
+  const key = Buffer.from(bits.match(/.{8}/g)!.map((byte) => parseInt(byte, 2)))
+  const counter = Buffer.alloc(8)
+  counter.writeBigUInt64BE(BigInt(Math.floor(time / 30_000)))
+  const digest = createHmac('sha1', key).update(counter).digest()
+  const offset = digest[digest.length - 1] & 0x0f
+  return ((digest.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).toString().padStart(6, '0')
 }

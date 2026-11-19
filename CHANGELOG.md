@@ -27,10 +27,25 @@ Version 2 of the REST contract. Three endpoints have clearer paths, and host tok
 - Security rules for the public tenant service in `api/openapi.yaml` (recommendations for self-hosted backends): host token checks, sessions bound to their tenant with fixed lifetimes, `Origin` check on every change, `404` for items of other tenants, rate limits on sign-in, hashed link tokens, attachments only after a malware scan
 - Developer guide: how a host signs user tokens (key pair, claims, example with `jose`) and keeps its tenant safe
 - `api/openapi.yaml`: table of all error codes with status and meaning, `401` on every endpoint that needs a session, consistent path parameter names (`eventId` instead of `id`), and a note on serving the API under a versioned base path such as `/api/v2`
+- Two-factor sign-in (feature `twoFactor`): page `/two-factor` with QR code, key for typing in and ten recovery codes, a code step after the password, new recovery codes and turning it off again. Endpoints `POST /auth/login/two-factor` and `/auth/two-factor*`; `POST /auth/login` answers `202` with a `challenge` when a code is needed. The confirmation mail of the test backend links to the page
+- Signed-in devices in **Settings → Security**: list with browser, system and last use, sign out one device or all others (`GET /auth/sessions`, `DELETE /auth/sessions/:id`, `DELETE /auth/sessions`)
+- Agenda view (`agenda`): the next 30 days as a list, shortcut `A`
+- Subscribed calendars (feature `externalCalendars`): up to 10 iCal addresses per user, shown read-only next to the own calendars and loaded by the backend (`/external-calendars*`)
+- Change history (feature `history`): "History" tab of events in team calendars (`GET /events/:id/history`)
+- Notifications (feature `notifications`): bell with invitations, changes, cancellations, replies, chat messages and reminders, live over the WebSocket (`/notifications*`, `notification.created`)
+- New settings tab **Connections** with subscribed calendars, CalDAV accounts and the access for CalDAV programs. Subscribed calendars moved there from **Calendars**
+- CalDAV server (feature `caldav`): app passwords for Apple Calendar, Thunderbird, DAVx⁵ and others (`/auth/app-passwords*`, `GET /caldav`), protocol in `api/caldav.md`
+- CalDAV accounts (feature `caldavAccounts`): calendars of Nextcloud, iCloud and other CalDAV services next to the own ones, editable, synchronized by the backend (`/caldav-accounts*`, `/caldav-calendars*`)
+- New error codes `invalidTwoFactorCode`, `twoFactorExpired`, `twoFactorAlreadyEnabled`, `twoFactorNotEnabled`, `invalidCalendarUrl`, `alreadySubscribed`, `tooManyExternalCalendars`, `externalCalendarUnavailable`, `tooManyAppPasswords`, `tooManyCaldavAccounts` and `caldavAuthFailed`, translated in all languages
+- `User` carries `twoFactorEnabled` and `hasPassword`
 
 ### Fixed
 
 - With `teams` off, the component no longer loads `GET /invitations`, so a backend without teams needs no endpoint for it
+- iCal export: detached occurrences are no longer also listed as `EXDATE` (some programs hid them), `UNTIL` of zoned series is written in UTC as RFC 5545 requires, `UTC` events use the `Z` form, and every time zone used gets a `VTIMEZONE`
+- iCal import: an `UNTIL` in UTC is read in the time zone of the series, so series west of UTC no longer run one day longer
+- The show/hide button of password fields is translated
+- `api/openapi.yaml`: `POST` and `PATCH /external-calendars` list `502` (`externalCalendarUnavailable`)
 
 ## 1.4.0 – 2026-11-18
 

@@ -1,6 +1,6 @@
 import { isOneOf } from './object.ts'
 
-export const CALENDAR_VIEWS = ['day', 'week', 'month', 'year'] as const
+export const CALENDAR_VIEWS = ['day', 'week', 'month', 'year', 'agenda'] as const
 
 export type CalendarView = (typeof CALENDAR_VIEWS)[number]
 

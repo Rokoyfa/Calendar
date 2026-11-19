@@ -41,7 +41,11 @@ export const listTimeZones = (): string[] => {
 }
 
 const toWallTime = (instant: number, timeZone: string): WallTime => {
-  const parts = Object.fromEntries(getFormatter(timeZone).formatToParts(new Date(instant)).map((part) => [part.type, part.value]))
+  const parts = Object.fromEntries(
+    getFormatter(timeZone)
+      .formatToParts(new Date(instant))
+      .map((part) => [part.type, part.value]),
+  )
   return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` }
 }
 
@@ -51,7 +55,7 @@ const wallTimeAsUtc = ({ date, time }: WallTime) => {
   return Date.UTC(year, month - 1, day, hour, minute)
 }
 
-const offsetAt = (instant: number, timeZone: string) => {
+export const offsetAt = (instant: number, timeZone: string) => {
   const minute = Math.floor(instant / MS_PER_MINUTE) * MS_PER_MINUTE
   return wallTimeAsUtc(toWallTime(minute, timeZone)) - minute
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useMemo, useState, type ReactNode, type RefObject } from 'react'
 import { RouterProvider } from 'react-router'
 import type { CalendarDataSource } from '../data/index.ts'
 import { useFeatures } from '../context/HostContext.ts'
@@ -6,11 +6,13 @@ import { AuthProvider, useAuth } from '../features/authorization/index.ts'
 import { CalendarsProvider } from '../features/calendars/index.ts'
 import { PreferencesProvider } from '../features/preferences/index.ts'
 import { ReminderNotices } from '../features/reminders/ReminderNotices.tsx'
-import { StorageProvider } from '../features/storage/index.ts'
+import { CaldavEventRepository, StorageProvider, withCaldavEvents } from '../features/storage/index.ts'
+import { CaldavProvider } from '../features/caldav/index.ts'
 import { useI18n, useLocaleGetter } from '../i18n/index.ts'
 import { createCalendarRouter } from '../router.tsx'
 import type { CalendarRouting } from './config.ts'
 import { withEventCallbacks, type EventCallbacks } from './eventCallbacks.ts'
+import { ExternalCalendarsProvider } from '../features/external/index.ts'
 
 type EventCallbacksRef = RefObject<EventCallbacks>
 
@@ -24,16 +26,24 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
   const { m } = useI18n()
   const getLanguage = useLocaleGetter()
   const { status, user, expireSession } = useAuth()
-  const { reminders } = useFeatures()
+  const { reminders, caldav, caldavAccounts } = useFeatures()
   const isAuthenticated = status === 'authenticated'
   const repositories = useMemo(
     () => dataSource.connect({ isAuthenticated }, { getLanguage, onUnauthorized: expireSession }),
     [dataSource, isAuthenticated, getLanguage, expireSession],
   )
+  const caldavEvents = useMemo(
+    () => (caldavAccounts && repositories.caldav ? new CaldavEventRepository(repositories.caldav) : undefined),
+    [caldavAccounts, repositories],
+  )
+  useEffect(() => caldavEvents?.setEmail(user?.email ?? null), [caldavEvents, user])
   const storage = useMemo(
     () => ({
       mode: repositories.mode,
-      events: withEventCallbacks(repositories.events, () => eventCallbacks.current),
+      events: withEventCallbacks(
+        caldavEvents ? withCaldavEvents(repositories.events, caldavEvents) : repositories.events,
+        () => eventCallbacks.current,
+      ),
       colors: repositories.colors,
       preferences: repositories.preferences,
       holidays: repositories.holidays,
@@ -41,8 +51,14 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
       categories: repositories.categories,
       shared: repositories.shared,
       attachments: repositories.attachments,
+      externalCalendars: repositories.externalCalendars,
+      history: repositories.history,
+      notifications: repositories.notifications,
+      appPasswords: caldav ? repositories.appPasswords : undefined,
+      caldav: caldavEvents ? repositories.caldav : undefined,
+      caldavEvents,
     }),
-    [repositories, eventCallbacks],
+    [repositories, eventCallbacks, caldav, caldavEvents],
   )
 
   if (status === 'loading') return <p className="appLoading">{m.common.loading}</p>
@@ -54,8 +70,12 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
           storageScope={user?.id ?? 'guest'}
           repository={repositories.calendars}
         >
-          {children}
-          {reminders && <ReminderNotices />}
+          <ExternalCalendarsProvider>
+            <CaldavProvider>
+              {children}
+              {reminders && <ReminderNotices />}
+            </CaldavProvider>
+          </ExternalCalendarsProvider>
         </CalendarsProvider>
       </PreferencesProvider>
     </StorageProvider>

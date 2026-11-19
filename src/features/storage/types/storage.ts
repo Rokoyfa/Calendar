@@ -9,6 +9,24 @@ import type { TrashedEvent } from '../../../utils/trash.ts'
 import type { PublicHoliday } from '../../../utils/holidays.ts'
 import type { Preferences } from '../../../utils/preferences.ts'
 import type { SharedCalendar } from '../../../utils/sharedCalendar.ts'
+import type {
+  ExternalCalendar,
+  ExternalCalendarChanges,
+  ExternalCalendarInput,
+} from '../../../utils/externalCalendar.ts'
+import type { HistoryPage } from '../../../utils/history.ts'
+import type {
+  AppPassword,
+  CaldavAccess,
+  CaldavAccount,
+  CaldavAccountChanges,
+  CaldavAccountInput,
+  CaldavCalendar,
+  CaldavCalendarChanges,
+  CaldavObject,
+  CreatedAppPassword,
+} from '../../../utils/caldav.ts'
+import type { AppNotification, NotificationPage } from '../../../utils/notification.ts'
 
 export type EventQuery = DateRange & { calendarIds: readonly string[] }
 
@@ -50,6 +68,50 @@ export interface AttachmentRepository {
   remove(id: string): Promise<void>
 }
 
+export interface ExternalCalendarRepository {
+  list(): Promise<ExternalCalendar[]>
+  create(input: ExternalCalendarInput): Promise<ExternalCalendar>
+  update(id: string, changes: ExternalCalendarChanges): Promise<ExternalCalendar>
+  remove(id: string): Promise<void>
+  content(id: string): Promise<string>
+}
+
+export interface AppPasswordRepository {
+  list(): Promise<AppPassword[]>
+  create(name: string): Promise<CreatedAppPassword>
+  remove(id: string): Promise<void>
+  access(): Promise<CaldavAccess>
+}
+
+export interface CaldavRepository {
+  list(): Promise<CaldavAccount[]>
+  create(input: CaldavAccountInput): Promise<CaldavAccount>
+  update(id: string, changes: CaldavAccountChanges): Promise<CaldavAccount>
+  remove(id: string): Promise<void>
+  sync(id: string): Promise<CaldavAccount>
+  updateCalendar(id: string, changes: CaldavCalendarChanges): Promise<CaldavCalendar>
+  listObjects(calendarId: string): Promise<CaldavObject[]>
+  createObject(calendarId: string, data: string): Promise<CaldavObject>
+  updateObject(calendarId: string, objectId: string, data: string, etag: string): Promise<CaldavObject>
+  removeObject(calendarId: string, objectId: string, etag: string): Promise<void>
+}
+
+export interface CaldavEventSource {
+  setCalendars(calendars: readonly CaldavCalendar[]): void
+  forget(calendarIds?: readonly string[]): void
+}
+
+export interface HistoryRepository {
+  list(eventId: string, options?: { before?: string }): Promise<HistoryPage>
+}
+
+export interface NotificationRepository {
+  list(options?: { before?: string }): Promise<NotificationPage>
+  markRead(ids?: readonly string[]): Promise<void>
+  remove(id: string): Promise<void>
+  subscribe(listener: (notification: AppNotification) => void): () => void
+}
+
 export interface SharedCalendarRepository {
   get(token: string): Promise<SharedCalendar>
   listEvents(token: string, range: DateRange): Promise<CalendarEvent[]>
@@ -88,6 +150,12 @@ export type StorageRepositories = {
   categories?: CategoryRepository
   shared?: SharedCalendarRepository
   attachments?: AttachmentRepository
+  externalCalendars?: ExternalCalendarRepository
+  history?: HistoryRepository
+  notifications?: NotificationRepository
+  appPasswords?: AppPasswordRepository
+  caldav?: CaldavRepository
+  caldavEvents?: CaldavEventSource
 }
 
 export type StorageContextValue = StorageRepositories & {

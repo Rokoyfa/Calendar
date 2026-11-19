@@ -7,6 +7,8 @@ export const settings = {
     account: 'Account',
     notifications: 'Notifications',
     data: 'Data',
+    security: 'Security',
+    connections: 'Connections',
   },
   dataExport: {
     title: 'Your data',

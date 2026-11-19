@@ -5,6 +5,7 @@ export const ROUTES = {
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
   verifyEmail: '/verify-email',
+  twoFactor: '/two-factor',
   settings: '/settings',
   createCalendar: '/calendars/new',
   calendarSettings: '/calendars/:calendarId/settings',
@@ -17,6 +18,7 @@ export const calendarSettingsPath = (calendarId: string) =>
 
 export const SETTINGS_CALENDARS_PATH = `${ROUTES.settings}?tab=calendars`
 export const SETTINGS_INVITATIONS_PATH = `${ROUTES.settings}?tab=invitations`
+export const SETTINGS_SECURITY_PATH = `${ROUTES.settings}?tab=security`
 
 export const TOKEN_PARAM = 'token'
 

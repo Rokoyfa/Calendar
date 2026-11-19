@@ -34,6 +34,12 @@ export const DEFAULT_FEATURES = {
   trash: true,
   dataExport: true,
   registration: true,
+  twoFactor: true,
+  externalCalendars: true,
+  history: true,
+  notifications: true,
+  caldav: true,
+  caldavAccounts: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES

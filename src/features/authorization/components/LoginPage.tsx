@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
@@ -12,6 +13,7 @@ import { useRedirectTarget } from '../hooks/useRedirectTarget.ts'
 import type { LoginInput } from '../types/auth.ts'
 import { normalizeEmail, validateLogin } from '../utils/validation.ts'
 import { CurrentPasswordField, EmailField } from './AuthFields.tsx'
+import { TwoFactorLoginStep } from './security/TwoFactorLoginStep.tsx'
 
 const EMPTY_LOGIN: LoginInput = { email: '', password: '' }
 
@@ -20,15 +22,27 @@ export function LoginPage() {
   const { login } = useAuth()
   const { registration } = useFeatures()
   const { redirectTo, continueToTarget } = useRedirectTarget()
+  const [challenge, setChallenge] = useState<string | null>(null)
   const { bind, handleSubmit, isPending, error } = useForm({
     initialValues: EMPTY_LOGIN,
     validate: (input) => validateLogin(input, m),
     prepare: (input) => ({ ...input, email: normalizeEmail(input.email) }),
     onSubmit: async (input) => {
-      await login(input)
+      const result = await login(input)
+      if ('twoFactorRequired' in result) {
+        setChallenge(result.challenge)
+        return
+      }
       await continueToTarget()
     },
   })
+
+  if (challenge)
+    return (
+      <PageLayout title={m.security.twoFactor.loginTitle}>
+        <TwoFactorLoginStep challenge={challenge} onDone={continueToTarget} onRestart={() => setChallenge(null)} />
+      </PageLayout>
+    )
 
   return (
     <PageLayout

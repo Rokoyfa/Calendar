@@ -96,10 +96,22 @@ describe('iCalendar', () => {
         { url: 'https://maps.example.com/halle', label: '' },
       ],
       recurrence: { frequency: 'monthly', monthlyMode: 'weekdayOfMonth', count: 5 },
-      excludedDates: ['2026-12-07'],
+      excludedDates: [],
       reminders: [30, 1440],
     })
+    expect(text).not.toContain('EXDATE')
     expect(exception).toMatchObject({ recurrenceId: '2026-12-07', input: { uid: 'series-uid', start: '11:00' } })
+  })
+
+  it('writes the end of a zoned series in UTC and reads it back in its zone', () => {
+    const series = calendarEvent({
+      timeZone: 'America/Los_Angeles',
+      recurrence: recurrence({ frequency: 'daily', until: '2026-12-10' }),
+    })
+    const text = toICalendar([series], 'Test')
+    expect(text).toContain('UNTIL=20261211T075900Z')
+    expect(text).toContain('TZID:America/Los_Angeles')
+    expect(parseICalendar(text)!.events[0].input.recurrence?.until).toBe('2026-12-10')
   })
 
   it('writes categories by name and reads them back', () => {

@@ -149,7 +149,7 @@ Was der öffentliche Tenant-Dienst dafür tun muss, steht in [`api/openapi.yaml`
 
 ### REST-API (OpenAPI)
 
-Der Vertrag zwischen `restDataSource` und einem Backend liegt als **OpenAPI 3.1** in [`api/openapi.yaml`](api/openapi.yaml): alle Endpunkte mit Anfragen, Antworten, Fehlercodes und Rechten. Jede Operation trägt `x-feature` (`core`, ein Feature-Name, `getUserToken` oder `tenant`); ein eigenes Backend braucht nur `core` und die Endpunkte der eingeschalteten Features. Das Test-Backend ist die Referenz-Umsetzung. Geprüft wurde, dass das Test-Backend alle beschriebenen Endpunkte außer `POST /auth/token` (Tenants) hat und dass seine Antworten in einem Durchlauf über alle 40 Endpunkte (65 Aufrufe, auch Fehlerfälle) den Schemas entsprechen.
+Der Vertrag zwischen `restDataSource` und einem Backend liegt als **OpenAPI 3.1** in [`api/openapi.yaml`](api/openapi.yaml): alle Endpunkte mit Anfragen, Antworten, Fehlercodes und Rechten. Jede Operation trägt `x-feature` (`core`, ein Feature-Name, `getUserToken` oder `tenant`); ein eigenes Backend braucht nur `core` und die Endpunkte der eingeschalteten Features. Das Test-Backend ist die Referenz-Umsetzung. Geprüft wurde, dass das Test-Backend alle beschriebenen Endpunkte außer `POST /auth/token` (Tenants) und `GET /holidays` (nur für `holidaySource="backend"`) hat und dass seine Antworten den Schemas entsprechen: zuerst in einem Durchlauf über die 40 Endpunkte von 1.x (65 Aufrufe, auch Fehlerfälle), dann für Zwei-Faktor-Anmeldung, Geräte, abonnierte Kalender, Verlauf und Benachrichtigungen (44 Aufrufe über 29 Operationen).
 
 Die Datei lässt sich z. B. mit Swagger UI oder Redocly ansehen und mit Generatoren für Server-Gerüste in anderen Sprachen nutzen.
 
@@ -401,6 +401,25 @@ Angemeldet zeigt `/settings` zusätzlich:
 - **E-Mail-Adresse:** Status „Bestätigt“ oder „Nicht bestätigt“, Bestätigungslink erneut senden
 - **Passwort ändern:** aktuelles Passwort und neues Passwort zweimal. Das neue muss sich vom aktuellen unterscheiden.
 - **Konto löschen:** Bestätigung im Fenster mit Passwort, danach zurück zum Kalender (abgemeldet)
+
+Der Tab **Sicherheit** (nur mit Passwort-Anmeldung) zeigt den Stand der Zwei-Faktor-Anmeldung mit Link auf `/two-factor` und die angemeldeten Geräte (`SessionsSection.tsx`): Browser und System aus dem User-Agent, letzte Nutzung, gekürzte IP, einzeln oder alle anderen abmelden. Code: `features/authorization/components/security/`.
+
+### Zwei-Faktor-Anmeldung
+
+- **Seite** `/two-factor` (`TwoFactorPage.tsx`, Schalter `twoFactor`): Passwort bestätigen → QR-Code (Bibliothek `qrcode`, erst auf dieser Seite nachgeladen, im npm-Paket als Abhängigkeit, im CDN-Bundle enthalten) und Schlüssel zum Eintippen → erster Code → zehn Wiederherstellungscodes zum Kopieren oder Herunterladen. Ist sie aktiv: neue Codes erzeugen, ausschalten mit Passwort und Code oder Wiederherstellungscode.
+- **Anmeldung:** `POST /auth/login` antwortet mit `202` und `challenge`; die Anmeldeseite zeigt dann `TwoFactorLoginStep` (Code aus der App oder Wiederherstellungscode, `POST /auth/login/two-factor`). Bei `twoFactorExpired` geht es zurück zum Passwort.
+- **Mail:** Die Bestätigungsmail nach der Registrierung enthält im TestBE einen zweiten Link auf `/two-factor`.
+- Mit `getUserToken` und im lokalen Modus gibt es weder Seite noch Tab.
+
+### Agenda, abonnierte Kalender, Verlauf, Glocke
+
+- **Agenda** (`AgendaView.tsx`): die nächsten 30 Tage als Liste, nur Tage mit Terminen oder Feiertagen, Kürzel `A`, Ansicht `agenda` in `views`, `initialView` und den Einstellungen.
+- **Abonnierte Kalender** (`features/external`, Schalter `externalCalendars`): `ExternalCalendarsProvider` lädt die Liste und den Inhalt jedes angezeigten Kalenders (`GET /external-calendars/:id/ics`, alle 15 Minuten neu), `utils/externalCalendar.ts` macht daraus mit dem iCal-Import schreibgeschützte Termine mit `calendarId` `external:<id>`. Der Kalender mischt sie vor `expandEvents` dazu; sie lassen sich nicht ziehen, nicht bearbeiten und haben weder Chat noch Anhänge, Erinnerungen oder Verlauf. Verwaltung in **Einstellungen → Verbindungen**.
+- **CalDAV-Konten** (`features/caldav`, Schalter `caldavAccounts`): `CaldavProvider` lädt die Konten (`/caldav-accounts`) und gibt die Kalender an `CaldavEventRepository` (`features/storage/repositories`). `withCaldavEvents` legt sich in `CalendarApp` um das Termin-Repository und leitet alles mit `calendarId` `caldav:<id>` dorthin; so funktionieren Bearbeiten, Ziehen, Serien-Umfänge und Rückgängig ohne Sonderwege. Termin-IDs sind `caldav:<kalender>:<objekt>` bzw. `…:<datum>` für herausgelöste Termine. `utils/caldav.ts` liest ein Objekt (`toCaldavEvents`) und schreibt es zurück (`buildCaldavObject`): nur die bekannten Eigenschaften werden ersetzt, alles andere des Originals (Organisator, Kategorien, `X-`-Eigenschaften, Anhänge, fremde Alarme, Parameter der Teilnehmenden) bleibt. Objekte werden 60 Sekunden zwischengespeichert, nach `eventChanged` sofort neu geladen. Schreibgeschützte Kalender öffnen nur zum Ansehen und lassen sich nicht ziehen. `CalendarPage` hängt die angezeigten CalDAV-Kalender an `calendarIds` an.
+- **CalDAV-Zugang** (Schalter `caldav`): `CaldavServerSettings` zeigt Serveradresse und Benutzername (`GET /caldav`) und verwaltet App-Passwörter (`/auth/app-passwords`). Das Protokoll selbst steht in `api/caldav.md`.
+- **Tab Verbindungen** in `SettingsPage`: abonnierte Kalender, CalDAV-Konten und CalDAV-Zugang; erscheint nur, wenn eins davon verfügbar ist.
+- **Verlauf** (`HistoryPanel.tsx`, Schalter `history`): Tab im Termin-Dialog, nur in Team-Kalendern.
+- **Glocke** (`features/notifications`, Schalter `notifications`): `NotificationBell` neben dem Konto-Button, Liste im Popover, neue Einträge über `notification.created` auf demselben WebSocket wie Chat und Live-Updates. Ein Klick öffnet den Termin über die Link-Parameter (`calendar`, `event`, `date`, bei Chat `tab=chat`) oder die Einladungen; Termine aus Kalendern ohne Zugriff sind nur Text.
 
 Der Tab **Daten** lädt die eigenen Daten als JSON herunter (DSGVO Art. 20): angemeldet über `GET /auth/me/export`, im lokalen Modus alles, was der Browser unter `calendar.*` speichert. Code: `DataExportSection.tsx`, `utils/dataExport.ts`. Schalter: `dataExport`.
 

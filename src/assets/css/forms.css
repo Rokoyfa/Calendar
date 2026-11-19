@@ -190,7 +190,6 @@ select.input {
   opacity: 0.5;
 }
 
-
 .buttonRow {
   display: flex;
   flex-wrap: wrap;
@@ -361,7 +360,7 @@ select.input {
 }
 
 .filterButton--active::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 2px;
   right: 2px;
@@ -388,7 +387,9 @@ select.input {
   padding: var(--space-2);
   border: 2px dashed transparent;
   border-radius: var(--radius-md);
-  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .attachments--dragOver {
@@ -444,4 +445,10 @@ button.attachmentName:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
+}
+
+.formSubtitle {
+  margin: var(--space-4) 0 0;
+  font-size: var(--font-size-md);
+  font-weight: 600;
 }

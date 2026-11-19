@@ -10,6 +10,11 @@ import type {
   PreferencesRepository,
   SharedCalendarRepository,
   StorageMode,
+  ExternalCalendarRepository,
+  HistoryRepository,
+  NotificationRepository,
+  AppPasswordRepository,
+  CaldavRepository,
 } from '../features/storage/index.ts'
 
 export type DataRepositories = {
@@ -23,6 +28,11 @@ export type DataRepositories = {
   categories?: CategoryRepository
   shared?: SharedCalendarRepository
   attachments?: AttachmentRepository
+  externalCalendars?: ExternalCalendarRepository
+  history?: HistoryRepository
+  notifications?: NotificationRepository
+  appPasswords?: AppPasswordRepository
+  caldav?: CaldavRepository
 }
 
 export type DataSourceContext = {

@@ -51,11 +51,12 @@ import { ChatPanel, useUnreadCount } from '../../chat/index.ts'
 import type { ChatKey } from '../../../utils/chat.ts'
 import { ReminderField } from './ReminderField.tsx'
 import { TimeZoneField } from './TimeZoneField.tsx'
+import { HistoryPanel } from './HistoryPanel.tsx'
 
 const DEFAULT_START = '09:00'
 const DEFAULT_END = '10:00'
 
-export type EventTab = 'general' | 'appearance' | 'recurrence' | 'attendees' | 'details' | 'chat'
+export type EventTab = 'general' | 'appearance' | 'recurrence' | 'attendees' | 'details' | 'chat' | 'history'
 
 const TAB_FIELDS: Record<EventTab, readonly (keyof EventValidationErrors)[]> = {
   general: ['title', 'startDate', 'start', 'endDate', 'end', 'timeZone', 'reminders'],
@@ -64,7 +65,10 @@ const TAB_FIELDS: Record<EventTab, readonly (keyof EventValidationErrors)[]> = {
   attendees: ['attendees'],
   details: ['location', 'links', 'description'],
   chat: [],
+  history: [],
 }
+
+const LIVE_TABS: readonly EventTab[] = ['chat', 'history']
 
 const NO_CATEGORIES: readonly Category[] = []
 
@@ -94,6 +98,8 @@ type EventModalProps = {
   onDuplicate?: (input: EventInput) => void
   onRemindersChange?: (reminders: number[]) => Promise<void>
   chat?: { key: ChatKey; calendarId: string }
+  history?: { eventId: string; calendarNames: ReadonlyMap<string, string> }
+  showAttachments?: boolean
   initialTab?: EventTab
   categories?: readonly Category[]
   onCreateCategory?: (name: string) => Promise<Category>
@@ -119,6 +125,8 @@ export function EventModal({
   onDuplicate,
   onRemindersChange,
   chat,
+  history,
+  showAttachments = true,
   initialTab = 'general',
   categories = NO_CATEGORIES,
   onCreateCategory,
@@ -377,7 +385,7 @@ export function EventModal({
         </FormField>
       </>
     ),
-    after: attachmentRepository && (
+    after: attachmentRepository && showAttachments && (
       <AttachmentsField
         eventId={occurrence?.id ?? null}
         canEdit={canEditAttachments}
@@ -392,11 +400,23 @@ export function EventModal({
       label: m.calendars.settings.withCount(m.events.chat.tab, unreadChat),
       content: <ChatPanel chatKey={chat.key} calendarId={chat.calendarId} isActive={activeTab === 'chat'} />,
     })
+  if (history)
+    tabDefinitions.push({
+      value: 'history',
+      label: m.events.history.tab,
+      content: (
+        <HistoryPanel
+          eventId={history.eventId}
+          calendarNames={history.calendarNames}
+          isActive={activeTab === 'history'}
+        />
+      ),
+    })
   const tabs = tabDefinitions.map(({ after, ...tab }) => ({
     ...tab,
     content: (
       <>
-        {readOnly && tab.value !== 'chat' ? (
+        {readOnly && !LIVE_TABS.includes(tab.value) ? (
           <fieldset className="readOnlyFields" disabled>
             {tab.content}
           </fieldset>

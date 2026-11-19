@@ -9,6 +9,8 @@ export const settings: Messages['settings'] = {
     account: 'Konto',
     notifications: 'Benachrichtigungen',
     data: 'Daten',
+    security: 'Sicherheit',
+    connections: 'Verbindungen',
   },
   dataExport: {
     title: 'Deine Daten',

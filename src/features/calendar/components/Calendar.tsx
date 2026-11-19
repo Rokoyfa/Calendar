@@ -37,6 +37,8 @@ import {
 } from '../../events/index.ts'
 import { ChatProvider, type ChatAccess } from '../../chat/index.ts'
 import { getChatKey } from '../../../utils/chat.ts'
+import { isExternalEvent } from '../../../utils/externalCalendar.ts'
+import { isCaldavEvent } from '../../../utils/caldav.ts'
 import { CurrentUserEmailContext } from '../context/CurrentUserContext.ts'
 import { DraggingEventContext } from '../context/DragContext.ts'
 import { useAttendeeCandidates, type AttendeeCandidateLoader } from '../hooks/useAttendeeCandidates.ts'
@@ -63,12 +65,14 @@ import { CalendarHeader } from './CalendarHeader.tsx'
 import { MonthView } from './MonthView.tsx'
 import { TimeGridView } from './TimeGridView.tsx'
 import { YearView } from './YearView.tsx'
+import { AgendaView } from './AgendaView.tsx'
 
 const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = {
   day: TimeGridView,
   week: TimeGridView,
   month: MonthView,
   year: YearView,
+  agenda: AgendaView,
 }
 
 const EventModal = lazy(async () => ({ default: (await import('../../events/components/EventModal.tsx')).EventModal }))
@@ -91,6 +95,8 @@ type CalendarProps = {
   currentUserEmail?: string | null
   loadAttendeeCandidates?: AttendeeCandidateLoader
   chat?: ChatAccess
+  externalEvents?: readonly CalendarEvent[]
+  isHistoryAvailable?: (calendarId: string) => boolean
   openEvent?: OpenEventRequest
   onOpenEventDone?: () => void
 }
@@ -110,6 +116,8 @@ type PendingDrop = {
 const NO_SHORTCUTS = {}
 const NO_NAMES: ReadonlyMap<string, string> = new Map()
 const ALWAYS = () => true
+const NEVER = () => false
+const NO_EXTERNAL_EVENTS: readonly CalendarEvent[] = []
 
 type UndoOffer = { id: number; message: string; undo: () => Promise<void> }
 
@@ -129,6 +137,8 @@ export function Calendar({
   currentUserEmail = null,
   loadAttendeeCandidates,
   chat,
+  externalEvents = NO_EXTERNAL_EVENTS,
+  isHistoryAvailable = NEVER,
   openEvent: linkedEvent,
   onOpenEventDone,
 }: CalendarProps) {
@@ -156,14 +166,27 @@ export function Calendar({
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const activeFilter = categories.length > 0 ? categoryFilter : null
   const occurrences = useMemo(() => {
-    const expanded = expandEvents(events, range.from, range.to, viewerTimeZone)
+    const all = externalEvents.length > 0 ? [...events, ...externalEvents] : events
+    const expanded = expandEvents(all, range.from, range.to, viewerTimeZone)
     if (activeFilter === null) return expanded
     const known = new Set(categories.map((category) => category.id))
-    return expanded.filter((occurrence) => matchesCategoryFilter(occurrence.categoryIds, known, activeFilter))
-  }, [events, range, viewerTimeZone, categories, activeFilter])
-  const occurrencesByKey = useMemo(
-    () => new Map(occurrences.map((occurrence) => [occurrence.occurrenceKey, occurrence])),
-    [occurrences],
+    return expanded.filter(
+      (occurrence) =>
+        isExternalEvent(occurrence) ||
+        isCaldavEvent(occurrence) ||
+        matchesCategoryFilter(occurrence.categoryIds, known, activeFilter),
+    )
+  }, [events, externalEvents, range, viewerTimeZone, categories, activeFilter])
+  const draggableByKey = useMemo(
+    () =>
+      new Map(
+        occurrences
+          .filter(
+            (occurrence) => !isExternalEvent(occurrence) && (!isCaldavEvent(occurrence) || canEditEvent(occurrence)),
+          )
+          .map((occurrence) => [occurrence.occurrenceKey, occurrence]),
+      ),
+    [occurrences, canEditEvent],
   )
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null)
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
@@ -376,7 +399,7 @@ export function Calendar({
   useEventDrag({
     containerRef: mainRef,
     enabled: canCreate,
-    occurrences: occurrencesByKey,
+    occurrences: draggableByKey,
     onPreview: setDragPreview,
     onDrop: handleDrop,
   })
@@ -401,6 +424,7 @@ export function Calendar({
           [VIEW_SHORTCUTS.month]: selectView('month'),
           [VIEW_SHORTCUTS.year]: selectView('year'),
           j: selectView('year'),
+          [VIEW_SHORTCUTS.agenda]: selectView('agenda'),
           'mod+z': undoOffer ? () => void runUndo() : undefined,
         }
       : NO_SHORTCUTS,
@@ -458,6 +482,9 @@ export function Calendar({
 
   const ViewComponent = VIEW_COMPONENTS[view]
   const editorSource = shownEditor?.occurrence ? eventSources.get(shownEditor.occurrence.calendarId) : undefined
+  const editorIsExternal = shownEditor?.occurrence ? isExternalEvent(shownEditor.occurrence) : false
+  const editorIsCaldav = shownEditor?.occurrence ? isCaldavEvent(shownEditor.occurrence) : false
+  const editorIsLocked = editorIsCaldav && shownEditor?.occurrence ? !canEditEvent(shownEditor.occurrence) : false
 
   return (
     <HolidaysContext value={holidays}>
@@ -504,7 +531,17 @@ export function Calendar({
               {shownEditor && (
                 <Suspense fallback={null}>
                   <EventModal
-                    readOnly={readOnly}
+                    readOnly={readOnly || editorIsExternal || editorIsLocked}
+                    showAttachments={!editorIsExternal && !editorIsCaldav}
+                    history={
+                      features.history &&
+                      shownEditor.occurrence &&
+                      !editorIsExternal &&
+                      !editorIsCaldav &&
+                      isHistoryAvailable(shownEditor.occurrence.calendarId)
+                        ? { eventId: shownEditor.occurrence.id, calendarNames }
+                        : undefined
+                    }
                     canEditAttachments={!readOnly && (!shownEditor.occurrence || canEditEvent(shownEditor.occurrence))}
                     categories={categories.filter((category) => category.calendarId === editorCalendarId)}
                     onCreateCategory={
@@ -521,7 +558,7 @@ export function Calendar({
                             candidates: attendeeCandidates,
                             ownEmail: currentUserEmail,
                             onRespond:
-                              respond && shownEditor.occurrence
+                              respond && shownEditor.occurrence && !editorIsExternal
                                 ? (status) => respond(shownEditor.occurrence!, status)
                                 : undefined,
                           }
@@ -529,7 +566,11 @@ export function Calendar({
                     }
                     notice={
                       shownEditor.notice ??
-                      (editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n)))
+                      (editorIsExternal && editorSource
+                        ? i18n.m.external.eventNotice(editorSource.name)
+                        : editorIsCaldav && editorSource
+                          ? i18n.m.caldav.eventNotice(editorSource.name)
+                          : editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n)))
                     }
                     onSave={handleSave}
                     remoteChange={editorRemoteChange}
@@ -537,9 +578,15 @@ export function Calendar({
                       closeEditor()
                       invalidate()
                     }}
-                    onDelete={shownEditor.occurrence ? () => requestDelete(shownEditor.occurrence!) : undefined}
+                    onDelete={
+                      shownEditor.occurrence && !editorIsExternal
+                        ? () => requestDelete(shownEditor.occurrence!)
+                        : undefined
+                    }
                     chat={
-                      shownEditor.occurrence && chat?.isAvailable(shownEditor.occurrence.calendarId)
+                      shownEditor.occurrence &&
+                      !editorIsExternal &&
+                      chat?.isAvailable(shownEditor.occurrence.calendarId)
                         ? {
                             key: getChatKey(shownEditor.occurrence),
                             calendarId: shownEditor.occurrence.calendarId,
@@ -549,7 +596,7 @@ export function Calendar({
                     initialTab={shownEditor.initialTab}
                     onDuplicate={features.duplicate && shownEditor.occurrence && canCreate ? duplicate : undefined}
                     onRemindersChange={
-                      setReminders && shownEditor.occurrence
+                      setReminders && shownEditor.occurrence && !editorIsExternal
                         ? async (reminders) => {
                             await setReminders(shownEditor.occurrence!, reminders)
                             closeEditor()

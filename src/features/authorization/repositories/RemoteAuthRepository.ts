@@ -1,7 +1,7 @@
 import { parseEventResponse, type EventReply } from '../../../utils/event.ts'
 import { ApiError, isApiError } from '../../../utils/apiError.ts'
 import type { ErrorCode } from '../../../utils/appError.ts'
-import type { ApiClient } from '../../../utils/api.ts'
+import { encodePathSegment, type ApiClient } from '../../../utils/api.ts'
 import type {
   AccountDeletionInput,
   AuthRepository,
@@ -11,7 +11,14 @@ import type {
   PasswordResetRequestInput,
   ProfileInput,
   RegisterInput,
+  SecurityActions,
+  TwoFactorChallenge,
+  TwoFactorDisableInput,
+  TwoFactorLoginInput,
+  TwoFactorSetup,
+  TwoFactorState,
   User,
+  UserSession,
 } from '../types/auth.ts'
 
 const AUTH_PATH = '/auth'
@@ -52,9 +59,46 @@ export class RemoteAuthRepository implements AuthRepository {
   }
 
   login(input: LoginInput) {
-    return translateErrors(this.#api.post<User>(`${AUTH_PATH}/login`, input), {
+    return translateErrors(this.#api.post<User | TwoFactorChallenge>(`${AUTH_PATH}/login`, input), {
       401: 'invalidCredentials',
     })
+  }
+
+  completeTwoFactorLogin(input: TwoFactorLoginInput) {
+    return translateErrors(this.#api.post<User>(`${AUTH_PATH}/login/two-factor`, input), {
+      400: 'invalidTwoFactorCode',
+      410: 'twoFactorExpired',
+    })
+  }
+
+  readonly security: SecurityActions = {
+    getTwoFactorState: () => this.#api.get<TwoFactorState>(`${AUTH_PATH}/two-factor`),
+    startTwoFactorSetup: (password) =>
+      translateErrors(this.#api.post<TwoFactorSetup>(`${AUTH_PATH}/two-factor/setup`, { password }), {
+        403: 'wrongPassword',
+      }),
+    confirmTwoFactor: async (code) =>
+      (
+        await translateErrors(
+          this.#api.post<{ recoveryCodes: string[] }>(`${AUTH_PATH}/two-factor/confirm`, { code }),
+          { 400: 'invalidTwoFactorCode' },
+        )
+      ).recoveryCodes,
+    renewRecoveryCodes: async (password) =>
+      (
+        await translateErrors(
+          this.#api.post<{ recoveryCodes: string[] }>(`${AUTH_PATH}/two-factor/recovery-codes`, { password }),
+          { 403: 'wrongPassword' },
+        )
+      ).recoveryCodes,
+    disableTwoFactor: (input: TwoFactorDisableInput) =>
+      translateErrors(this.#api.request<void>('DELETE', `${AUTH_PATH}/two-factor`, { body: input }), {
+        400: 'invalidTwoFactorCode',
+        403: 'wrongPassword',
+      }),
+    listSessions: () => this.#api.get<UserSession[]>(`${AUTH_PATH}/sessions`),
+    endSession: (id) => this.#api.delete(`${AUTH_PATH}/sessions/${encodePathSegment(id)}`),
+    endOtherSessions: () => this.#api.delete(`${AUTH_PATH}/sessions`),
   }
 
   register(input: RegisterInput) {
@@ -108,7 +152,9 @@ export class RemoteAuthRepository implements AuthRepository {
 
   async respondToEvent(token: string, status: EventReply) {
     return parseEventResponse(
-      await translateErrors(this.#api.post<unknown>('/events/email-response', { token, status }), { 410: 'invalidLink' }),
+      await translateErrors(this.#api.post<unknown>('/events/email-response', { token, status }), {
+        410: 'invalidLink',
+      }),
     )
   }
 }

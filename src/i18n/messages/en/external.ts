@@ -1,0 +1,26 @@
+export const external = {
+  title: 'Subscribed calendars',
+  description:
+    'Show calendars from other services next to your own, for example public holidays, school holidays or a work calendar. Paste the iCal address (.ics) the service gives you. These calendars are read-only.',
+  empty: 'You have not subscribed to any calendar yet.',
+  addTitle: 'Subscribe to a calendar',
+  url: 'Calendar address (iCal)',
+  urlHint:
+    'Starts with https:// or webcal://. The full address is not shown again, because it can contain a private key.',
+  urlInvalid: 'Please enter an https:// or webcal:// address.',
+  name: 'Name',
+  nameRequired: 'Please enter a name.',
+  add: 'Subscribe',
+  adding: 'Checking the calendar …',
+  added: 'The calendar was added.',
+  show: 'Show in the calendar',
+  readOnly: 'Read only',
+  edit: 'Edit',
+  remove: 'Unsubscribe',
+  removing: 'Unsubscribing …',
+  removeTitle: 'Unsubscribe from calendar',
+  removeMessage: (name: string) => `Stop showing “${name}”? You can subscribe again at any time.`,
+  updated: (time: string) => `Updated ${time}`,
+  limitReached: (max: number) => `You can subscribe to at most ${max} calendars.`,
+  eventNotice: (name: string) => `From the subscribed calendar “${name}”. It can only be changed there.`,
+}

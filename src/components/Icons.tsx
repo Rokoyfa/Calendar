@@ -91,3 +91,13 @@ export const MapPinIcon = (props: IconProps) => (
 export const ChatIcon = (props: IconProps) => (
   <IconBase {...props} strokeWidth={2.5} path="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.8A8 8 0 1 1 21 12z" />
 )
+
+export const BellIcon = (props: IconProps) => (
+  <IconBase
+    {...props}
+    strokeWidth={2.5}
+    path="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"
+  />
+)
+
+export const CloseIcon = (props: IconProps) => <IconBase {...props} strokeWidth={2.5} path="M18 6L6 18M6 6l12 12" />

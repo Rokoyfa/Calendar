@@ -87,8 +87,8 @@ describe('features and views', () => {
 
   it('keeps the views in their fixed order', () => {
     expect(resolveViews(['month', 'day'])).toEqual(['day', 'month'])
-    expect(resolveViews([])).toEqual(['day', 'week', 'month', 'year'])
-    expect(resolveViews(undefined)).toHaveLength(4)
+    expect(resolveViews([])).toEqual(['day', 'week', 'month', 'year', 'agenda'])
+    expect(resolveViews(undefined)).toHaveLength(5)
   })
 
   it('finds the closest enabled view', () => {

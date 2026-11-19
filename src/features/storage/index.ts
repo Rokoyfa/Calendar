@@ -13,6 +13,12 @@ export { RemoteCategoryRepository } from './repositories/RemoteCategoryRepositor
 export { RemoteAttachmentRepository } from './repositories/RemoteAttachmentRepository.ts'
 export { RemoteSharedCalendarRepository } from './repositories/RemoteSharedCalendarRepository.ts'
 export { RemoteChatRepository } from './repositories/RemoteChatRepository.ts'
+export { RemoteExternalCalendarRepository } from './repositories/RemoteExternalCalendarRepository.ts'
+export { RemoteHistoryRepository } from './repositories/RemoteHistoryRepository.ts'
+export { RemoteNotificationRepository } from './repositories/RemoteNotificationRepository.ts'
+export { RemoteAppPasswordRepository } from './repositories/RemoteAppPasswordRepository.ts'
+export { RemoteCaldavRepository } from './repositories/RemoteCaldavRepository.ts'
+export { CaldavEventRepository, withCaldavEvents } from './repositories/CaldavEventRepository.ts'
 export { LiveSocket, type LiveMessage } from './utils/liveSocket.ts'
 export type {
   AttachmentRepository,
@@ -22,6 +28,12 @@ export type {
   EventRepository,
   EventSearchQuery,
   ChatRepository,
+  ExternalCalendarRepository,
+  AppPasswordRepository,
+  CaldavRepository,
+  CaldavEventSource,
+  HistoryRepository,
+  NotificationRepository,
   HolidayQuery,
   HolidayRepository,
   PreferencesRepository,

@@ -17,6 +17,8 @@ export const common = {
   progress: 'Progress',
   next: 'Next',
   back: 'Back',
+  showPassword: 'Show',
+  hidePassword: 'Hide',
 }
 
 export const errors: Record<ErrorCode, string> & {
@@ -83,6 +85,17 @@ export const errors: Record<ErrorCode, string> & {
   unknownTenant: 'This calendar is not set up correctly (unknown tenant).',
   originNotAllowed: 'This calendar may not be used on this website.',
   invalidUserToken: 'Your sign-in could not be confirmed. Please reload the page.',
+  invalidTwoFactorCode: 'The code is wrong or was already used.',
+  twoFactorExpired: 'The sign-in took too long. Please sign in again.',
+  twoFactorAlreadyEnabled: 'Two-factor sign-in is already on.',
+  twoFactorNotEnabled: 'Two-factor sign-in is off.',
+  invalidCalendarUrl: 'This address does not lead to a calendar that can be subscribed to.',
+  alreadySubscribed: 'You have already subscribed to this calendar.',
+  tooManyExternalCalendars: 'You have reached the maximum number of subscribed calendars.',
+  externalCalendarUnavailable: 'The calendar could not be loaded right now.',
+  tooManyAppPasswords: 'You can create at most 20 app passwords.',
+  tooManyCaldavAccounts: 'You can connect at most 5 CalDAV accounts.',
+  caldavAuthFailed: 'The CalDAV server did not accept the user name or password.',
   status: {
     400: 'The request was invalid.',
     401: 'Please sign in.',

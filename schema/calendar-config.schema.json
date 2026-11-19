@@ -162,6 +162,36 @@
           "type": "boolean",
           "default": true,
           "description": "Shows the sign-up page. Turn it off when users only sign in through the host (getUserToken) or are created by an admin. The backend must refuse POST /auth/register too."
+        },
+        "twoFactor": {
+          "type": "boolean",
+          "default": true,
+          "description": "Two-factor sign-in with codes from an authenticator app, for accounts with a password. Adds the page /two-factor and asks for the code after the password. Needs the /auth/two-factor endpoints; not available in local mode or with getUserToken."
+        },
+        "externalCalendars": {
+          "type": "boolean",
+          "default": true,
+          "description": "Lets users subscribe to calendars from other services (.ics addresses) and shows them read-only next to their own. Needs the /external-calendars endpoints; not available in local mode."
+        },
+        "history": {
+          "type": "boolean",
+          "default": true,
+          "description": "Shows who changed what and when in a History tab of events in team calendars. Needs GET /events/{id}/history; not available in local mode."
+        },
+        "notifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Shows a bell with notifications about invitations, changes, replies, chat messages and reminders. Needs the /notifications endpoints; not available in local mode."
+        },
+        "caldav": {
+          "type": "boolean",
+          "default": true,
+          "description": "Lets users show and edit their calendars in other programs (Apple Calendar, Thunderbird, DAVx5 …) over CalDAV with app passwords. Adds the server address and the app passwords to Settings › Connections. Needs /auth/app-passwords, /caldav and the CalDAV server described in api/caldav.md; not available in local mode."
+        },
+        "caldavAccounts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Lets users connect accounts of other CalDAV services (Nextcloud, iCloud …) and show and edit their calendars next to their own. Needs the /caldav-accounts and /caldav-calendars endpoints; not available in local mode."
         }
       }
     },
@@ -173,7 +203,8 @@
           "day",
           "week",
           "month",
-          "year"
+          "year",
+          "agenda"
         ]
       },
       "minItems": 1,
@@ -236,7 +267,8 @@
         "day",
         "week",
         "month",
-        "year"
+        "year",
+        "agenda"
       ],
       "description": "View shown first. Overrides the user's start view."
     },

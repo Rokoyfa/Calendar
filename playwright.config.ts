@@ -36,6 +36,8 @@ export default defineConfig({
         DATA_FILE: join(dataDir, 'data.json'),
         ATTACHMENTS_DIR: join(dataDir, 'attachments'),
         TENANT_CONFIG_FILE: join(dataDir, 'tenant-config.json'),
+        CREDENTIAL_KEY_FILE: join(dataDir, 'credential.key'),
+        ALLOW_PRIVATE_NETWORK_FETCH: 'true',
       },
     },
     {

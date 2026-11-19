@@ -52,6 +52,17 @@ const ERROR_CODES = [
   'unknownTenant',
   'originNotAllowed',
   'invalidUserToken',
+  'invalidTwoFactorCode',
+  'twoFactorExpired',
+  'twoFactorAlreadyEnabled',
+  'twoFactorNotEnabled',
+  'invalidCalendarUrl',
+  'alreadySubscribed',
+  'tooManyExternalCalendars',
+  'externalCalendarUnavailable',
+  'tooManyAppPasswords',
+  'tooManyCaldavAccounts',
+  'caldavAuthFailed',
 ] as const
 
 export const isErrorCode = (value: unknown): value is ErrorCode =>

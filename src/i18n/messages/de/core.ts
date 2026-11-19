@@ -16,6 +16,8 @@ export const common: Messages['common'] = {
   progress: 'Fortschritt',
   next: 'Weiter',
   back: 'Zurück',
+  showPassword: 'Anzeigen',
+  hidePassword: 'Verbergen',
 }
 
 export const errors: Messages['errors'] = {
@@ -76,6 +78,17 @@ export const errors: Messages['errors'] = {
   unknownTenant: 'Dieser Kalender ist nicht richtig eingerichtet (unbekannter Tenant).',
   originNotAllowed: 'Dieser Kalender darf auf dieser Website nicht verwendet werden.',
   invalidUserToken: 'Deine Anmeldung konnte nicht bestätigt werden. Bitte lade die Seite neu.',
+  invalidTwoFactorCode: 'Der Code ist falsch oder wurde schon verwendet.',
+  twoFactorExpired: 'Die Anmeldung hat zu lange gedauert. Bitte melde dich erneut an.',
+  twoFactorAlreadyEnabled: 'Die Zwei-Faktor-Anmeldung ist bereits aktiv.',
+  twoFactorNotEnabled: 'Die Zwei-Faktor-Anmeldung ist nicht aktiv.',
+  invalidCalendarUrl: 'Unter dieser Adresse liegt kein Kalender, der abonniert werden kann.',
+  alreadySubscribed: 'Diesen Kalender hast du bereits abonniert.',
+  tooManyExternalCalendars: 'Du hast die höchste Zahl abonnierter Kalender erreicht.',
+  externalCalendarUnavailable: 'Der Kalender konnte gerade nicht geladen werden.',
+  tooManyAppPasswords: 'Du kannst höchstens 20 App-Passwörter anlegen.',
+  tooManyCaldavAccounts: 'Du kannst höchstens 5 CalDAV-Konten verbinden.',
+  caldavAuthFailed: 'Der CalDAV-Server hat Benutzername oder Passwort nicht akzeptiert.',
   status: {
     400: 'Die Anfrage war ungültig.',
     401: 'Bitte melde dich an.',

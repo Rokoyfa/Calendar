@@ -4,6 +4,14 @@ export const views = {
   week: { label: 'Week', previous: 'Previous week', next: 'Next week' },
   month: { label: 'Month', previous: 'Previous month', next: 'Next month' },
   year: { label: 'Year', previous: 'Previous year', next: 'Next year' },
+  agenda: {
+    label: 'Agenda',
+    previous: 'Previous 30 days',
+    next: 'Next 30 days',
+    range: (from: string, to: string) => `${from} – ${to}`,
+    allDay: 'All day',
+    empty: 'No events in these 30 days.',
+  },
   weekNumber: (week: number) => `Wk ${week}`,
   weekNumberLong: (week: number) => `Week ${week}`,
 }

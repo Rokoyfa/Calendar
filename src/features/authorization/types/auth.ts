@@ -4,6 +4,57 @@ export type User = {
   email: string
   name: string
   emailVerified: boolean
+  twoFactorEnabled?: boolean
+  hasPassword?: boolean
+}
+
+export type TwoFactorChallenge = {
+  twoFactorRequired: true
+  challenge: string
+}
+
+export type TwoFactorLoginInput = {
+  challenge: string
+  code?: string
+  recoveryCode?: string
+}
+
+export type TwoFactorState = {
+  enabled: boolean
+  recoveryCodesLeft: number
+  available: boolean
+}
+
+export type TwoFactorSetup = {
+  secret: string
+  otpauthUri: string
+}
+
+export type TwoFactorDisableInput = {
+  password: string
+  code?: string
+  recoveryCode?: string
+}
+
+export type UserSession = {
+  id: string
+  current: boolean
+  createdAt: string
+  lastSeenAt: string
+  expiresAt: string
+  userAgent: string | null
+  ipAddress: string | null
+}
+
+export type SecurityActions = {
+  getTwoFactorState(): Promise<TwoFactorState>
+  startTwoFactorSetup(password: string): Promise<TwoFactorSetup>
+  confirmTwoFactor(code: string): Promise<string[]>
+  renewRecoveryCodes(password: string): Promise<string[]>
+  disableTwoFactor(input: TwoFactorDisableInput): Promise<void>
+  listSessions(): Promise<UserSession[]>
+  endSession(id: string): Promise<void>
+  endOtherSessions(): Promise<void>
 }
 
 export type LoginInput = {
@@ -42,7 +93,9 @@ export type UserTokenProvider = () => string | null | Promise<string | null>
 export interface AuthRepository {
   readonly method?: AuthMethod
   getCurrentUser(): Promise<User | null>
-  login(input: LoginInput): Promise<User>
+  login(input: LoginInput): Promise<User | TwoFactorChallenge>
+  completeTwoFactorLogin?(input: TwoFactorLoginInput): Promise<User>
+  security?: SecurityActions
   register(input: RegisterInput): Promise<User>
   logout(): Promise<void>
   updateProfile(input: ProfileInput): Promise<User>
@@ -71,6 +124,9 @@ type AccountActions = Pick<
 >
 
 export type AuthContextValue = AccountActions & {
+  completeTwoFactorLogin: (input: TwoFactorLoginInput) => Promise<User>
+  security: SecurityActions | null
+  refreshUser: () => Promise<void>
   respondToEvent: (token: string, status: EventReply) => Promise<EventResponse>
   exportData: (() => Promise<Blob>) | null
   enabled: boolean

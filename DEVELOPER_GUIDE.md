@@ -25,6 +25,10 @@ Everything you need to put `@rokoyfa/calendar` on your page: embedding, all opti
 19. [Trash](#19-trash)
 20. [Data export](#20-data-export)
 21. [Accessibility](#21-accessibility)
+22. [Two-factor sign-in and devices](#22-two-factor-sign-in-and-devices)
+23. [Subscribed calendars](#23-subscribed-calendars)
+24. [Change history](#24-change-history)
+25. [Notifications](#25-notifications)
 
 ## 1. Embedding
 
@@ -101,7 +105,7 @@ Every option can be given in three ways: as a React prop, as an attribute of the
 | Prop | Attribute | Default | |
 | --- | --- | --- | --- |
 | `features` | `feature-*` | see [Features](#3-features) | Switches for every optional feature |
-| `views` | `views` | all four | Views the user can switch between: `day`, `week`, `month`, `year`. Attribute: separated by spaces or commas, `views="week month"`. With one view the switch disappears |
+| `views` | `views` | all five | Views the user can switch between: `day`, `week`, `month`, `year`, `agenda` (a list of the next 30 days). Attribute: separated by spaces or commas, `views="week month"`. With one view the switch disappears |
 | `initialView` | `initial-view` | user's start view | View shown first. Wins over the user's setting |
 | `readOnly` | `read-only` | `false` | Shows events without letting anyone create, change, move, delete or import them, see [Read-only mode](#14-read-only-mode-and-public-links) |
 
@@ -188,6 +192,12 @@ Your backend only needs the endpoints of the features that are on, plus a small 
 | `dataExport` | `feature-data-export` | on | "Data" tab in the settings to download one's own data, see [Data export](#20-data-export) | `GET /auth/me/export` |
 | `registration` | `feature-registration` | on | Sign-up page and the link to it on the sign-in page | `POST /auth/register` |
 | `publicLinks` | `feature-public-links` | on | Public read-only links and the page they open, see [Public links](#14-read-only-mode-and-public-links) | `/calendars/:id/share`, `/shared/:token` |
+| `twoFactor` | `feature-two-factor` | on | Two-factor sign-in for accounts with a password: the page `/two-factor` and a code step after the password, see [Two-factor sign-in](#22-two-factor-sign-in-and-devices). Not in local mode or with `getUserToken` | `POST /auth/login/two-factor`, `/auth/two-factor*` |
+| `externalCalendars` | `feature-external-calendars` | on | Subscribing to calendars of other services, shown read-only, see [Subscribed calendars](#23-subscribed-calendars). Not in local mode | `/external-calendars*` |
+| `history` | `feature-history` | on | "History" tab of events in team calendars, see [Change history](#24-change-history). Not in local mode | `GET /events/:id/history` |
+| `notifications` | `feature-notifications` | on | Bell with notifications, see [Notifications](#25-notifications). Not in local mode | `/notifications*`, `notification.created` over the WebSocket |
+| `caldav` | `feature-caldav` | on | Using the calendars in other programs over CalDAV with app passwords, see [CalDAV](#26-caldav). Not in local mode | `/auth/app-passwords*`, `GET /caldav`, the CalDAV server from `api/caldav.md` |
+| `caldavAccounts` | `feature-caldav-accounts` | on | Connecting accounts of other CalDAV services and editing their calendars, see [CalDAV](#26-caldav). Not in local mode | `/caldav-accounts*`, `/caldav-calendars*` |
 
 Good to know:
 
@@ -424,7 +434,7 @@ Every token is accepted once and for at most five minutes, so a token that shows
 
 The address in `email` is not taken as confirmed. The first time it shows up, and after every change, the user gets a confirmation link. Until then the user can use the calendar but cannot see or accept team invitations.
 
-**Deleting users.** When a user asks you to delete their data, open the host dashboard, go to the users of your tenant and enter the user's email address and name. The dashboard checks that the user belongs to your tenant and removes the account with everything that belongs only to it; teams the user led get the next member as owner. Admins and owners can do this, viewers cannot, and every deletion is recorded in the audit log. There is no public API for it.
+**Deleting users.** When a user asks you to delete their data, open the host dashboard, go to the users of your tenant and enter the user's email address and name. Within about a minute the account is removed with everything that belongs only to it, but only if a user with this address and name exists in your tenant; teams the user led get the next member as owner. The dashboard shows whether the request is done or no matching user was found. Admins and owners can do this, viewers cannot, and every request is recorded in the audit log. There is no public API for it.
 
 **Keeping your tenant safe.**
 
@@ -839,6 +849,11 @@ The backend stores series as one event. The component expands occurrences itself
 | Settings, colors | `PATCH /preferences`, `POST /colors`, `DELETE /colors/:rrggbb` |
 | Holidays (only with `holiday-source="backend"`) | `GET /holidays?from=…&to=…&region=DE-NW&lang=de`, answer `PublicHoliday[]` |
 | Sign-in, teams, invitations | `/auth/*`, `/calendars`, `/teams/*`, `/invitations/*`, see the OpenAPI file |
+| Two-factor sign-in | `POST /auth/login` may answer `202` with `{ twoFactorRequired, challenge }`, then `POST /auth/login/two-factor`. The page `/two-factor` calls `GET /auth/two-factor`, `POST /auth/two-factor/setup`, `/confirm`, `/recovery-codes` and `DELETE /auth/two-factor` |
+| Devices | "Security" tab in the settings: `GET /auth/sessions`, `DELETE /auth/sessions/:id`, `DELETE /auth/sessions` |
+| Subscribed calendars | `GET /external-calendars` on start, `GET /external-calendars/:id/ics` for every shown one and again every 15 minutes, `POST`, `PATCH` and `DELETE /external-calendars/:id` from the settings |
+| Change history | `GET /events/:id/history` when the "History" tab of an event is opened |
+| Notifications | `GET /notifications` on start, `notification.created` over the WebSocket, `POST /notifications/read`, `DELETE /notifications/:id` |
 
 Before editing "following" or "all" of a series, the component loads its detached events with `GET /events?seriesId=…`.
 
@@ -861,6 +876,12 @@ Before editing "following" or "all" of a series, the component loads its detache
 - **Trash:** `DELETE /events/:id` moves the event to the trash instead of deleting it, together with the detached events of a series. Keep attachments, chat and email response links. Deleted events must no longer appear anywhere else: lists, search, feeds, public links, reminders. Restoring keeps the id and raises `version`; refuse a detached event whose series is still in the trash with `409 seriesDeleted`. After 30 days delete the event for good with its attachments and chat, and do the same at once when its calendar or team is deleted.
 - **Live updates:** after every change to an event (create, `PUT`, `DELETE`, attendee response, attachment added or removed, category removed) send `{ "type": "event.changed", "calendarId", "eventId", "version", "changedBy" }` over the WebSocket to every connected member of the calendar's team. `version` is the new version, `null` when the event was deleted. `changedBy` is the user id, or `null` for changes without a session such as answers from an email link. Send one message per event, also for detached events deleted with their series.
 - **Email links:** point them at the host page with the screen as parameter, e.g. `https://host.example/calendar?calendarPath=%2Freset-password%3Ftoken%3D…`.
+- **Two-factor sign-in:** TOTP after RFC 6238 (SHA-1, 6 digits, 30 seconds, ±1 step). Store the secret encrypted and accept every 30-second step only once. Recovery codes and the challenge between password and code are stored as hashes; the challenge lives 10 minutes and 5 attempts. Turning the two-factor sign-in on ends all other sessions. The confirmation mail after registration should link to the page `/two-factor` of the component, so users can turn it on right away.
+- **Subscribed calendars:** load the address on the server, never in the browser, and protect that against SSRF: only `https` (turn `webcal://` into `https://`), port 443, resolve the name and refuse private, loopback, link-local and multicast addresses, connect to exactly the address you checked, check every redirect again, limit time and size (the test backend uses 10 seconds and 5 MB). Keep a copy for 15 minutes. The full address can contain a private key: store it encrypted and only return its host.
+- **CalDAV accounts:** the same SSRF protection for every request, also for the principal, calendar home and calendar addresses the other server names. Store address, user name and password encrypted (for example AES-256-GCM bound to the account and field), never return the password, and send it only to that server. Synchronize with `sync-collection` where the server offers it and `getctag`/`getetag` otherwise; write with `If-None-Match: *` for new objects and `If-Match` for changes.
+- **CalDAV server:** accept only app passwords (random, at least 100 bits, stored as a hash), count failures like sign-in attempts, refuse DTDs and entities in XML, limit body size and depth, and decide every request with the same roles as the REST endpoints. Details in `api/caldav.md`.
+- **Change history:** record who changed which field of an event, one entry per request. Changes to attendees, links, categories and the repetition are listed by name only. Keep the history for a year.
+- **Notifications:** create them for invitations to a team or an event, changes and cancellations of events someone is invited to, replies to the creator, chat messages and reminders. Never for one's own actions, and for people only invited by email only once their address is confirmed. Send `{ "type": "notification.created", "notification" }` over the WebSocket to the user.
 
 ## 11. Event chat
 
@@ -1116,3 +1137,52 @@ The calendar aims at WCAG 2.2 AA and is checked with axe-core in light and dark 
 - **Creating events.** In the day and week view, `Tab` reaches the time grid. The arrow keys pick the hour (`↑` / `↓`) and the day (`←` / `→`), `Home` and `End` jump to 0:00 and 23:00, `Enter` or `Space` opens the dialog for that time. Only one slot is a tab stop, so the grid costs a single `Tab`. The **+** button and `N` work as before.
 - **Focus.** Closing a dialog returns the focus to where it was, for example to the event or slot that opened it.
 
+
+## 22. Two-factor sign-in and devices
+
+Accounts with a password can protect their sign-in with a code from an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password …). The component brings the whole page, so your backend only needs the endpoints.
+
+- **Page.** `/two-factor` of the component, also reachable from **Settings → Security**. Turning it on asks for the password, shows a QR code and the key for typing it in, checks the first code and then shows ten recovery codes once, to copy or download. On the same page users create new recovery codes or turn the sign-in off again (password plus a code or recovery code).
+- **Sign-in.** After a correct password the backend answers `202` with a `challenge` instead of a session. The sign-in page then asks for the code, or a recovery code, and calls `POST /auth/login/two-factor`. After 10 minutes or 5 wrong codes the user starts again with the password.
+- **Link in the mail.** Let the confirmation mail after registration link to the page, e.g. `https://host.example/calendar/two-factor` with browser routing or `https://host.example/calendar?calendarPath=%2Ftwo-factor` with the link parameter. The test backend does this.
+- **Devices.** **Settings → Security** lists all sessions of the user with browser, system, last use and a shortened IP address. Users can sign out one device or all others.
+- **Not available** in local mode and with `getUserToken`: then the host signs the user in and protects that sign-in itself. Turn the page off with `features: { twoFactor: false }`.
+
+## 23. Subscribed calendars
+
+Users can show calendars of other services next to their own, for example public or school holidays or a work calendar, by pasting its iCal address (`https://…` or `webcal://…`) in **Settings → Connections**. Up to 10 per user.
+
+- They are read-only: their events open in a view-only dialog with a note where they come from, cannot be moved, and have no chat, attachments, reminders or history. **Duplicate** copies an event into an own calendar.
+- Each one can be hidden, renamed and given a color, or unsubscribed again. A failed load is shown in the settings; the calendar keeps showing the last copy.
+- The backend loads the files, the browser never contacts the other service. See [Rules for the backend](#rules-for-the-backend) for the protection against SSRF.
+- Turn it off with `features: { externalCalendars: false }`.
+
+## 24. Change history
+
+Events in team calendars get a **History** tab: who created, changed, moved, deleted or restored the event and when, with the old and new value of title, place, description, start, end, all day, time zone, color and calendar. Changes to attendees, links, categories and the repetition are named without values. Entries are kept for a year. Turn it off with `features: { history: false }`.
+
+## 25. Notifications
+
+A bell next to the account button shows notifications with a badge for the unread ones: invitations to a team calendar or an event, changes and cancellations of events the user is invited to, replies to the user's events, chat messages and reminders. New ones arrive at once over the WebSocket. A click opens the event (or the invitations in the settings) and marks it as read; **Mark all as read** and removing single notifications are in the list. Read notifications are kept for 30 days, unread ones for 90. Turn it off with `features: { notifications: false }`.
+
+## 26. CalDAV
+
+**Settings → Connections** collects everything that links the calendar with other services: subscribed calendars ([section 23](#23-subscribed-calendars)), CalDAV accounts and the access for CalDAV programs. The tab only appears when at least one of them is available.
+
+**Other programs use this calendar** (feature `caldav`). The section shows the server address and the user name (the email address) to enter in Apple Calendar, Thunderbird, DAVx⁵ or Outlook with a CalDAV add-in, and manages app passwords:
+
+- Users create one app password per program (up to 20). It is shown once, with a button to copy it; the list shows creation and last use, and each one can be revoked.
+- CalDAV accepts only app passwords, never the account password, so two-factor sign-in stays effective. A new account password revokes all app passwords.
+- Every calendar the user can see appears as its own collection. The role decides as in the component: viewers can only read.
+- Series and their detached occurrences are one resource, reminders are those of the signed-in user, attachments and chat stay in the component.
+- Your backend implements the protocol described in `api/caldav.md` (`PROPFIND`, `REPORT` with `calendar-query`, `calendar-multiget` and `sync-collection`, `GET`, `PUT`, `DELETE`, `/.well-known/caldav`).
+
+**This calendar uses other services** (feature `caldavAccounts`). Users connect up to 5 accounts of Nextcloud, iCloud, mailbox.org, Fastmail or any other CalDAV server with server address, user name and password (for iCloud an app-specific password):
+
+- The backend finds the calendars itself, keeps a copy and synchronizes every 15 minutes or when the user asks. The browser never talks to the other server.
+- The calendars appear next to the own ones with their name and color; each one can be hidden, renamed and recolored here without changing the other server.
+- Events can be edited, moved, repeated, detached and deleted like own events, including undo. Every change goes to the other server at once with `If-Match`; when the event changed there in the meantime, the user sees `eventChanged` and the dialog offers to reload.
+- When the component writes an event, it changes only what it knows (title, place, description, times, repetition, exceptions, attendees and their answers, links, reminders, color) and keeps everything else of the original, for example the organizer, categories, attachments or properties of other programs.
+- Calendars the other server marks read-only open in a view-only dialog.
+- New events are created in the active calendar of the component, so they cannot be created in a CalDAV calendar directly. **Duplicate** copies a CalDAV event into the active own calendar.
+- Credentials are stored encrypted by the backend. Only `https`, no private networks, every redirect checked again (see [Rules for the backend](#rules-for-the-backend)).

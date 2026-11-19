@@ -6,6 +6,14 @@ export const views: Messages['views'] = {
   week: { label: 'Woche', previous: 'Vorherige Woche', next: 'Nächste Woche' },
   month: { label: 'Monat', previous: 'Vorheriger Monat', next: 'Nächster Monat' },
   year: { label: 'Jahr', previous: 'Vorheriges Jahr', next: 'Nächstes Jahr' },
+  agenda: {
+    label: 'Agenda',
+    previous: 'Vorherige 30 Tage',
+    next: 'Nächste 30 Tage',
+    range: (from: string, to: string) => `${from} – ${to}`,
+    allDay: 'Ganztägig',
+    empty: 'Keine Termine in diesen 30 Tagen.',
+  },
   weekNumber: (week) => `KW ${week}`,
   weekNumberLong: (week) => `Kalenderwoche ${week}`,
 }

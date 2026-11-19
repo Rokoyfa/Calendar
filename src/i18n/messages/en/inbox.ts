@@ -1,0 +1,19 @@
+export const inbox = {
+  open: 'Notifications',
+  openUnread: (count: number) => `Notifications, ${count} unread`,
+  title: 'Notifications',
+  empty: 'No notifications.',
+  markAllRead: 'Mark all as read',
+  remove: 'Remove notification',
+  loadMore: 'Show older',
+  someone: 'Someone',
+  kinds: {
+    teamInvitation: (actor: string, team: string) => `${actor} invited you to the calendar “${team}”`,
+    eventInvitation: (actor: string, title: string) => `${actor} invited you to “${title}”`,
+    eventChanged: (actor: string, title: string) => `${actor} changed “${title}”`,
+    eventCanceled: (actor: string, title: string) => `${actor} cancelled “${title}”`,
+    attendeeResponse: (actor: string, title: string) => `${actor} replied to “${title}”`,
+    chatMessage: (actor: string, title: string) => `${actor} wrote about “${title}”`,
+    reminder: (title: string) => `Reminder: “${title}”`,
+  },
+}

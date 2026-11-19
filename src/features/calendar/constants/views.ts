@@ -16,6 +16,8 @@ import { CALENDAR_VIEWS, type CalendarView, type ViewDefinition } from '../types
 
 const MONTHS_PER_YEAR = 12
 
+export const AGENDA_DAYS = 30
+
 export const VIEW_DEFINITIONS: Record<CalendarView, ViewDefinition> = {
   day: {
     getRange: (anchor) => ({ from: anchor, to: anchor }),
@@ -48,6 +50,12 @@ export const VIEW_DEFINITIONS: Record<CalendarView, ViewDefinition> = {
     step: (anchor, direction) => addMonthsToISODate(anchor, direction * MONTHS_PER_YEAR),
     getTitle: (anchor) => anchor.slice(0, 4),
   },
+  agenda: {
+    getRange: (anchor) => ({ from: anchor, to: addDaysToISODate(anchor, AGENDA_DAYS - 1) }),
+    step: (anchor, direction) => addDaysToISODate(anchor, direction * AGENDA_DAYS),
+    getTitle: (anchor, { m, format }) =>
+      m.views.agenda.range(format.shortDay(anchor), format.fullDay(addDaysToISODate(anchor, AGENDA_DAYS - 1))),
+  },
 }
 
 export const VIEW_SHORTCUTS: Record<CalendarView, string> = {
@@ -55,6 +63,7 @@ export const VIEW_SHORTCUTS: Record<CalendarView, string> = {
   week: 'w',
   month: 'm',
   year: 'y',
+  agenda: 'a',
 }
 
 export const withShortcut = (label: string, key: string) => `${label} (${key.toUpperCase()})`

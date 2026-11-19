@@ -33,6 +33,10 @@ const VerifyEmailPage = lazyPage(
   () => import('./features/authorization/components/VerifyEmailPage.tsx'),
   'VerifyEmailPage',
 )
+const TwoFactorPage = lazyPage(
+  () => import('./features/authorization/components/security/TwoFactorPage.tsx'),
+  'TwoFactorPage',
+)
 const RespondPage = lazyPage(() => import('./pages/RespondPage.tsx'), 'RespondPage')
 const SharedCalendarPage = lazyPage(() => import('./pages/SharedCalendarPage.tsx'), 'SharedCalendarPage')
 
@@ -58,6 +62,7 @@ const routes: RouteObject[] = [
   { path: ROUTES.forgotPassword, element: guestOnly(<ForgotPasswordPage />) },
   { path: ROUTES.resetPassword, element: withAuth(<ResetPasswordPage />) },
   { path: ROUTES.verifyEmail, element: withAuth(<VerifyEmailPage />) },
+  { path: ROUTES.twoFactor, element: accountsOnly(<TwoFactorPage />) },
   { path: ROUTES.respond, element: withAuth(<RespondPage />) },
   { path: ROUTES.shared, element: loaded(<SharedCalendarPage />) },
   { path: '*', element: <Navigate to={ROUTES.calendar} replace /> },

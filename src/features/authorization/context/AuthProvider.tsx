@@ -11,6 +11,8 @@ import type {
   PasswordResetRequestInput,
   ProfileInput,
   RegisterInput,
+  TwoFactorChallenge,
+  TwoFactorLoginInput,
   User,
 } from '../types/auth.ts'
 import { AppError } from '../../../utils/appError.ts'
@@ -46,6 +48,9 @@ const ANONYMOUS: Session = { status: 'anonymous', user: null }
 
 const authenticated = (user: User): Session => ({ status: 'authenticated', user })
 
+const isChallenge = (result: User | TwoFactorChallenge): result is TwoFactorChallenge =>
+  'twoFactorRequired' in result && result.twoFactorRequired === true
+
 export function AuthProvider({ repository: configuredRepository, children }: AuthProviderProps) {
   const enabled = configuredRepository !== null
   const repository = configuredRepository ?? DISABLED_AUTH
@@ -74,7 +79,26 @@ export function AuthProvider({ repository: configuredRepository, children }: Aut
     return user
   }, [])
 
-  const login = useCallback((input: LoginInput) => signIn(repository.login(input)), [repository, signIn])
+  const login = useCallback(
+    async (input: LoginInput) => {
+      const result = await repository.login(input)
+      if (isChallenge(result)) return result
+      setSession(authenticated(result))
+      return result
+    },
+    [repository],
+  )
+
+  const completeTwoFactorLogin = useCallback(
+    (input: TwoFactorLoginInput) =>
+      signIn(repository.completeTwoFactorLogin ? repository.completeTwoFactorLogin(input) : unavailable()),
+    [repository, signIn],
+  )
+
+  const refreshUser = useCallback(async () => {
+    const user = await repository.getCurrentUser()
+    setSession(user ? authenticated(user) : ANONYMOUS)
+  }, [repository])
 
   const register = useCallback((input: RegisterInput) => signIn(repository.register(input)), [repository, signIn])
 
@@ -116,6 +140,7 @@ export function AuthProvider({ repository: configuredRepository, children }: Aut
       respondToEvent: (token: string, status: EventReply) =>
         repository.respondToEvent ? repository.respondToEvent(token, status) : unavailable(),
       exportData: repository.exportData ? () => repository.exportData!() : null,
+      security: repository.security ?? null,
     }),
     [repository],
   )
@@ -138,6 +163,8 @@ export function AuthProvider({ repository: configuredRepository, children }: Aut
       ...session,
       ...accountRequests,
       login,
+      completeTwoFactorLogin,
+      refreshUser,
       register,
       logout,
       updateProfile,
@@ -146,6 +173,8 @@ export function AuthProvider({ repository: configuredRepository, children }: Aut
       expireSession,
     }),
     [
+      completeTwoFactorLogin,
+      refreshUser,
       enabled,
       method,
       session,

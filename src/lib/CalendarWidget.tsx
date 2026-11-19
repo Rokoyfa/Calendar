@@ -66,7 +66,7 @@ function ConfiguredCalendar({
     () => resolveViews(viewKey ? (viewKey.split(',') as CalendarOptions['views']) : undefined),
     [viewKey],
   )
-  const { auth, chat, liveUpdates } = features
+  const { auth, chat, liveUpdates, notifications } = features
   const holidayBackend = features.holidays ? holidaySource : 'library'
   const dataSource = useMemo(() => {
     if (providedDataSource) return providedDataSource
@@ -77,6 +77,7 @@ function ConfiguredCalendar({
       holidaySource: holidayBackend,
       chat,
       liveUpdates,
+      notifications,
     }
     if (tenant) return tenantDataSource({ ...rest, tenant })
     return auth || storageMode === 'remote' ? restDataSource({ ...rest, auth }) : localDataSource()
@@ -87,6 +88,7 @@ function ConfiguredCalendar({
     auth,
     chat,
     liveUpdates,
+    notifications,
     storageMode,
     apiBaseUrl,
     apiTimeoutMs,

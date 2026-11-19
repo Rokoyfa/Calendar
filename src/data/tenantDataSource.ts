@@ -13,6 +13,7 @@ export type TenantDataSourceOptions = {
   holidaySource?: HolidaySource
   chat?: boolean
   liveUpdates?: boolean
+  notifications?: boolean
 }
 
 export const tenantDataSource = ({
@@ -23,6 +24,7 @@ export const tenantDataSource = ({
   holidaySource,
   chat,
   liveUpdates,
+  notifications,
 }: TenantDataSourceOptions): CalendarDataSource =>
   restDataSource({
     baseUrl,
@@ -33,4 +35,5 @@ export const tenantDataSource = ({
     holidaySource,
     chat,
     liveUpdates,
+    notifications,
   })

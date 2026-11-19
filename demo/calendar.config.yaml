@@ -69,7 +69,7 @@ features:
   # "Duplicate" in the event dialog.
   duplicate: true
 
-  # Keyboard shortcuts (T today, N new event, / search, D W M Y views, arrow keys).
+  # Keyboard shortcuts (T today, N new event, / search, D W M Y A views, arrow keys).
   shortcuts: true
 
   # Subscription links for other calendar apps. Needs the feed endpoints.
@@ -115,14 +115,37 @@ features:
   # The backend must refuse POST /auth/register as well.
   registration: true
 
+  # Two-factor sign-in with codes from an authenticator app, for accounts with a password: the page
+  # /two-factor and a code step after the password. Needs the /auth/two-factor endpoints.
+  twoFactor: true
+
+  # Subscribing to calendars of other services (.ics addresses), shown read-only next to the own ones.
+  # Needs the /external-calendars endpoints.
+  externalCalendars: true
+
+  # "History" tab of events in team calendars: who changed what and when. Needs GET /events/{id}/history.
+  history: true
+
+  # Bell with notifications about invitations, changes, replies, chat messages and reminders.
+  # Needs the /notifications endpoints; new ones arrive over the WebSocket.
+  notifications: true
+
+  # Use the calendars in Apple Calendar, Thunderbird, DAVx5 and other CalDAV programs with app passwords.
+  # Needs /auth/app-passwords, /caldav and the CalDAV server from api/caldav.md.
+  caldav: true
+
+  # Connect accounts of other CalDAV services (Nextcloud, iCloud …) and edit their calendars here.
+  # Needs the /caldav-accounts and /caldav-calendars endpoints.
+  caldavAccounts: true
+
 # Shows events without letting anyone create, change, move, delete or import them.
 readOnly: false
 
 # ── Appearance ──────────────────────────────────────────────────────────────────
 
-# Views the user can switch between, any of: day, week, month, year.
+# Views the user can switch between, any of: day, week, month, year, agenda.
 # With a single view the switch disappears.
-views: [day, week, month, year]
+views: [day, week, month, year, agenda]
 
 # View shown first. Default: the user's own start view (week on desktop, day on phones).
 # initialView: month

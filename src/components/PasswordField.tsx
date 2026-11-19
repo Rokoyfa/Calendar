@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useI18n } from '../i18n/index.ts'
 import { TextField, type TextFieldProps } from './TextField.tsx'
 
 type PasswordFieldProps = Omit<TextFieldProps, 'type' | 'addon'>
 
 export function PasswordField(props: PasswordFieldProps) {
+  const { m } = useI18n()
   const [isVisible, setIsVisible] = useState(false)
   return (
     <TextField
@@ -16,7 +18,7 @@ export function PasswordField(props: PasswordFieldProps) {
           aria-pressed={isVisible}
           onClick={() => setIsVisible((visible) => !visible)}
         >
-          {isVisible ? 'Verbergen' : 'Anzeigen'}
+          {isVisible ? m.common.hidePassword : m.common.showPassword}
         </button>
       }
     />

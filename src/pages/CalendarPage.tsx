@@ -24,6 +24,11 @@ import { useHost } from '../context/HostContext.ts'
 import { useRootElement } from '../context/RootElementContext.ts'
 import { nearestView } from '../utils/calendarView.ts'
 import { getStartView, isCompactWidth } from '../utils/preferences.ts'
+import { useExternalCalendars } from '../features/external/index.ts'
+import { externalCalendarId, isExternalEvent } from '../utils/externalCalendar.ts'
+import { NotificationBell } from '../features/notifications/index.ts'
+import { useCaldav } from '../features/caldav/index.ts'
+import { caldavCalendarId, isCaldavEvent } from '../utils/caldav.ts'
 
 const LINK_PARAMS = {
   calendar: 'calendar',
@@ -96,19 +101,43 @@ export function CalendarPage() {
       return members.map(({ email, name }) => ({ email, name }))
     }
   }, [host.features.attendees, user, calendars, repository])
+  const external = useExternalCalendars()
+  const caldav = useCaldav()
+  const caldavById = useMemo(
+    () => new Map(caldav.calendars.map((calendar) => [caldavCalendarId(calendar.id), calendar])),
+    [caldav.calendars],
+  )
+  const calendarIds = useMemo(() => {
+    const shown = caldav.calendars.filter((calendar) => calendar.shown).map(({ id }) => caldavCalendarId(id))
+    return shown.length > 0 ? [...visibleCalendarIds, ...shown] : visibleCalendarIds
+  }, [visibleCalendarIds, caldav.calendars])
   const eventSources = useMemo(
-    () => new Map(getSharedCalendars(calendars, activeCalendar).map(({ id, name, color }) => [id, { name, color }])),
-    [calendars, activeCalendar],
+    () =>
+      new Map([
+        ...getSharedCalendars(calendars, activeCalendar).map(({ id, name, color }) => [id, { name, color }] as const),
+        ...external.calendars.map(({ id, name, color }) => [externalCalendarId(id), { name, color }] as const),
+        ...[...caldavById].map(([id, { name, color }]) => [id, { name, color }] as const),
+      ]),
+    [calendars, activeCalendar, external.calendars, caldavById],
+  )
+  const isHistoryAvailable = useCallback(
+    (calendarId: string) => {
+      const calendar = calendars.find((entry) => entry.id === calendarId)
+      return Boolean(calendar && !isPersonalCalendar(calendar))
+    },
+    [calendars],
   )
   const initialView =
     host.initialView ?? nearestView(getStartView(preferences, isCompactWidth(root.clientWidth)), host.views)
 
   const mayEditEvent = useCallback(
     (event: CalendarEvent) => {
+      if (isExternalEvent(event)) return false
+      if (isCaldavEvent(event)) return caldavById.get(event.calendarId)?.readOnly === false
       const calendar = calendars.find((entry) => entry.id === event.calendarId)
       return calendar === undefined || canEditEntry(calendar, event.createdBy, user?.id ?? null)
     },
-    [calendars, user],
+    [calendars, user, caldavById],
   )
   const mayManageCategories = useCallback(
     (calendarId: string) => {
@@ -123,7 +152,7 @@ export function CalendarPage() {
     <div className="app">
       <EmailVerificationBanner />
       <Calendar
-        calendarIds={visibleCalendarIds}
+        calendarIds={calendarIds}
         targetCalendarId={activeCalendar.id}
         canCreate={hasPermission(activeCalendar, 'create_entry')}
         eventSources={eventSources}
@@ -136,6 +165,8 @@ export function CalendarPage() {
         currentUserEmail={user?.email ?? null}
         loadAttendeeCandidates={loadAttendeeCandidates}
         chat={chatAccess}
+        externalEvents={external.events}
+        isHistoryAvailable={isHistoryAvailable}
         openEvent={openEvent}
         onOpenEventDone={clearLink}
         headerAccessory={
@@ -145,6 +176,7 @@ export function CalendarPage() {
                 <SettingsIcon size={20} />
               </Link>
             )}
+            <NotificationBell />
             <AccountMenu menuItems={host.features.teams ? <CalendarSwitcher /> : undefined} />
           </>
         }

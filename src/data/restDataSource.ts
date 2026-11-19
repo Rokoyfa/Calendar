@@ -13,6 +13,11 @@ import {
   RemoteHolidayRepository,
   RemotePreferencesRepository,
   RemoteSharedCalendarRepository,
+  RemoteExternalCalendarRepository,
+  RemoteAppPasswordRepository,
+  RemoteCaldavRepository,
+  RemoteHistoryRepository,
+  RemoteNotificationRepository,
   LiveSocket,
 } from '../features/storage/index.ts'
 import type { HolidaySource } from '../lib/defaults.ts'
@@ -31,6 +36,7 @@ export type RestDataSourceOptions = {
   holidaySource?: HolidaySource
   chat?: boolean
   liveUpdates?: boolean
+  notifications?: boolean
   chatSocketUrl?: string
 }
 
@@ -44,6 +50,7 @@ export function restDataSource({
   holidaySource = 'library',
   chat = true,
   liveUpdates = true,
+  notifications = true,
   chatSocketUrl,
 }: RestDataSourceOptions): CalendarDataSource {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
@@ -67,7 +74,7 @@ export function restDataSource({
 
   const createRemoteRepositories = (context: DataSourceContext): DataRepositories => {
     const api = createApi(context)
-    const socket = chat || liveUpdates ? new LiveSocket(getSocketUrl()) : undefined
+    const socket = chat || liveUpdates || notifications ? new LiveSocket(getSocketUrl()) : undefined
     return {
       mode: 'remote',
       events: new RemoteEventRepository(api, liveUpdates ? socket : undefined),
@@ -79,6 +86,11 @@ export function restDataSource({
       shared: new RemoteSharedCalendarRepository(api),
       attachments: new RemoteAttachmentRepository(api),
       chat: chat && socket ? new RemoteChatRepository(api, socket) : undefined,
+      externalCalendars: new RemoteExternalCalendarRepository(api),
+      history: new RemoteHistoryRepository(api),
+      notifications: notifications ? new RemoteNotificationRepository(api, socket) : undefined,
+      appPasswords: new RemoteAppPasswordRepository(api),
+      caldav: new RemoteCaldavRepository(api),
     }
   }
 

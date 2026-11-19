@@ -75,6 +75,11 @@ info:
     the component's `apiBaseUrl` (`api-base-url`) to it; a later major version can then run next to it. Changes within
     a major version only add endpoints, fields or optional parameters.
 
+    **Two-factor sign-in** (`twoFactor`): accounts with a password can turn on codes from an authenticator app. The
+    page for this is part of the component (`#calendar-security` opens it, see the Developer Guide), so a backend only
+    needs the endpoints. The confirmation mail after registration links to that page. Secrets are stored encrypted,
+    recovery codes and the sign-in challenge only as hashes. A used code (its 30-second step) is not accepted again.
+
     **Rate limits.** Any endpoint may answer `429` with a `Retry-After` header (seconds or HTTP date). Send `code`
     `rateLimited`, or a more specific one. The component then shows how long to wait. Cross-origin backends must list
     `Retry-After` in `Access-Control-Expose-Headers`, otherwise the browser hides it.
@@ -93,6 +98,9 @@ info:
     | `unauthorized` | 401 | No valid session or token |
     | `invalidCredentials` | 401 | Email or password is wrong on sign-in |
     | `invalidUserToken` | 401 | The host token for `POST /auth/token` is invalid or expired |
+    | `invalidTwoFactorCode` | 400 | The code or recovery code is wrong or was used already |
+    | `invalidCalendarUrl` | 400 | The address of an external calendar is not usable |
+    | `caldavAuthFailed` | 400 | The other CalDAV server refused user name or password |
     | `forbidden` | 403 | The role does not allow this |
     | `wrongPassword` | 403 | The password confirming a change is wrong |
     | `wrongCurrentPassword` | 403 | The current password is wrong when changing it |
@@ -127,6 +135,13 @@ info:
     | `tenantLimitReached` | 409 | The tenant reached its limit of users, teams or attachment storage |
     | `tooManyCategories` | 409 | More than 30 categories in a calendar |
     | `tooManyAttachments` | 409 | More than 20 attachments on an event |
+    | `twoFactorAlreadyEnabled` | 409 | The two-factor sign-in is already on |
+    | `twoFactorNotEnabled` | 409 | The two-factor sign-in is off, or no setup was started |
+    | `alreadySubscribed` | 409 | The external calendar is already subscribed |
+    | `tooManyExternalCalendars` | 409 | More than 10 external calendars |
+    | `tooManyAppPasswords` | 409 | More than 20 app passwords |
+    | `tooManyCaldavAccounts` | 409 | More than 5 CalDAV accounts |
+    | `twoFactorExpired` | 410 | The sign-in step for the code expired; sign in again |
     | `invalidLink` | 410 | The link from an email is invalid or expired |
     | `invitationExpired` | 410 | The invitation is no longer valid |
     | `eventChanged` | 412 | `If-Match` names an older `version` of the event |
@@ -135,6 +150,7 @@ info:
     | `tooManyLoginAttempts` | 429 | Too many failed sign-ins, with `Retry-After` |
     | `rateLimited` | 429 | Any other rate limit, with `Retry-After` |
     | `serverError` | 500 | Unexpected error |
+    | `externalCalendarUnavailable` | 502 | The external calendar could not be loaded |
 servers:
   - url: /api/v2
     description: Recommended, with `apiBaseUrl` set to it
@@ -167,6 +183,18 @@ tags:
     description: Files on events. Only for members of the event's calendar, never through public links or subscriptions.
   - name: Sharing
     description: Public read-only links to a calendar. The `/shared` paths need no session.
+  - name: CalDAV
+    description: |
+      The calendars as CalDAV server for other programs. This part only manages app passwords; the protocol under
+      `/dav/` is described in `api/caldav.md`.
+  - name: CalDAV accounts
+    description: CalDAV accounts of other services (Nextcloud, iCloud …), shown and edited next to the own calendars.
+  - name: External calendars
+    description: Read-only calendars from other services (`.ics` addresses), shown next to the own calendars.
+  - name: Notifications
+    description: |
+      In-app notifications (bell). New notifications also arrive over the WebSocket as
+      `{ type: 'notification.created', notification }`.
 paths:
   /auth/me/export:
     get:
@@ -236,7 +264,7 @@ paths:
       tags: [Auth]
       x-feature: auth
       summary: Change password
-      description: Ends all other sessions of the user. `403` with `wrongCurrentPassword`.
+      description: Ends all other sessions of the user and revokes all app passwords. `403` with `wrongCurrentPassword`.
       requestBody:
         required: true
         content:
@@ -282,7 +310,10 @@ paths:
       tags: [Auth]
       x-feature: auth
       summary: Sign in
-      description: '`401` with `invalidCredentials`, `429` with `tooManyLoginAttempts` after 5 failures in 15 minutes.'
+      description: |
+        `401` with `invalidCredentials`, `429` with `tooManyLoginAttempts` after 5 failures in 15 minutes.
+        When the account has the two-factor sign-in turned on, the answer is `202` with a `challenge` and no session
+        yet; the component then asks for the code and calls `POST /auth/login/two-factor`.
       security: []
       requestBody:
         required: true
@@ -296,6 +327,16 @@ paths:
                 password: { type: string }
       responses:
         '200': { $ref: '#/components/responses/User' }
+        '202':
+          description: Password correct, the second factor is missing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [twoFactorRequired, challenge]
+                properties:
+                  twoFactorRequired: { type: boolean, const: true }
+                  challenge: { type: string, description: 'Random value, valid for 10 minutes and 5 attempts' }
         '401': { $ref: '#/components/responses/Problem' }
         '429': { $ref: '#/components/responses/Problem' }
   /auth/token:
@@ -356,7 +397,7 @@ paths:
       tags: [Auth]
       x-feature: auth
       summary: Set a new password with a reset token
-      description: Ends all sessions. `410` with `invalidLink`.
+      description: Ends all sessions and revokes all app passwords. `410` with `invalidLink`.
       security: []
       requestBody:
         required: true
@@ -398,6 +439,177 @@ paths:
       responses:
         '204': { description: Sent }
         '401': { $ref: '#/components/responses/Problem' }
+  /auth/login/two-factor:
+    post:
+      tags: [Auth]
+      x-feature: twoFactor
+      summary: Second step of the sign-in
+      description: |
+        Finishes a sign-in that `POST /auth/login` answered with `202`. Send either `code` (6 digits from the
+        authenticator app) or `recoveryCode`. A code is accepted once; a recovery code is used up.
+        `400` with `invalidTwoFactorCode`. After 5 wrong codes, or 10 minutes after the password step, the challenge is
+        void and the answer is `410` with `twoFactorExpired`; the component then starts again with the password.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challenge]
+              properties:
+                challenge: { type: string, description: Value from the `202` answer of `POST /auth/login` }
+                code: { type: string, pattern: '^\d{6}$' }
+                recoveryCode: { type: string, maxLength: 32 }
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+  /auth/two-factor:
+    get:
+      tags: [Auth]
+      x-feature: twoFactor
+      summary: State of the two-factor sign-in
+      responses:
+        '200':
+          description: State
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TwoFactorState' }
+        '401': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Auth]
+      x-feature: twoFactor
+      summary: Turn the two-factor sign-in off
+      description: |
+        Needs the password and a current code or an unused recovery code. Removes the secret and all recovery codes.
+        `403` with `wrongPassword`, `400` with `invalidTwoFactorCode`, `409` with `twoFactorNotEnabled`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+                code: { type: string, pattern: '^\d{6}$' }
+                recoveryCode: { type: string, maxLength: 32 }
+      responses:
+        '204': { description: Turned off }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /auth/two-factor/setup:
+    post:
+      tags: [Auth]
+      x-feature: twoFactor
+      summary: Start the setup
+      description: |
+        Creates a new secret (TOTP, RFC 6238: SHA-1, 6 digits, 30 seconds) that is not active yet. A setup that was not
+        confirmed is replaced. Only for accounts with a password; accounts signed in through the host page get `403`
+        `forbidden`, the host protects their sign-in. `403` with `wrongPassword`, `409` with `twoFactorAlreadyEnabled`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+      responses:
+        '200':
+          description: Secret for the authenticator app
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [secret, otpauthUri]
+                properties:
+                  secret: { type: string, description: 'Base32, for typing it in by hand' }
+                  otpauthUri: { type: string, description: '`otpauth://totp/…` for the QR code' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /auth/two-factor/confirm:
+    post:
+      tags: [Auth]
+      x-feature: twoFactor
+      summary: Turn the two-factor sign-in on
+      description: |
+        Checks the first code from the app, turns the two-factor sign-in on, ends all other sessions of the user and
+        returns 10 recovery codes. They are shown once; only their hash is stored. `400` with `invalidTwoFactorCode`,
+        `409` with `twoFactorNotEnabled` when no setup was started.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, pattern: '^\d{6}$' }
+      responses:
+        '200': { $ref: '#/components/responses/RecoveryCodes' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /auth/two-factor/recovery-codes:
+    post:
+      tags: [Auth]
+      x-feature: twoFactor
+      summary: New recovery codes
+      description: Replaces all recovery codes. `403` with `wrongPassword`, `409` with `twoFactorNotEnabled`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/RecoveryCodes' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /auth/sessions:
+    get:
+      tags: [Auth]
+      x-feature: auth
+      summary: Signed-in devices
+      description: All active sessions of the user, newest use first.
+      responses:
+        '200':
+          description: Sessions
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Session' } }
+        '401': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Auth]
+      x-feature: auth
+      summary: Sign out all other devices
+      description: Ends every session of the user except the current one.
+      responses:
+        '204': { description: Ended }
+        '401': { $ref: '#/components/responses/Problem' }
+  /auth/sessions/{sessionId}:
+    parameters:
+      - { name: sessionId, in: path, required: true, schema: { type: string } }
+    delete:
+      tags: [Auth]
+      x-feature: auth
+      summary: Sign out one device
+      description: Ending the current session also clears the cookie. `404` with `notFound`.
+      responses:
+        '204': { description: Ended }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
   /events:
     get:
       tags: [Events]
@@ -1157,6 +1369,445 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '204': { description: Declined }
         '404': { $ref: '#/components/responses/Problem' }
+  /events/{eventId}/history:
+    parameters:
+      - { name: eventId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Events]
+      x-feature: history
+      summary: Change history of an event
+      description: |
+        Who changed what and when, newest first, for everyone who can see the event. One entry per request; changes
+        to attendees, links, categories and the repetition are listed by name without values. Entries are kept for a
+        year. `404` with `eventNotFound`.
+      parameters:
+        - { name: before, in: query, required: false, schema: { type: string }, description: '`id` of the oldest entry already loaded' }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: Entries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries, hasMore]
+                properties:
+                  entries: { type: array, items: { $ref: '#/components/schemas/HistoryEntry' } }
+                  hasMore: { type: boolean }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /external-calendars:
+    get:
+      tags: [External calendars]
+      x-feature: externalCalendars
+      summary: Subscribed external calendars
+      responses:
+        '200':
+          description: External calendars
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/ExternalCalendar' } }
+        '401': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [External calendars]
+      x-feature: externalCalendars
+      summary: Subscribe to an external calendar
+      description: |
+        The backend loads the address once to check it. `400` with `invalidCalendarUrl` when it is not an `https://`
+        (or `webcal://`) address, points to a private network, or does not return a calendar. `409` with
+        `alreadySubscribed` or `tooManyExternalCalendars` (10 per user). `502` with `externalCalendarUnavailable` when
+        the address cannot be reached.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExternalCalendarInput' }
+      responses:
+        '201':
+          description: Subscribed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExternalCalendar' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
+  /external-calendars/{externalCalendarId}:
+    parameters:
+      - { name: externalCalendarId, in: path, required: true, schema: { type: string } }
+    patch:
+      tags: [External calendars]
+      x-feature: externalCalendars
+      summary: Change an external calendar
+      description: A new `url` is checked like on creation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name: { $ref: '#/components/schemas/CalendarName' }
+                url: { type: string, maxLength: 2000 }
+                color: { $ref: '#/components/schemas/EventColor' }
+                shown: { type: boolean }
+                position: { type: integer, minimum: 0, maximum: 255 }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExternalCalendar' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [External calendars]
+      x-feature: externalCalendars
+      summary: Unsubscribe
+      responses:
+        '204': { description: Removed }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /external-calendars/{externalCalendarId}/ics:
+    parameters:
+      - { name: externalCalendarId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [External calendars]
+      x-feature: externalCalendars
+      summary: Content of an external calendar
+      description: |
+        The iCalendar file as the source delivers it. The backend loads it at most every 15 minutes and otherwise
+        answers from its copy; the component reads it like an import and shows the events read-only.
+        `502` with `externalCalendarUnavailable` when the source cannot be reached and there is no copy yet.
+      responses:
+        '200':
+          description: iCalendar
+          content:
+            text/calendar:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
+  /auth/app-passwords:
+    get:
+      tags: [CalDAV]
+      x-feature: caldav
+      summary: App passwords for CalDAV programs
+      description: Name, creation and last use of every app password of the user, newest first. The password itself is never sent again.
+      responses:
+        '200':
+          description: App passwords
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/AppPassword' } }
+        '401': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [CalDAV]
+      x-feature: caldav
+      summary: Create an app password
+      description: |
+        Creates a random password for one CalDAV program (Apple Calendar, Thunderbird, DAVx5 …). It is returned once
+        and stored only as a hash. CalDAV accepts only app passwords, never the account password, so the two-factor
+        sign-in stays effective. `409` with `tooManyAppPasswords` (20 per user).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+      responses:
+        '201':
+          description: Created, with the password
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/AppPassword' }
+                  - type: object
+                    required: [password]
+                    properties:
+                      password: { type: string, description: Shown once }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /auth/app-passwords/{appPasswordId}:
+    parameters:
+      - { name: appPasswordId, in: path, required: true, schema: { type: string } }
+    delete:
+      tags: [CalDAV]
+      x-feature: caldav
+      summary: Revoke an app password
+      responses:
+        '204': { description: Revoked }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /caldav:
+    get:
+      tags: [CalDAV]
+      x-feature: caldav
+      summary: Access data for CalDAV programs
+      description: The server address and user name to enter in a CalDAV program. The protocol itself is described in `api/caldav.md`.
+      responses:
+        '200':
+          description: Access data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [serverUrl, username]
+                properties:
+                  serverUrl: { type: string, examples: ['https://calendar.example.com/dav/'] }
+                  username: { type: string, description: The email address of the user }
+        '401': { $ref: '#/components/responses/Problem' }
+  /caldav-accounts:
+    get:
+      tags: [CalDAV accounts]
+      x-feature: caldavAccounts
+      summary: Connected CalDAV accounts
+      responses:
+        '200':
+          description: Accounts with their calendars
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CaldavAccount' } }
+        '401': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [CalDAV accounts]
+      x-feature: caldavAccounts
+      summary: Connect a CalDAV account
+      description: |
+        The backend finds the calendars of the account (`/.well-known/caldav`, principal, calendar home) and loads them
+        once. Loading is protected like external calendars: only `https`, no private networks. `400` with
+        `invalidCalendarUrl`, `400` with `caldavAuthFailed` for wrong credentials, `409` with `alreadySubscribed` or
+        `tooManyCaldavAccounts` (5 per user), `502` with `externalCalendarUnavailable`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CaldavAccountInput' }
+      responses:
+        '201':
+          description: Connected
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaldavAccount' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
+  /caldav-accounts/{caldavAccountId}:
+    parameters:
+      - { name: caldavAccountId, in: path, required: true, schema: { type: string } }
+    patch:
+      tags: [CalDAV accounts]
+      x-feature: caldavAccounts
+      summary: Rename an account or store a new password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+                password: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaldavAccount' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [CalDAV accounts]
+      x-feature: caldavAccounts
+      summary: Disconnect an account
+      description: Removes the account and the copies of its calendars. Nothing is deleted on the other server.
+      responses:
+        '204': { description: Disconnected }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /caldav-accounts/{caldavAccountId}/sync:
+    parameters:
+      - { name: caldavAccountId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [CalDAV accounts]
+      x-feature: caldavAccounts
+      summary: Synchronize now
+      description: Reloads the list of calendars and their changes. The backend also does this on its own every 15 minutes.
+      responses:
+        '200':
+          description: Synchronized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaldavAccount' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
+  /caldav-calendars/{caldavCalendarId}:
+    parameters:
+      - { name: caldavCalendarId, in: path, required: true, schema: { type: string } }
+    patch:
+      tags: [CalDAV accounts]
+      x-feature: caldavAccounts
+      summary: Change how a CalDAV calendar is shown
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name: { $ref: '#/components/schemas/CalendarName' }
+                color: { $ref: '#/components/schemas/EventColor' }
+                shown: { type: boolean }
+                position: { type: integer, minimum: 0, maximum: 255 }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaldavCalendar' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /caldav-calendars/{caldavCalendarId}/objects:
+    parameters:
+      - { name: caldavCalendarId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [CalDAV accounts]
+      x-feature: caldavAccounts
+      summary: Events of a CalDAV calendar
+      description: The copy of the calendar, one iCalendar object per resource. The component reads them like an import.
+      responses:
+        '200':
+          description: Objects
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CaldavObject' } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [CalDAV accounts]
+      x-feature: caldavAccounts
+      summary: Create an event on the other server
+      description: '`403` with `forbidden` for read-only calendars, `400` with `invalidInput` when `data` is not one valid event.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CaldavObjectInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaldavObject' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
+  /caldav-calendars/{caldavCalendarId}/objects/{objectId}:
+    parameters:
+      - { name: caldavCalendarId, in: path, required: true, schema: { type: string } }
+      - { name: objectId, in: path, required: true, schema: { type: string } }
+      - { name: If-Match, in: header, required: true, schema: { type: string }, description: '`etag` of the object as loaded' }
+    put:
+      tags: [CalDAV accounts]
+      x-feature: caldavAccounts
+      summary: Change an event on the other server
+      description: '`412` with `eventChanged` when the event changed there in the meantime; the component then reloads it.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CaldavObjectInput' }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaldavObject' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [CalDAV accounts]
+      x-feature: caldavAccounts
+      summary: Delete an event on the other server
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
+  /notifications:
+    get:
+      tags: [Notifications]
+      x-feature: notifications
+      summary: Notifications of the user
+      description: Newest first. Read notifications are kept for 30 days, unread ones for 90 days.
+      parameters:
+        - { name: before, in: query, required: false, schema: { type: string }, description: '`id` of the oldest notification already loaded' }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 30 } }
+      responses:
+        '200':
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [notifications, unread, hasMore]
+                properties:
+                  notifications: { type: array, items: { $ref: '#/components/schemas/Notification' } }
+                  unread: { type: integer, minimum: 0 }
+                  hasMore: { type: boolean }
+        '401': { $ref: '#/components/responses/Problem' }
+  /notifications/read:
+    post:
+      tags: [Notifications]
+      x-feature: notifications
+      summary: Mark notifications as read
+      description: Without `ids` all notifications of the user are marked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids: { type: array, maxItems: 100, items: { type: string } }
+      responses:
+        '204': { description: Marked }
+        '401': { $ref: '#/components/responses/Problem' }
+  /notifications/{notificationId}:
+    parameters:
+      - { name: notificationId, in: path, required: true, schema: { type: string } }
+    delete:
+      tags: [Notifications]
+      x-feature: notifications
+      summary: Remove a notification
+      responses:
+        '204': { description: Removed }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
   /tenant/config:
     get:
       tags: [Tenant]
@@ -1578,6 +2229,15 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Preferences' }
+    RecoveryCodes:
+      description: Recovery codes, shown once
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [recoveryCodes]
+            properties:
+              recoveryCodes: { type: array, minItems: 10, maxItems: 10, items: { type: string } }
     Colors:
       description: Custom colors
       content:
@@ -1603,6 +2263,139 @@ components:
         email: { $ref: '#/components/schemas/Email' }
         name: { $ref: '#/components/schemas/PersonName' }
         emailVerified: { type: boolean }
+        twoFactorEnabled: { type: boolean, description: Only sent when the backend offers `twoFactor` }
+        hasPassword: { type: boolean, description: '`false` for accounts that only sign in through the host page' }
+    TwoFactorState:
+      type: object
+      required: [enabled, recoveryCodesLeft, available]
+      properties:
+        enabled: { type: boolean }
+        recoveryCodesLeft: { type: integer, minimum: 0, maximum: 10 }
+        available: { type: boolean, description: '`false` for accounts without a password' }
+    Session:
+      type: object
+      required: [id, current, createdAt, lastSeenAt, expiresAt, userAgent, ipAddress]
+      properties:
+        id: { type: string }
+        current: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        lastSeenAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        userAgent: { oneOf: [{ type: string }, { type: 'null' }] }
+        ipAddress: { oneOf: [{ type: string }, { type: 'null' }], description: 'Shortened, for example `203.0.113.x`' }
+    HistoryChange:
+      type: object
+      required: [field, old, new]
+      properties:
+        field:
+          type: string
+          enum: [title, location, description, start, end, allDay, timeZone, color, calendar, recurrence, attendees, links, categories]
+        old: { oneOf: [{ type: string }, { type: 'null' }], description: '`null` for attendees, links, categories and recurrence' }
+        new: { oneOf: [{ type: string }, { type: 'null' }] }
+    HistoryEntry:
+      type: object
+      required: [id, action, changedAt, changedBy, changes]
+      properties:
+        id: { type: string }
+        action: { type: string, enum: [created, updated, moved, deleted, restored] }
+        changedAt: { type: string, format: date-time }
+        changedBy:
+          description: null when the account was deleted or the change came from an email link
+          oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
+        changes: { type: array, items: { $ref: '#/components/schemas/HistoryChange' } }
+    AppPassword:
+      type: object
+      required: [id, name, createdAt, lastUsedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+        lastUsedAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }
+    CaldavAccountInput:
+      type: object
+      required: [name, serverUrl, username, password]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+        serverUrl: { type: string, maxLength: 2000, examples: ['https://cloud.example.com/remote.php/dav'] }
+        username: { type: string, minLength: 1, maxLength: 255 }
+        password: { type: string, minLength: 1, maxLength: 500 }
+    CaldavCalendar:
+      type: object
+      required: [id, name, color, shown, readOnly, position, syncedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        color: { $ref: '#/components/schemas/EventColor' }
+        shown: { type: boolean }
+        readOnly: { type: boolean }
+        position: { type: integer }
+        syncedAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }
+    CaldavAccount:
+      type: object
+      required: [id, name, serverHost, username, syncedAt, syncError, calendars]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        serverHost: { type: string }
+        username: { type: string }
+        syncedAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }
+        syncError: { oneOf: [{ type: string }, { type: 'null' }], description: 'Error code of the last synchronization, for example `caldavAuthFailed`' }
+        calendars: { type: array, items: { $ref: '#/components/schemas/CaldavCalendar' } }
+    CaldavObjectInput:
+      type: object
+      required: [data]
+      properties:
+        data: { type: string, maxLength: 1048576, description: 'iCalendar with one event (`UID`), its repetition and exceptions' }
+    CaldavObject:
+      type: object
+      required: [id, etag, data]
+      properties:
+        id: { type: string }
+        etag: { type: string }
+        data: { type: string }
+    ExternalCalendarInput:
+      type: object
+      required: [name, url]
+      properties:
+        name: { $ref: '#/components/schemas/CalendarName' }
+        url: { type: string, maxLength: 2000, examples: ['https://example.com/holidays.ics'] }
+        color: { $ref: '#/components/schemas/EventColor' }
+    ExternalCalendar:
+      type: object
+      required: [id, name, color, shown, position, urlHost, fetchedAt, error]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        color: { $ref: '#/components/schemas/EventColor' }
+        shown: { type: boolean }
+        position: { type: integer }
+        urlHost: { type: string, description: 'Only the host of the address; the full address may contain a secret and is never sent back' }
+        fetchedAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }
+        error: { oneOf: [{ type: string }, { type: 'null' }], description: 'Error code of the last load, for example `externalCalendarUnavailable`' }
+    Notification:
+      type: object
+      required: [id, kind, actor, event, team, invitationId, createdAt, readAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [teamInvitation, eventInvitation, eventChanged, eventCanceled, attendeeResponse, chatMessage, reminder] }
+        actor:
+          oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
+        event:
+          oneOf:
+            - type: object
+              required: [id, calendarId, title, startDate, occurrenceDate]
+              properties:
+                id: { type: string }
+                calendarId: { type: string }
+                title: { type: string }
+                startDate: { $ref: '#/components/schemas/ISODate' }
+                occurrenceDate: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
+            - { type: 'null' }
+        team:
+          oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
+        invitationId: { oneOf: [{ type: string }, { type: 'null' }] }
+        createdAt: { type: string, format: date-time }
+        readAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }
     Email:
       type: string
       format: email
@@ -1893,7 +2686,7 @@ components:
       enum: [system, light, dark]
     CalendarView:
       type: string
-      enum: [day, week, month, year]
+      enum: [day, week, month, year, agenda]
     Locale:
       type: string
       description: '`auto` or a BCP 47 language tag such as `en-US`, `en-GB`, `de-DE`'

@@ -19,7 +19,8 @@ import {
   type EventLink,
 } from './event.ts'
 import { getISODateWeekday, getWeekdayOrdinal, type Recurrence } from './recurrence.ts'
-import { convertWallTime, isTimeZone } from './timeZone.ts'
+import { convertWallTime, isTimeZone, toInstant } from './timeZone.ts'
+import { timeZonesOf, vtimezoneLines } from './vtimezone.ts'
 
 const LINE_LIMIT = 75
 const ICAL_WEEKDAYS = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
@@ -38,7 +39,7 @@ const PARTSTATS: Record<AttendeeStatus, string> = {
 const UNTITLED = '–'
 const DEFAULT_DURATION_MINUTES = 60
 
-const escapeText = (value: string) =>
+export const escapeText = (value: string) =>
   value.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
 
 const quoteParam = (name: string, value: string) => (value ? `;${name}="${value.replace(/"/g, "'")}"` : '')
@@ -63,7 +64,7 @@ const splitTextList = (value: string) => {
 const unescapeText = (value: string) =>
   value.replace(/\\([\\;,nN])/g, (_, char: string) => (char === 'n' || char === 'N' ? '\n' : char))
 
-const foldLine = (line: string) => {
+export const foldLine = (line: string) => {
   const encoder = new TextEncoder()
   const parts: string[] = []
   let current = ''
@@ -82,7 +83,7 @@ const compactDate = (isoDate: string) => isoDate.replaceAll('-', '')
 
 const compactDateTime = (isoDate: string, time: string) => `${compactDate(isoDate)}T${time.replace(':', '')}00`
 
-const utcStamp = (date: Date) =>
+export const utcStamp = (date: Date) =>
   date
     .toISOString()
     .replace(/[-:]/g, '')
@@ -96,7 +97,14 @@ const toTimeProperty = (
   time: string,
 ): TimeProperty => {
   if (event.allDay) return { params: ';VALUE=DATE', value: compactDate(date) }
+  if (event.timeZone === 'UTC') return { params: '', value: `${compactDateTime(date, time)}Z` }
   return { params: event.timeZone ? `;TZID=${event.timeZone}` : '', value: compactDateTime(date, time) }
+}
+
+const toUntil = (event: CalendarEvent, until: string) => {
+  if (event.allDay) return compactDate(until)
+  if (!event.timeZone) return compactDateTime(until, '23:59')
+  return utcStamp(new Date(toInstant({ date: until, time: '23:59' }, event.timeZone)))
 }
 
 const toRRule = (event: CalendarEvent) => {
@@ -111,8 +119,7 @@ const toRRule = (event: CalendarEvent) => {
     const ordinal = recurrence.monthlyMode === 'lastWeekdayOfMonth' ? -1 : getWeekdayOrdinal(event.startDate)
     parts.push(`BYDAY=${ordinal}${weekday}`)
   }
-  if (recurrence.until)
-    parts.push(`UNTIL=${event.allDay ? compactDate(recurrence.until) : compactDateTime(recurrence.until, '23:59')}`)
+  if (recurrence.until) parts.push(`UNTIL=${toUntil(event, recurrence.until)}`)
   if (recurrence.count) parts.push(`COUNT=${recurrence.count}`)
   return parts.join(';')
 }
@@ -123,11 +130,12 @@ const toDuration = (minutes: number) => {
   return `-PT${minutes}M`
 }
 
-const eventLines = (
+export const eventLines = (
   event: CalendarEvent,
   series: CalendarEvent | undefined,
   stamp: string,
   categoryNames: ReadonlyMap<string, string>,
+  overrideDates: ReadonlySet<string> = new Set(),
 ) => {
   const start = toTimeProperty(event, event.startDate, event.start)
   const end = toTimeProperty(event, event.allDay ? addDaysToISODate(event.endDate, 1) : event.endDate, event.end)
@@ -153,6 +161,7 @@ const eventLines = (
   const rrule = toRRule(event)
   if (rrule) lines.push(`RRULE:${rrule}`)
   for (const date of event.excludedDates) {
+    if (overrideDates.has(date)) continue
     const excluded = toTimeProperty(event, date, event.start)
     lines.push(`EXDATE${excluded.params}:${excluded.value}`)
   }
@@ -173,6 +182,13 @@ const eventLines = (
   return lines
 }
 
+export const overrideDatesOf = (events: readonly CalendarEvent[]) => {
+  const dates = new Map<string, Set<string>>()
+  for (const { seriesId, originalDate } of events)
+    if (seriesId && originalDate) dates.set(seriesId, (dates.get(seriesId) ?? new Set()).add(originalDate))
+  return dates
+}
+
 export type ICalendarExportOptions = {
   now?: Date
   categoryNames?: ReadonlyMap<string, string>
@@ -186,6 +202,7 @@ export function toICalendar(
   { now = new Date(), categoryNames = NO_CATEGORY_NAMES }: ICalendarExportOptions = {},
 ) {
   const byId = new Map(events.map((event) => [event.id, event]))
+  const overrides = overrideDatesOf(events)
   const stamp = utcStamp(now)
   const lines = [
     'BEGIN:VCALENDAR',
@@ -193,8 +210,15 @@ export function toICalendar(
     'PRODID:-//Rokoyfa//Calendar//EN',
     'CALSCALE:GREGORIAN',
     `X-WR-CALNAME:${escapeText(calendarName)}`,
+    ...[...timeZonesOf(events)].flatMap(([timeZone, year]) => vtimezoneLines(timeZone, year)),
     ...events.flatMap((event) =>
-      eventLines(event, event.seriesId ? byId.get(event.seriesId) : undefined, stamp, categoryNames),
+      eventLines(
+        event,
+        event.seriesId ? byId.get(event.seriesId) : undefined,
+        stamp,
+        categoryNames,
+        overrides.get(event.id),
+      ),
     ),
     'END:VCALENDAR',
   ]
@@ -268,7 +292,16 @@ const addMinutes = ({ date, time }: { date: string; time: string }, minutes: num
   }
 }
 
-const parseRRule = (value: string, startDate: string): Recurrence | null => {
+const untilDate = (value: string, start: ParsedTime) => {
+  const match = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})\d{0,2}(Z)?)?$/.exec(value)
+  if (!match) return null
+  const date = `${match[1]}-${match[2]}-${match[3]}`
+  if (!match[6] || start.allDay || !start.timeZone || start.timeZone === 'UTC') return date
+  return convertWallTime({ date, time: `${match[4]}:${match[5]}` }, 'UTC', start.timeZone).date
+}
+
+const parseRRule = (value: string, start: ParsedTime): Recurrence | null => {
+  const startDate = start.date
   const rule = Object.fromEntries(
     value.split(';').map((part) => {
       const [key, ruleValue = ''] = part.split('=')
@@ -287,7 +320,7 @@ const parseRRule = (value: string, startDate: string): Recurrence | null => {
   } else if (frequency === 'monthly' && byDay.length === 1) {
     monthlyMode = byDay[0].startsWith('-1') ? 'lastWeekdayOfMonth' : 'weekdayOfMonth'
   } else if (byDay.length > 0) return null
-  const until = rule.UNTIL ? `${rule.UNTIL.slice(0, 4)}-${rule.UNTIL.slice(4, 6)}-${rule.UNTIL.slice(6, 8)}` : null
+  const until = rule.UNTIL ? untilDate(rule.UNTIL, start) : null
   const count = rule.COUNT ? Math.min(Math.max(Number(rule.COUNT) || 1, 1), 999) : null
   return {
     frequency,
@@ -354,7 +387,7 @@ const toImportedEvent = (component: Component): ImportedEvent | null => {
     end = addMinutes(start, DEFAULT_DURATION_MINUTES)
 
   const rrule = get('RRULE')
-  const recurrence = rrule ? parseRRule(rrule.value, start.date) : null
+  const recurrence = rrule ? parseRRule(rrule.value, start) : null
   const recurrenceIdProperty = get('RECURRENCE-ID')
   const recurrenceId = recurrenceIdProperty ? (parseTime(recurrenceIdProperty)?.date ?? null) : null
   const excludedDates = recurrence
