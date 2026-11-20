@@ -159,4 +159,6 @@ export const recurrence: Messages['recurrence'] = {
   monthlyOnLastWeekday: (weekday) => `am letzten ${weekday}`,
   until: (date) => ` bis ${date}`,
   times: (count) => (count === 1 ? ', einmal' : `, ${count}-mal`),
+  custom: 'Eigene Regel aus einem anderen Programm',
+  extraDates: (count) => (count === 1 ? ', dazu 1 weiterer Termin' : `, dazu ${count} weitere Termine`),
 }

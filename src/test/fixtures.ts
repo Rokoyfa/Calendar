@@ -8,6 +8,8 @@ export const recurrence = (overrides: Partial<Recurrence> = {}): Recurrence => (
   monthlyMode: 'dayOfMonth',
   until: null,
   count: null,
+  rule: null,
+  dates: [],
   ...overrides,
 })
 

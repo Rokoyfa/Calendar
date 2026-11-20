@@ -23,10 +23,13 @@ export const isDetachedFrom = (event: CalendarEvent, date: string) =>
 
 const shiftDates = (dates: readonly string[], shift: number) => dates.map((date) => addDaysToISODate(date, shift))
 
-const followShift = (previous: Recurrence | null, next: Recurrence, shift: number) =>
-  shift !== 0 && next.frequency === 'weekly' && isSameRecurrence(previous, next)
-    ? { ...next, weekdays: shiftWeekdays(next.weekdays, shift) }
-    : next
+const followShift = (previous: Recurrence | null, next: Recurrence, shift: number) => {
+  if (shift === 0 || !isSameRecurrence(previous, next)) return next
+  const dates = shiftDates(next.dates, shift)
+  return next.frequency === 'weekly' && next.rule === null
+    ? { ...next, weekdays: shiftWeekdays(next.weekdays, shift), dates }
+    : { ...next, dates }
+}
 
 const asSingleEvent = (input: EventInput): EventInput => ({ ...input, excludedDates: [], ...NO_SERIES_LINK })
 
@@ -65,6 +68,7 @@ export const truncateSeries = (series: CalendarEvent, occurrenceDate: string): E
       ...recurrence,
       until: recurrence.until === null ? lastDate : minISODate(recurrence.until, lastDate),
       count: null,
+      dates: recurrence.dates.filter((date) => date < occurrenceDate),
     },
     excludedDates: series.excludedDates.filter((date) => date < occurrenceDate),
   }
@@ -81,10 +85,17 @@ export const continueSeries = (series: CalendarEvent, occurrenceDate: string, in
       ? Math.max(count - countOccurrencesBefore(series.startDate, series.recurrence, occurrenceDate), 1)
       : count
 
+  const followed = followShift(series.recurrence, input.recurrence, shift)
   return {
     ...input,
     uid: createEventUid(),
-    recurrence: { ...followShift(series.recurrence, input.recurrence, shift), count: remaining },
+    recurrence: {
+      ...followed,
+      count: remaining,
+      dates: keepsRule
+        ? followed.dates.filter((date) => date >= addDaysToISODate(occurrenceDate, shift))
+        : followed.dates,
+    },
     excludedDates: keepsRule
       ? shiftDates(
           series.excludedDates.filter((date) => date >= occurrenceDate),

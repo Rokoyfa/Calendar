@@ -21,7 +21,9 @@
   line-height: 1.4;
   color: var(--color-text);
   background-color: var(--color-bg);
-  transition: background-color var(--transition-base), color var(--transition-base);
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base);
 }
 
 .calendarRoot:focus {
@@ -43,6 +45,11 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+:where(p, li, dd, .formHint) a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 img,

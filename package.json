@@ -1,6 +1,6 @@
 {
   "name": "@rokoyfa/calendar",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "Embeddable calendar for React and any website: day, week, month and year views, recurring and all-day events, time zones, drag and drop, teams and eight languages, as a React component or a <calendar-widget> web component.",
   "keywords": [
     "calendar",
@@ -62,7 +62,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:lib": "node -e \"require('fs').rmSync('dist-lib',{recursive:true,force:true})\" && vite build -c vite.lib.config.ts && vite build -c vite.lib.config.ts --mode element && tsc -p tsconfig.lib.json && node scripts/collect-types.mjs",
+    "build:lib": "node -e \"require('fs').rmSync('dist-lib',{recursive:true,force:true})\" && vite build -c vite.lib.config.ts && vite build -c vite.lib.config.ts --mode element && tsc -p tsconfig.lib.json && node scripts/collect-types.mjs && node scripts/check-bundle-size.mjs",
+    "check:size": "node scripts/check-bundle-size.mjs",
     "typecheck": "tsc -b && tsc -p e2e/tsconfig.json --noEmit",
     "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build:lib",
     "test": "vitest run",
@@ -74,6 +75,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "@types/node": "^24.19.2",

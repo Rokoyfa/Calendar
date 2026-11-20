@@ -18,7 +18,7 @@ An embeddable calendar for React apps and any other website. It runs without a b
 **Any website**, React is bundled:
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@1/dist-lib/cdn/calendar-widget.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@2/dist-lib/cdn/calendar-widget.js"></script>
 
 <calendar-widget style="height: 700px"></calendar-widget>
 ```

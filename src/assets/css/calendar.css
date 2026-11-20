@@ -422,10 +422,11 @@ button.columnHeader:hover {
 .eventChip {
   display: block;
   width: 100%;
-  padding: 1px var(--space-2);
+  min-height: 24px;
+  padding: 3px var(--space-2);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
-  line-height: 1.4;
+  line-height: 18px;
   text-align: left;
 }
 
@@ -451,6 +452,7 @@ button.columnHeader:hover {
 }
 
 .moreEvents {
+  min-height: 24px;
   padding: 0 var(--space-2);
   font-size: var(--font-size-sm);
   color: var(--color-muted);

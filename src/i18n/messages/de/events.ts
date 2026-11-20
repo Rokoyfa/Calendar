@@ -77,6 +77,13 @@ export const events: Messages['events'] = {
   endsOnDate: 'Am Datum',
   endsAfterCount: 'Nach Anzahl',
   lastOccurrence: 'Letzter Termin',
+  calendar: 'Kalender',
+  moveSeriesHint: 'Die ganze Serie wechselt in den anderen Kalender, auch einzeln geänderte Termine.',
+  customRule: 'Eigene Regel',
+  customRuleHint:
+    'Diese Serie nutzt eine Regel aus einem anderen Programm, die sich hier nicht bearbeiten lässt. Sie bleibt erhalten, wenn du anderes änderst. Wähle eine andere Wiederholung, um sie zu ersetzen.',
+  extraDates: (count) => (count === 1 ? 'Zusätzlich an 1 weiteren Tag.' : `Zusätzlich an ${count} weiteren Tagen.`),
+  removeExtraDates: 'Zusätzliche Tage entfernen',
   after: 'Nach',
   occurrences: { one: 'Termin', many: 'Terminen' },
   location: 'Ort',

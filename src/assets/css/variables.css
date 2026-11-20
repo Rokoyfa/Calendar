@@ -4,7 +4,7 @@
 
 :host,
 .calendarRoot {
-  --font-family: var(--calendar-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
+  --font-family: var(--calendar-font, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif);
   --font-size-xs: 10px;
   --font-size-sm: 12px;
   --font-size-md: 14px;
@@ -26,6 +26,7 @@
   --color-red: light-dark(rgb(190, 35, 15), rgb(226, 80, 60));
   --color-blue: light-dark(rgb(54, 92, 175), rgb(98, 140, 230));
   --color-green: light-dark(rgb(21, 129, 21), rgb(52, 170, 82));
+  --color-success-text: light-dark(rgb(14, 92, 14), rgb(120, 214, 140));
   --color-yellow: light-dark(rgb(233, 229, 4), rgb(230, 210, 40));
   --color-grey: light-dark(rgb(94, 91, 91), rgb(150, 147, 147));
   --color-accent: var(--calendar-accent, var(--color-blue));
@@ -55,11 +56,11 @@
   --transition-base: 200ms ease-in;
 }
 
-.calendarRoot[data-theme="light"] {
+.calendarRoot[data-theme='light'] {
   color-scheme: light;
 }
 
-.calendarRoot[data-theme="dark"] {
+.calendarRoot[data-theme='dark'] {
   color-scheme: dark;
 }
 

@@ -39,7 +39,7 @@ There are two ways to embed the calendar. Both render the same component and tak
 One script, no build step. React is bundled.
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@1/dist-lib/cdn/calendar-widget.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@2/dist-lib/cdn/calendar-widget.js"></script>
 
 <calendar-widget style="height: 700px"></calendar-widget>
 ```
@@ -797,6 +797,8 @@ type Recurrence = {
   monthlyMode: 'dayOfMonth' | 'weekdayOfMonth' | 'lastWeekdayOfMonth'
   until: string | null          // either until or count, or neither
   count: number | null
+  rule: string | null           // RRULE without UNTIL/COUNT from another program, decides the occurrences when set
+  dates: string[]               // additional occurrences (RDATE) after the start, max 100
 }
 
 type CalendarSummary = {
@@ -1184,5 +1186,6 @@ A bell next to the account button shows notifications with a badge for the unrea
 - Events can be edited, moved, repeated, detached and deleted like own events, including undo. Every change goes to the other server at once with `If-Match`; when the event changed there in the meantime, the user sees `eventChanged` and the dialog offers to reload.
 - When the component writes an event, it changes only what it knows (title, place, description, times, repetition, exceptions, attendees and their answers, links, reminders, color) and keeps everything else of the original, for example the organizer, categories, attachments or properties of other programs.
 - Calendars the other server marks read-only open in a view-only dialog.
-- New events are created in the active calendar of the component, so they cannot be created in a CalDAV calendar directly. **Duplicate** copies a CalDAV event into the active own calendar.
+- The **Calendar** field of the event dialog lists the own calendars with the right to add events and the writable CalDAV calendars, so new events can go there directly and existing ones can move between all of them. A move between the component's calendars uses `POST /events/{eventId}/move`; a move to or from CalDAV creates the event in the target and then deletes the original (attachments and chat stay in the trash of the original).
+- Repetitions the simple fields cannot describe keep their original rule in `recurrence.rule` and additional dates in `recurrence.dates`, so editing the title of such a series in the component does not change its repetition on the other server.
 - Credentials are stored encrypted by the backend. Only `https`, no private networks, every redirect checked again (see [Rules for the backend](#rules-for-the-backend)).

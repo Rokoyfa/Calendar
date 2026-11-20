@@ -74,6 +74,13 @@ export const events = {
   endsOnDate: 'On date',
   endsAfterCount: 'After a number',
   lastOccurrence: 'Last event',
+  calendar: 'Calendar',
+  moveSeriesHint: 'The whole series moves to the other calendar, including separately edited events.',
+  customRule: 'Custom rule',
+  customRuleHint:
+    'This series uses a rule from another program that cannot be edited here. It stays unchanged when you edit other details. Choose another repetition to replace it.',
+  extraDates: (count: number) => (count === 1 ? 'Also on 1 additional date.' : `Also on ${count} additional dates.`),
+  removeExtraDates: 'Remove additional dates',
   after: 'After',
   occurrences: { one: 'event', many: 'events' },
   location: 'Location',

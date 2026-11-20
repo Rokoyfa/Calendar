@@ -150,6 +150,8 @@ const recurrence: Messages['recurrence'] = {
   monthlyOnLastWeekday: (weekday) => `op de laatste ${weekday}`,
   until: (date) => ` tot ${date}`,
   times: (count) => (count === 1 ? ', één keer' : `, ${count} keer`),
+  custom: 'Eigen regel uit een ander programma',
+  extraDates: (count) => (count === 1 ? ', plus 1 extra datum' : `, plus ${count} extra datums`),
 }
 
 const views: Messages['views'] = {
@@ -283,6 +285,13 @@ const events: Messages['events'] = {
   endsOnDate: 'Op datum',
   endsAfterCount: 'Na een aantal',
   lastOccurrence: 'Laatste afspraak',
+  calendar: 'Agenda',
+  moveSeriesHint: 'De hele reeks gaat naar de andere agenda, ook apart bewerkte afspraken.',
+  customRule: 'Eigen regel',
+  customRuleHint:
+    'Deze reeks gebruikt een regel uit een ander programma die hier niet kan worden bewerkt. Die blijft behouden als je andere gegevens wijzigt. Kies een andere herhaling om haar te vervangen.',
+  extraDates: (count) => (count === 1 ? 'Ook op 1 extra datum.' : `Ook op ${count} extra datums.`),
+  removeExtraDates: 'Extra datums verwijderen',
   after: 'Na',
   occurrences: { one: 'afspraak', many: 'afspraken' },
   location: 'Locatie',
@@ -550,7 +559,7 @@ const calendars: Messages['calendars'] = {
     editor: 'Redacteur',
     member: 'Lid',
     contributor: 'Bijdrager',
-    viewer: 'Kijker',
+    viewer: 'Lezer',
   },
   roleDescriptions: {
     owner: 'Leidt de agenda en heeft altijd alle rechten.',

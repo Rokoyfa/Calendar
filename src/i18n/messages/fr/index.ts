@@ -155,6 +155,8 @@ const recurrence: Messages['recurrence'] = {
   monthlyOnLastWeekday: (weekday) => `le dernier ${weekday}`,
   until: (date) => ` jusqu’au ${date}`,
   times: (count) => (count === 1 ? ', une fois' : `, ${count} fois`),
+  custom: 'Règle personnalisée d’un autre programme',
+  extraDates: (count) => (count === 1 ? ', plus 1 date supplémentaire' : `, plus ${count} dates supplémentaires`),
 }
 
 const views: Messages['views'] = {
@@ -178,22 +180,22 @@ const views: Messages['views'] = {
 const calendar: Messages['calendar'] = {
   today: 'Aujourd’hui',
   newEvent: 'Nouvel événement',
-  now: (time) => `Maintenant : ${time}`,
-  ownResponse: (status) => `Votre réponse : ${status}`,
-  newEventAt: (day, time) => `Nouvel événement : ${day}, ${time}`,
+  now: (time) => `Maintenant\u00a0: ${time}`,
+  ownResponse: (status) => `Votre réponse\u00a0: ${status}`,
+  newEventAt: (day, time) => `Nouvel événement\u00a0: ${day}, ${time}`,
   todayMark: 'aujourd’hui',
   openDay: (date) => `Ouvrir le ${date}`,
   moreEvents: (count) => `+${count} de plus`,
   moreLinks: (count) => `+${count} autres liens`,
-  holiday: (name) => `Jour férié : ${name}`,
-  fromCalendar: (name) => `Du calendrier « ${name} »`,
+  holiday: (name) => `Jour férié\u00a0: ${name}`,
+  fromCalendar: (name) => `Du calendrier «\u00a0${name}\u00a0»`,
   sharedEventNotice: (source) => `${source}. Tous les membres voient les modifications.`,
   dismiss: 'Fermer',
   undo: {
     action: 'Annuler',
     ctrlZ: 'Ctrl+Z',
-    deleted: (title) => `« ${title} » supprimé`,
-    moved: (title) => `« ${title} » déplacé`,
+    deleted: (title) => `«\u00a0${title}\u00a0» supprimé`,
+    moved: (title) => `«\u00a0${title}\u00a0» déplacé`,
   },
   filter: {
     open: 'Filtrer par catégorie',
@@ -223,7 +225,7 @@ const events: Messages['events'] = {
   allDay: 'Toute la journée',
   timeZone: 'Fuseau horaire',
   floatingTimeZone: 'Même heure locale partout',
-  inYourTimeZone: (period) => `Dans votre fuseau horaire : ${period}`,
+  inYourTimeZone: (period) => `Dans votre fuseau horaire\u00a0: ${period}`,
   description: 'Description',
   color: 'Couleur',
   addCustomColor: 'Ajouter une couleur personnalisée',
@@ -232,7 +234,7 @@ const events: Messages['events'] = {
     `Jusqu’à ${max} couleurs que vous ajoutez en modifiant un événement. Les événements gardent leur couleur même si vous la supprimez ici.`,
   noCustomColors: 'Pas encore de couleurs personnalisées.',
   removeColor: (label) => `Supprimer la couleur ${label}`,
-  deleteTitle: 'Supprimer l’événement ?',
+  deleteTitle: 'Supprimer l’événement\u202f?',
   viewTitle: 'Événement',
   deleteTrashHint: "L'événement va dans la corbeille, où il peut être restauré pendant 30 jours.",
   remoteChange: {
@@ -256,11 +258,12 @@ const events: Messages['events'] = {
     download: (name) => `Télécharger ${name}`,
     remove: (name) => `Retirer ${name}`,
     uploadedBy: (name) => `par ${name}`,
-    tooLarge: (name, size) => `« ${name} » dépasse ${size}.`,
-    emptyFile: (name) => `« ${name} » est vide.`,
-    tooMany: (name, count) => `« ${name} » ne peut pas être ajouté : ${count} fichiers maximum par événement.`,
+    tooLarge: (name, size) => `«\u00a0${name}\u00a0» dépasse ${size}.`,
+    emptyFile: (name) => `«\u00a0${name}\u00a0» est vide.`,
+    tooMany: (name, count) =>
+      `«\u00a0${name}\u00a0» ne peut pas être ajouté\u00a0: ${count} fichiers maximum par événement.`,
     notUploaded: (names) =>
-      `L’événement a été enregistré, mais ces pièces jointes n’ont pas pu être envoyées : ${names}`,
+      `L’événement a été enregistré, mais ces pièces jointes n’ont pas pu être envoyées\u00a0: ${names}`,
     count: (count) => (count === 1 ? '1 pièce jointe' : `${count} pièces jointes`),
   },
   categories: {
@@ -270,11 +273,11 @@ const events: Messages['events'] = {
     create: 'Créer',
     empty: 'Aucune catégorie pour le moment. Créez la première ici.',
   },
-  deleteMessage: (title) => `« ${title} » sera supprimé.`,
-  deleteSeriesMessage: (title) => `« ${title} » est un événement récurrent. Que faut-il supprimer ?`,
+  deleteMessage: (title) => `«\u00a0${title}\u00a0» sera supprimé.`,
+  deleteSeriesMessage: (title) => `«\u00a0${title}\u00a0» est un événement récurrent. Que faut-il supprimer\u202f?`,
   deleteIrreversible: 'Cette action est irréversible.',
   scopeTitle: 'Modifier l’événement récurrent',
-  scopeMessage: 'À quels événements de la série les modifications doivent-elles s’appliquer ?',
+  scopeMessage: 'À quels événements de la série les modifications doivent-elles s’appliquer\u202f?',
   scopes: {
     single: 'Cet événement uniquement',
     following: 'Cet événement et les suivants',
@@ -289,6 +292,13 @@ const events: Messages['events'] = {
   endsOnDate: 'À une date',
   endsAfterCount: 'Après un nombre',
   lastOccurrence: 'Dernier événement',
+  calendar: 'Calendrier',
+  moveSeriesHint: 'Toute la série passe dans l’autre calendrier, y compris les événements modifiés séparément.',
+  customRule: 'Règle personnalisée',
+  customRuleHint:
+    'Cette série utilise une règle d’un autre programme qui ne peut pas être modifiée ici. Elle est conservée lorsque vous modifiez d’autres détails. Choisissez une autre répétition pour la remplacer.',
+  extraDates: (count) => (count === 1 ? 'Aussi à 1 date supplémentaire.' : `Aussi à ${count} dates supplémentaires.`),
+  removeExtraDates: 'Supprimer les dates supplémentaires',
   after: 'Après',
   occurrences: { one: 'événement', many: 'événements' },
   location: 'Lieu',
@@ -322,10 +332,10 @@ const events: Messages['events'] = {
   linkLabel: 'Libellé (facultatif)',
   openLink: (name) => `Ouvrir ${name}`,
   removeLink: (name) => `Retirer ${name}`,
-  openMap: (location) => `Ouvrir « ${location} » dans une carte`,
+  openMap: (location) => `Ouvrir «\u00a0${location}\u00a0» dans une carte`,
   chat: {
     tab: 'Discussion',
-    empty: 'Pas encore de messages. Écris le premier !',
+    empty: 'Pas encore de messages. Écris le premier\u202f!',
     placeholder: 'Écrire un message…',
     send: 'Envoyer',
     sendHint: 'Entrée envoie, Maj+Entrée ajoute une ligne',
@@ -339,7 +349,7 @@ const events: Messages['events'] = {
     removedAuthor: 'Compte supprimé',
   },
   duplicate: 'Dupliquer',
-  duplicateNotice: (title) => `Copie de « ${title} ». Elle est créée à l’enregistrement.`,
+  duplicateNotice: (title) => `Copie de «\u00a0${title}\u00a0». Elle est créée à l’enregistrement.`,
   history: {
     tab: 'Historique',
     none: 'Aucune modification enregistrée pour l’instant.',
@@ -378,14 +388,14 @@ const events: Messages['events'] = {
     sending: 'Enregistrement de ta réponse…',
     incompleteLink: 'Ce lien est incomplet. Ouvre-le à nouveau depuis l’e-mail.',
     recurring: 'C’est un événement récurrent. Ta réponse vaut pour toute la série.',
-    saved: (status) => `Enregistré : ${status}`,
+    saved: (status) => `Enregistré\u00a0: ${status}`,
   },
 }
 
 const storage: Messages['storage'] = {
-  importTitle: 'Importer les événements locaux ?',
+  importTitle: 'Importer les événements locaux\u202f?',
   importMessage: (count) =>
-    `${count === 1 ? 'Un événement est enregistré' : `${count} événements sont enregistrés`} dans ce navigateur sans compte. Voulez-vous ${count === 1 ? 'le' : 'les'} transférer vers votre compte ? ${count === 1 ? 'Il sera' : 'Ils seront'} alors disponible${count === 1 ? '' : 's'} sur tous vos appareils et supprimé${count === 1 ? '' : 's'} de ce navigateur.`,
+    `${count === 1 ? 'Un événement est enregistré' : `${count} événements sont enregistrés`} dans ce navigateur sans compte. Voulez-vous ${count === 1 ? 'le' : 'les'} transférer vers votre compte\u202f? ${count === 1 ? 'Il sera' : 'Ils seront'} alors disponible${count === 1 ? '' : 's'} sur tous vos appareils et supprimé${count === 1 ? '' : 's'} de ce navigateur.`,
   importing: 'Importation …',
   importConfirm: 'Transférer vers mon compte',
   keepLocal: 'Garder uniquement dans ce navigateur',
@@ -406,7 +416,7 @@ const settings: Messages['settings'] = {
   dataExport: {
     title: 'Vos données',
     accountDescription:
-      'Téléchargez tout ce qui est enregistré pour votre compte : profil, paramètres, couleurs, adhésions, vos événements, réponses, messages de discussion et les informations sur vos pièces jointes. Le fichier est au format JSON.',
+      'Téléchargez tout ce qui est enregistré pour votre compte\u00a0: profil, paramètres, couleurs, adhésions, vos événements, réponses, messages de discussion et les informations sur vos pièces jointes. Le fichier est au format JSON.',
     localDescription:
       'Téléchargez tous les événements et paramètres enregistrés par ce navigateur. Le fichier est au format JSON.',
     download: 'Télécharger les données',
@@ -419,12 +429,12 @@ const settings: Messages['settings'] = {
   timeZoneDescription:
     'Les événements sont affichés dans ce fuseau horaire, qui est aussi présélectionné pour les nouveaux événements.',
   timeZoneLabel: 'Fuseau horaire',
-  timeZoneAuto: (zone) => `Automatique : ${zone} (recommandé)`,
+  timeZoneAuto: (zone) => `Automatique\u00a0: ${zone} (recommandé)`,
   holidaysTitle: 'Jours fériés',
-  holidaysDescription: 'Affiche les jours fériés dans le calendrier. Données : date-holidays (CC BY-SA 4.0).',
+  holidaysDescription: 'Affiche les jours fériés dans le calendrier. Données\u00a0: date-holidays (CC BY-SA 4.0).',
   holidaysCountry: 'Pays',
   holidaysRegion: 'Région',
-  holidaysAuto: (name) => `Automatique : ${name} (recommandé)`,
+  holidaysAuto: (name) => `Automatique\u00a0: ${name} (recommandé)`,
   holidaysOff: 'Aucun jour férié',
   holidaysWholeCountry: 'Tout le pays',
   notifications: {
@@ -463,20 +473,20 @@ const auth: Messages['auth'] = {
     title: 'Connexion',
     submit: 'Se connecter',
     pending: 'Connexion …',
-    noAccount: 'Pas encore de compte ?',
+    noAccount: 'Pas encore de compte\u202f?',
     registerLink: 'S’inscrire',
-    forgotPassword: 'Mot de passe oublié ?',
+    forgotPassword: 'Mot de passe oublié\u202f?',
   },
   register: {
     title: 'Inscription',
     submit: 'Créer un compte',
     pending: 'Création du compte …',
-    hasAccount: 'Vous avez déjà un compte ?',
+    hasAccount: 'Vous avez déjà un compte\u202f?',
     loginLink: 'Se connecter',
   },
   forgot: {
     title: 'Mot de passe oublié',
-    remembered: 'Vous vous en souvenez ?',
+    remembered: 'Vous vous en souvenez\u202f?',
     loginLink: 'Se connecter',
     hint: 'Saisissez l’adresse e-mail de votre compte. Nous vous enverrons un lien pour définir un nouveau mot de passe.',
     success: (email) =>
@@ -522,7 +532,7 @@ const auth: Messages['auth'] = {
     emailTitle: 'Adresse e-mail',
     verified: 'Confirmée',
     unverified: 'Non confirmée',
-    verificationSent: 'Nous vous avons envoyé un lien de confirmation. Rien reçu ?',
+    verificationSent: 'Nous vous avons envoyé un lien de confirmation. Rien reçu\u202f?',
     resendVerification: 'Renvoyer le lien de confirmation',
     passwordTitle: 'Changer le mot de passe',
     passwordDescription: 'Vos autres appareils seront ensuite déconnectés.',
@@ -564,7 +574,7 @@ const calendars: Messages['calendars'] = {
     viewer: 'Voit le calendrier mais ne modifie rien.',
   },
   roleOverview: 'Ce que chaque rôle peut faire',
-  roleHint: (role, description) => `${role} : ${description}`,
+  roleHint: (role, description) => `${role}\u00a0: ${description}`,
   kind: {
     personal: 'Calendrier personnel',
     team: 'Calendrier d’équipe',
@@ -573,7 +583,7 @@ const calendars: Messages['calendars'] = {
   indicator: {
     onlyYou: 'Rien que pour vous',
     team: (role) => `Équipe · ${role}`,
-    current: (name) => `Calendrier actuel : ${name}`,
+    current: (name) => `Calendrier actuel\u00a0: ${name}`,
   },
   switcher: {
     open: 'Changer de calendrier',
@@ -590,7 +600,7 @@ const calendars: Messages['calendars'] = {
   invitations: {
     title: 'Invitations',
     description:
-      'Vous avez été invité à ces calendriers. Une fois acceptés, ils apparaissent sous Calendriers et dans « Changer de calendrier ».',
+      'Vous avez été invité à ces calendriers. Une fois acceptés, ils apparaissent sous Calendriers et dans «\u00a0Changer de calendrier\u00a0».',
     empty: 'Aucune invitation en attente. Lorsque quelqu’un vous invite à un calendrier, l’invitation apparaît ici.',
     invitedBy: (name) => `${name} vous invite`,
     invited: 'Vous êtes invité',
@@ -614,33 +624,33 @@ const calendars: Messages['calendars'] = {
     create: 'Créer un calendrier',
   },
   leave: {
-    title: 'Quitter le calendrier ?',
+    title: 'Quitter le calendrier\u202f?',
     confirm: 'Quitter',
     pending: 'Départ …',
     message: (team) =>
-      `Vous quittez l’équipe « ${team} » et ne verrez plus son calendrier. Vous ne pourrez revenir que via une nouvelle invitation.`,
+      `Vous quittez l’équipe «\u00a0${team}\u00a0» et ne verrez plus son calendrier. Vous ne pourrez revenir que via une nouvelle invitation.`,
   },
   create: {
     title: 'Nouveau calendrier',
     steps: [
       {
         label: 'Nom',
-        title: 'Comment s’appelle le calendrier ?',
+        title: 'Comment s’appelle le calendrier\u202f?',
         hint: 'Tous les membres voient le nom et la description.',
       },
       {
         label: 'Couleur',
-        title: 'Quelle couleur doit-il avoir ?',
+        title: 'Quelle couleur doit-il avoir\u202f?',
         hint: 'Les nouveaux événements de ce calendrier commencent avec cette couleur.',
       },
       {
         label: 'Membres',
-        title: 'Qui voulez-vous inviter ?',
+        title: 'Qui voulez-vous inviter\u202f?',
         hint: 'Les invités reçoivent un e-mail et voient le calendrier dès qu’ils acceptent.',
       },
       {
         label: 'Vérification',
-        title: 'Tout est correct ?',
+        title: 'Tout est correct\u202f?',
         hint: 'Vous êtes le propriétaire et pouvez tout modifier plus tard.',
       },
     ],
@@ -654,7 +664,7 @@ const calendars: Messages['calendars'] = {
     namePlaceholder: 'p. ex. Famille, club de foot, projet',
     description: 'Description',
     descriptionOptional: 'Description (facultatif)',
-    descriptionPlaceholder: 'À quoi sert ce calendrier ?',
+    descriptionPlaceholder: 'À quoi sert ce calendrier\u202f?',
     yourRole: 'Votre rôle',
     invitations: 'Invitations',
     none: 'Aucune',
@@ -708,10 +718,10 @@ const calendars: Messages['calendars'] = {
     you: ' (vous)',
     roleOf: (name) => `Rôle de ${name}`,
     remove: 'Retirer',
-    removeTitle: 'Retirer le membre ?',
+    removeTitle: 'Retirer le membre\u202f?',
     removing: 'Retrait …',
     removeMessage: (name, calendar) =>
-      `${name} ne verra plus « ${calendar} ». Un retour n’est possible que via une nouvelle invitation.`,
+      `${name} ne verra plus «\u00a0${calendar}\u00a0». Un retour n’est possible que via une nouvelle invitation.`,
   },
   teamInvitations: {
     title: 'Invitations',
@@ -735,18 +745,18 @@ const calendars: Messages['calendars'] = {
       'En tant que seul propriétaire, vous ne pouvez pas partir. Transférez d’abord la propriété ou supprimez l’équipe.',
     leaveHint: 'Vous ne verrez plus le calendrier. Vous ne pourrez revenir que via une nouvelle invitation.',
     deleteHint: (team) =>
-      `Supprime l’équipe « ${team} » avec tous les calendriers, événements et invitations, pour tous les membres.`,
+      `Supprime l’équipe «\u00a0${team}\u00a0» avec tous les calendriers, événements et invitations, pour tous les membres.`,
     deleteTeam: 'Supprimer l’équipe',
-    transferConfirmTitle: 'Vraiment transférer la propriété ?',
+    transferConfirmTitle: 'Vraiment transférer la propriété\u202f?',
     transferConfirm: 'Transférer définitivement',
     transferring: 'Transfert …',
     transferMessage: (name, email, team, role) =>
-      `${name} (${email}) devient propriétaire de « ${team} » et obtient tous les droits, y compris la suppression de l’équipe. Vous devenez ${role} et ne pourrez plus supprimer l’équipe ni reprendre vous-même la propriété.`,
-    deleteTitle: 'Supprimer l’équipe ?',
+      `${name} (${email}) devient propriétaire de «\u00a0${team}\u00a0» et obtient tous les droits, y compris la suppression de l’équipe. Vous devenez ${role} et ne pourrez plus supprimer l’équipe ni reprendre vous-même la propriété.`,
+    deleteTitle: 'Supprimer l’équipe\u202f?',
     deleteConfirm: 'Supprimer définitivement',
     deleting: 'Suppression …',
     deleteMessage: (team, count) =>
-      `« ${team} » sera supprimée avec tous les calendriers, événements et invitations, également pour les ${count} membres. Cette action est irréversible.`,
+      `«\u00a0${team}\u00a0» sera supprimée avec tous les calendriers, événements et invitations, également pour les ${count} membres. Cette action est irréversible.`,
   },
   categories: {
     title: 'Catégories',
@@ -773,17 +783,17 @@ const calendars: Messages['calendars'] = {
     noResults: 'Aucune entrée correspondante.',
     showMore: (shown, total) => `Afficher plus (${shown} sur ${total})`,
     emptyAction: 'Vider la corbeille',
-    emptyTitle: 'Vider la corbeille ?',
+    emptyTitle: 'Vider la corbeille\u202f?',
     emptyConfirm: (count) =>
       `${count} entrée(s) de la corbeille seront supprimées définitivement, avec leurs pièces jointes et leur discussion. Cette action est irréversible.`,
     emptyConfirmOwn: (own, total) =>
       `${own} entrée(s) sur ${total} seront supprimées définitivement, celles que vous pouvez supprimer. Cette action est irréversible.`,
     restore: 'Restaurer',
     deleteForever: 'Supprimer définitivement',
-    deleteForeverLabel: (title) => `Supprimer « ${title} » définitivement`,
-    confirmTitle: 'Supprimer définitivement ?',
+    deleteForeverLabel: (title) => `Supprimer «\u00a0${title}\u00a0» définitivement`,
+    confirmTitle: 'Supprimer définitivement\u202f?',
     confirmDelete: (title) =>
-      `« ${title} » sera supprimé définitivement, avec toutes les pièces jointes et la discussion. Cette action est irréversible.`,
+      `«\u00a0${title}\u00a0» sera supprimé définitivement, avec toutes les pièces jointes et la discussion. Cette action est irréversible.`,
   },
   share: {
     title: 'Lien public',
@@ -845,11 +855,11 @@ const security: Messages['security'] = {
     description: 'Après votre mot de passe, la connexion demande aussi un code d’une application d’authentification.',
     pageTitle: 'Connexion en deux étapes',
     intro:
-      'Protégez votre compte par une seconde étape : après votre mot de passe, vous saisissez un code à six chiffres d’une application comme Google Authenticator, Microsoft Authenticator ou 1Password.',
+      'Protégez votre compte par une seconde étape\u00a0: après votre mot de passe, vous saisissez un code à six chiffres d’une application comme Google Authenticator, Microsoft Authenticator ou 1Password.',
     backToSettings: 'Retour à Sécurité',
     on: 'Activée',
     off: 'Désactivée',
-    statusOn: (left) => `Activée · Codes de récupération restants : ${left}`,
+    statusOn: (left) => `Activée · Codes de récupération restants\u00a0: ${left}`,
     manage: 'Gérer',
     setUp: 'Configurer',
     unavailable: 'La connexion en deux étapes n’est pas disponible pour ce compte.',
@@ -898,7 +908,7 @@ const security: Messages['security'] = {
       'Ces appareils sont connectés à votre compte. Déconnectez ceux que vous ne reconnaissez pas ou n’utilisez plus.',
     current: 'Cet appareil',
     unknownDevice: 'Appareil inconnu',
-    lastSeen: (time) => `Dernière utilisation : ${time}`,
+    lastSeen: (time) => `Dernière utilisation\u00a0: ${time}`,
     signedIn: (time) => `connecté le ${time}`,
     endOne: 'Déconnecter',
     endCurrent: 'Se déconnecter ici',
@@ -917,13 +927,13 @@ const inbox: Messages['inbox'] = {
   loadMore: 'Afficher les plus anciennes',
   someone: 'Quelqu’un',
   kinds: {
-    teamInvitation: (actor, team) => `${actor} vous a invité au calendrier « ${team} »`,
-    eventInvitation: (actor, title) => `${actor} vous a invité à « ${title} »`,
-    eventChanged: (actor, title) => `${actor} a modifié « ${title} »`,
-    eventCanceled: (actor, title) => `${actor} a annulé « ${title} »`,
-    attendeeResponse: (actor, title) => `${actor} a répondu à « ${title} »`,
-    chatMessage: (actor, title) => `${actor} a écrit à propos de « ${title} »`,
-    reminder: (title) => `Rappel : « ${title} »`,
+    teamInvitation: (actor, team) => `${actor} vous a invité au calendrier «\u00a0${team}\u00a0»`,
+    eventInvitation: (actor, title) => `${actor} vous a invité à «\u00a0${title}\u00a0»`,
+    eventChanged: (actor, title) => `${actor} a modifié «\u00a0${title}\u00a0»`,
+    eventCanceled: (actor, title) => `${actor} a annulé «\u00a0${title}\u00a0»`,
+    attendeeResponse: (actor, title) => `${actor} a répondu à «\u00a0${title}\u00a0»`,
+    chatMessage: (actor, title) => `${actor} a écrit à propos de «\u00a0${title}\u00a0»`,
+    reminder: (title) => `Rappel\u00a0: «\u00a0${title}\u00a0»`,
   },
 }
 
@@ -948,10 +958,10 @@ const external: Messages['external'] = {
   remove: 'Se désabonner',
   removing: 'Désabonnement …',
   removeTitle: 'Se désabonner du calendrier',
-  removeMessage: (name) => `Ne plus afficher « ${name} » ? Vous pouvez vous réabonner à tout moment.`,
-  updated: (time) => `Mis à jour : ${time}`,
+  removeMessage: (name) => `Ne plus afficher «\u00a0${name}\u00a0»\u202f? Vous pouvez vous réabonner à tout moment.`,
+  updated: (time) => `Mis à jour\u00a0: ${time}`,
   limitReached: (max) => `Vous pouvez vous abonner à ${max} calendriers au maximum.`,
-  eventNotice: (name) => `Du calendrier abonné « ${name} ». Il ne peut être modifié que là-bas.`,
+  eventNotice: (name) => `Du calendrier abonné «\u00a0${name}\u00a0». Il ne peut être modifié que là-bas.`,
 }
 
 const caldav: Messages['caldav'] = {
@@ -986,7 +996,7 @@ const caldav: Messages['caldav'] = {
     removing: 'Déconnexion …',
     removeTitle: 'Déconnecter le compte',
     removeMessage: (name) =>
-      `Déconnecter « ${name} » ? Ses calendriers disparaissent d’ici. Rien n’est supprimé sur l’autre serveur.`,
+      `Déconnecter «\u00a0${name}\u00a0»\u202f? Ses calendriers disparaissent d’ici. Rien n’est supprimé sur l’autre serveur.`,
     calendars: 'Calendriers',
     noCalendars: 'Ce compte n’a aucun calendrier avec des événements.',
     show: 'Afficher dans le calendrier',
@@ -1021,10 +1031,10 @@ const caldav: Messages['caldav'] = {
     revoking: 'Révocation …',
     revokeTitle: 'Révoquer le mot de passe d’application',
     revokeMessage: (name) =>
-      `Révoquer le mot de passe d’application « ${name} » ? Le programme ne pourra plus se synchroniser.`,
+      `Révoquer le mot de passe d’application «\u00a0${name}\u00a0»\u202f? Le programme ne pourra plus se synchroniser.`,
     limitReached: (max) => `Vous pouvez créer au maximum ${max} mots de passe d’application.`,
   },
-  eventNotice: (name) => `Du calendrier CalDAV « ${name} ». Les modifications y sont enregistrées.`,
+  eventNotice: (name) => `Du calendrier CalDAV «\u00a0${name}\u00a0». Les modifications y sont enregistrées.`,
 }
 
 export const fr: Messages = {

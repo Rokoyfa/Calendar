@@ -14,6 +14,7 @@ import type { I18n, Messages } from '../i18n/index.ts'
 import { isIntegerInRange } from './number.ts'
 import { isOneOf } from './object.ts'
 import { hasFieldErrors } from './validation.ts'
+import { isRule, RECURRENCE_DATES_MAX, rulePeriods } from './rrule.ts'
 
 export const RECURRENCE_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly'] as const
 
@@ -30,6 +31,8 @@ export type Recurrence = {
   monthlyMode: MonthlyMode
   until: string | null
   count: number | null
+  rule: string | null
+  dates: string[]
 }
 
 export const RECURRENCE_INTERVAL_MAX = 99
@@ -46,8 +49,7 @@ const isInLastWeekOfMonth = (isoDate: string) => {
   return date.getDate() + DAYS_PER_WEEK > daysInMonth(date.getFullYear(), date.getMonth())
 }
 
-const isRecurrenceFrequency = (value: unknown): value is RecurrenceFrequency =>
-  isOneOf(RECURRENCE_FREQUENCIES, value)
+const isRecurrenceFrequency = (value: unknown): value is RecurrenceFrequency => isOneOf(RECURRENCE_FREQUENCIES, value)
 
 const isMonthlyMode = (value: unknown): value is MonthlyMode => isOneOf(MONTHLY_MODES, value)
 
@@ -58,6 +60,8 @@ export const createRecurrence = (frequency: RecurrenceFrequency, startDate: stri
   monthlyMode: 'dayOfMonth',
   until: null,
   count: null,
+  rule: null,
+  dates: [],
 })
 
 const weekdayDistance = (from: number, to: number) => (((to - from) % DAYS_PER_WEEK) + DAYS_PER_WEEK) % DAYS_PER_WEEK
@@ -66,12 +70,15 @@ export const normalizeWeekdays = (weekdays: readonly number[]) => [...new Set(we
 
 export const parseRecurrence = (value: unknown): Recurrence | null => {
   if (typeof value !== 'object' || value === null) return null
-  const { frequency, interval, weekdays, monthlyMode, until, count } = value as Record<string, unknown>
+  const { frequency, interval, weekdays, monthlyMode, until, count, rule, dates } = value as Record<string, unknown>
   if (!isRecurrenceFrequency(frequency) || !isIntegerInRange(interval, 1)) return null
   if (!Array.isArray(weekdays) || !weekdays.every((day) => isIntegerInRange(day, 0, DAYS_PER_WEEK - 1))) return null
   if (monthlyMode !== undefined && !isMonthlyMode(monthlyMode)) return null
   if (until != null && !isISODate(until)) return null
   if (count != null && !isIntegerInRange(count, 1)) return null
+  if (rule != null && !isRule(rule)) return null
+  if (dates != null && (!Array.isArray(dates) || dates.length > RECURRENCE_DATES_MAX || !dates.every(isISODate)))
+    return null
   return {
     frequency,
     interval,
@@ -79,8 +86,12 @@ export const parseRecurrence = (value: unknown): Recurrence | null => {
     monthlyMode: monthlyMode ?? 'dayOfMonth',
     until: until ?? null,
     count: count ?? null,
+    rule: rule ?? null,
+    dates: normalizeDates((dates as string[] | undefined) ?? []),
   }
 }
+
+export const normalizeDates = (dates: readonly string[]) => [...new Set(dates)].sort()
 
 export const isSameRecurrence = (a: Recurrence | null, b: Recurrence | null) => {
   if (a === null || b === null) return a === b
@@ -89,8 +100,12 @@ export const isSameRecurrence = (a: Recurrence | null, b: Recurrence | null) => 
     a.interval === b.interval &&
     a.until === b.until &&
     a.count === b.count &&
-    (a.frequency !== 'weekly' || normalizeWeekdays(a.weekdays).join() === normalizeWeekdays(b.weekdays).join()) &&
-    (a.frequency !== 'monthly' || a.monthlyMode === b.monthlyMode)
+    a.rule === b.rule &&
+    normalizeDates(a.dates).join() === normalizeDates(b.dates).join() &&
+    (a.rule !== null ||
+      a.frequency !== 'weekly' ||
+      normalizeWeekdays(a.weekdays).join() === normalizeWeekdays(b.weekdays).join()) &&
+    (a.rule !== null || a.frequency !== 'monthly' || a.monthlyMode === b.monthlyMode)
   )
 }
 
@@ -98,14 +113,18 @@ export const shiftWeekdays = (weekdays: readonly number[], days: number) =>
   normalizeWeekdays(weekdays.map((day) => weekdayDistance(-days, day)))
 
 export const adaptRecurrenceToStart = (recurrence: Recurrence | null, previousStart: string, nextStart: string) => {
-  if (!recurrence || !isISODate(previousStart) || !isISODate(nextStart)) return recurrence
+  if (!recurrence || recurrence.rule !== null || !isISODate(previousStart) || !isISODate(nextStart)) return recurrence
 
   if (recurrence.frequency === 'weekly') {
     const followsStart = recurrence.weekdays.length === 1 && recurrence.weekdays[0] === getISODateWeekday(previousStart)
     return followsStart ? { ...recurrence, weekdays: [getISODateWeekday(nextStart)] } : recurrence
   }
 
-  if (recurrence.frequency === 'monthly' && recurrence.monthlyMode === 'lastWeekdayOfMonth' && !isInLastWeekOfMonth(nextStart))
+  if (
+    recurrence.frequency === 'monthly' &&
+    recurrence.monthlyMode === 'lastWeekdayOfMonth' &&
+    !isInLastWeekOfMonth(nextStart)
+  )
     return { ...recurrence, monthlyMode: 'weekdayOfMonth' as const }
 
   return recurrence
@@ -123,14 +142,15 @@ export const validateRecurrence = (
   const errors: RecurrenceValidationErrors = {}
   const { interval, frequency, weekdays, until, count } = recurrence
 
-  if (!isIntegerInRange(interval, 1, RECURRENCE_INTERVAL_MAX)) errors.interval = validation.integerRange(1, RECURRENCE_INTERVAL_MAX)
+  if (!isIntegerInRange(interval, 1, RECURRENCE_INTERVAL_MAX))
+    errors.interval = validation.integerRange(1, RECURRENCE_INTERVAL_MAX)
 
-  if (frequency === 'weekly' && weekdays.length === 0) errors.weekdays = validation.weekdaysRequired
+  if (frequency === 'weekly' && recurrence.rule === null && weekdays.length === 0)
+    errors.weekdays = validation.weekdaysRequired
 
   if (until !== null) {
     if (!isISODate(until)) errors.until = validation.dateInvalid
-    else if (isISODate(startDate) && until < startDate)
-      errors.until = validation.untilBeforeStart
+    else if (isISODate(startDate) && until < startDate) errors.until = validation.untilBeforeStart
   }
 
   if (count !== null && !isIntegerInRange(count, 1, RECURRENCE_COUNT_MAX))
@@ -152,8 +172,14 @@ export const getMonthlyModeOptions = (startDate: string): MonthlyMode[] =>
 export const formatRecurrence = (recurrence: Recurrence, startDate: string, i18n: Pick<I18n, 'm' | 'format'>) => {
   const { m, format } = i18n
   const { frequency, interval, weekdays, until, count } = recurrence
+  const end =
+    until !== null ? m.recurrence.until(format.fullDay(until)) : count !== null ? m.recurrence.times(count) : ''
+  const extra = recurrence.dates.length > 0 ? m.recurrence.extraDates(recurrence.dates.length) : ''
+  if (recurrence.rule !== null) return `${m.recurrence.custom}${end}${extra}`
   const base =
-    interval === 1 ? m.recurrence.frequency[frequency] : m.recurrence.every(interval, m.recurrence.units[frequency].many)
+    interval === 1
+      ? m.recurrence.frequency[frequency]
+      : m.recurrence.every(interval, m.recurrence.units[frequency].many)
 
   const detail =
     frequency === 'weekly'
@@ -164,9 +190,7 @@ export const formatRecurrence = (recurrence: Recurrence, startDate: string, i18n
           ? m.recurrence.onDate(format.shortDay(startDate))
           : ''
 
-  const end = until !== null ? m.recurrence.until(format.fullDay(until)) : count !== null ? m.recurrence.times(count) : ''
-
-  return `${base}${detail}${end}`
+  return `${base}${detail}${end}${extra}`
 }
 
 const dayOfMonth = (year: number, monthIndex: number, day: number) =>
@@ -187,6 +211,11 @@ type Period = { start: string; dates: string[] }
 
 function* periods(seriesStart: string, recurrence: Recurrence, from: string): Generator<Period> {
   const { frequency, interval } = recurrence
+
+  if (recurrence.rule !== null) {
+    yield* rulePeriods(recurrence.rule, seriesStart, from)
+    return
+  }
 
   if (frequency === 'daily') {
     for (let step = Math.max(Math.ceil(daysBetween(seriesStart, from) / interval), 0); ; step++) {
@@ -211,8 +240,7 @@ function* periods(seriesStart: string, recurrence: Recurrence, from: string): Ge
   if (frequency === 'monthly') {
     const weekday = getISODateWeekday(seriesStart)
     const ordinal = getWeekdayOrdinal(seriesStart)
-    const monthsUntilFrom =
-      (fromDate.getFullYear() - start.getFullYear()) * 12 + fromDate.getMonth() - start.getMonth()
+    const monthsUntilFrom = (fromDate.getFullYear() - start.getFullYear()) * 12 + fromDate.getMonth() - start.getMonth()
     for (let step = Math.max(Math.floor(monthsUntilFrom / interval), 0); ; step++) {
       const month = new Date(start.getFullYear(), start.getMonth() + step * interval, 1)
       const year = month.getFullYear()
@@ -240,6 +268,12 @@ export function getOccurrenceDates(
   windowStart: string,
   windowEnd: string,
 ): string[] {
+  const ruleDates = getRuleDates(seriesStart, recurrence, windowStart, windowEnd)
+  const extraDates = recurrence.dates.filter((date) => date >= windowStart && date <= windowEnd && date >= seriesStart)
+  return extraDates.length === 0 ? ruleDates : normalizeDates([...ruleDates, ...extraDates])
+}
+
+function getRuleDates(seriesStart: string, recurrence: Recurrence, windowStart: string, windowEnd: string): string[] {
   const { until, count } = recurrence
   const last = until === null ? windowEnd : minISODate(until, windowEnd)
   const first = count === null ? maxISODate(windowStart, seriesStart) : seriesStart
@@ -266,4 +300,4 @@ export function getOccurrenceDates(
 }
 
 export const countOccurrencesBefore = (seriesStart: string, recurrence: Recurrence, date: string) =>
-  getOccurrenceDates(seriesStart, recurrence, seriesStart, addDaysToISODate(date, -1)).length
+  getRuleDates(seriesStart, recurrence, seriesStart, addDaysToISODate(date, -1)).length

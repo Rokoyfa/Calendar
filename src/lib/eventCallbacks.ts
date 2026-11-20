@@ -45,6 +45,13 @@ export const withEventCallbacks = (
     getCallbacks().onEventUpdate?.(event)
     return event
   },
+  move:
+    repository.move &&
+    (async (id, calendarId, version) => {
+      const event = await repository.move!(id, calendarId, version)
+      getCallbacks().onEventUpdate?.(event)
+      return event
+    }),
   async remove(id, version) {
     await repository.remove(id, version)
     getCallbacks().onEventDelete?.({ id })

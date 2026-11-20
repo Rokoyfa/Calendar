@@ -2,7 +2,7 @@
 
 All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning](https://semver.org/). From 1.0 on, breaking changes to props, attributes, DOM events, exported types, the data adapter and the REST contract only come with a new major version.
 
-## Unreleased
+## 2.0.0 – 2026-11-20
 
 Version 2 of the REST contract. Three endpoints have clearer paths, and host tokens follow stricter rules; everything else stays compatible.
 
@@ -38,6 +38,11 @@ Version 2 of the REST contract. Three endpoints have clearer paths, and host tok
 - CalDAV accounts (feature `caldavAccounts`): calendars of Nextcloud, iCloud and other CalDAV services next to the own ones, editable, synchronized by the backend (`/caldav-accounts*`, `/caldav-calendars*`)
 - New error codes `invalidTwoFactorCode`, `twoFactorExpired`, `twoFactorAlreadyEnabled`, `twoFactorNotEnabled`, `invalidCalendarUrl`, `alreadySubscribed`, `tooManyExternalCalendars`, `externalCalendarUnavailable`, `tooManyAppPasswords`, `tooManyCaldavAccounts` and `caldavAuthFailed`, translated in all languages
 - `User` carries `twoFactorEnabled` and `hasPassword`
+- Repetitions from other programs that the simple fields cannot describe (for example "last working day of the month" or "on the 1st and 15th") are shown exactly and kept unchanged: `Recurrence` gains `rule` (an `RRULE` without `UNTIL` and `COUNT`) and `dates` (`RDATE`). The dialog shows them as **Custom rule** and keeps them when other details change. Import, export, CalDAV (both directions) and the test backend support them
+- Calendar field in the event dialog: new events can go to any calendar with the right to add events, including writable CalDAV calendars, and existing events or whole series move to another calendar with undo. New endpoint `POST /events/{eventId}/move`, optional `EventRepository.move`
+- Test backend: CalDAV also under `/dav/{tenantPublicId}/` with `TENANT_PUBLIC_ID`
+- `npm run check:size`: the initial load of the CDN bundle (now 184 KB gzip) must stay under 200 KB; it runs after `build:lib`. The parsers for iCal, CalDAV objects and subscribed calendars load only when needed
+- Accessibility checks with axe (WCAG 2.2 AA) for sign-in, all calendar views in light and dark, the event dialog and all settings pages in the end-to-end tests
 
 ### Fixed
 
@@ -46,6 +51,8 @@ Version 2 of the REST contract. Three endpoints have clearer paths, and host tok
 - iCal import: an `UNTIL` in UTC is read in the time zone of the series, so series west of UTC no longer run one day longer
 - The show/hide button of password fields is translated
 - `api/openapi.yaml`: `POST` and `PATCH /external-calendars` list `502` (`externalCalendarUnavailable`)
+- Accessibility: events in the month view and the "more" button are at least 24 px high, links inside text are underlined, and green status badges have enough contrast
+- French texts use non-breaking spaces before `? ! ; :` and inside « », Dutch calls the viewer role "Lezer"
 
 ## 1.4.0 – 2026-11-18
 

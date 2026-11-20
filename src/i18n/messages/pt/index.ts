@@ -154,6 +154,8 @@ const recurrence: Messages['recurrence'] = {
   monthlyOnLastWeekday: (weekday) => (isMasculineWeekday(weekday) ? `no último ${weekday}` : `na última ${weekday}`),
   until: (date) => ` até ${date}`,
   times: (count) => (count === 1 ? ', uma vez' : `, ${count} vezes`),
+  custom: 'Regra personalizada de outro programa',
+  extraDates: (count) => (count === 1 ? ', mais 1 data adicional' : `, mais ${count} datas adicionais`),
 }
 
 const views: Messages['views'] = {
@@ -287,6 +289,13 @@ const events: Messages['events'] = {
   endsOnDate: 'Em uma data',
   endsAfterCount: 'Após um número',
   lastOccurrence: 'Último evento',
+  calendar: 'Calendário',
+  moveSeriesHint: 'A série inteira vai para o outro calendário, incluindo os eventos editados separadamente.',
+  customRule: 'Regra personalizada',
+  customRuleHint:
+    'Esta série usa uma regra de outro programa que não pode ser editada aqui. Ela é mantida quando você altera outros detalhes. Escolha outra repetição para substituí-la.',
+  extraDates: (count) => (count === 1 ? 'Também em 1 data adicional.' : `Também em ${count} datas adicionais.`),
+  removeExtraDates: 'Remover datas adicionais',
   after: 'Após',
   occurrences: { one: 'evento', many: 'eventos' },
   location: 'Local',

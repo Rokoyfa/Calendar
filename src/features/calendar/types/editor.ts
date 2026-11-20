@@ -6,4 +6,5 @@ export type EditorState = {
   occurrence: EventOccurrence | null
   notice?: string
   initialTab?: EventTab
+  calendarId?: string
 }

@@ -18,18 +18,19 @@ import {
   type EventInput,
   type EventLink,
 } from './event.ts'
-import { getISODateWeekday, getWeekdayOrdinal, type Recurrence } from './recurrence.ts'
+import {
+  createRecurrence,
+  getISODateWeekday,
+  getWeekdayOrdinal,
+  RECURRENCE_COUNT_MAX,
+  type Recurrence,
+} from './recurrence.ts'
+import { isRule, normalizeRule, RECURRENCE_DATES_MAX, splitRuleParts, toSimpleRecurrence } from './rrule.ts'
 import { convertWallTime, isTimeZone, toInstant } from './timeZone.ts'
 import { timeZonesOf, vtimezoneLines } from './vtimezone.ts'
 
 const LINE_LIMIT = 75
 const ICAL_WEEKDAYS = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
-const FREQUENCIES: Record<string, Recurrence['frequency']> = {
-  DAILY: 'daily',
-  WEEKLY: 'weekly',
-  MONTHLY: 'monthly',
-  YEARLY: 'yearly',
-}
 const PARTSTATS: Record<AttendeeStatus, string> = {
   needsAction: 'NEEDS-ACTION',
   accepted: 'ACCEPTED',
@@ -110,6 +111,14 @@ const toUntil = (event: CalendarEvent, until: string) => {
 const toRRule = (event: CalendarEvent) => {
   const { recurrence } = event
   if (!recurrence) return null
+  if (recurrence.rule !== null) {
+    const end = recurrence.until
+      ? `;UNTIL=${toUntil(event, recurrence.until)}`
+      : recurrence.count
+        ? `;COUNT=${recurrence.count}`
+        : ''
+    return `${recurrence.rule}${end}`
+  }
   const parts = [`FREQ=${recurrence.frequency.toUpperCase()}`]
   if (recurrence.interval > 1) parts.push(`INTERVAL=${recurrence.interval}`)
   if (recurrence.frequency === 'weekly' && recurrence.weekdays.length > 0)
@@ -160,6 +169,10 @@ export const eventLines = (
   )
   const rrule = toRRule(event)
   if (rrule) lines.push(`RRULE:${rrule}`)
+  for (const date of event.recurrence?.dates ?? []) {
+    const extra = toTimeProperty(event, date, event.start)
+    lines.push(`RDATE${extra.params}:${extra.value}`)
+  }
   for (const date of event.excludedDates) {
     if (overrideDates.has(date)) continue
     const excluded = toTimeProperty(event, date, event.start)
@@ -292,43 +305,47 @@ const addMinutes = ({ date, time }: { date: string; time: string }, minutes: num
   }
 }
 
+const inStartZone = (value: ParsedTime, start: ParsedTime) =>
+  value.allDay || start.allDay || !value.timeZone || !start.timeZone || value.timeZone === start.timeZone
+    ? value
+    : { ...value, ...convertWallTime(value, value.timeZone, start.timeZone), timeZone: start.timeZone }
+
 const untilDate = (value: string, start: ParsedTime) => {
-  const match = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})\d{0,2}(Z)?)?$/.exec(value)
-  if (!match) return null
-  const date = `${match[1]}-${match[2]}-${match[3]}`
-  if (!match[6] || start.allDay || !start.timeZone || start.timeZone === 'UTC') return date
-  return convertWallTime({ date, time: `${match[4]}:${match[5]}` }, 'UTC', start.timeZone).date
+  const parsed = parseTime({ name: 'UNTIL', params: {}, value })
+  if (!parsed) return null
+  if (parsed.allDay || start.allDay) return parsed.date
+  const local = inStartZone(parsed.timeZone === 'UTC' ? parsed : { ...parsed, timeZone: start.timeZone }, start)
+  return local.time < start.time ? addDaysToISODate(local.date, -1) : local.date
 }
 
+const occurrenceDates = (properties: readonly Property[], start: ParsedTime) => [
+  ...new Set(
+    properties.flatMap((property) =>
+      property.params.VALUE === 'PERIOD'
+        ? []
+        : property.value.split(',').flatMap((value) => {
+            const parsed = parseTime({ ...property, value })
+            return parsed ? [inStartZone(parsed, start).date] : []
+          }),
+    ),
+  ),
+]
+
 const parseRRule = (value: string, start: ParsedTime): Recurrence | null => {
-  const startDate = start.date
-  const rule = Object.fromEntries(
-    value.split(';').map((part) => {
-      const [key, ruleValue = ''] = part.split('=')
-      return [key.toUpperCase(), ruleValue.toUpperCase()]
-    }),
-  )
-  const frequency = FREQUENCIES[rule.FREQ]
-  if (!frequency) return null
-  const interval = Math.min(Math.max(Number(rule.INTERVAL ?? 1) || 1, 1), 99)
-  const byDay = rule.BYDAY ? rule.BYDAY.split(',') : []
-  let weekdays: number[] = []
-  let monthlyMode: Recurrence['monthlyMode'] = 'dayOfMonth'
-  if (frequency === 'weekly') {
-    weekdays = byDay.map((day) => ICAL_WEEKDAYS.indexOf(day.slice(-2))).filter((day) => day >= 0)
-    if (weekdays.length === 0) weekdays = [getISODateWeekday(startDate)]
-  } else if (frequency === 'monthly' && byDay.length === 1) {
-    monthlyMode = byDay[0].startsWith('-1') ? 'lastWeekdayOfMonth' : 'weekdayOfMonth'
-  } else if (byDay.length > 0) return null
-  const until = rule.UNTIL ? untilDate(rule.UNTIL, start) : null
-  const count = rule.COUNT ? Math.min(Math.max(Number(rule.COUNT) || 1, 1), 999) : null
+  const normalized = normalizeRule(value)
+  const result = toSimpleRecurrence(normalized, start.date)
+  if (!result) return null
+  const parts = splitRuleParts(value)
+  const untilValue = parts.get('UNTIL')
+  const countValue = parts.get('COUNT')
+  const count = countValue ? Math.min(Math.max(Number(countValue) || 1, 1), RECURRENCE_COUNT_MAX) : null
+  const until = untilValue && count === null ? untilDate(untilValue, start) : null
   return {
-    frequency,
-    interval,
-    weekdays: [...new Set(weekdays)].sort((a, b) => a - b),
-    monthlyMode,
-    until: until && isISODate(until) && until >= startDate && count === null ? until : null,
+    ...result.simple,
+    until: until && isISODate(until) && until >= start.date ? until : null,
     count,
+    rule: result.exact || !isRule(normalized) ? null : normalized,
+    dates: [],
   }
 }
 
@@ -387,21 +404,20 @@ const toImportedEvent = (component: Component): ImportedEvent | null => {
     end = addMinutes(start, DEFAULT_DURATION_MINUTES)
 
   const rrule = get('RRULE')
-  const recurrence = rrule ? parseRRule(rrule.value, start) : null
+  const extraDates = occurrenceDates(all('RDATE'), start)
+    .filter((date) => date > start.date)
+    .sort()
+    .slice(0, RECURRENCE_DATES_MAX)
+  const parsedRule = rrule ? parseRRule(rrule.value, start) : null
+  const recurrence: Recurrence | null = parsedRule
+    ? { ...parsedRule, dates: extraDates }
+    : extraDates.length > 0
+      ? { ...createRecurrence('daily', start.date), count: 1, dates: extraDates }
+      : null
   const recurrenceIdProperty = get('RECURRENCE-ID')
-  const recurrenceId = recurrenceIdProperty ? (parseTime(recurrenceIdProperty)?.date ?? null) : null
-  const excludedDates = recurrence
-    ? [
-        ...new Set(
-          all('EXDATE').flatMap((property) =>
-            property.value
-              .split(',')
-              .map((value) => parseTime({ ...property, value })?.date)
-              .filter((date): date is string => date !== undefined),
-          ),
-        ),
-      ].sort()
-    : []
+  const recurrenceIdTime = recurrenceIdProperty ? parseTime(recurrenceIdProperty) : null
+  const recurrenceId = recurrenceIdTime?.date ?? null
+  const excludedDates = recurrence ? occurrenceDates(all('EXDATE'), start).sort() : []
   const text = (name: string, max: number) =>
     unescapeText(get(name)?.value ?? '')
       .trim()

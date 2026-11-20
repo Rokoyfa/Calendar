@@ -56,6 +56,12 @@ export class RemoteEventRepository implements EventRepository {
     return parseEvent(await this.#api.put<unknown>(this.#eventPath(id), input, { headers: ifMatch(version) }))
   }
 
+  async move(id: string, calendarId: string, version?: number) {
+    return parseEvent(
+      await this.#api.post<unknown>(`${this.#eventPath(id)}/move`, { calendarId }, { headers: ifMatch(version) }),
+    )
+  }
+
   async respond(id: string, status: AttendeeStatus) {
     return parseEvent(await this.#api.post<unknown>(`${this.#eventPath(id)}/response`, { status }))
   }

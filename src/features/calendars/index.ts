@@ -4,7 +4,15 @@ export { CalendarSettings } from './components/CalendarSettings.tsx'
 export { InvitationList } from './components/InvitationList.tsx'
 export { CalendarSwitcher } from './components/CalendarSwitcher.tsx'
 export { ActiveCalendarIndicator } from './components/ActiveCalendarIndicator.tsx'
-export { canEditEntry, canManageCategories, getSharedCalendars, hasPermission, isPersonalCalendar } from './utils/permissions.ts'
+export {
+  canDeleteEntry,
+  canEditEntry,
+  canManageCategories,
+  getDistinctTeamName,
+  getSharedCalendars,
+  hasPermission,
+  isPersonalCalendar,
+} from './utils/permissions.ts'
 export { LocalCalendarRepository } from './repositories/LocalCalendarRepository.ts'
 export { RemoteCalendarRepository } from './repositories/RemoteCalendarRepository.ts'
 export type {

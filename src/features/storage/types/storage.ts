@@ -38,6 +38,7 @@ export interface EventRepository {
   create(calendarId: string, input: EventInput): Promise<CalendarEvent>
   update(id: string, input: EventInput, version?: number): Promise<CalendarEvent>
   remove(id: string, version?: number): Promise<void>
+  move?(id: string, calendarId: string, version?: number): Promise<CalendarEvent>
   search?(query: EventSearchQuery): Promise<CalendarEvent[]>
   respond?(id: string, status: AttendeeStatus): Promise<CalendarEvent>
   setReminders?(id: string, reminders: number[]): Promise<CalendarEvent>

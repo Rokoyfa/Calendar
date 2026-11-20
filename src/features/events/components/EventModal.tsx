@@ -1,5 +1,6 @@
 import { useState, type ReactNode, type SubmitEventHandler } from 'react'
 import { Switch } from '../../../components/Switch.tsx'
+import { SelectField } from '../../../components/SelectField.tsx'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
@@ -86,8 +87,17 @@ export type AttendeeOptions = {
   onRespond?: (status: Exclude<AttendeeStatus, 'needsAction'>) => Promise<void>
 }
 
+export type CalendarChoice = { id: string; name: string }
+
+export type CalendarFieldOptions = {
+  value: string
+  options: readonly CalendarChoice[]
+  onChange: (calendarId: string) => void
+}
+
 type EventModalProps = {
   initialValue: EventInput
+  calendarField?: CalendarFieldOptions
   attendeeOptions?: AttendeeOptions
   occurrence?: EventOccurrence | null
   notice?: string
@@ -115,6 +125,7 @@ type PendingSave = {
 
 export function EventModal({
   initialValue,
+  calendarField,
   attendeeOptions,
   occurrence = null,
   notice,
@@ -140,6 +151,7 @@ export function EventModal({
   const viewerTimeZone = useViewerTimeZone()
   const getLocationUrl = useLocationUrl()
   const mode: EventModalMode = occurrence ? 'edit' : 'create'
+  const isMoving = occurrence !== null && calendarField !== undefined && calendarField.value !== occurrence.calendarId
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
@@ -155,7 +167,7 @@ export function EventModal({
   } = useAsyncAction(async (input: EventInput, scope: EditScope, options: SaveOptions = {}) => {
     setConflict(null)
     try {
-      if (occurrence && onRemindersChange && changesOnlyReminders(initialValue, input))
+      if (occurrence && !isMoving && onRemindersChange && changesOnlyReminders(initialValue, input))
         await onRemindersChange(input.reminders)
       else await onSave(input, scope, pendingFiles, options)
     } catch (error) {
@@ -223,7 +235,8 @@ export function EventModal({
     }
 
     const options = getScopeOptions(occurrence, input.recurrence)
-    if (occurrence && onRemindersChange && changesOnlyReminders(initialValue, input)) void save(input, 'all')
+    if (isMoving) void save(input, 'all')
+    else if (occurrence && onRemindersChange && changesOnlyReminders(initialValue, input)) void save(input, 'all')
     else if (options.length > 1) setPendingSave({ input, options })
     else void save(input, options[0])
   }
@@ -257,6 +270,20 @@ export function EventModal({
             onChange={(title) => setField('title', title)}
             data-autofocus
           />
+
+          {calendarField && calendarField.options.length > 1 && !readOnly && (
+            <SelectField
+              label={m.events.calendar}
+              name="calendarId"
+              value={calendarField.value}
+              options={calendarField.options.map(({ id, name }) => ({ value: id, label: name }))}
+              onChange={(calendarId) => {
+                calendarField.onChange(calendarId)
+                setField('categoryIds', [])
+              }}
+            />
+          )}
+          {isMoving && occurrence?.recurrence && <p className="formHint">{m.events.moveSeriesHint}</p>}
 
           <Switch label={m.events.allDay} checked={values.allDay} onChange={setAllDay} />
 

@@ -709,6 +709,36 @@ paths:
         '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
+  /events/{eventId}/move:
+    parameters:
+      - { name: eventId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Events]
+      summary: Move an event to another calendar
+      description: |
+        Moves a single event or a whole series with its detached events. Needs the right to delete the event in its
+        calendar and `create_entry` in the target. Categories are removed because they belong to the old calendar;
+        attachments, chat and history stay with the event. `400` for a detached event, `409` with `uidTaken` when the
+        target already has the `uid`, `412` with `eventChanged` when `If-Match` names an older `version`.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [calendarId]
+              properties:
+                calendarId: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Event' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
   /events/{eventId}/reminders:
     parameters:
       - { name: eventId, in: path, required: true, schema: { type: string } }
@@ -2435,6 +2465,23 @@ components:
         monthlyMode: { type: string, enum: [dayOfMonth, weekdayOfMonth, lastWeekdayOfMonth] }
         until: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
         count: { oneOf: [{ type: integer, minimum: 1, maximum: 999 }, { type: 'null' }] }
+        rule:
+          oneOf:
+            - type: string
+              maxLength: 500
+              pattern: '^FREQ=[A-Z]+(;[A-Z-]+=[A-Z0-9,+-]+)*$'
+            - type: 'null'
+          default: null
+          description: |
+            A rule from another program that the fields above cannot describe, as an RFC 5545 `RRULE` value without
+            `UNTIL` and `COUNT` (the end comes from `until` or `count`). When set, it decides the occurrences and the
+            other fields are only an approximation for programs that do not know it. Store and return it unchanged.
+        dates:
+          type: array
+          maxItems: 100
+          default: []
+          items: { $ref: '#/components/schemas/ISODate' }
+          description: Additional occurrences (`RDATE`) after the start, independent of `until` and `count`.
     EventInput:
       type: object
       required: [title, startDate, start, endDate, end, description, color, recurrence, excludedDates, seriesId, originalDate]

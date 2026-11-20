@@ -158,6 +158,8 @@ const recurrence: Messages['recurrence'] = {
   monthlyOnLastWeekday: (weekday) => `w ostatnim tygodniu miesiąca (${weekday})`,
   until: (date) => ` do ${date}`,
   times: (count) => (count === 1 ? ', jeden raz' : `, ${count} ${plural(count, 'raz', 'razy', 'razy')}`),
+  custom: 'Własna reguła z innego programu',
+  extraDates: (count) => `, oraz ${count} ${plural(count, 'dodatkowa data', 'dodatkowe daty', 'dodatkowych dat')}`,
 }
 
 const views: Messages['views'] = {
@@ -291,6 +293,14 @@ const events: Messages['events'] = {
   endsOnDate: 'W dniu',
   endsAfterCount: 'Po liczbie',
   lastOccurrence: 'Ostatnie wydarzenie',
+  calendar: 'Kalendarz',
+  moveSeriesHint: 'Cała seria przechodzi do drugiego kalendarza, łącznie z osobno edytowanymi wydarzeniami.',
+  customRule: 'Własna reguła',
+  customRuleHint:
+    'Ta seria używa reguły z innego programu, której nie można tu edytować. Pozostaje bez zmian, gdy zmieniasz inne szczegóły. Wybierz inne powtarzanie, aby ją zastąpić.',
+  extraDates: (count) =>
+    `Także w ${count} ${plural(count, 'dodatkowym dniu', 'dodatkowych dniach', 'dodatkowych dniach')}.`,
+  removeExtraDates: 'Usuń dodatkowe dni',
   after: 'Po',
   occurrences: { one: 'wydarzeniu', many: 'wydarzeniach' },
   location: 'Miejsce',

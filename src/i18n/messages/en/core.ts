@@ -166,4 +166,6 @@ export const recurrence = {
   monthlyOnLastWeekday: (weekday: string) => `on the last ${weekday}`,
   until: (date: string) => ` until ${date}`,
   times: (count: number) => (count === 1 ? ', once' : `, ${count} times`),
+  custom: 'Custom rule from another program',
+  extraDates: (count: number) => (count === 1 ? ', plus 1 additional date' : `, plus ${count} additional dates`),
 }

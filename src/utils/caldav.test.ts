@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  buildCaldavObject,
-  caldavEventId,
-  isServerUrl,
-  parseCaldavAccounts,
-  parseCaldavEventId,
-  toCaldavEvents,
-  type CaldavCalendar,
-} from './caldav.ts'
+import { caldavEventId, isServerUrl, parseCaldavAccounts, parseCaldavEventId, type CaldavCalendar } from './caldav.ts'
+import { buildCaldavObject, toCaldavEvents } from './caldavObject.ts'
 
 const calendar: CaldavCalendar = {
   id: 'cal1',
@@ -175,5 +168,28 @@ describe('caldav', () => {
     expect(text).toContain('DTSTART;TZID=America/New_York:20261123T003000')
     expect(text).toContain('COLOR:red')
     expect(text.indexOf('COLOR:red')).toBeLessThan(text.indexOf('BEGIN:VALARM'))
+  })
+
+  it('keeps rules it cannot edit when other details change', () => {
+    const data = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'BEGIN:VEVENT',
+      'UID:payday@example.com',
+      'DTSTART;VALUE=DATE:20260130',
+      'DTEND;VALUE=DATE:20260131',
+      'SUMMARY:Payday',
+      'RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1;COUNT=12',
+      'RDATE;VALUE=DATE:20261224',
+      'END:VEVENT',
+      'END:VCALENDAR',
+      '',
+    ].join('\r\n')
+    const [series] = toCaldavEvents(calendar, { id: 'pay', etag: '"1"', data })
+    expect(series.recurrence).toMatchObject({ rule: 'FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1', count: 12 })
+    const text = buildCaldavObject(data, [{ ...series, title: 'Salary' }], 'green').replace(/\r\n /g, '')
+    expect(text).toContain('RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1;COUNT=12')
+    expect(text).toContain('RDATE;VALUE=DATE:20261224')
+    expect(text).toContain('SUMMARY:Salary')
   })
 })

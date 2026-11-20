@@ -1,4 +1,5 @@
 import { useI18n } from '../../../i18n/index.ts'
+import { Button } from '../../../components/Button.tsx'
 import { ChoiceChip } from '../../../components/ChoiceChip.tsx'
 import { FormField } from '../../../components/FormField.tsx'
 import { NumberField } from '../../../components/NumberField.tsx'
@@ -48,9 +49,11 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
   const { m, format } = i18n
   const hasValidStart = isISODate(startDate)
 
-  const frequencyOptions: SelectOption<RecurrenceFrequency | 'never'>[] = [
+  const isCustom = value?.rule != null
+  const frequencyOptions: SelectOption<RecurrenceFrequency | 'never' | 'custom'>[] = [
     { value: 'never', label: m.events.never },
     ...RECURRENCE_FREQUENCIES.map((frequency) => ({ value: frequency, label: m.recurrence.frequency[frequency] })),
+    ...(isCustom ? [{ value: 'custom' as const, label: m.events.customRule }] : []),
   ]
 
   const endOptions: SelectOption<EndMode>[] = [
@@ -59,8 +62,11 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
     { value: 'count', label: m.events.endsAfterCount },
   ]
 
-  const changeFrequency = (frequency: RecurrenceFrequency | 'never') => {
+  const changeFrequency = (frequency: RecurrenceFrequency | 'never' | 'custom') => {
+    if (frequency === 'custom') return
     if (frequency === 'never') onChange(null)
+    else if (value && isCustom && hasValidStart)
+      onChange({ ...createRecurrence(frequency, startDate), until: value.until, count: value.count })
     else if (value) onChange({ ...value, frequency })
     else if (hasValidStart) onChange(createRecurrence(frequency, startDate))
   }
@@ -82,7 +88,7 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
     onChange({ ...value, weekdays })
   }
 
-  const unit = value ? m.recurrence.units[value.frequency] : null
+  const unit = value && !isCustom ? m.recurrence.units[value.frequency] : null
   const endMode = value ? getEndMode(value) : 'never'
 
   return (
@@ -91,7 +97,7 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
         <SelectField
           label={m.events.repeat}
           name="recurrenceFrequency"
-          value={value?.frequency ?? 'never'}
+          value={isCustom ? 'custom' : (value?.frequency ?? 'never')}
           options={frequencyOptions}
           onChange={changeFrequency}
         />
@@ -109,7 +115,18 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
         )}
       </div>
 
-      {value?.frequency === 'weekly' && (
+      {isCustom && <p className="formHint">{m.events.customRuleHint}</p>}
+
+      {value && value.dates.length > 0 && (
+        <div className="formRow">
+          <p className="formHint">{m.events.extraDates(value.dates.length)}</p>
+          <Button variant="outline" onClick={() => onChange({ ...value, dates: [] })}>
+            {m.events.removeExtraDates}
+          </Button>
+        </div>
+      )}
+
+      {!isCustom && value?.frequency === 'weekly' && (
         <FormField as="fieldset" label={m.events.onTheseDays} error={errors.weekdays}>
           <div className="choiceList">
             {format.shortWeekdays.map(({ weekday, label }) => (
@@ -128,7 +145,7 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
         </FormField>
       )}
 
-      {value?.frequency === 'monthly' && hasValidStart && (
+      {!isCustom && value?.frequency === 'monthly' && hasValidStart && (
         <SelectField
           label={m.events.inMonth}
           name="recurrenceMonthlyMode"

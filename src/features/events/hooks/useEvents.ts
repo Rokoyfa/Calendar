@@ -24,6 +24,7 @@ const ignoreVersions = (repository: EventRepository): EventRepository => ({
   create: (calendarId, input) => repository.create(calendarId, input),
   update: (id, input) => repository.update(id, input),
   remove: (id) => repository.remove(id),
+  move: repository.move && ((id, calendarId) => repository.move!(id, calendarId)),
   restore: repository.restore && ((id) => repository.restore!(id)),
 })
 
@@ -76,8 +77,27 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
   )
 
   const createEvent = useCallback(
-    (input: EventInput) => withReload(() => repository.create(targetCalendarId, input)),
+    (input: EventInput, calendarId = targetCalendarId) => withReload(() => repository.create(calendarId, input)),
     [repository, withReload, targetCalendarId],
+  )
+
+  const moveEvent = useMemo(
+    () =>
+      repository.move &&
+      ((occurrence: EventOccurrence, calendarId: string, checkVersion = true) =>
+        withReload(async () => {
+          const series = findSeries(occurrence)
+          const from = series.calendarId
+          const moved = await repository.move!(series.id, calendarId, checkVersion ? series.version : undefined)
+          return {
+            event: moved,
+            undo: () =>
+              withReload(async () => {
+                await repository.move!(moved.id, from, moved.version)
+              }),
+          }
+        })),
+    [repository, withReload, findSeries],
   )
 
   const updateEvent = useCallback(
@@ -115,5 +135,16 @@ export function useEvents({ from, to, calendarIds, targetCalendarId }: UseEvents
     [repository, withReload],
   )
 
-  return { events, error, isLoading, reload: invalidate, createEvent, updateEvent, deleteEvent, respond, setReminders }
+  return {
+    events,
+    error,
+    isLoading,
+    reload: invalidate,
+    createEvent,
+    updateEvent,
+    deleteEvent,
+    moveEvent,
+    respond,
+    setReminders,
+  }
 }

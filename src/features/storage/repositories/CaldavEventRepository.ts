@@ -1,19 +1,28 @@
 import { AppError } from '../../../utils/appError.ts'
 import {
-  buildCaldavObject,
   caldavCalendarId,
   caldavEventId,
   isCaldavCalendarId,
   isInRange,
   parseCaldavEventId,
-  toCaldavEvents,
   type CaldavCalendar,
   type CaldavObject,
 } from '../../../utils/caldav.ts'
-import { createEventUid, type AttendeeStatus, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
+import {
+  createEventUid,
+  NO_SERIES_LINK,
+  toEventInput,
+  type AttendeeStatus,
+  type CalendarEvent,
+  type EventInput,
+} from '../../../utils/event.ts'
 import type { CaldavEventSource, CaldavRepository, EventQuery, EventRepository } from '../types/storage.ts'
 
 const CACHE_MS = 60_000
+
+let codec: Promise<typeof import('../../../utils/caldavObject.ts')> | null = null
+
+const loadCodec = () => (codec ??= import('../../../utils/caldavObject.ts'))
 
 type Loaded = { loadedAt: number; objects: Map<string, CaldavObject> }
 
@@ -82,7 +91,7 @@ export class CaldavEventRepository implements CaldavEventSource {
         .filter((id) => this.#calendars.has(id))
         .map(async (id) => {
           const calendar = this.#calendar(id)
-          const { objects } = await this.#load(id)
+          const [{ objects }, { toCaldavEvents }] = await Promise.all([this.#load(id), loadCodec()])
           return [...objects.values()].flatMap((object) => toCaldavEvents(calendar, object))
         }),
     )
@@ -94,6 +103,7 @@ export class CaldavEventRepository implements CaldavEventSource {
     if (!ref) throw new AppError('eventNotFound')
     const calendar = this.#calendar(ref.calendarId)
     const object = (await this.#load(ref.calendarId)).objects.get(ref.objectId)
+    const { toCaldavEvents } = await loadCodec()
     const events = object ? toCaldavEvents(calendar, object) : []
     const event = events.find((entry) => entry.id === id)
     if (!object || !event) throw new AppError('eventNotFound')
@@ -119,6 +129,7 @@ export class CaldavEventRepository implements CaldavEventSource {
   }
 
   async #save({ calendar, object }: Found, events: readonly CalendarEvent[], id: string) {
+    const { buildCaldavObject, toCaldavEvents } = await loadCodec()
     const data = buildCaldavObject(object.data, events, calendar.color)
     const saved = await this.#guard(calendar.id, () =>
       this.#api.updateObject(calendar.id, object.id, data, object.etag),
@@ -161,6 +172,7 @@ export class CaldavEventRepository implements CaldavEventSource {
     const calendar = this.#calendar(rawCalendarId(calendarId))
     if (calendar.readOnly) throw new AppError('forbidden')
     const draft = this.#toEvent({ ...input, uid: input.uid || createEventUid() }, calendar, 'new', null)
+    const { buildCaldavObject, toCaldavEvents } = await loadCodec()
     const data = buildCaldavObject(null, [draft], calendar.color)
     const created = await this.#api.createObject(calendar.id, data)
     this.#remember(calendar.id, created)
@@ -223,7 +235,35 @@ export class CaldavEventRepository implements CaldavEventSource {
 }
 
 export const withCaldavEvents = (main: EventRepository, caldav: CaldavEventRepository): EventRepository => {
+  const create = (calendarId: string, input: EventInput) =>
+    isCaldavCalendarId(calendarId) || (input.seriesId !== null && isCaldavCalendarId(input.seriesId))
+      ? caldav.create(calendarId, input)
+      : main.create(calendarId, input)
+  const remove = (id: string, version?: number) =>
+    isCaldavCalendarId(id) ? caldav.remove(id) : main.remove(id, version)
+  const copyAcross = async (id: string, calendarId: string, version?: number) => {
+    const group = isCaldavCalendarId(id) ? await caldav.listSeries(id) : await main.listSeries(id)
+    const root = group.find((event) => event.id === id)
+    if (!root || root.seriesId !== null) throw new AppError('eventNotFound')
+    if (root.calendarId === calendarId) return root
+    const created = await create(calendarId, { ...toEventInput(root), categoryIds: [], ...NO_SERIES_LINK })
+    try {
+      for (const detached of group.filter((event) => event.seriesId === root.id))
+        await create(calendarId, { ...toEventInput(detached), categoryIds: [], seriesId: created.id })
+      await remove(id, version)
+    } catch (error) {
+      await remove(created.id).catch(() => undefined)
+      throw error
+    }
+    return created
+  }
   return {
+    move: (id, calendarId, version) =>
+      !isCaldavCalendarId(id) && !isCaldavCalendarId(calendarId)
+        ? main.move
+          ? main.move(id, calendarId, version)
+          : Promise.reject(new AppError('forbidden'))
+        : copyAcross(id, calendarId, version),
     async list(query) {
       const own = query.calendarIds.filter((id) => !isCaldavCalendarId(id))
       const [mainEvents, caldavEvents] = await Promise.all([

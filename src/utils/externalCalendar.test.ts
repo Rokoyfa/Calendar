@@ -6,9 +6,9 @@ import {
   isExternalEvent,
   normalizeCalendarUrl,
   parseExternalCalendars,
-  toExternalEvents,
   type ExternalCalendar,
 } from './externalCalendar.ts'
+import { toExternalEvents } from './externalEvents.ts'
 
 const CALENDAR: ExternalCalendar = {
   id: 'ext-1',

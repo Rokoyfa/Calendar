@@ -3,7 +3,6 @@ import { useFeatures } from '../../../context/HostContext.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import type { CalendarEvent } from '../../../utils/event.ts'
 import {
-  toExternalEvents,
   type ExternalCalendar,
   type ExternalCalendarChanges,
   type ExternalCalendarInput,
@@ -15,6 +14,8 @@ import {
   NO_EXTERNAL_CALENDARS,
   type ExternalCalendarsContextValue,
 } from './ExternalCalendarsContext.ts'
+
+type Converter = typeof import('../../../utils/externalEvents.ts').toExternalEvents
 
 const REFRESH_MS = 15 * 60_000
 const NO_CALENDARS: ExternalCalendar[] = []
@@ -68,15 +69,31 @@ function ActiveProvider({ repository, children }: ActiveProviderProps) {
     return () => clearInterval(timer)
   }, [fetchContent])
 
+  const [convert, setConvert] = useState<Converter | null>(null)
+  const needsConverter = calendars.some((calendar) => calendar.shown)
+
+  useEffect(() => {
+    if (!needsConverter || convert) return
+    let cancelled = false
+    void import('../../../utils/externalEvents.ts').then(({ toExternalEvents }) => {
+      if (!cancelled) setConvert(() => toExternalEvents)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [needsConverter, convert])
+
   const events = useMemo<CalendarEvent[]>(
     () =>
-      calendars
-        .filter((calendar) => calendar.shown)
-        .flatMap((calendar) => {
-          const text = contents.get(calendar.id)?.text
-          return text ? toExternalEvents(calendar, text) : []
-        }),
-    [calendars, contents],
+      convert
+        ? calendars
+            .filter((calendar) => calendar.shown)
+            .flatMap((calendar) => {
+              const text = contents.get(calendar.id)?.text
+              return text ? convert(calendar, text) : []
+            })
+        : [],
+    [calendars, contents, convert],
   )
 
   const failedIds = useMemo(

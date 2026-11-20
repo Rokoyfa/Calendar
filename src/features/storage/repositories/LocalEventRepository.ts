@@ -94,6 +94,22 @@ export class LocalEventRepository implements EventRepository {
     return updated
   }
 
+  async move(id: string, calendarId: string, version?: number) {
+    const existing = this.#find(id, version)
+    if (existing.seriesId !== null) throw new AppError('forbidden')
+    const updatedAt = new Date().toISOString()
+    let moved = existing
+    this.#events.update((events) =>
+      events.map((event) => {
+        if (event.id !== id && event.seriesId !== id) return event
+        const next = { ...event, calendarId, categoryIds: [], version: event.version + 1, updatedAt }
+        if (event.id === id) moved = next
+        return next
+      }),
+    )
+    return moved
+  }
+
   #find(id: string, version: number | undefined) {
     const existing = this.#events.read().find((event) => event.id === id)
     if (!existing) throw new AppError('eventNotFound')

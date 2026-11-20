@@ -13,8 +13,10 @@ import {
   hasPermission,
   isPersonalCalendar,
   useCalendars,
+  canDeleteEntry,
   canEditEntry,
   canManageCategories,
+  getDistinctTeamName,
 } from '../features/calendars/index.ts'
 import type { CalendarEvent } from '../utils/event.ts'
 import { usePreferences } from '../features/preferences/index.ts'
@@ -147,6 +149,28 @@ export function CalendarPage() {
     [calendars],
   )
   const calendarNames = useMemo(() => new Map(calendars.map((calendar) => [calendar.id, calendar.name])), [calendars])
+  const calendarChoices = useMemo(() => {
+    const own = calendars
+      .filter((calendar) => hasPermission(calendar, 'create_entry'))
+      .toSorted((a, b) => Number(b.id === activeCalendar.id) - Number(a.id === activeCalendar.id))
+      .map((calendar) => {
+        const team = getDistinctTeamName(calendar)
+        return { id: calendar.id, name: team ? `${calendar.name} (${team})` : calendar.name }
+      })
+    const remote = caldav.calendars
+      .filter((calendar) => calendar.shown && !calendar.readOnly)
+      .map((calendar) => ({ id: caldavCalendarId(calendar.id), name: `${calendar.name} (${calendar.accountName})` }))
+    return [...own, ...remote]
+  }, [calendars, activeCalendar, caldav.calendars])
+  const mayMoveEvent = useCallback(
+    (event: CalendarEvent) => {
+      if (isExternalEvent(event)) return false
+      if (isCaldavEvent(event)) return caldavById.get(event.calendarId)?.readOnly === false
+      const calendar = calendars.find((entry) => entry.id === event.calendarId)
+      return calendar !== undefined && canDeleteEntry(calendar, event.createdBy, user?.id ?? null)
+    },
+    [calendars, user, caldavById],
+  )
 
   return (
     <div className="app">
@@ -155,6 +179,8 @@ export function CalendarPage() {
         calendarIds={calendarIds}
         targetCalendarId={activeCalendar.id}
         canCreate={hasPermission(activeCalendar, 'create_entry')}
+        calendarChoices={calendarChoices}
+        canMoveEvent={mayMoveEvent}
         eventSources={eventSources}
         calendarNames={calendarNames}
         canManageCategories={mayManageCategories}

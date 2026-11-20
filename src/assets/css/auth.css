@@ -138,7 +138,7 @@
 
 .statusBadge--on {
   background: color-mix(in srgb, var(--color-green) 18%, transparent);
-  color: var(--color-green);
+  color: var(--color-success-text);
 }
 
 .twoFactorSetup {

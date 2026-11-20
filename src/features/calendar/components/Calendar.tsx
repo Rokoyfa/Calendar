@@ -32,6 +32,7 @@ import {
   getScopeOptions,
   RecurrenceScopeModal,
   useEvents,
+  type CalendarChoice,
   type EventTab,
   type SaveOptions,
 } from '../../events/index.ts'
@@ -83,6 +84,8 @@ type CalendarProps = {
   calendarIds: readonly string[]
   targetCalendarId: string
   canCreate?: boolean
+  calendarChoices?: readonly CalendarChoice[]
+  canMoveEvent?: (event: CalendarEvent) => boolean
   readOnly?: boolean
   calendarNames?: ReadonlyMap<string, string>
   canManageCategories?: (calendarId: string) => boolean
@@ -118,6 +121,7 @@ const NO_NAMES: ReadonlyMap<string, string> = new Map()
 const ALWAYS = () => true
 const NEVER = () => false
 const NO_EXTERNAL_EVENTS: readonly CalendarEvent[] = []
+const NO_CHOICES: readonly CalendarChoice[] = []
 
 type UndoOffer = { id: number; message: string; undo: () => Promise<void> }
 
@@ -125,6 +129,8 @@ export function Calendar({
   calendarIds,
   targetCalendarId,
   canCreate: mayCreate = true,
+  calendarChoices = NO_CHOICES,
+  canMoveEvent = NEVER,
   readOnly: forcedReadOnly = false,
   calendarNames = NO_NAMES,
   canManageCategories = ALWAYS,
@@ -154,7 +160,7 @@ export function Calendar({
   const today = toISODate(now)
   const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
     useCalendarView(initialView, linkedEvent?.date)
-  const { events, error, createEvent, updateEvent, deleteEvent, respond, setReminders } = useEvents({
+  const { events, error, createEvent, updateEvent, deleteEvent, moveEvent, respond, setReminders } = useEvents({
     ...range,
     calendarIds,
     targetCalendarId,
@@ -244,7 +250,9 @@ export function Calendar({
 
   const [eventToDelete, setEventToDelete] = useState<EventOccurrence | null>(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const editorCalendarId = shownEditor ? (shownEditor.occurrence?.calendarId ?? targetCalendarId) : null
+  const editorCalendarId = shownEditor
+    ? (shownEditor.calendarId ?? shownEditor.occurrence?.calendarId ?? targetCalendarId)
+    : null
   const attendeeCandidates = useAttendeeCandidates(loadAttendeeCandidates, editorCalendarId)
 
   const offerUndo = (message: string, undo: (() => Promise<void>) | null) =>
@@ -370,8 +378,15 @@ export function Calendar({
     attachments: readonly File[],
     options?: SaveOptions,
   ) => {
-    if (shownEditor?.occurrence) await updateEvent(shownEditor.occurrence, input, scope, options)
-    else await uploadAttachments((await createEvent(input)).id, attachments)
+    const occurrence = shownEditor?.occurrence
+    const target = editorCalendarId ?? targetCalendarId
+    if (occurrence) {
+      await updateEvent(occurrence, input, scope, options)
+      if (moveEvent && target !== occurrence.calendarId) {
+        const { undo } = await moveEvent(occurrence, target, false)
+        offerUndo(i18n.m.calendar.undo.moved(input.title), undo)
+      }
+    } else await uploadAttachments((await createEvent(input, target)).id, attachments)
     closeEditor()
     goToDate(toViewerPeriod(input, input.timeZone, viewerTimeZone).startDate)
   }
@@ -485,6 +500,38 @@ export function Calendar({
   const editorIsExternal = shownEditor?.occurrence ? isExternalEvent(shownEditor.occurrence) : false
   const editorIsCaldav = shownEditor?.occurrence ? isCaldavEvent(shownEditor.occurrence) : false
   const editorIsLocked = editorIsCaldav && shownEditor?.occurrence ? !canEditEvent(shownEditor.occurrence) : false
+  const editorOccurrence = shownEditor?.occurrence ?? null
+  const canChooseCalendar =
+    shownEditor !== null &&
+    !readOnly &&
+    !editorIsExternal &&
+    !editorIsLocked &&
+    (editorOccurrence === null
+      ? canCreate
+      : editorOccurrence.seriesId === null &&
+        moveEvent !== undefined &&
+        canEditEvent(editorOccurrence) &&
+        canMoveEvent(editorOccurrence))
+  const calendarField =
+    canChooseCalendar && editorCalendarId
+      ? {
+          value: editorCalendarId,
+          options:
+            editorOccurrence && !calendarChoices.some((choice) => choice.id === editorOccurrence.calendarId)
+              ? [
+                  {
+                    id: editorOccurrence.calendarId,
+                    name:
+                      calendarNames.get(editorOccurrence.calendarId) ??
+                      eventSources.get(editorOccurrence.calendarId)?.name ??
+                      '',
+                  },
+                  ...calendarChoices,
+                ]
+              : calendarChoices,
+          onChange: (calendarId: string) => setEditor((current) => (current ? { ...current, calendarId } : current)),
+        }
+      : undefined
 
   return (
     <HolidaysContext value={holidays}>
@@ -550,6 +597,7 @@ export function Calendar({
                         : undefined
                     }
                     key={shownEditor.occurrence?.occurrenceKey ?? 'new'}
+                    calendarField={calendarField}
                     initialValue={shownEditor.initialValue}
                     occurrence={shownEditor.occurrence}
                     attendeeOptions={
