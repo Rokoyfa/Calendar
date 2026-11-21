@@ -3,6 +3,7 @@ import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import type { CalendarSummary, Invitation, TeamInvitation, TeamMember, TeamRole } from '../types/calendar.ts'
 import { hasPermission, isPersonalCalendar } from '../utils/permissions.ts'
 import { useCalendars } from './useCalendars.ts'
+import { removeById } from '../../../utils/list.ts'
 
 const NO_MEMBERS: TeamMember[] = []
 const NO_INVITATIONS: TeamInvitation[] = []
@@ -53,7 +54,7 @@ export function useTeam(calendar: CalendarSummary) {
   const revokeInvitation = useCallback(
     async (invitationId: string) => {
       await repository.revokeInvitation(teamId, invitationId)
-      updateInvitations((current) => current.filter((invitation) => invitation.id !== invitationId))
+      updateInvitations((current) => removeById(current, invitationId))
     },
     [repository, teamId, updateInvitations],
   )

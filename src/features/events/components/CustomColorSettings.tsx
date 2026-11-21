@@ -6,6 +6,7 @@ import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { getEventColorAttributes, getEventColorLabel } from '../../../utils/event.ts'
 import { MAX_CUSTOM_COLORS } from '../constants/colors.ts'
 import { useCustomColors } from '../hooks/useCustomColors.ts'
+import { ItemList } from '../../../components/ItemList.tsx'
 
 export function CustomColorSettings() {
   const { m } = useI18n()
@@ -13,33 +14,26 @@ export function CustomColorSettings() {
   const { run, isPending, error } = useAsyncAction(removeColor)
 
   return (
-    <PageSection
-      title={m.events.customColors}
-      description={m.events.customColorsDescription(MAX_CUSTOM_COLORS)}
-    >
-      {colors.length === 0 ? (
-        <p className="emptyHint">{m.events.noCustomColors}</p>
-      ) : (
-        <ul className="itemList">
-          {colors.map((color) => {
-            const label = getEventColorLabel(color, m)
-            return (
-              <li key={color} className="itemRow">
-                <span {...getEventColorAttributes(color, 'colorSwatch')} aria-hidden="true" />
-                <span className="itemRowMain colorCode">{label}</span>
-                <IconButton
-                  label={m.events.removeColor(label)}
-                  plain
-                  disabled={isPending}
-                  onClick={() => void run(color)}
-                >
-                  ×
-                </IconButton>
-              </li>
-            )
-          })}
-        </ul>
-      )}
+    <PageSection title={m.events.customColors} description={m.events.customColorsDescription(MAX_CUSTOM_COLORS)}>
+      <ItemList items={colors} empty={m.events.noCustomColors}>
+        {(color) => {
+          const label = getEventColorLabel(color, m)
+          return (
+            <li key={color} className="itemRow">
+              <span {...getEventColorAttributes(color, 'colorSwatch')} aria-hidden="true" />
+              <span className="itemRowMain colorCode">{label}</span>
+              <IconButton
+                label={m.events.removeColor(label)}
+                plain
+                disabled={isPending}
+                onClick={() => void run(color)}
+              >
+                ×
+              </IconButton>
+            </li>
+          )
+        }}
+      </ItemList>
       <ErrorMessage message={loadError ?? error} />
     </PageSection>
   )

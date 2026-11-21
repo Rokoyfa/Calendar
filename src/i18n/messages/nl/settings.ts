@@ -1,0 +1,53 @@
+import type { Messages } from '../types.ts'
+
+export const settings: Messages['settings'] = {
+  tabsLabel: 'Onderdelen van de instellingen',
+  tabs: {
+    calendars: 'Agenda’s',
+    invitations: 'Uitnodigingen',
+    appearance: 'Weergave',
+    account: 'Account',
+    notifications: 'Meldingen',
+    data: 'Gegevens',
+    security: 'Beveiliging',
+    connections: 'Koppelingen',
+  },
+  dataExport: {
+    title: 'Jouw gegevens',
+    accountDescription:
+      'Download alles wat voor je account is opgeslagen: profiel, instellingen, kleuren, lidmaatschappen, je afspraken, antwoorden, chatberichten en de gegevens van je bijlagen. Het bestand is in JSON-formaat.',
+    localDescription:
+      'Download alle afspraken en instellingen die deze browser opslaat. Het bestand is in JSON-formaat.',
+    download: 'Gegevens downloaden',
+  },
+  languageTitle: 'Taal en regio',
+  languageDescription: 'Bepaalt de taal, de datum- en tijdnotatie en de eerste dag van de week.',
+  languageLabel: 'Taal',
+  languageAuto: 'Automatisch (browser)',
+  timeZoneTitle: 'Tijdzone',
+  timeZoneDescription: 'Afspraken worden in deze tijdzone getoond en nieuwe afspraken krijgen hem vooraf ingesteld.',
+  timeZoneLabel: 'Tijdzone',
+  timeZoneAuto: (zone) => `Automatisch: ${zone} (aanbevolen)`,
+  holidaysTitle: 'Feestdagen',
+  holidaysDescription: 'Toont officiële feestdagen in de agenda. Gegevens: date-holidays (CC BY-SA 4.0).',
+  holidaysCountry: 'Land',
+  holidaysRegion: 'Regio',
+  holidaysAuto: (name) => `Automatisch: ${name} (aanbevolen)`,
+  holidaysOff: 'Geen feestdagen',
+  holidaysWholeCountry: 'Heel het land',
+  notifications: {
+    title: 'E-mails over afspraken',
+    description: 'E-mails naar je bevestigde adres. Herinneringen per e-mail komen ook als de agenda gesloten is.',
+    unverified: 'Bevestig je e-mailadres om e-mails te ontvangen.',
+    emailInvites: 'Als iemand me uitnodigt voor een afspraak',
+    emailChanges: 'Als een afspraak waarvoor ik ben uitgenodigd wijzigt of wordt geannuleerd',
+    emailReminders: 'Herinneringen per e-mail',
+    emailChat: 'Nieuwe chatberichten bij afspraken waarvoor ik ben uitgenodigd',
+  },
+  themeTitle: 'Kleurenschema',
+  themeLabel: 'Licht of donker',
+  startViewTitle: 'Startweergave',
+  startViewDescription: 'De agenda opent in deze weergave.',
+  desktop: 'Computer en tablet',
+  mobile: 'Telefoon',
+}

@@ -1,3 +1,4 @@
+import { parseList, textOrEmpty } from './parse.ts'
 export const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024
 export const MAX_ATTACHMENTS = 20
 export const ATTACHMENT_NAME_MAX_LENGTH = 200
@@ -17,8 +18,6 @@ export type RejectedFile = { name: string; reason: 'tooLarge' | 'empty' | 'tooMa
 const CONTROL_CHARACTERS = /\p{Cc}/gu
 const PATH_SEPARATORS = /[\\/]/
 
-const text = (value: unknown) => (typeof value === 'string' ? value : '')
-
 export const cleanFileName = (name: string) => {
   const base = name.split(PATH_SEPARATORS).pop() ?? ''
   const cleaned = base.replace(CONTROL_CHARACTERS, '').trim()
@@ -28,22 +27,23 @@ export const cleanFileName = (name: string) => {
 export const parseAttachment = (value: unknown): Attachment | null => {
   if (typeof value !== 'object' || value === null) return null
   const { id, eventId, name, type, size, createdAt, uploadedBy } = value as Record<string, unknown>
-  if (!text(id) || !text(eventId) || !text(name) || typeof size !== 'number' || size < 0) return null
+  if (!textOrEmpty(id) || !textOrEmpty(eventId) || !textOrEmpty(name) || typeof size !== 'number' || size < 0)
+    return null
   const uploader =
     typeof uploadedBy === 'object' && uploadedBy !== null ? (uploadedBy as Record<string, unknown>) : null
   return {
-    id: text(id),
-    eventId: text(eventId),
-    name: cleanFileName(text(name)),
-    type: text(type) || 'application/octet-stream',
+    id: textOrEmpty(id),
+    eventId: textOrEmpty(eventId),
+    name: cleanFileName(textOrEmpty(name)),
+    type: textOrEmpty(type) || 'application/octet-stream',
     size,
-    createdAt: text(createdAt),
-    uploadedBy: uploader && text(uploader.id) ? { id: text(uploader.id), name: text(uploader.name) } : null,
+    createdAt: textOrEmpty(createdAt),
+    uploadedBy:
+      uploader && textOrEmpty(uploader.id) ? { id: textOrEmpty(uploader.id), name: textOrEmpty(uploader.name) } : null,
   }
 }
 
-export const parseAttachments = (value: unknown): Attachment[] =>
-  Array.isArray(value) ? value.flatMap((entry) => parseAttachment(entry) ?? []) : []
+export const parseAttachments = (value: unknown): Attachment[] => parseList(value, parseAttachment)
 
 export const checkFiles = <T extends { name: string; size: number }>(files: readonly T[], existing: number) => {
   const accepted: T[] = []
@@ -72,19 +72,4 @@ export const formatFileSize = (bytes: number, locale?: string) => {
     unitDisplay: 'short',
     maximumFractionDigits: unit === 0 || value >= 10 ? 0 : 1,
   }).format(value)
-}
-
-export const saveBlob = (blob: Blob, name: string, root: ParentNode & Node = document.body) => {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = name
-  link.rel = 'noopener'
-  link.style.display = 'none'
-  root.appendChild(link)
-  link.click()
-  setTimeout(() => {
-    link.remove()
-    URL.revokeObjectURL(url)
-  }, 1000)
 }

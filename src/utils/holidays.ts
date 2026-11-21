@@ -1,3 +1,4 @@
+import { isRecord } from './parse.ts'
 export const HOLIDAYS_AUTO = 'auto'
 export const HOLIDAYS_OFF = 'off'
 
@@ -41,8 +42,8 @@ export const resolveHolidayRegion = (setting: string, hostValue: string | undefi
 export const parsePublicHolidays = (value: unknown): PublicHoliday[] =>
   Array.isArray(value)
     ? value.flatMap((entry) => {
-        if (typeof entry !== 'object' || entry === null) return []
-        const { date, name } = entry as Record<string, unknown>
+        if (!isRecord(entry)) return []
+        const { date, name } = entry
         return typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) && typeof name === 'string' && name
           ? [{ date, name }]
           : []

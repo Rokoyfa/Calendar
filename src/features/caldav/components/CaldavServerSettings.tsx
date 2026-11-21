@@ -19,28 +19,21 @@ import {
 import { formatTimestamp } from '../../../utils/timestamp.ts'
 import { useStorage, type AppPasswordRepository } from '../../storage/index.ts'
 import { useIsCaldavServerAvailable } from '../hooks/useIsCaldavServerAvailable.ts'
+import { removeById } from '../../../utils/list.ts'
+import { useConfirm } from '../../../hooks/useConfirm.ts'
+import { CopyButton } from '../../../components/CopyButton.tsx'
+import { ItemList } from '../../../components/ItemList.tsx'
+import { LimitedAdd } from '../../../components/LimitedAdd.tsx'
+import { FormActions } from '../../../components/FormActions.tsx'
 
 const NO_PASSWORDS: AppPassword[] = []
 
 function CopyValue({ label, value }: { label: string; value: string }) {
-  const { m } = useI18n()
-  const text = m.caldav.server
-  const [copied, setCopied] = useState(false)
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(value)
-      setCopied(true)
-    } catch {
-      setCopied(false)
-    }
-  }
   return (
     <div className="copyValue">
       <span className="copyValueLabel">{label}</span>
       <code className="copyValueText">{value}</code>
-      <Button variant="outline" onClick={() => void copy()}>
-        {copied ? text.copied : text.copy}
-      </Button>
+      <CopyButton value={value} />
     </div>
   )
 }
@@ -69,7 +62,8 @@ function ActiveServerSettings({ repository }: { repository: AppPasswordRepositor
   const load = useCallback(() => repository.list(), [repository])
   const { data: passwords, error, update } = useAsyncResource(load, NO_PASSWORDS)
   const [created, setCreated] = useState<CreatedAppPassword | null>(null)
-  const [toRevoke, setToRevoke] = useState<AppPassword | null>(null)
+  const revocation = useConfirm<AppPassword>()
+  const toRevoke = revocation.target
   const add = useForm({
     initialValues: { name: '' },
     validate: ({ name }) => (name.trim() ? {} : { name: text.nameRequired }),
@@ -106,29 +100,25 @@ function ActiveServerSettings({ repository }: { repository: AppPasswordRepositor
           </div>
         </div>
       )}
-      {passwords.length > 0 ? (
-        <ul className="sessionList">
-          {passwords.map((entry) => (
-            <li key={entry.id} className="sessionItem">
-              <div className="sessionInfo">
-                <span className="sessionDevice">{entry.name}</span>
-                <span className="formHint">
-                  {[
-                    text.created(time(entry.createdAt)),
-                    entry.lastUsedAt ? text.lastUsed(time(entry.lastUsedAt)) : text.neverUsed,
-                  ].join(' · ')}
-                </span>
-              </div>
-              <Button variant="dangerOutline" onClick={() => setToRevoke(entry)}>
-                {text.revoke}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="emptyHint">{text.empty}</p>
-      )}
-      {passwords.length < MAX_APP_PASSWORDS ? (
+      <ItemList items={passwords} empty={text.empty} className="sessionList">
+        {(entry) => (
+          <li key={entry.id} className="sessionItem">
+            <div className="sessionInfo">
+              <span className="sessionDevice">{entry.name}</span>
+              <span className="formHint">
+                {[
+                  text.created(time(entry.createdAt)),
+                  entry.lastUsedAt ? text.lastUsed(time(entry.lastUsedAt)) : text.neverUsed,
+                ].join(' · ')}
+              </span>
+            </div>
+            <Button variant="dangerOutline" onClick={() => revocation.ask(entry)}>
+              {text.revoke}
+            </Button>
+          </li>
+        )}
+      </ItemList>
+      <LimitedAdd count={passwords.length} max={MAX_APP_PASSWORDS} limitText={text.limitReached}>
         <Form onSubmit={add.handleSubmit}>
           <TextField
             label={text.name}
@@ -139,15 +129,9 @@ function ActiveServerSettings({ repository }: { repository: AppPasswordRepositor
             {...add.bind('name')}
           />
           <ActionFeedback error={add.error} />
-          <div className="formActions">
-            <Button type="submit" isPending={add.isPending} pendingLabel={text.creating}>
-              {text.create}
-            </Button>
-          </div>
+          <FormActions isPending={add.isPending} submitLabel={text.create} pendingLabel={text.creating} />
         </Form>
-      ) : (
-        <p className="formHint">{text.limitReached(MAX_APP_PASSWORDS)}</p>
-      )}
+      </LimitedAdd>
       {toRevoke && (
         <ConfirmModal
           title={text.revokeTitle}
@@ -155,10 +139,9 @@ function ActiveServerSettings({ repository }: { repository: AppPasswordRepositor
           pendingLabel={text.revoking}
           onConfirm={async () => {
             await repository.remove(toRevoke.id)
-            update((current) => current.filter((entry) => entry.id !== toRevoke.id))
-            setToRevoke(null)
+            update((current) => removeById(current, toRevoke.id))
           }}
-          onClose={() => setToRevoke(null)}
+          onClose={revocation.close}
         >
           {text.revokeMessage(toRevoke.name)}
         </ConfirmModal>

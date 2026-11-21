@@ -32,3 +32,9 @@ export function TextField({ label, error, addon, onChange, className, ...inputPr
     </FormField>
   )
 }
+
+export function UrlField(props: Omit<TextFieldProps, 'type'>) {
+  return (
+    <TextField type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder="https://" {...props} />
+  )
+}

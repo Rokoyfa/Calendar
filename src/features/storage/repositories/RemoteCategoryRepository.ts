@@ -1,15 +1,11 @@
 import { encodePathSegment, type ApiClient } from '../../../utils/api.ts'
-import { AppError } from '../../../utils/appError.ts'
 import { parseCategories, parseCategory } from '../../../utils/category.ts'
 import type { CategoryRepository } from '../types/storage.ts'
+import { requireValue } from '../../../utils/parse.ts'
 
 const CATEGORIES_PATH = '/categories'
 
-const toCategory = (value: unknown) => {
-  const category = parseCategory(value)
-  if (!category) throw new AppError('unknown')
-  return category
-}
+const toCategory = (value: unknown) => requireValue(parseCategory(value))
 
 export class RemoteCategoryRepository implements CategoryRepository {
   readonly #api: ApiClient

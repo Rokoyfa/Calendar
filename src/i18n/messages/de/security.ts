@@ -33,8 +33,6 @@ export const security: Messages['security'] = {
     recoveryTitle: 'Wiederherstellungscodes',
     recoveryHint:
       'Bewahre diese Codes sicher auf. Jeder Code meldet dich einmal an, falls du deine App nicht nutzen kannst. Sie werden nur jetzt angezeigt.',
-    copy: 'Kopieren',
-    copied: 'Kopiert',
     download: 'Herunterladen',
     done: 'Fertig',
     enabledNotice: 'Die Zwei-Faktor-Anmeldung ist aktiv. Deine anderen Geräte wurden abgemeldet.',

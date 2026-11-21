@@ -53,6 +53,7 @@ import type { ChatKey } from '../../../utils/chat.ts'
 import { ReminderField } from './ReminderField.tsx'
 import { TimeZoneField } from './TimeZoneField.tsx'
 import { HistoryPanel } from './HistoryPanel.tsx'
+import { compact } from '../../../utils/list.ts'
 
 const DEFAULT_START = '09:00'
 const DEFAULT_END = '10:00'
@@ -254,7 +255,7 @@ export function EventModal({
 
   const locationUrl = getLocationUrl(values.location)
 
-  const tabDefinitions: (TabDefinition<EventTab> & { after?: ReactNode })[] = [
+  const tabDefinitions = compact<TabDefinition<EventTab> & { after?: ReactNode }>([
     {
       value: 'general',
       label: m.events.tabs.general,
@@ -340,9 +341,7 @@ export function EventModal({
         </>
       ),
     },
-  ]
-  if (features.recurrence)
-    tabDefinitions.push({
+    features.recurrence && {
       value: 'recurrence',
       label: m.events.tabs.recurrence,
       content: (
@@ -353,82 +352,80 @@ export function EventModal({
           onChange={setRecurrence}
         />
       ),
-    })
-  if (attendeeOptions && (attendeeOptions.candidates.length > 0 || values.attendees.length > 0))
-    tabDefinitions.push({
-      value: 'attendees',
-      label: m.calendars.settings.withCount(m.events.tabs.attendees, values.attendees.length),
+    },
+    attendeeOptions &&
+      (attendeeOptions.candidates.length > 0 || values.attendees.length > 0) && {
+        value: 'attendees',
+        label: m.calendars.settings.withCount(m.events.tabs.attendees, values.attendees.length),
+        content: (
+          <AttendeesField
+            attendees={values.attendees}
+            candidates={attendeeOptions.candidates}
+            ownEmail={attendeeOptions.ownEmail}
+            onChange={(attendees) => setField('attendees', attendees)}
+            onRespond={occurrence ? attendeeOptions.onRespond : undefined}
+          />
+        ),
+      },
+    {
+      value: 'details',
+      label: m.events.tabs.details,
       content: (
-        <AttendeesField
-          attendees={values.attendees}
-          candidates={attendeeOptions.candidates}
-          ownEmail={attendeeOptions.ownEmail}
-          onChange={(attendees) => setField('attendees', attendees)}
-          onRespond={occurrence ? attendeeOptions.onRespond : undefined}
+        <>
+          <TextField
+            label={m.events.location}
+            name="location"
+            autoComplete="off"
+            maxLength={EVENT_LOCATION_MAX_LENGTH}
+            value={values.location}
+            error={errors.location}
+            onChange={(location) => setField('location', location)}
+            addon={
+              locationUrl && (
+                <a
+                  className="iconButton iconButton--plain"
+                  href={locationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={m.events.openMap(values.location.trim())}
+                  title={m.events.openMap(values.location.trim())}
+                >
+                  <MapPinIcon size={18} />
+                </a>
+              )
+            }
+          />
+
+          {features.links && (
+            <LinksField links={values.links} error={errors.links} onChange={(links) => setField('links', links)} />
+          )}
+
+          <FormField label={m.events.description} error={errors.description}>
+            <textarea
+              className="textarea eventDescription"
+              name="description"
+              maxLength={EVENT_DESCRIPTION_MAX_LENGTH}
+              value={values.description}
+              onChange={(event) => setField('description', event.target.value)}
+            />
+          </FormField>
+        </>
+      ),
+      after: attachmentRepository && showAttachments && (
+        <AttachmentsField
+          eventId={occurrence?.id ?? null}
+          canEdit={canEditAttachments}
+          pending={pendingFiles}
+          onPendingChange={setPendingFiles}
         />
       ),
-    })
-  tabDefinitions.push({
-    value: 'details',
-    label: m.events.tabs.details,
-    content: (
-      <>
-        <TextField
-          label={m.events.location}
-          name="location"
-          autoComplete="off"
-          maxLength={EVENT_LOCATION_MAX_LENGTH}
-          value={values.location}
-          error={errors.location}
-          onChange={(location) => setField('location', location)}
-          addon={
-            locationUrl && (
-              <a
-                className="iconButton iconButton--plain"
-                href={locationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={m.events.openMap(values.location.trim())}
-                title={m.events.openMap(values.location.trim())}
-              >
-                <MapPinIcon size={18} />
-              </a>
-            )
-          }
-        />
-
-        {features.links && (
-          <LinksField links={values.links} error={errors.links} onChange={(links) => setField('links', links)} />
-        )}
-
-        <FormField label={m.events.description} error={errors.description}>
-          <textarea
-            className="textarea eventDescription"
-            name="description"
-            maxLength={EVENT_DESCRIPTION_MAX_LENGTH}
-            value={values.description}
-            onChange={(event) => setField('description', event.target.value)}
-          />
-        </FormField>
-      </>
-    ),
-    after: attachmentRepository && showAttachments && (
-      <AttachmentsField
-        eventId={occurrence?.id ?? null}
-        canEdit={canEditAttachments}
-        pending={pendingFiles}
-        onPendingChange={setPendingFiles}
-      />
-    ),
-  })
-  if (chat)
-    tabDefinitions.push({
+    },
+    chat && {
       value: 'chat',
       label: m.calendars.settings.withCount(m.events.chat.tab, unreadChat),
       content: <ChatPanel chatKey={chat.key} calendarId={chat.calendarId} isActive={activeTab === 'chat'} />,
-    })
-  if (history)
-    tabDefinitions.push({
+    },
+    history && {
       value: 'history',
       label: m.events.history.tab,
       content: (
@@ -438,7 +435,8 @@ export function EventModal({
           isActive={activeTab === 'history'}
         />
       ),
-    })
+    },
+  ])
   const tabs = tabDefinitions.map(({ after, ...tab }) => ({
     ...tab,
     content: (

@@ -46,8 +46,6 @@ export const caldav: Messages['caldav'] = {
       'Zeige und bearbeite deine Kalender in Apple Kalender, Thunderbird, DAVx⁵ (Android), Outlook mit CalDAV-Add-in oder anderen Programmen. Trage dort die Serveradresse und deine E-Mail-Adresse ein und als Passwort ein App-Passwort.',
     serverUrl: 'Serveradresse',
     username: 'Benutzername',
-    copy: 'Kopieren',
-    copied: 'Kopiert',
     passwordsTitle: 'App-Passwörter',
     passwordsDescription:
       'Lege für jedes Programm ein eigenes Passwort an. Dein Kontopasswort funktioniert dort nicht, so bleibt die Zwei-Faktor-Anmeldung wirksam. Ein neues Kontopasswort widerruft alle App-Passwörter.',

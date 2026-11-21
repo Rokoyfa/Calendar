@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
 import { isSameChat, type ChatKey, type ChatMessage } from '../../../utils/chat.ts'
 import type { ChatRepository } from '../../storage/index.ts'
+import { removeById } from '../../../utils/list.ts'
 
 const READ_DELAY_MS = 500
 
@@ -112,7 +113,7 @@ export function useChatMessages(repository: ChatRepository, chatKey: ChatKey, is
   const remove = useCallback(
     async (id: string) => {
       await repository.remove(id)
-      setState((current) => ({ ...current, messages: current.messages.filter((message) => message.id !== id) }))
+      setState((current) => ({ ...current, messages: removeById(current.messages, id) }))
     },
     [repository],
   )

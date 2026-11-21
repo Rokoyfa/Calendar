@@ -10,6 +10,7 @@ import type {
 import { useAuth } from '../../authorization/index.ts'
 import { useStorage, type CaldavEventSource, type CaldavRepository } from '../../storage/index.ts'
 import { CaldavContext, NO_CALDAV, type CaldavCalendarEntry, type CaldavContextValue } from './CaldavContext.ts'
+import { removeById, replaceById, upsertById } from '../../../utils/list.ts'
 
 const NO_ACCOUNTS: CaldavAccount[] = []
 
@@ -60,10 +61,7 @@ function ActiveProvider({ repository, source, children }: ActiveProviderProps) {
   const replace = useCallback(
     (account: CaldavAccount) =>
       apply(
-        (current) =>
-          current.some((entry) => entry.id === account.id)
-            ? current.map((entry) => (entry.id === account.id ? account : entry))
-            : [...current, account],
+        (current) => upsertById(current, account),
         account.calendars.map((calendar) => calendar.id),
       ),
     [apply],
@@ -80,7 +78,7 @@ function ActiveProvider({ repository, source, children }: ActiveProviderProps) {
       update: async (id: string, changes: CaldavAccountChanges) => replace(await repository.update(id, changes)),
       remove: async (id: string) => {
         await repository.remove(id)
-        apply((current) => current.filter((account) => account.id !== id))
+        apply((current) => removeById(current, id))
       },
       sync: async (id: string) => replace(await repository.sync(id)),
       updateCalendar: async (id: string, changes: CaldavCalendarChanges) => {
@@ -89,9 +87,7 @@ function ActiveProvider({ repository, source, children }: ActiveProviderProps) {
           (current) =>
             current.map((account) => ({
               ...account,
-              calendars: account.calendars
-                .map((calendar) => (calendar.id === id ? updated : calendar))
-                .sort((a, b) => a.position - b.position),
+              calendars: replaceById(account.calendars, updated).sort((a, b) => a.position - b.position),
             })),
           [id],
         )

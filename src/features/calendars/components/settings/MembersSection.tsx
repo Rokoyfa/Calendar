@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Button } from '../../../../components/Button.tsx'
 import { ConfirmModal } from '../../../../components/ConfirmModal.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
@@ -8,6 +7,7 @@ import { useI18n } from '../../../../i18n/index.ts'
 import { RoleOverview } from './RoleOverview.tsx'
 import type { CalendarSummary, TeamMember, TeamRole } from '../../types/calendar.ts'
 import { getAssignableRoles, hasPermission, outranks } from '../../utils/permissions.ts'
+import { useConfirm } from '../../../../hooks/useConfirm.ts'
 
 type MembersSectionProps = {
   calendar: CalendarSummary
@@ -79,16 +79,13 @@ export function MembersSection({
 }: MembersSectionProps) {
   const { m } = useI18n()
   const { members: text } = m.calendars
-  const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null)
+  const removal = useConfirm<TeamMember>()
+  const memberToRemove = removal.target
   const canManageMembers = hasPermission(calendar, 'manage_members')
   const roles = getAssignableRoles(calendar.role)
 
   return (
-    <PageSection
-      title={text.title}
-      description={text.description}
-      aside={<RoleOverview />}
-    >
+    <PageSection title={text.title} description={text.description} aside={<RoleOverview />}>
       <ErrorMessage message={error} />
       <ul className="itemList">
         {members.map((member) => {
@@ -101,7 +98,7 @@ export function MembersSection({
               canManage={canManageMembers && !isSelf && outranks(calendar.role, member.role)}
               roles={roles}
               onChangeRole={(role) => onChangeRole(member.userId, role)}
-              onRemove={() => setMemberToRemove(member)}
+              onRemove={() => removal.ask(member)}
             />
           )
         })}
@@ -111,11 +108,8 @@ export function MembersSection({
           title={text.removeTitle}
           confirmLabel={text.remove}
           pendingLabel={text.removing}
-          onConfirm={async () => {
-            await onRemove(memberToRemove.userId)
-            setMemberToRemove(null)
-          }}
-          onClose={() => setMemberToRemove(null)}
+          onConfirm={() => onRemove(memberToRemove.userId)}
+          onClose={removal.close}
         >
           {text.removeMessage(memberToRemove.name, calendar.name)}
         </ConfirmModal>

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react'
 import { useI18n } from '../i18n/index.ts'
 import { useAsyncAction } from '../hooks/useAsyncAction.ts'
 import { Button } from './Button.tsx'
@@ -16,7 +16,11 @@ type ConfirmModalProps = {
 
 export function ConfirmModal({ title, confirmLabel, pendingLabel, onConfirm, onClose, children }: ConfirmModalProps) {
   const { m } = useI18n()
-  const { run, isPending, error } = useAsyncAction(onConfirm)
+  const confirm = useCallback(async () => {
+    await onConfirm()
+    onClose()
+  }, [onConfirm, onClose])
+  const { run, isPending, error } = useAsyncAction(confirm)
 
   return (
     <Modal title={title} variant="danger" onClose={onClose}>

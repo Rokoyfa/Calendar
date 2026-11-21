@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { lazy, Suspense, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useHost } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
@@ -9,16 +9,14 @@ import { isISODate, isTime } from '../../../utils/date.ts'
 import { useAttachmentRepository } from '../../attachments/index.ts'
 import { CategoryFilterModal, useCategories } from '../../categories/index.ts'
 import { useStorage } from '../../storage/index.ts'
-import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
+import { useI18n } from '../../../i18n/index.ts'
 import { useKeyboardShortcuts } from '../../../hooks/useKeyboardShortcuts.ts'
 import { addDaysToISODate, MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
 import {
   createAllDayEventInput,
   createEventInput,
-  createEventInputForSlots,
   expandEvents,
   toDuplicateInput,
-  toOccurrenceInput,
   toViewerPeriod,
   ZONE_SHIFT_DAYS,
   type EditScope,
@@ -33,7 +31,6 @@ import {
   RecurrenceScopeModal,
   useEvents,
   type CalendarChoice,
-  type EventTab,
   type SaveOptions,
 } from '../../events/index.ts'
 import { ChatProvider, type ChatAccess } from '../../chat/index.ts'
@@ -55,11 +52,9 @@ import { useLiveEvents } from '../hooks/useLiveEvents.ts'
 import { useEventNavigation } from '../hooks/useEventNavigation.ts'
 import { useEventDrag, type DragPreview } from '../hooks/useEventDrag.ts'
 import { useNow } from '../hooks/useNow.ts'
-import type { EditorState } from '../types/editor.ts'
 import type { EventSources } from '../types/eventSource.ts'
 import { toDropInput } from '../utils/eventDrag.ts'
 import { getSourceText } from '../utils/eventLabels.ts'
-import type { SlotRange } from '../utils/slotSelection.ts'
 import type { CalendarView, CalendarViewProps } from '../types/view.ts'
 import { groupSegmentsByDate } from '../utils/segmentEvents.ts'
 import { CalendarHeader } from './CalendarHeader.tsx'
@@ -67,6 +62,10 @@ import { MonthView } from './MonthView.tsx'
 import { TimeGridView } from './TimeGridView.tsx'
 import { YearView } from './YearView.tsx'
 import { AgendaView } from './AgendaView.tsx'
+import { useEventEditor, type OpenEventRequest } from '../hooks/useEventEditor.ts'
+import { useUndo } from '../hooks/useUndo.ts'
+import { useActionError } from '../../../hooks/useActionError.ts'
+import { getEditorAccess, withCurrentCalendar } from '../utils/editorAccess.ts'
 
 const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = {
   day: TimeGridView,
@@ -77,8 +76,6 @@ const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = 
 }
 
 const EventModal = lazy(async () => ({ default: (await import('../../events/components/EventModal.tsx')).EventModal }))
-
-type RemoteChange = { eventId: string; version: number | null }
 
 type CalendarProps = {
   calendarIds: readonly string[]
@@ -104,12 +101,6 @@ type CalendarProps = {
   onOpenEventDone?: () => void
 }
 
-export type OpenEventRequest = {
-  eventId: string
-  date: string
-  tab?: EventTab
-}
-
 type PendingDrop = {
   occurrence: EventOccurrence
   period: EventPeriod
@@ -122,8 +113,6 @@ const ALWAYS = () => true
 const NEVER = () => false
 const NO_EXTERNAL_EVENTS: readonly CalendarEvent[] = []
 const NO_CHOICES: readonly CalendarChoice[] = []
-
-type UndoOffer = { id: number; message: string; undo: () => Promise<void> }
 
 export function Calendar({
   calendarIds,
@@ -154,8 +143,6 @@ export function Calendar({
   const attachmentRepository = useAttachmentRepository()
   const readOnly = forcedReadOnly || hostReadOnly
   const canCreate = mayCreate && !readOnly
-  const [hostRequest, setHostRequest] = useState<OpenEventRequest | null>(null)
-  const openEvent = hostRequest ?? linkedEvent
   const now = useNow()
   const today = toISODate(now)
   const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
@@ -196,8 +183,8 @@ export function Calendar({
   )
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null)
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
-  const [undoOffer, setUndoOffer] = useState<UndoOffer | null>(null)
+  const { error: actionError, setError: setActionError, attempt } = useActionError()
+  const undo = useUndo(features.undo, attempt)
   const segmentsByDate = useMemo(() => {
     const shown = dragPreview
       ? occurrences.map((occurrence) =>
@@ -209,44 +196,22 @@ export function Calendar({
     return groupSegmentsByDate(shown, range)
   }, [occurrences, dragPreview, range])
   const mainRef = useRef<HTMLElement>(null)
-  const [editor, setEditor] = useState<EditorState | null>(null)
-  const requestedOccurrence = useMemo(
-    () =>
-      openEvent
-        ? (occurrences.find(
-            (occurrence) =>
-              (occurrence.id === openEvent.eventId && occurrence.occurrenceDate === openEvent.date) ||
-              (occurrence.seriesId === openEvent.eventId && occurrence.originalDate === openEvent.date) ||
-              (occurrence.id === openEvent.eventId && !occurrence.recurrence),
-          ) ?? null)
-        : null,
-    [openEvent, occurrences],
-  )
-  const shownEditor: EditorState | null =
-    editor ??
-    (requestedOccurrence && {
-      initialValue: toOccurrenceInput(requestedOccurrence),
-      occurrence: requestedOccurrence,
-      initialTab: openEvent?.tab,
-    })
-
-  const [remoteChange, setRemoteChange] = useState<RemoteChange | null>(null)
+  const editor = useEventEditor({
+    occurrences,
+    canCreate,
+    viewerTimeZone,
+    linkedEvent,
+    onLinkedEventDone: onOpenEventDone,
+  })
+  const shownEditor = editor.shown
   useLiveEvents({
     enabled: features.liveUpdates,
     calendarIds,
     onChange: ({ eventId, version, changedBy }) => {
       if (eventId === null || (changedBy !== null && changedBy === currentUserId)) return
-      if (shownEditor?.occurrence?.id === eventId) setRemoteChange({ eventId, version })
+      editor.noteRemoteChange({ eventId, version })
     },
   })
-  const editorRemoteChange =
-    shownEditor?.occurrence && remoteChange?.eventId === shownEditor.occurrence.id
-      ? remoteChange.version === null
-        ? 'deleted'
-        : remoteChange.version > shownEditor.occurrence.version
-          ? 'updated'
-          : null
-      : null
 
   const [eventToDelete, setEventToDelete] = useState<EventOccurrence | null>(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -255,75 +220,9 @@ export function Calendar({
     : null
   const attendeeCandidates = useAttendeeCandidates(loadAttendeeCandidates, editorCalendarId)
 
-  const offerUndo = (message: string, undo: (() => Promise<void>) | null) =>
-    setUndoOffer(undo && features.undo ? { id: Date.now(), message, undo } : null)
+  const createNow = () => editor.openCreate(view === 'day' ? anchor : today, now.getHours())
 
-  const dismissUndo = useCallback(() => setUndoOffer(null), [])
-
-  const runUndo = async () => {
-    if (!undoOffer) return
-    setUndoOffer(null)
-    setActionError(null)
-    try {
-      await undoOffer.undo()
-    } catch (caught) {
-      setActionError(getErrorMessage(caught, i18n.m))
-    }
-  }
-
-  const createNow = () => openCreate(view === 'day' ? anchor : today, now.getHours())
-
-  const openCreate = useCallback(
-    (date: string, hour: number) => {
-      if (canCreate)
-        setEditor({
-          initialValue: createEventInput(date, hour, viewerTimeZone),
-          occurrence: null,
-        })
-    },
-    [canCreate, viewerTimeZone],
-  )
-
-  const openCreateRange = useCallback(
-    ({ first, last }: SlotRange) => {
-      if (canCreate)
-        setEditor({
-          initialValue: createEventInputForSlots(first, last, viewerTimeZone),
-          occurrence: null,
-        })
-    },
-    [canCreate, viewerTimeZone],
-  )
-
-  const openCreateAllDay = useCallback(
-    (date: string) => {
-      if (canCreate)
-        setEditor({
-          initialValue: createAllDayEventInput(date),
-          occurrence: null,
-        })
-    },
-    [canCreate],
-  )
-
-  const openEdit = useCallback((occurrence: EventOccurrence, initialTab?: EventTab) => {
-    setEditor({
-      initialValue: toOccurrenceInput(occurrence),
-      occurrence,
-      initialTab,
-    })
-  }, [])
-
-  const finishRequest = () => {
-    if (hostRequest) setHostRequest(null)
-    else if (linkedEvent) onOpenEventDone?.()
-  }
-
-  const closeEditor = () => {
-    setEditor(null)
-    setRemoteChange(null)
-    finishRequest()
-  }
+  const closeEditor = editor.close
 
   const openSearchResult = (event: CalendarEvent, date: string) => {
     setIsSearchOpen(false)
@@ -334,23 +233,17 @@ export function Calendar({
       viewerTimeZone,
     ).find((candidate) => candidate.occurrenceDate === date)
     goToDate(occurrence?.startDate ?? date)
-    if (occurrence) openEdit(occurrence)
+    if (occurrence) editor.openEdit(occurrence)
   }
 
-  const duplicate = (input: EventInput) => {
-    finishRequest()
-    setEditor({
-      initialValue: toDuplicateInput(input),
-      occurrence: null,
-      notice: i18n.m.events.duplicateNotice(input.title),
-    })
-  }
+  const duplicate = (input: EventInput) =>
+    editor.duplicate(toDuplicateInput(input), i18n.m.events.duplicateNotice(input.title))
 
   const removeEvent = async (occurrence: EventOccurrence, scope: EditScope) => {
-    const undo = await deleteEvent(occurrence, scope)
+    const revert = await deleteEvent(occurrence, scope)
     setEventToDelete(null)
     closeEditor()
-    offerUndo(i18n.m.calendar.undo.deleted(occurrence.title), undo)
+    undo.offerUndo(i18n.m.calendar.undo.deleted(occurrence.title), revert)
   }
 
   const requestDelete = async (occurrence: EventOccurrence) => {
@@ -383,8 +276,8 @@ export function Calendar({
     if (occurrence) {
       await updateEvent(occurrence, input, scope, options)
       if (moveEvent && target !== occurrence.calendarId) {
-        const { undo } = await moveEvent(occurrence, target, false)
-        offerUndo(i18n.m.calendar.undo.moved(input.title), undo)
+        const moved = await moveEvent(occurrence, target, false)
+        undo.offerUndo(i18n.m.calendar.undo.moved(input.title), moved.undo)
       }
     } else await uploadAttachments((await createEvent(input, target)).id, attachments)
     closeEditor()
@@ -393,15 +286,11 @@ export function Calendar({
 
   const saveDrop = async (occurrence: EventOccurrence, period: EventPeriod, scope: EditScope) => {
     setPendingDrop(null)
-    setActionError(null)
-    try {
-      const undo = await updateEvent(occurrence, toDropInput(occurrence, period, viewerTimeZone, scope), scope)
-      offerUndo(i18n.m.calendar.undo.moved(occurrence.title), undo)
-    } catch (caught) {
-      setActionError(getErrorMessage(caught, i18n.m))
-    } finally {
-      setDragPreview(null)
-    }
+    await attempt(async () => {
+      const revert = await updateEvent(occurrence, toDropInput(occurrence, period, viewerTimeZone, scope), scope)
+      undo.offerUndo(i18n.m.calendar.undo.moved(occurrence.title), revert)
+    })
+    setDragPreview(null)
   }
 
   const handleDrop = (occurrence: EventOccurrence, period: EventPeriod) => {
@@ -440,7 +329,7 @@ export function Calendar({
           [VIEW_SHORTCUTS.year]: selectView('year'),
           j: selectView('year'),
           [VIEW_SHORTCUTS.agenda]: selectView('agenda'),
-          'mod+z': undoOffer ? () => void runUndo() : undefined,
+          'mod+z': undo.offer ? () => void undo.run() : undefined,
         }
       : NO_SHORTCUTS,
   )
@@ -461,9 +350,8 @@ export function Calendar({
     previous,
     today: goToToday,
     openEvent: (eventId, date) => {
-      setEditor(null)
       goToDate(date)
-      setHostRequest({ eventId, date })
+      editor.openFromHost(eventId, date)
     },
     createEvent: (draft = {}) => {
       if (!canCreate) return false
@@ -478,15 +366,12 @@ export function Calendar({
         !draft.allDay && isTime(draft.start) && isTime(draft.end)
           ? { start: draft.start, end: draft.end, endDate: isISODate(draft.endDate) ? draft.endDate : startDate }
           : {}
-      setEditor({
-        initialValue: {
-          ...base,
-          ...times,
-          title: draft.title ?? '',
-          location: draft.location ?? '',
-          description: draft.description ?? '',
-        },
-        occurrence: null,
+      editor.openDraft({
+        ...base,
+        ...times,
+        title: draft.title ?? '',
+        location: draft.location ?? '',
+        description: draft.description ?? '',
       })
       return true
     },
@@ -497,39 +382,34 @@ export function Calendar({
 
   const ViewComponent = VIEW_COMPONENTS[view]
   const editorSource = shownEditor?.occurrence ? eventSources.get(shownEditor.occurrence.calendarId) : undefined
-  const editorIsExternal = shownEditor?.occurrence ? isExternalEvent(shownEditor.occurrence) : false
-  const editorIsCaldav = shownEditor?.occurrence ? isCaldavEvent(shownEditor.occurrence) : false
-  const editorIsLocked = editorIsCaldav && shownEditor?.occurrence ? !canEditEvent(shownEditor.occurrence) : false
   const editorOccurrence = shownEditor?.occurrence ?? null
-  const canChooseCalendar =
-    shownEditor !== null &&
-    !readOnly &&
-    !editorIsExternal &&
-    !editorIsLocked &&
-    (editorOccurrence === null
-      ? canCreate
-      : editorOccurrence.seriesId === null &&
-        moveEvent !== undefined &&
-        canEditEvent(editorOccurrence) &&
-        canMoveEvent(editorOccurrence))
+  const {
+    isExternal: editorIsExternal,
+    isCaldav: editorIsCaldav,
+    isLocked: editorIsLocked,
+    canChooseCalendar,
+  } = getEditorAccess({
+    occurrence: editorOccurrence,
+    readOnly,
+    canCreate,
+    supportsMove: moveEvent !== undefined,
+    canEditEvent,
+    canMoveEvent,
+  })
   const calendarField =
-    canChooseCalendar && editorCalendarId
+    shownEditor && canChooseCalendar && editorCalendarId
       ? {
           value: editorCalendarId,
-          options:
-            editorOccurrence && !calendarChoices.some((choice) => choice.id === editorOccurrence.calendarId)
-              ? [
-                  {
-                    id: editorOccurrence.calendarId,
-                    name:
-                      calendarNames.get(editorOccurrence.calendarId) ??
-                      eventSources.get(editorOccurrence.calendarId)?.name ??
-                      '',
-                  },
-                  ...calendarChoices,
-                ]
-              : calendarChoices,
-          onChange: (calendarId: string) => setEditor((current) => (current ? { ...current, calendarId } : current)),
+          options: withCurrentCalendar(
+            calendarChoices,
+            editorOccurrence,
+            editorOccurrence
+              ? (calendarNames.get(editorOccurrence.calendarId) ??
+                  eventSources.get(editorOccurrence.calendarId)?.name ??
+                  '')
+              : '',
+          ),
+          onChange: editor.setCalendarId,
         }
       : undefined
 
@@ -566,10 +446,10 @@ export function Calendar({
                   currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
                   segmentsByDate={segmentsByDate}
                   canCreate={canCreate}
-                  onCreate={openCreate}
-                  onCreateRange={openCreateRange}
-                  onCreateAllDay={openCreateAllDay}
-                  onEventSelect={openEdit}
+                  onCreate={editor.openCreate}
+                  onCreateRange={editor.openCreateRange}
+                  onCreateAllDay={editor.openCreateAllDay}
+                  onEventSelect={editor.openEdit}
                   onShowDay={(date) => showView('day', date)}
                   onShowMonth={(date) => showView('month', date)}
                 />
@@ -621,7 +501,7 @@ export function Calendar({
                           : editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n)))
                     }
                     onSave={handleSave}
-                    remoteChange={editorRemoteChange}
+                    remoteChange={editor.remoteState}
                     onReload={() => {
                       closeEditor()
                       invalidate()
@@ -694,12 +574,12 @@ export function Calendar({
                   movesToTrash={features.trash && Boolean(eventRepository.restore)}
                 />
               )}
-              {undoOffer && (
+              {undo.offer && (
                 <UndoNotice
-                  key={undoOffer.id}
-                  message={undoOffer.message}
-                  onUndo={() => void runUndo()}
-                  onDismiss={dismissUndo}
+                  key={undo.offer.id}
+                  message={undo.offer.message}
+                  onUndo={() => void undo.run()}
+                  onDismiss={undo.dismiss}
                 />
               )}
             </DraggingEventContext>

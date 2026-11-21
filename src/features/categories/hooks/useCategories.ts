@@ -5,6 +5,7 @@ import { useI18n } from '../../../i18n/index.ts'
 import { AppError } from '../../../utils/appError.ts'
 import { sortCategories, type Category } from '../../../utils/category.ts'
 import { useStorage } from '../../storage/index.ts'
+import { removeById, replaceById } from '../../../utils/list.ts'
 
 const NO_CATEGORIES: Category[] = []
 
@@ -33,7 +34,7 @@ export function useCategories(calendarIds: readonly string[]) {
     async (id: string, name: string) => {
       if (!active) return
       const renamed = await active.rename(id, name)
-      update((current) => current.map((category) => (category.id === id ? renamed : category)))
+      update((current) => replaceById(current, renamed))
     },
     [active, update],
   )
@@ -42,7 +43,7 @@ export function useCategories(calendarIds: readonly string[]) {
     async (id: string) => {
       if (!active) return
       await active.remove(id)
-      update((current) => current.filter((category) => category.id !== id))
+      update((current) => removeById(current, id))
     },
     [active, update],
   )

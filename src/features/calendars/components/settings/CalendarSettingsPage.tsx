@@ -21,6 +21,7 @@ import { CategoriesSection } from '../../../categories/index.ts'
 import { GeneralSection } from './GeneralSection.tsx'
 import { MembersSection } from './MembersSection.tsx'
 import { TeamInvitationsSection } from './TeamInvitationsSection.tsx'
+import { compact } from '../../../../utils/list.ts'
 
 function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
@@ -34,15 +35,40 @@ function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
 type TeamTab = 'general' | 'members' | 'invitations' | 'exchange' | 'trash' | 'danger'
 type PersonalTab = 'general' | 'exchange' | 'trash'
 
+function useCommonTabs(calendar: CalendarSummary, canOpenTrash: boolean) {
+  const { m } = useI18n()
+  const { settings } = m.calendars
+  const { subscriptions, importExport, trash } = useFeatures()
+  return {
+    exchange: (subscriptions || importExport) && {
+      value: 'exchange' as const,
+      label: settings.tabs.exchange,
+      content: (
+        <>
+          {subscriptions && <SubscribeSection calendar={calendar} />}
+          {importExport && <ExchangeSection calendar={calendar} />}
+        </>
+      ),
+    },
+    trash: trash &&
+      canOpenTrash && {
+        value: 'trash' as const,
+        label: settings.tabs.trash,
+        content: <TrashSection calendar={calendar} />,
+      },
+  }
+}
+
 function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
   const { settings } = m.calendars
   const { withCount } = settings
   const { user } = useAuth()
   const team = useTeam(calendar)
-  const { subscriptions, importExport, publicLinks, trash } = useFeatures()
+  const { publicLinks } = useFeatures()
+  const common = useCommonTabs(calendar, canUseTrash(calendar))
   const canManage = hasPermission(calendar, 'manage_calendars')
-  const tabs: TabDefinition<TeamTab>[] = [
+  const tabs = compact<TabDefinition<TeamTab>>([
     {
       value: 'general',
       label: settings.tabs.general,
@@ -69,42 +95,23 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
         />
       ),
     },
-    ...(hasPermission(calendar, 'invite_members')
-      ? [
-          {
-            value: 'invitations' as const,
-            label: withCount(settings.tabs.invitations, team.invitations.length),
-            content: (
-              <TeamInvitationsSection
-                calendar={calendar}
-                invitations={team.invitations}
-                members={team.members}
-                error={team.invitationsError}
-                ownEmail={user?.email ?? null}
-                onInvite={team.invite}
-                onRevoke={team.revokeInvitation}
-              />
-            ),
-          },
-        ]
-      : []),
-    ...(subscriptions || importExport
-      ? [
-          {
-            value: 'exchange' as const,
-            label: settings.tabs.exchange,
-            content: (
-              <>
-                {subscriptions && <SubscribeSection calendar={calendar} />}
-                {importExport && <ExchangeSection calendar={calendar} />}
-              </>
-            ),
-          },
-        ]
-      : []),
-    ...(trash && canUseTrash(calendar)
-      ? [{ value: 'trash' as const, label: settings.tabs.trash, content: <TrashSection calendar={calendar} /> }]
-      : []),
+    hasPermission(calendar, 'invite_members') && {
+      value: 'invitations',
+      label: withCount(settings.tabs.invitations, team.invitations.length),
+      content: (
+        <TeamInvitationsSection
+          calendar={calendar}
+          invitations={team.invitations}
+          members={team.members}
+          error={team.invitationsError}
+          ownEmail={user?.email ?? null}
+          onInvite={team.invite}
+          onRevoke={team.revokeInvitation}
+        />
+      ),
+    },
+    common.exchange,
+    common.trash,
     {
       value: 'danger',
       label: settings.tabs.danger,
@@ -117,7 +124,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
         />
       ),
     },
-  ]
+  ])
   const [active, select] = useTabParam(tabs)
 
   return <Tabs label={settings.tabsLabel} tabs={tabs} value={active} onChange={select} />
@@ -126,9 +133,10 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
 function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
   const { settings } = m.calendars
-  const { subscriptions, importExport, publicLinks, trash } = useFeatures()
+  const { publicLinks } = useFeatures()
+  const common = useCommonTabs(calendar, true)
   const canManage = hasPermission(calendar, 'manage_calendars')
-  const tabs: TabDefinition<PersonalTab>[] = [
+  const tabs = compact<TabDefinition<PersonalTab>>([
     {
       value: 'general',
       label: settings.tabs.general,
@@ -143,24 +151,9 @@ function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
         </>
       ),
     },
-    ...(subscriptions || importExport
-      ? [
-          {
-            value: 'exchange' as const,
-            label: settings.tabs.exchange,
-            content: (
-              <>
-                {subscriptions && <SubscribeSection calendar={calendar} />}
-                {importExport && <ExchangeSection calendar={calendar} />}
-              </>
-            ),
-          },
-        ]
-      : []),
-    ...(trash
-      ? [{ value: 'trash' as const, label: settings.tabs.trash, content: <TrashSection calendar={calendar} /> }]
-      : []),
-  ]
+    common.exchange,
+    common.trash,
+  ])
   const [active, select] = useTabParam(tabs)
 
   return <Tabs label={settings.tabsLabel} tabs={tabs} value={active} onChange={select} />

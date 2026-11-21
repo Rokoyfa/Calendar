@@ -1,3 +1,4 @@
-export { Calendar, type OpenEventRequest } from './components/Calendar.tsx'
+export { Calendar } from './components/Calendar.tsx'
+export type { OpenEventRequest } from './hooks/useEventEditor.ts'
 export { getViewOptions } from './constants/views.ts'
 export { MiniMonth } from './components/MiniMonth.tsx'

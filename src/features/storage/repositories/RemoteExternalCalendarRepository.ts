@@ -1,5 +1,4 @@
 import { encodePathSegment, type ApiClient } from '../../../utils/api.ts'
-import { AppError } from '../../../utils/appError.ts'
 import {
   parseExternalCalendar,
   parseExternalCalendars,
@@ -7,14 +6,11 @@ import {
   type ExternalCalendarInput,
 } from '../../../utils/externalCalendar.ts'
 import type { ExternalCalendarRepository } from '../types/storage.ts'
+import { requireValue } from '../../../utils/parse.ts'
 
 const PATH = '/external-calendars'
 
-const parseOne = (value: unknown) => {
-  const calendar = parseExternalCalendar(value)
-  if (!calendar) throw new AppError('unknown')
-  return calendar
-}
+const parseOne = (value: unknown) => requireValue(parseExternalCalendar(value))
 
 export class RemoteExternalCalendarRepository implements ExternalCalendarRepository {
   readonly #api: ApiClient

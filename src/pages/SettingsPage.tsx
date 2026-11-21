@@ -15,6 +15,7 @@ import {
   useIsCaldavServerAvailable,
 } from '../features/caldav/index.ts'
 import { useI18n } from '../i18n/index.ts'
+import { compact } from '../utils/list.ts'
 
 type SettingsTab =
   'calendars' | 'connections' | 'invitations' | 'appearance' | 'notifications' | 'account' | 'security' | 'data'
@@ -28,15 +29,13 @@ export function SettingsPage() {
   const external = useExternalCalendars()
   const caldavAccounts = useCaldav()
   const caldavServer = useIsCaldavServerAvailable()
-  const tabs: TabDefinition<SettingsTab>[] = [
+  const tabs = compact<TabDefinition<SettingsTab>>([
     {
       value: 'calendars',
       label: m.settings.tabs.calendars,
       content: <CalendarSettings />,
     },
-  ]
-  if (external.isAvailable || caldavAccounts.isAvailable || caldavServer)
-    tabs.push({
+    (external.isAvailable || caldavAccounts.isAvailable || caldavServer) && {
       value: 'connections',
       label: m.settings.tabs.connections,
       content: (
@@ -46,48 +45,53 @@ export function SettingsPage() {
           <CaldavServerSettings />
         </>
       ),
-    })
-  if (teams && user?.emailVerified)
-    tabs.push({
-      value: 'invitations',
-      label: m.calendars.settings.withCount(m.settings.tabs.invitations, invitations.length),
-      content: <InvitationList />,
-    })
-  tabs.push({
-    value: 'appearance',
-    label: m.settings.tabs.appearance,
-    content: (
-      <>
-        <PreferencesSettings />
-        {holidays && <HolidaySettings />}
-        {customColors && <CustomColorSettings />}
-      </>
-    ),
-  })
-  if (emailNotifications && enabled && user)
-    tabs.push({
-      value: 'notifications',
-      label: m.settings.tabs.notifications,
-      content: <NotificationSettings emailVerified={user.emailVerified} />,
-    })
-  if (enabled && user && method === 'password')
-    tabs.push({
-      value: 'account',
-      label: m.settings.tabs.account,
-      content: <AccountSettings />,
-    })
-  if (enabled && user && method === 'password' && security)
-    tabs.push({
-      value: 'security',
-      label: m.settings.tabs.security,
-      content: <SecuritySettings />,
-    })
-  if (dataExport && (!user || exportData))
-    tabs.push({
-      value: 'data',
-      label: m.settings.tabs.data,
-      content: <DataExportSection />,
-    })
+    },
+    teams &&
+      user?.emailVerified && {
+        value: 'invitations',
+        label: m.calendars.settings.withCount(m.settings.tabs.invitations, invitations.length),
+        content: <InvitationList />,
+      },
+    {
+      value: 'appearance',
+      label: m.settings.tabs.appearance,
+      content: (
+        <>
+          <PreferencesSettings />
+          {holidays && <HolidaySettings />}
+          {customColors && <CustomColorSettings />}
+        </>
+      ),
+    },
+    emailNotifications &&
+      enabled &&
+      user && {
+        value: 'notifications',
+        label: m.settings.tabs.notifications,
+        content: <NotificationSettings emailVerified={user.emailVerified} />,
+      },
+    enabled &&
+      user &&
+      method === 'password' && {
+        value: 'account',
+        label: m.settings.tabs.account,
+        content: <AccountSettings />,
+      },
+    enabled &&
+      user &&
+      method === 'password' &&
+      security && {
+        value: 'security',
+        label: m.settings.tabs.security,
+        content: <SecuritySettings />,
+      },
+    dataExport &&
+      (!user || exportData) && {
+        value: 'data',
+        label: m.settings.tabs.data,
+        content: <DataExportSection />,
+      },
+  ])
   const [active, select] = useTabParam(tabs)
 
   return (

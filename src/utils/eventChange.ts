@@ -1,3 +1,4 @@
+import { filledTextOrNull } from './parse.ts'
 export type EventChange =
   | { type: 'connected' }
   | { type: 'disconnected' }
@@ -9,8 +10,6 @@ export type EventChange =
       changedBy: string | null
     }
 
-const textOrNull = (value: unknown) => (typeof value === 'string' && value !== '' ? value : null)
-
 export const parseEventChange = (value: unknown): EventChange | null => {
   if (typeof value !== 'object' || value === null) return null
   const record = value as Record<string, unknown>
@@ -18,10 +17,10 @@ export const parseEventChange = (value: unknown): EventChange | null => {
   if (record.type !== 'event.changed') return null
   return {
     type: 'event.changed',
-    calendarId: textOrNull(record.calendarId),
-    eventId: textOrNull(record.eventId),
+    calendarId: filledTextOrNull(record.calendarId),
+    eventId: filledTextOrNull(record.eventId),
     version: Number.isInteger(record.version) && (record.version as number) > 0 ? (record.version as number) : null,
-    changedBy: textOrNull(record.changedBy),
+    changedBy: filledTextOrNull(record.changedBy),
   }
 }
 

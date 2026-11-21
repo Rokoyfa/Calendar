@@ -16,6 +16,7 @@ import { normalizeDraft } from '../utils/draft.ts'
 import { getVisibleCalendarIds, isPersonalCalendar } from '../utils/permissions.ts'
 import { readActiveCalendarId, writeActiveCalendarId } from '../utils/activeCalendarStorage.ts'
 import { CalendarsContext } from './CalendarsContext.ts'
+import { removeById, replaceById } from '../../../utils/list.ts'
 
 const INITIAL_CALENDARS: CalendarSummary[] = [PERSONAL_CALENDAR]
 const NO_INVITATIONS: PendingInvitation[] = []
@@ -65,8 +66,7 @@ export function CalendarsProvider({ repository, storageScope, children }: Calend
   )
 
   const replaceCalendar = useCallback(
-    (changed: CalendarSummary) =>
-      updateCalendars((current) => current.map((calendar) => (calendar.id === changed.id ? changed : calendar))),
+    (changed: CalendarSummary) => updateCalendars((current) => replaceById(current, changed)),
     [updateCalendars],
   )
 
@@ -103,7 +103,7 @@ export function CalendarsProvider({ repository, storageScope, children }: Calend
         ...current.filter((calendar) => !added.some(({ id }) => id === calendar.id)),
         ...added,
       ])
-      updateInvitations((current) => current.filter((invitation) => invitation.id !== id))
+      updateInvitations((current) => removeById(current, id))
     },
     [repository, updateCalendars, updateInvitations],
   )
@@ -111,7 +111,7 @@ export function CalendarsProvider({ repository, storageScope, children }: Calend
   const declineInvitation = useCallback(
     async (id: string) => {
       await repository.declineInvitation(id)
-      updateInvitations((current) => current.filter((invitation) => invitation.id !== id))
+      updateInvitations((current) => removeById(current, id))
     },
     [repository, updateInvitations],
   )

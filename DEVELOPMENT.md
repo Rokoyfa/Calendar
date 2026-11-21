@@ -196,7 +196,7 @@ Wochenbeginn und Zählweise liefert `Intl.Locale#getWeekInfo`, wo es fehlt, eine
 
 **Aufbau (`src/i18n/`):**
 
-- `messages/en/*.ts` sind die Quelle der Texte, je Bereich eine Datei (`core`, `calendar`, `events`, `calendars`, `auth`, `settings`, `storage`). Der Typ `Messages` wird aus Englisch abgeleitet. Jede andere Sprache (`messages/de/*.ts`, `messages/fr/index.ts` usw.) muss genau dieselben Schlüssel haben, sonst schlägt die Typprüfung fehl. Ein Test vergleicht zusätzlich den Aufbau aller Sprachen mit Englisch.
+- `messages/en/*.ts` sind die Quelle der Texte, je Bereich eine Datei (`core`, `calendar`, `events`, `calendars`, `auth`, `settings`, `storage`, `security`, `inbox`, `external`, `caldav`). Der Typ `Messages` wird aus Englisch abgeleitet. Jede andere Sprache hat dieselben Dateien (`messages/de/*.ts`, `messages/fr/*.ts` usw., Grammatik-Hilfen wie die polnische Mehrzahl in `grammar.ts`) und muss genau dieselben Schlüssel haben, sonst schlägt die Typprüfung fehl. Ein Test vergleicht zusätzlich den Aufbau aller Sprachen mit Englisch.
 - Englisch ist fest im Paket, alle anderen Sprachen werden erst bei Bedarf nachgeladen (`loadMessages` in `messages/index.ts`, je Sprache eine eigene Datei von etwa 7 KB gzip, auch im CDN-Build). Bis die Sprache da ist, zeigt das Widget nichts, beim Wechsel in den Einstellungen bleibt bis dahin die alte Sprache stehen.
 - **Neue Sprache einbauen:** Ordner `messages/<code>/` mit `index.ts` anlegen (am einfachsten eine bestehende Sprache kopieren), in `BUILT_IN_LANGUAGES` und `BUILT_IN_LOCALES` (`locale.ts`) sowie in den Ladern in `messages/index.ts` eintragen. Grammatik wie Mehrzahl oder Geschlecht steckt in den Funktionen der jeweiligen Sprache (Beispiel Polnisch: `plural`).
 - **`messages` des Gastgebers** (Prop bzw. Property am Web Component): `{ [Sprachcode]: Teil-Texte }`. Für eine mitgelieferte Sprache werden einzelne Texte überschrieben, eine neue Sprache (z. B. `sv`) baut auf Englisch auf und ist danach wählbar. Zusammengeführt wird tief (`mergeMessages`), fehlende Texte kommen aus der Basis.
@@ -630,7 +630,7 @@ Eigene Seite `/calendars/:calendarId/settings` je Kalender (nur angemeldet), err
 
 Der persönliche Kalender hat keine Tabs, nur **Allgemein** (Name und Farbe) und einen Hinweis, dass er sich nicht teilen oder löschen lässt. Ohne Zugriff (z. B. nach dem Entfernen) zeigt die Seite „Diesen Kalender gibt es nicht, oder du hast keinen Zugriff mehr.“
 
-Die Seite liegt in `features/calendars/components/settings/`, Mitglieder und Einladungen lädt `useTeam`. Bestätigungen laufen über den allgemeinen `ConfirmModal` aus `components/`, den jetzt auch „Kalender verlassen“ in der Liste nutzt.
+Die Seite liegt in `features/calendars/components/settings/`, Mitglieder und Einladungen lädt `useTeam`. Bestätigungen laufen über den allgemeinen `ConfirmModal` aus `components/` zusammen mit `useConfirm`, auch „Kalender verlassen“ in der Liste und der Papierkorb. Die Tabs „Austausch“ und „Papierkorb“ beschreibt `useCommonTabs` einmal für persönliche und Team-Kalender; bedingte Tabs stehen mit `bedingung && { … }` in der Liste, `compact` entfernt die leeren.
 
 ### Kalender erstellen
 
@@ -915,11 +915,18 @@ src/
 │  ├─ Tabs.tsx                 Tabs mit Inhalt (role=tablist/tabpanel, Pfeiltasten)
 │  ├─ Switch.tsx               Ein/Aus-Schalter (Checkbox mit role=switch)
 │  ├─ Stepper.tsx              Fortschritt in Schritten, erledigte Schritte anklickbar
-│  ├─ TextField.tsx            Textfeld mit Beschriftung und Fehler
+│  ├─ TextField.tsx            Textfeld mit Beschriftung und Fehler, UrlField mit den Vorgaben für Adressen
 │  ├─ PasswordField.tsx        Passwortfeld mit „Anzeigen“
 │  ├─ StatusMessage.tsx        Fehler- (role="alert") und Erfolgsmeldung (role="status"), ActionFeedback für beides
 │  ├─ PageLayout.tsx           Eigene Seite mit „Zum Kalender“ und Titel, als Karte (Anmeldung) oder volle Breite (Einstellungen)
 │  ├─ PageSection.tsx          Abschnitt mit Überschrift und Erklärung links, Inhalt rechts, optional als Gefahrenbereich
+│  ├─ ConfirmModal.tsx         Bestätigung einer gefährlichen Aktion, schließt sich nach Erfolg selbst
+│  ├─ FormActions.tsx          Abbrechen und Absenden am Formularende, Standard „Speichern“
+│  ├─ AsyncSwitch.tsx          Schalter, der eine asynchrone Aktion auslöst, mit Sperre und Fehlermeldung
+│  ├─ CopyButton.tsx           In die Zwischenablage kopieren, zeigt „Kopiert“ bis sich der Wert ändert
+│  ├─ ItemList.tsx             Liste oder Leer-Hinweis
+│  ├─ LimitedAdd.tsx           Formular zum Hinzufügen oder Hinweis „Höchstzahl erreicht“
+│  ├─ ManagedListSection.tsx   Abschnitt mit Liste, Hinzufügen bis zur Höchstzahl und Entfernen mit Bestätigung
 │  └─ Icons.tsx                SVG-Symbole
 ├─ hooks/                      Featureübergreifende Hooks
 │  ├─ useKeyboardShortcuts.ts  Tastenkürzel des Kalenders (Pfeile, T, N, /, D/W/M/Y, Strg+Z)
@@ -927,6 +934,8 @@ src/
 │  ├─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel, apply() übernimmt das Ergebnis einer Änderung
 │  ├─ useForm.ts               Ganzes Formular: Werte, Prüfung, Vorbereiten, Absenden mit Lade-, Erfolgs- und Fehlerzustand
 │  ├─ useFormState.ts          Formularwerte, Fehler je Feld, `bind(name)` für value/error/onChange, Prüfung beim Absenden, Zurücksetzen
+│  ├─ useConfirm.ts            Ziel einer Bestätigung merken (ask/close), passend zu ConfirmModal
+│  ├─ useActionError.ts        Fehler einer Aktion als Meldung, attempt(action) leert und setzt ihn
 │  └─ useRequiredContext.ts    Context lesen und Fehler werfen, wenn der Provider fehlt
 ├─ utils/
 │  ├─ api.ts                   API-Client (fetch mit JSON, Query, Token, Timeout, Abbruch)
@@ -944,6 +953,9 @@ src/
 │  ├─ event.ts                 Termin-Typen, Farben (Klasse/Style samt weiterer Klassen), Validierung, Vorkommen eines Termins
 │  ├─ number.ts                Ganzzahl-Prüfung mit Bereich
 │  ├─ object.ts                Felder übernehmen, Wert aus fester Liste prüfen (isOneOf)
+│  ├─ parse.ts                 Antworten prüfen: isRecord/asRecord, textOrEmpty/textOrNull/filledTextOrNull, parseList, requireValue
+│  ├─ list.ts                  Listen per id ändern (replaceById, upsertById, removeById), compact für bedingte Einträge
+│  ├─ download.ts              Datei im Browser speichern (saveBlob)
 │  ├─ preferences.ts           Einstellungen: Typen, Standardwerte, Prüfung, Startansicht
 │  ├─ recurrence.ts            Wiederholungsregeln, Berechnung der Vorkommen
 │  ├─ series.ts                Serien ausnehmen, aufteilen, ändern
@@ -952,6 +964,8 @@ src/
    ├─ calendar/                Anzeige: Tag, Woche, Monat, Jahr
    │  │                        constants/views.ts beschreibt jede Ansicht einmal (Zeitraum, Schritt, Titel),
    │  │                        hooks/useCalendarView.ts steuert Ansicht und Datum
+   │  │                        hooks/useEventEditor.ts den Termindialog (neu, bearbeiten, per Link geöffnet, fremde Änderungen),
+   │  │                        hooks/useUndo.ts das Rückgängig-Angebot, utils/editorAccess.ts was im Dialog erlaubt ist
    │  ├─ components/
    │  ├─ constants/
    │  ├─ hooks/
@@ -1015,7 +1029,7 @@ src/
 - Typen, die zwischen Features geteilt werden, liegen in `utils/`. Props-Typen bleiben bei ihrer Komponente.
 - Schaltflächen immer über `Button`/`ButtonLink`, Formulare über `useForm` + `Form`, Meldungen über `ActionFeedback`. Keine eigenen `button`-Klassen oder Lade-Texte von Hand.
 - Context-Hooks nutzen `useRequiredContext`.
-- Keine Doppelungen: Was an mehr als einer Stelle gebraucht wird, liegt einmal in `components/`, `hooks/` oder `utils/` (featureübergreifend) bzw. im `utils/`-Ordner des Features. Formularfelder werden aus `FormField` und den darauf aufbauenden Feldern zusammengesetzt, Datumswerte nur über `utils/date.ts` geprüft und berechnet, Backend-Aufrufe nur über den API-Client aus `utils/api.ts`.
+- Keine Doppelungen: Was an mehr als einer Stelle gebraucht wird, liegt einmal in `components/`, `hooks/` oder `utils/` (featureübergreifend) bzw. im `utils/`-Ordner des Features. Formularfelder werden aus `FormField` und den darauf aufbauenden Feldern zusammengesetzt, Formularenden aus `FormActions`, Listen mit Leer-Hinweis aus `ItemList`, Antworten des Backends mit den Hilfen aus `utils/parse.ts` geprüft, Datumswerte nur über `utils/date.ts` geprüft und berechnet, Backend-Aufrufe nur über den API-Client aus `utils/api.ts`.
 - Farben für Hell- und Dunkelmodus stehen nur einmal in `variables.css` und nutzen `light-dark()`. Terminfarben werden ausschließlich über `--event-color` und `--event-text` gesetzt, egal ob Standard- oder eigene Farbe.
 
 ---

@@ -1,4 +1,5 @@
-import { asRecord, isOneOf } from './object.ts'
+import { isOneOf } from './object.ts'
+import { asRecord, parseList, textOrNull } from './parse.ts'
 
 export const HISTORY_ACTIONS = ['created', 'updated', 'moved', 'deleted', 'restored'] as const
 
@@ -34,12 +35,10 @@ export type HistoryEntry = {
 
 export type HistoryPage = { entries: HistoryEntry[]; hasMore: boolean }
 
-const optionalText = (value: unknown) => (typeof value === 'string' ? value : null)
-
 const parseChange = (value: unknown): HistoryChange | null => {
   const record = asRecord(value)
   if (!isOneOf(HISTORY_FIELDS, record.field)) return null
-  return { field: record.field, old: optionalText(record.old), new: optionalText(record.new) }
+  return { field: record.field, old: textOrNull(record.old), new: textOrNull(record.new) }
 }
 
 export const parseHistoryEntry = (value: unknown): HistoryEntry | null => {
@@ -51,19 +50,15 @@ export const parseHistoryEntry = (value: unknown): HistoryEntry | null => {
     id: record.id,
     action: record.action,
     changedAt: record.changedAt,
-    changedBy: typeof author.id === 'string' ? { id: author.id, name: optionalText(author.name) ?? '' } : null,
-    changes: (Array.isArray(record.changes) ? record.changes : [])
-      .map(parseChange)
-      .filter((change): change is HistoryChange => change !== null),
+    changedBy: typeof author.id === 'string' ? { id: author.id, name: textOrNull(author.name) ?? '' } : null,
+    changes: parseList(record.changes, parseChange),
   }
 }
 
 export const parseHistoryPage = (value: unknown): HistoryPage => {
   const record = asRecord(value)
   return {
-    entries: (Array.isArray(record.entries) ? record.entries : [])
-      .map(parseHistoryEntry)
-      .filter((entry): entry is HistoryEntry => entry !== null),
+    entries: parseList(record.entries, parseHistoryEntry),
     hasMore: record.hasMore === true,
   }
 }

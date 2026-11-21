@@ -8,6 +8,7 @@ import { useI18n } from '../../../../i18n/index.ts'
 import { DEFAULT_INVITATION_ROLE, INVITABLE_ROLES } from '../../constants/calendars.ts'
 import type { InvitableRole, Invitation } from '../../types/calendar.ts'
 import { validateInvitation } from '../../utils/draft.ts'
+import { ItemList } from '../../../../components/ItemList.tsx'
 
 type MembersStepProps = {
   invitations: readonly Invitation[]
@@ -61,27 +62,23 @@ export function MembersStep({ invitations, ownEmail, onChange }: MembersStepProp
       </div>
       <p className="formHint">{m.calendars.roleHint(roles[role], roleDescriptions[role])}</p>
 
-      {invitations.length === 0 ? (
-        <p className="emptyHint">{invite.nobodyYet}</p>
-      ) : (
-        <ul className="itemList">
-          {invitations.map((invitation) => (
-            <li key={invitation.email} className="itemRow">
-              <span className="itemRowMain">
-                <span className="itemRowTitle">{invitation.email}</span>
-                <span className="itemRowMeta">{roles[invitation.role]}</span>
-              </span>
-              <IconButton
-                label={invite.remove(invitation.email)}
-                plain
-                onClick={() => onChange(invitations.filter((entry) => entry.email !== invitation.email))}
-              >
-                ×
-              </IconButton>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ItemList items={invitations} empty={invite.nobodyYet}>
+        {(invitation) => (
+          <li key={invitation.email} className="itemRow">
+            <span className="itemRowMain">
+              <span className="itemRowTitle">{invitation.email}</span>
+              <span className="itemRowMeta">{roles[invitation.role]}</span>
+            </span>
+            <IconButton
+              label={invite.remove(invitation.email)}
+              plain
+              onClick={() => onChange(invitations.filter((entry) => entry.email !== invitation.email))}
+            >
+              ×
+            </IconButton>
+          </li>
+        )}
+      </ItemList>
     </>
   )
 }

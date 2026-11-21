@@ -1,0 +1,21 @@
+import type { Messages } from '../types.ts'
+
+export const inbox: Messages['inbox'] = {
+  open: 'Notificaciones',
+  openUnread: (count) => `Notificaciones, ${count} sin leer`,
+  title: 'Notificaciones',
+  empty: 'No hay notificaciones.',
+  markAllRead: 'Marcar todas como leídas',
+  remove: 'Eliminar notificación',
+  loadMore: 'Mostrar anteriores',
+  someone: 'Alguien',
+  kinds: {
+    teamInvitation: (actor, team) => `${actor} te ha invitado al calendario «${team}»`,
+    eventInvitation: (actor, title) => `${actor} te ha invitado a «${title}»`,
+    eventChanged: (actor, title) => `${actor} ha modificado «${title}»`,
+    eventCanceled: (actor, title) => `${actor} ha cancelado «${title}»`,
+    attendeeResponse: (actor, title) => `${actor} ha respondido a «${title}»`,
+    chatMessage: (actor, title) => `${actor} ha escrito sobre «${title}»`,
+    reminder: (title) => `Recordatorio: «${title}»`,
+  },
+}

@@ -10,6 +10,8 @@ export const common: Messages['common'] = {
   saved: 'Gespeichert.',
   delete: 'Löschen',
   deleting: 'Wird gelöscht …',
+  copy: 'Kopieren',
+  copied: 'Kopiert',
   backToCalendar: 'Zum Kalender',
   backToSettings: 'Zu den Einstellungen',
   settings: 'Einstellungen',

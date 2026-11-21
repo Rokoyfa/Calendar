@@ -7,6 +7,7 @@ import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { CATEGORY_NAME_MAX_LENGTH, MAX_CATEGORIES, normalizeCategoryName } from '../../../utils/category.ts'
 import { useCategories } from '../hooks/useCategories.ts'
+import { ItemList } from '../../../components/ItemList.tsx'
 
 type CategoriesSectionProps = {
   calendarId: string
@@ -45,54 +46,50 @@ export function CategoriesSection({ calendarId, canManage }: CategoriesSectionPr
 
   return (
     <PageSection title={text.title} description={text.description}>
-      {categories.length === 0 ? (
-        <p className="emptyHint">{text.empty}</p>
-      ) : (
-        <ul className="itemList">
-          {categories.map((category) => (
-            <li key={category.id} className="itemRow">
-              {editing?.id === category.id ? (
-                <form className="inlineForm" onSubmit={submitRename}>
-                  <input
-                    className="input"
-                    name="categoryName"
-                    aria-label={text.nameLabel}
-                    maxLength={CATEGORY_NAME_MAX_LENGTH}
-                    value={editing.name}
-                    onChange={(event) => setEditing({ id: category.id, name: event.target.value })}
-                    autoFocus
-                  />
-                  <Button type="submit" isPending={renaming.isPending}>
-                    {m.common.save}
-                  </Button>
-                  <Button variant="secondary" onClick={() => setEditing(null)}>
-                    {m.common.cancel}
-                  </Button>
-                </form>
-              ) : (
-                <>
-                  <span className="itemRowMain">{category.name}</span>
-                  {canManage && (
-                    <>
-                      <Button variant="outline" onClick={() => setEditing({ id: category.id, name: category.name })}>
-                        {text.rename}
-                      </Button>
-                      <IconButton
-                        label={text.remove(category.name)}
-                        plain
-                        disabled={removing.isPending}
-                        onClick={() => void removing.run(category.id)}
-                      >
-                        ×
-                      </IconButton>
-                    </>
-                  )}
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      <ItemList items={categories} empty={text.empty}>
+        {(category) => (
+          <li key={category.id} className="itemRow">
+            {editing?.id === category.id ? (
+              <form className="inlineForm" onSubmit={submitRename}>
+                <input
+                  className="input"
+                  name="categoryName"
+                  aria-label={text.nameLabel}
+                  maxLength={CATEGORY_NAME_MAX_LENGTH}
+                  value={editing.name}
+                  onChange={(event) => setEditing({ id: category.id, name: event.target.value })}
+                  autoFocus
+                />
+                <Button type="submit" isPending={renaming.isPending}>
+                  {m.common.save}
+                </Button>
+                <Button variant="secondary" onClick={() => setEditing(null)}>
+                  {m.common.cancel}
+                </Button>
+              </form>
+            ) : (
+              <>
+                <span className="itemRowMain">{category.name}</span>
+                {canManage && (
+                  <>
+                    <Button variant="outline" onClick={() => setEditing({ id: category.id, name: category.name })}>
+                      {text.rename}
+                    </Button>
+                    <IconButton
+                      label={text.remove(category.name)}
+                      plain
+                      disabled={removing.isPending}
+                      onClick={() => void removing.run(category.id)}
+                    >
+                      ×
+                    </IconButton>
+                  </>
+                )}
+              </>
+            )}
+          </li>
+        )}
+      </ItemList>
       {canManage && categories.length < MAX_CATEGORIES && (
         <form className="inlineForm" onSubmit={submitNew}>
           <input

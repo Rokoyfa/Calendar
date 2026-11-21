@@ -1,7 +1,7 @@
 import { encodePathSegment, type ApiClient } from '../../../utils/api.ts'
-import { AppError } from '../../../utils/appError.ts'
 import { parseAttachment, parseAttachments, type Attachment } from '../../../utils/attachment.ts'
 import type { AttachmentRepository } from '../types/storage.ts'
+import { requireValue } from '../../../utils/parse.ts'
 
 const TRANSFER_TIMEOUT_MS = 120_000
 
@@ -19,13 +19,13 @@ export class RemoteAttachmentRepository implements AttachmentRepository {
   async upload(eventId: string, file: File) {
     const form = new FormData()
     form.append('file', file, file.name)
-    const attachment = parseAttachment(
-      await this.#api.post<unknown>(`/events/${encodePathSegment(eventId)}/attachments`, form, {
-        timeoutMs: TRANSFER_TIMEOUT_MS,
-      }),
+    return requireValue(
+      parseAttachment(
+        await this.#api.post<unknown>(`/events/${encodePathSegment(eventId)}/attachments`, form, {
+          timeoutMs: TRANSFER_TIMEOUT_MS,
+        }),
+      ),
     )
-    if (!attachment) throw new AppError('unknown')
-    return attachment
   }
 
   download(attachment: Attachment) {

@@ -15,6 +15,7 @@ import {
 import { CurrentPasswordField } from '../AuthFields.tsx'
 import { RecoveryCodeList } from './RecoveryCodeList.tsx'
 import { TwoFactorCodeField } from './TwoFactorCodeField.tsx'
+import { FormActions } from '../../../../components/FormActions.tsx'
 
 type TwoFactorManageProps = {
   security: SecurityActions
@@ -77,11 +78,12 @@ export function TwoFactorManage({ security, state, onChanged }: TwoFactorManageP
           <Form onSubmit={renew.handleSubmit}>
             <CurrentPasswordField {...renew.bind('password')} />
             <ActionFeedback error={renew.error} />
-            <div className="formActions">
-              <Button type="submit" variant="outline" isPending={renew.isPending} pendingLabel={text.preparing}>
-                {text.renew}
-              </Button>
-            </div>
+            <FormActions
+              isPending={renew.isPending}
+              variant="outline"
+              submitLabel={text.renew}
+              pendingLabel={text.preparing}
+            />
           </Form>
         )}
       </PageSection>
@@ -93,11 +95,12 @@ export function TwoFactorManage({ security, state, onChanged }: TwoFactorManageP
             {useRecovery ? text.useCode : text.useRecovery}
           </button>
           <ActionFeedback error={disable.error} />
-          <div className="formActions">
-            <Button type="submit" variant="danger" isPending={disable.isPending} pendingLabel={text.checking}>
-              {text.disable}
-            </Button>
-          </div>
+          <FormActions
+            isPending={disable.isPending}
+            variant="danger"
+            submitLabel={text.disable}
+            pendingLabel={text.checking}
+          />
         </Form>
       </PageSection>
     </>

@@ -1,6 +1,7 @@
 import { DEFAULT_LANGUAGE, isBuiltInLanguage, type BuiltInLanguage, type Language } from '../locale.ts'
 import { en } from './en/index.ts'
 import type { Messages, PartialMessages } from './types.ts'
+import { isRecord } from '../../utils/parse.ts'
 
 export type { DeepPartial, MessageOverrides, Messages, PartialMessages } from './types.ts'
 
@@ -27,13 +28,10 @@ export async function loadMessages(language: Language): Promise<Messages> {
   return messages
 }
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
 const mergeDeep = (base: unknown, override: unknown): unknown => {
   if (override === undefined) return base
   if (base !== undefined && typeof base !== typeof override) return base
-  if (!isPlainObject(base) || !isPlainObject(override)) return override
+  if (!isRecord(base) || !isRecord(override)) return override
   const result: Record<string, unknown> = { ...base }
   for (const [key, value] of Object.entries(override)) result[key] = mergeDeep(base[key], value)
   return result

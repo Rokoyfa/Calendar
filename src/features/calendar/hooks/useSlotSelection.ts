@@ -1,6 +1,13 @@
 import { useState, type RefObject } from 'react'
 import type { HourSlot } from '../../../utils/event.ts'
-import { findSlotAt, getSlotFromTarget, isSameSlot, toSlotRange, type SlotRange, type SlotSelection } from '../utils/slotSelection.ts'
+import {
+  findSlotAt,
+  getSlotFromTarget,
+  isSameSlot,
+  toSlotRange,
+  type SlotRange,
+  type SlotSelection,
+} from '../utils/slotSelection.ts'
 import { usePressDrag } from './usePressDrag.ts'
 
 const DELAY = { mouse: 0, touch: 350 }

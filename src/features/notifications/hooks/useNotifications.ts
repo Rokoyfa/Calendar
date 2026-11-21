@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
 import type { AppNotification } from '../../../utils/notification.ts'
 import type { NotificationRepository } from '../../storage/index.ts'
+import { removeById } from '../../../utils/list.ts'
 
 type State = { notifications: AppNotification[]; unread: number; hasMore: boolean }
 
@@ -93,7 +94,7 @@ export function useNotifications(repository: NotificationRepository | undefined)
           const removed = current.notifications.find((entry) => entry.id === id)
           return {
             ...current,
-            notifications: current.notifications.filter((entry) => entry.id !== id),
+            notifications: removeById(current.notifications, id),
             unread: removed && !removed.readAt ? Math.max(0, current.unread - 1) : current.unread,
           }
         })

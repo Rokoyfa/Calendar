@@ -1,12 +1,9 @@
 import { useState } from 'react'
 import { Button } from '../../../components/Button.tsx'
-import { ConfirmModal } from '../../../components/ConfirmModal.tsx'
 import { Form } from '../../../components/Form.tsx'
-import { PageSection } from '../../../components/PageSection.tsx'
 import { PasswordField } from '../../../components/PasswordField.tsx'
 import { ActionFeedback, ErrorMessage } from '../../../components/StatusMessage.tsx'
-import { Switch } from '../../../components/Switch.tsx'
-import { TextField } from '../../../components/TextField.tsx'
+import { TextField, UrlField } from '../../../components/TextField.tsx'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useForm } from '../../../hooks/useForm.ts'
@@ -22,10 +19,14 @@ import {
   type CaldavAccount,
   type CaldavCalendar,
 } from '../../../utils/caldav.ts'
-import { getEventColorAttributes, type EventColor } from '../../../utils/event.ts'
+import { getEventColorAttributes } from '../../../utils/event.ts'
 import { formatTimestamp } from '../../../utils/timestamp.ts'
-import { ColorPicker } from '../../events/index.ts'
+import { NameColorForm } from '../../events/index.ts'
 import { useCaldav } from '../hooks/useCaldav.ts'
+import { ItemList } from '../../../components/ItemList.tsx'
+import { FormActions } from '../../../components/FormActions.tsx'
+import { AsyncSwitch } from '../../../components/AsyncSwitch.tsx'
+import { ManagedListSection } from '../../../components/ManagedListSection.tsx'
 
 type AddValues = { serverUrl: string; username: string; password: string; name: string }
 
@@ -38,15 +39,6 @@ function CaldavCalendarRow({ calendar }: { calendar: CaldavCalendar }) {
   const text = m.caldav.accounts
   const { updateCalendar } = useCaldav()
   const [isEditing, setIsEditing] = useState(false)
-  const toggle = useAsyncAction((shown: boolean) => updateCalendar(calendar.id, { shown }))
-  const edit = useForm<{ name: string; color: EventColor }>({
-    initialValues: { name: calendar.name, color: calendar.color },
-    validate: ({ name }) => (name.trim() ? {} : { name: text.nameRequired }),
-    onSubmit: async ({ name, color }) => {
-      await updateCalendar(calendar.id, { name: name.trim(), color })
-      setIsEditing(false)
-    },
-  })
 
   return (
     <li className="caldavCalendar">
@@ -55,33 +47,23 @@ function CaldavCalendarRow({ calendar }: { calendar: CaldavCalendar }) {
         <span className="itemRowTitle">{calendar.name}</span>
         {calendar.readOnly && <span className="badge">{text.readOnly}</span>}
       </div>
-      <Switch
+      <AsyncSwitch
         label={text.show}
         checked={calendar.shown}
-        disabled={toggle.isPending}
-        onChange={(shown) => void toggle.run(shown)}
+        onChange={(shown) => updateCalendar(calendar.id, { shown })}
       />
-      <ErrorMessage message={toggle.error} />
       {isEditing ? (
-        <Form onSubmit={edit.handleSubmit}>
-          <TextField
-            label={text.name}
-            name="name"
-            maxLength={CALDAV_NAME_MAX_LENGTH}
-            autoComplete="off"
-            {...edit.bind('name')}
-          />
-          <ColorPicker value={edit.values.color} onChange={(color) => edit.setField('color', color)} />
-          <ActionFeedback error={edit.error} />
-          <div className="formActions">
-            <Button variant="secondary" onClick={() => setIsEditing(false)}>
-              {m.common.cancel}
-            </Button>
-            <Button type="submit" isPending={edit.isPending} pendingLabel={m.common.saving}>
-              {m.common.save}
-            </Button>
-          </div>
-        </Form>
+        <NameColorForm
+          initialValues={{ name: calendar.name, color: calendar.color }}
+          nameLabel={text.name}
+          nameRequired={text.nameRequired}
+          maxLength={CALDAV_NAME_MAX_LENGTH}
+          onSubmit={async (values) => {
+            await updateCalendar(calendar.id, values)
+            setIsEditing(false)
+          }}
+          onCancel={() => setIsEditing(false)}
+        />
       ) : (
         <div className="formActions">
           <Button variant="outline" onClick={() => setIsEditing(true)}>
@@ -127,15 +109,9 @@ function CaldavAccountCard({ account, onRemove }: { account: CaldavAccount; onRe
         {syncError && <ErrorMessage message={m.errors[syncError]} />}
         <ErrorMessage message={syncNow.error} />
         <h3 className="formSubtitle">{text.calendars}</h3>
-        {account.calendars.length > 0 ? (
-          <ul className="caldavCalendarList">
-            {account.calendars.map((calendar) => (
-              <CaldavCalendarRow key={calendar.id} calendar={calendar} />
-            ))}
-          </ul>
-        ) : (
-          <p className="emptyHint">{text.noCalendars}</p>
-        )}
+        <ItemList items={account.calendars} empty={text.noCalendars} className="caldavCalendarList">
+          {(calendar) => <CaldavCalendarRow key={calendar.id} calendar={calendar} />}
+        </ItemList>
         {isEditing ? (
           <Form onSubmit={edit.handleSubmit}>
             <TextField
@@ -154,14 +130,7 @@ function CaldavAccountCard({ account, onRemove }: { account: CaldavAccount; onRe
             />
             <p className="formHint">{text.newPasswordHint}</p>
             <ActionFeedback error={edit.error} />
-            <div className="formActions">
-              <Button variant="secondary" onClick={() => setIsEditing(false)}>
-                {m.common.cancel}
-              </Button>
-              <Button type="submit" isPending={edit.isPending} pendingLabel={m.common.saving}>
-                {m.common.save}
-              </Button>
-            </div>
+            <FormActions isPending={edit.isPending} onCancel={() => setIsEditing(false)} />
           </Form>
         ) : (
           <div className="formActions">
@@ -190,7 +159,6 @@ export function CaldavAccountSettings() {
   const { m } = useI18n()
   const text = m.caldav.accounts
   const { isAvailable, accounts, error, create, remove } = useCaldav()
-  const [toRemove, setToRemove] = useState<CaldavAccount | null>(null)
   const add = useForm({
     initialValues: EMPTY,
     validate: ({ serverUrl, username, password }) => ({
@@ -210,31 +178,21 @@ export function CaldavAccountSettings() {
   })
 
   if (!isAvailable) return null
-  const canAdd = accounts.length < MAX_CALDAV_ACCOUNTS
 
   return (
-    <PageSection title={text.title} description={text.description}>
-      <ErrorMessage message={error} />
-      {accounts.length > 0 ? (
-        <ul className="calendarSettingList">
-          {accounts.map((account) => (
-            <CaldavAccountCard key={account.id} account={account} onRemove={() => setToRemove(account)} />
-          ))}
-        </ul>
-      ) : (
-        <p className="emptyHint">{text.empty}</p>
-      )}
-      {canAdd ? (
+    <ManagedListSection
+      texts={text}
+      items={accounts}
+      max={MAX_CALDAV_ACCOUNTS}
+      error={error}
+      onRemove={(item) => remove(item.id)}
+      addForm={
         <Form onSubmit={add.handleSubmit}>
           <h3 className="formSubtitle">{text.addTitle}</h3>
-          <TextField
+          <UrlField
             label={text.serverUrl}
             name="serverUrl"
-            type="url"
-            inputMode="url"
             autoComplete="url"
-            spellCheck={false}
-            placeholder="https://"
             maxLength={CALDAV_URL_MAX_LENGTH}
             {...add.bind('serverUrl')}
           />
@@ -264,29 +222,11 @@ export function CaldavAccountSettings() {
             {...add.bind('name')}
           />
           <ActionFeedback error={add.error} success={add.isSuccess && text.added} />
-          <div className="formActions">
-            <Button type="submit" isPending={add.isPending} pendingLabel={text.adding}>
-              {text.add}
-            </Button>
-          </div>
+          <FormActions isPending={add.isPending} submitLabel={text.add} pendingLabel={text.adding} />
         </Form>
-      ) : (
-        <p className="formHint">{text.limitReached(MAX_CALDAV_ACCOUNTS)}</p>
-      )}
-      {toRemove && (
-        <ConfirmModal
-          title={text.removeTitle}
-          confirmLabel={text.remove}
-          pendingLabel={text.removing}
-          onConfirm={async () => {
-            await remove(toRemove.id)
-            setToRemove(null)
-          }}
-          onClose={() => setToRemove(null)}
-        >
-          {text.removeMessage(toRemove.name)}
-        </ConfirmModal>
-      )}
-    </PageSection>
+      }
+    >
+      {(item, askRemove) => <CaldavAccountCard key={item.id} account={item} onRemove={askRemove} />}
+    </ManagedListSection>
   )
 }

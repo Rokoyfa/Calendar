@@ -24,6 +24,7 @@ import {
   type Recurrence,
   type RecurrenceValidationErrors,
 } from './recurrence.ts'
+import { asRecord, isRecord, parseList, textOrEmpty } from './parse.ts'
 
 export const PRESET_EVENT_COLORS = ['blue', 'red', 'green', 'yellow'] as const
 
@@ -147,8 +148,8 @@ const parseReminders = (value: unknown) =>
   Array.isArray(value) ? [...new Set(value.filter(isReminder))].sort((a, b) => a - b).slice(0, MAX_REMINDERS) : []
 
 const parseAttendee = (value: unknown): Attendee | null => {
-  if (typeof value !== 'object' || value === null) return null
-  const { email, name, status } = value as Record<string, unknown>
+  if (!isRecord(value)) return null
+  const { email, name, status } = value
   if (typeof email !== 'string' || email === '') return null
   return {
     email: email.toLowerCase(),
@@ -157,13 +158,7 @@ const parseAttendee = (value: unknown): Attendee | null => {
   }
 }
 
-const parseAttendees = (value: unknown) =>
-  Array.isArray(value)
-    ? value
-        .map(parseAttendee)
-        .filter((attendee): attendee is Attendee => attendee !== null)
-        .slice(0, MAX_ATTENDEES)
-    : []
+const parseAttendees = (value: unknown) => parseList(value, parseAttendee).slice(0, MAX_ATTENDEES)
 
 const URL_SCHEME = /^[a-z][a-z\d+.-]*:/i
 
@@ -188,8 +183,8 @@ const parseLinks = (value: unknown): EventLink[] =>
   Array.isArray(value)
     ? value
         .flatMap((entry) => {
-          if (typeof entry !== 'object' || entry === null) return []
-          const { url, label } = entry as Record<string, unknown>
+          if (!isRecord(entry)) return []
+          const { url, label } = entry
           if (typeof url !== 'string' || url.length > EVENT_LINK_URL_MAX_LENGTH || !isWebUrl(url)) return []
           return [{ url, label: typeof label === 'string' ? label.slice(0, EVENT_LINK_LABEL_MAX_LENGTH) : '' }]
         })
@@ -217,15 +212,14 @@ export type EventResponse = Pick<
 > & { recurring: boolean; status: AttendeeStatus }
 
 export const parseEventResponse = (value: unknown): EventResponse => {
-  const record = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>
-  const text = (field: unknown) => (typeof field === 'string' ? field : '')
+  const record = asRecord(value)
   const allDay = record.allDay === true
   return {
-    title: text(record.title),
-    location: text(record.location),
-    startDate: text(record.startDate),
+    title: textOrEmpty(record.title),
+    location: textOrEmpty(record.location),
+    startDate: textOrEmpty(record.startDate),
     start: isTime(record.start) ? record.start : ALL_DAY_TIME,
-    endDate: isISODate(record.endDate) ? record.endDate : text(record.startDate),
+    endDate: isISODate(record.endDate) ? record.endDate : textOrEmpty(record.startDate),
     end: isTime(record.end) ? record.end : ALL_DAY_TIME,
     allDay,
     timeZone: !allDay && isTimeZone(record.timeZone) ? record.timeZone : null,

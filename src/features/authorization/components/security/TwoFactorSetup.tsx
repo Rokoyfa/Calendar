@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Button } from '../../../../components/Button.tsx'
 import { Form } from '../../../../components/Form.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
@@ -11,6 +10,7 @@ import { CurrentPasswordField } from '../AuthFields.tsx'
 import { QrCode } from './QrCode.tsx'
 import { RecoveryCodeList } from './RecoveryCodeList.tsx'
 import { TwoFactorCodeField } from './TwoFactorCodeField.tsx'
+import { FormActions } from '../../../../components/FormActions.tsx'
 
 type TwoFactorSetupProps = {
   security: SecurityActions
@@ -43,11 +43,7 @@ export function TwoFactorSetup({ security, onEnabled }: TwoFactorSetupProps) {
         <RecoveryCodeList codes={recoveryCodes} />
         <Form onSubmit={finish.handleSubmit}>
           <ActionFeedback error={finish.error} />
-          <div className="formActions">
-            <Button type="submit" isPending={finish.isPending}>
-              {text.done}
-            </Button>
-          </div>
+          <FormActions isPending={finish.isPending} submitLabel={text.done} />
         </Form>
       </PageSection>
     )
@@ -65,14 +61,12 @@ export function TwoFactorSetup({ security, onEnabled }: TwoFactorSetupProps) {
         <Form onSubmit={confirm.handleSubmit}>
           <TwoFactorCodeField {...confirm.bind('code')} autoFocus />
           <ActionFeedback error={confirm.error} />
-          <div className="formActions">
-            <Button variant="secondary" onClick={() => setSetup(null)}>
-              {m.common.cancel}
-            </Button>
-            <Button type="submit" isPending={confirm.isPending} pendingLabel={text.checking}>
-              {text.enable}
-            </Button>
-          </div>
+          <FormActions
+            isPending={confirm.isPending}
+            onCancel={() => setSetup(null)}
+            submitLabel={text.enable}
+            pendingLabel={text.checking}
+          />
         </Form>
       </PageSection>
     )
@@ -82,11 +76,7 @@ export function TwoFactorSetup({ security, onEnabled }: TwoFactorSetupProps) {
       <Form onSubmit={start.handleSubmit}>
         <CurrentPasswordField {...start.bind('password')} autoFocus />
         <ActionFeedback error={start.error} />
-        <div className="formActions">
-          <Button type="submit" isPending={start.isPending} pendingLabel={text.preparing}>
-            {text.start}
-          </Button>
-        </div>
+        <FormActions isPending={start.isPending} submitLabel={text.start} pendingLabel={text.preparing} />
       </Form>
     </PageSection>
   )

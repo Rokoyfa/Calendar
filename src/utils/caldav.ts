@@ -1,6 +1,6 @@
 import { addDaysToISODate } from './date.ts'
 import { isEventColor, type CalendarEvent, type EventColor } from './event.ts'
-import { asRecord } from './object.ts'
+import { asRecord, parseList, textOrNull } from './parse.ts'
 
 export const CALDAV_CALENDAR_PREFIX = 'caldav:'
 export const MAX_CALDAV_ACCOUNTS = 5
@@ -44,37 +44,34 @@ export type CaldavCalendarChanges = Partial<Pick<CaldavCalendar, 'name' | 'color
 
 export type CaldavObject = { id: string; etag: string; data: string }
 
-const text = (value: unknown) => (typeof value === 'string' ? value : null)
-
 export const parseAppPassword = (value: unknown): AppPassword | null => {
   const record = asRecord(value)
-  const id = text(record.id)
-  const name = text(record.name)
-  const createdAt = text(record.createdAt)
+  const id = textOrNull(record.id)
+  const name = textOrNull(record.name)
+  const createdAt = textOrNull(record.createdAt)
   if (!id || name === null || !createdAt) return null
-  return { id, name, createdAt, lastUsedAt: text(record.lastUsedAt) }
+  return { id, name, createdAt, lastUsedAt: textOrNull(record.lastUsedAt) }
 }
 
-export const parseAppPasswords = (value: unknown) =>
-  (Array.isArray(value) ? value : []).map(parseAppPassword).filter((entry): entry is AppPassword => entry !== null)
+export const parseAppPasswords = (value: unknown) => parseList(value, parseAppPassword)
 
 export const parseCreatedAppPassword = (value: unknown): CreatedAppPassword | null => {
   const entry = parseAppPassword(value)
-  const password = text(asRecord(value).password)
+  const password = textOrNull(asRecord(value).password)
   return entry && password ? { ...entry, password } : null
 }
 
 export const parseCaldavAccess = (value: unknown): CaldavAccess | null => {
   const record = asRecord(value)
-  const serverUrl = text(record.serverUrl)
-  const username = text(record.username)
+  const serverUrl = textOrNull(record.serverUrl)
+  const username = textOrNull(record.username)
   return serverUrl && username ? { serverUrl, username } : null
 }
 
 export const parseCaldavCalendar = (value: unknown): CaldavCalendar | null => {
   const record = asRecord(value)
-  const id = text(record.id)
-  const name = text(record.name)
+  const id = textOrNull(record.id)
+  const name = textOrNull(record.name)
   if (!id || name === null) return null
   return {
     id,
@@ -83,42 +80,37 @@ export const parseCaldavCalendar = (value: unknown): CaldavCalendar | null => {
     shown: record.shown !== false,
     readOnly: record.readOnly === true,
     position: typeof record.position === 'number' ? record.position : 0,
-    syncedAt: text(record.syncedAt),
+    syncedAt: textOrNull(record.syncedAt),
   }
 }
 
 export const parseCaldavAccount = (value: unknown): CaldavAccount | null => {
   const record = asRecord(value)
-  const id = text(record.id)
-  const name = text(record.name)
+  const id = textOrNull(record.id)
+  const name = textOrNull(record.name)
   if (!id || name === null) return null
   return {
     id,
     name,
-    serverHost: text(record.serverHost) ?? '',
-    username: text(record.username) ?? '',
-    syncedAt: text(record.syncedAt),
-    syncError: text(record.syncError),
-    calendars: (Array.isArray(record.calendars) ? record.calendars : [])
-      .map(parseCaldavCalendar)
-      .filter((calendar): calendar is CaldavCalendar => calendar !== null)
-      .sort((a, b) => a.position - b.position),
+    serverHost: textOrNull(record.serverHost) ?? '',
+    username: textOrNull(record.username) ?? '',
+    syncedAt: textOrNull(record.syncedAt),
+    syncError: textOrNull(record.syncError),
+    calendars: parseList(record.calendars, parseCaldavCalendar).sort((a, b) => a.position - b.position),
   }
 }
 
-export const parseCaldavAccounts = (value: unknown) =>
-  (Array.isArray(value) ? value : []).map(parseCaldavAccount).filter((entry): entry is CaldavAccount => entry !== null)
+export const parseCaldavAccounts = (value: unknown) => parseList(value, parseCaldavAccount)
 
 export const parseCaldavObject = (value: unknown): CaldavObject | null => {
   const record = asRecord(value)
-  const id = text(record.id)
-  const etag = text(record.etag)
-  const data = text(record.data)
+  const id = textOrNull(record.id)
+  const etag = textOrNull(record.etag)
+  const data = textOrNull(record.data)
   return id && etag && data !== null ? { id, etag, data } : null
 }
 
-export const parseCaldavObjects = (value: unknown) =>
-  (Array.isArray(value) ? value : []).map(parseCaldavObject).filter((entry): entry is CaldavObject => entry !== null)
+export const parseCaldavObjects = (value: unknown) => parseList(value, parseCaldavObject)
 
 export const isServerUrl = (value: string) => {
   const trimmed = value.trim()

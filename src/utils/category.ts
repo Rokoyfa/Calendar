@@ -1,3 +1,4 @@
+import { parseList, textOrEmpty } from './parse.ts'
 export const CATEGORY_NAME_MAX_LENGTH = 40
 export const MAX_CATEGORIES = 30
 export const MAX_EVENT_CATEGORIES = 5
@@ -8,17 +9,16 @@ export const UNCATEGORIZED = ''
 
 export type CategoryFilter = ReadonlySet<string> | null
 
-const text = (value: unknown) => (typeof value === 'string' ? value : '')
-
 export const parseCategory = (value: unknown): Category | null => {
   if (typeof value !== 'object' || value === null) return null
   const { id, calendarId, name } = value as Record<string, unknown>
-  const trimmed = text(name).trim().slice(0, CATEGORY_NAME_MAX_LENGTH)
-  return text(id) && text(calendarId) && trimmed ? { id: text(id), calendarId: text(calendarId), name: trimmed } : null
+  const trimmed = textOrEmpty(name).trim().slice(0, CATEGORY_NAME_MAX_LENGTH)
+  return textOrEmpty(id) && textOrEmpty(calendarId) && trimmed
+    ? { id: textOrEmpty(id), calendarId: textOrEmpty(calendarId), name: trimmed }
+    : null
 }
 
-export const parseCategories = (value: unknown): Category[] =>
-  Array.isArray(value) ? value.flatMap((entry) => parseCategory(entry) ?? []) : []
+export const parseCategories = (value: unknown): Category[] => parseList(value, parseCategory)
 
 export const parseCategoryIds = (value: unknown): string[] =>
   Array.isArray(value)

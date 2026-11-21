@@ -1,5 +1,4 @@
 import { encodePathSegment, type ApiClient } from '../../../utils/api.ts'
-import { AppError } from '../../../utils/appError.ts'
 import {
   parseCaldavAccount,
   parseCaldavAccounts,
@@ -11,14 +10,10 @@ import {
   type CaldavCalendarChanges,
 } from '../../../utils/caldav.ts'
 import type { CaldavRepository } from '../types/storage.ts'
+import { requireValue } from '../../../utils/parse.ts'
 
 const ACCOUNTS = '/caldav-accounts'
 const CALENDARS = '/caldav-calendars'
-
-const required = <T>(value: T | null) => {
-  if (value === null) throw new AppError('unknown')
-  return value
-}
 
 export class RemoteCaldavRepository implements CaldavRepository {
   readonly #api: ApiClient
@@ -36,11 +31,11 @@ export class RemoteCaldavRepository implements CaldavRepository {
   }
 
   async create(input: CaldavAccountInput) {
-    return required(parseCaldavAccount(await this.#api.post<unknown>(ACCOUNTS, input)))
+    return requireValue(parseCaldavAccount(await this.#api.post<unknown>(ACCOUNTS, input)))
   }
 
   async update(id: string, changes: CaldavAccountChanges) {
-    return required(parseCaldavAccount(await this.#api.patch<unknown>(this.#account(id), changes)))
+    return requireValue(parseCaldavAccount(await this.#api.patch<unknown>(this.#account(id), changes)))
   }
 
   remove(id: string) {
@@ -48,11 +43,11 @@ export class RemoteCaldavRepository implements CaldavRepository {
   }
 
   async sync(id: string) {
-    return required(parseCaldavAccount(await this.#api.post<unknown>(`${this.#account(id)}/sync`)))
+    return requireValue(parseCaldavAccount(await this.#api.post<unknown>(`${this.#account(id)}/sync`)))
   }
 
   async updateCalendar(id: string, changes: CaldavCalendarChanges) {
-    return required(
+    return requireValue(
       parseCaldavCalendar(await this.#api.patch<unknown>(`${CALENDARS}/${encodePathSegment(id)}`, changes)),
     )
   }
@@ -62,11 +57,11 @@ export class RemoteCaldavRepository implements CaldavRepository {
   }
 
   async createObject(calendarId: string, data: string) {
-    return required(parseCaldavObject(await this.#api.post<unknown>(this.#objects(calendarId), { data })))
+    return requireValue(parseCaldavObject(await this.#api.post<unknown>(this.#objects(calendarId), { data })))
   }
 
   async updateObject(calendarId: string, objectId: string, data: string, etag: string) {
-    return required(
+    return requireValue(
       parseCaldavObject(
         await this.#api.put<unknown>(
           `${this.#objects(calendarId)}/${encodePathSegment(objectId)}`,

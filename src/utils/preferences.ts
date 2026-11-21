@@ -1,8 +1,9 @@
 import { AUTO_LOCALE, canonicalizeLocale } from '../i18n/locale.ts'
 import { isCalendarView, type CalendarView } from './calendarView.ts'
-import { asRecord, isOneOf } from './object.ts'
+import { isOneOf } from './object.ts'
 import { HOLIDAYS_AUTO, isHolidaySetting } from './holidays.ts'
 import { isTimeZone } from './timeZone.ts'
+import { asRecord } from './parse.ts'
 
 export const THEMES = ['system', 'light', 'dark'] as const
 

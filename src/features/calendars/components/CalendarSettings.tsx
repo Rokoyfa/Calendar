@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Button, ButtonLink } from '../../../components/Button.tsx'
 import { Link } from 'react-router'
 import { calendarSettingsPath, ROUTES } from '../../../config/routes.ts'
@@ -14,6 +13,7 @@ import { ShowInPersonalSwitch } from './ShowInPersonalSwitch.tsx'
 import { canLeaveCalendar, getCalendarKindLabel, isPersonalCalendar } from '../utils/permissions.ts'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { useAuth } from '../../authorization/index.ts'
+import { useConfirm } from '../../../hooks/useConfirm.ts'
 
 function LeaveCalendarModal({ calendar, onClose }: { calendar: CalendarSummary; onClose: () => void }) {
   const { m } = useI18n()
@@ -23,10 +23,7 @@ function LeaveCalendarModal({ calendar, onClose }: { calendar: CalendarSummary; 
       title={m.calendars.leave.title}
       confirmLabel={m.calendars.leave.confirm}
       pendingLabel={m.calendars.leave.pending}
-      onConfirm={async () => {
-        await leaveCalendar(calendar.id)
-        onClose()
-      }}
+      onConfirm={() => leaveCalendar(calendar.id)}
       onClose={onClose}
     >
       {m.calendars.leave.message(calendar.teamName ?? calendar.name)}
@@ -84,28 +81,23 @@ export function CalendarSettings() {
   const { calendars, error } = useCalendars()
   const { user } = useAuth()
   const canUseTeams = teams && user !== null
-  const [calendarToLeave, setCalendarToLeave] = useState<CalendarSummary | null>(null)
+  const leaving = useConfirm<CalendarSummary>()
 
   return (
-    <PageSection
-      title={list.title}
-      description={list.description}
-    >
+    <PageSection title={list.title} description={list.description}>
       <ErrorMessage message={error} />
       <ul className="calendarSettingList">
         {calendars.map((calendar) => (
-          <CalendarRow key={calendar.id} calendar={calendar} onLeave={() => setCalendarToLeave(calendar)} />
+          <CalendarRow key={calendar.id} calendar={calendar} onLeave={() => leaving.ask(calendar)} />
         ))}
       </ul>
-      {canUseTeams && calendars.every(isPersonalCalendar) && (
-        <p className="emptyHint">{list.noTeamCalendars}</p>
-      )}
+      {canUseTeams && calendars.every(isPersonalCalendar) && <p className="emptyHint">{list.noTeamCalendars}</p>}
       {canUseTeams && (
         <div className="formActions">
           <ButtonLink to={ROUTES.createCalendar}>{list.create}</ButtonLink>
         </div>
       )}
-      {calendarToLeave && <LeaveCalendarModal calendar={calendarToLeave} onClose={() => setCalendarToLeave(null)} />}
+      {leaving.target && <LeaveCalendarModal calendar={leaving.target} onClose={leaving.close} />}
     </PageSection>
   )
 }

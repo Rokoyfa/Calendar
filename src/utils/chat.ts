@@ -1,4 +1,5 @@
 import type { EventOccurrence } from './event.ts'
+import { asRecord, parseList, textOrEmpty } from './parse.ts'
 
 export const CHAT_MESSAGE_MAX_LENGTH = 2000
 
@@ -33,13 +34,8 @@ export const getChatId = ({ eventId, occurrenceDate }: ChatKey) => `${eventId}|$
 
 export const isSameChat = (a: ChatKey, b: ChatKey) => getChatId(a) === getChatId(b)
 
-const asRecord = (value: unknown) =>
-  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {}
-
-const text = (value: unknown) => (typeof value === 'string' ? value : '')
-
 const parseKey = (record: Record<string, unknown>): ChatKey => ({
-  eventId: text(record.eventId),
+  eventId: textOrEmpty(record.eventId),
   occurrenceDate: typeof record.occurrenceDate === 'string' && record.occurrenceDate ? record.occurrenceDate : null,
 })
 
@@ -51,22 +47,17 @@ export const parseChatMessage = (value: unknown): ChatMessage | null => {
   return {
     ...parseKey(record),
     id: record.id,
-    calendarId: text(record.calendarId),
-    author: typeof author.id === 'string' ? { id: author.id, name: text(author.name) } : null,
+    calendarId: textOrEmpty(record.calendarId),
+    author: typeof author.id === 'string' ? { id: author.id, name: textOrEmpty(author.name) } : null,
     text: record.text,
     createdAt: record.createdAt,
     editedAt: typeof record.editedAt === 'string' ? record.editedAt : null,
   }
 }
 
-const parseMessages = (value: unknown) =>
-  (Array.isArray(value) ? value : [])
-    .map(parseChatMessage)
-    .filter((message): message is ChatMessage => message !== null)
-
 export const parseChatPage = (value: unknown): ChatPage => {
   const record = asRecord(value)
-  return { messages: parseMessages(record.messages), hasMore: record.hasMore === true }
+  return { messages: parseList(record.messages, parseChatMessage), hasMore: record.hasMore === true }
 }
 
 export const parseChatUnread = (value: unknown): ChatUnread[] =>
@@ -82,7 +73,7 @@ export const parseChatEvent = (value: unknown): ChatEvent | null => {
     return message && { type: record.type, message }
   }
   if (record.type === 'message.deleted' && typeof record.id === 'string')
-    return { type: 'message.deleted', id: record.id, calendarId: text(record.calendarId), ...parseKey(record) }
+    return { type: 'message.deleted', id: record.id, calendarId: textOrEmpty(record.calendarId), ...parseKey(record) }
   return null
 }
 

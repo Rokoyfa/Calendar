@@ -1,5 +1,5 @@
 import { isEventColor, type CalendarEvent, type EventColor } from './event.ts'
-import { asRecord } from './object.ts'
+import { asRecord, parseList } from './parse.ts'
 
 export const EXTERNAL_CALENDAR_PREFIX = 'external:'
 export const MAX_EXTERNAL_CALENDARS = 10
@@ -37,10 +37,7 @@ export const parseExternalCalendar = (value: unknown): ExternalCalendar | null =
 }
 
 export const parseExternalCalendars = (value: unknown) =>
-  (Array.isArray(value) ? value : [])
-    .map(parseExternalCalendar)
-    .filter((calendar): calendar is ExternalCalendar => calendar !== null)
-    .sort((a, b) => a.position - b.position)
+  parseList(value, parseExternalCalendar).sort((a, b) => a.position - b.position)
 
 export const externalCalendarId = (id: string) => `${EXTERNAL_CALENDAR_PREFIX}${id}`
 

@@ -4,6 +4,7 @@ import { Modal } from '../../../../components/Modal.tsx'
 import { TextField } from '../../../../components/TextField.tsx'
 import { useI18n } from '../../../../i18n/index.ts'
 import type { TeamMember } from '../../types/calendar.ts'
+import { ItemList } from '../../../../components/ItemList.tsx'
 
 type TransferOwnershipModalProps = {
   candidates: readonly TeamMember[]
@@ -35,30 +36,32 @@ export function TransferOwnershipModal({ candidates, onSelect, onClose }: Transf
           onChange={setQuery}
           data-autofocus
         />
-        {results.length === 0 ? (
-          <p className="emptyHint">{transfer.noResults}</p>
-        ) : (
-          <ul className="memberPicker" role="radiogroup" aria-label={transfer.newOwner}>
-            {results.map((member) => (
-              <li key={member.userId}>
-                <label className="memberOption">
-                  <input
-                    type="radio"
-                    name="newOwner"
-                    value={member.userId}
-                    checked={member.userId === selectedId}
-                    onChange={() => setSelectedId(member.userId)}
-                  />
-                  <span className="itemRowMain">
-                    <span className="itemRowTitle">{member.name}</span>
-                    <span className="itemRowMeta">{member.email}</span>
-                  </span>
-                  <span className="badge">{roles[member.role]}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
+        <ItemList
+          items={results}
+          empty={transfer.noResults}
+          className="memberPicker"
+          role="radiogroup"
+          aria-label={transfer.newOwner}
+        >
+          {(member) => (
+            <li key={member.userId}>
+              <label className="memberOption">
+                <input
+                  type="radio"
+                  name="newOwner"
+                  value={member.userId}
+                  checked={member.userId === selectedId}
+                  onChange={() => setSelectedId(member.userId)}
+                />
+                <span className="itemRowMain">
+                  <span className="itemRowTitle">{member.name}</span>
+                  <span className="itemRowMeta">{member.email}</span>
+                </span>
+                <span className="badge">{roles[member.role]}</span>
+              </label>
+            </li>
+          )}
+        </ItemList>
         <div className="formActions">
           <Button variant="secondary" onClick={onClose}>
             {m.common.cancel}

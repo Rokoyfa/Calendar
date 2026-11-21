@@ -1,3 +1,4 @@
+import { isRecord } from '../../../utils/parse.ts'
 const RETRY_MIN_MS = 1000
 const RETRY_MAX_MS = 30_000
 const PING_INTERVAL_MS = 25_000
@@ -6,8 +7,7 @@ const MAX_FAILED_STARTS = 5
 export type LiveMessage = Record<string, unknown> & { type: string }
 type Listener = (message: LiveMessage) => void
 
-const isMessage = (value: unknown): value is LiveMessage =>
-  typeof value === 'object' && value !== null && typeof (value as { type?: unknown }).type === 'string'
+const isMessage = (value: unknown): value is LiveMessage => isRecord(value) && typeof value.type === 'string'
 
 export class LiveSocket {
   readonly #url: string

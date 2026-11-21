@@ -1,24 +1,19 @@
 import { encodePathSegment, type ApiClient, type QueryParams } from '../../../utils/api.ts'
-import { AppError } from '../../../utils/appError.ts'
-import { parseCalendarEvent, type AttendeeStatus, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
+import { parseCalendarEvent, type AttendeeStatus, type EventInput } from '../../../utils/event.ts'
 import type { EventQuery, EventRepository, EventSearchQuery } from '../types/storage.ts'
 import { parseTrashedEvents } from '../../../utils/trash.ts'
 import { parseEventChange, type EventChange } from '../../../utils/eventChange.ts'
 import type { LiveSocket } from '../utils/liveSocket.ts'
+import { parseList, requireValue } from '../../../utils/parse.ts'
 
 const EVENTS_PATH = '/events'
 
 const ifMatch = (version: number | undefined): HeadersInit | undefined =>
   version === undefined || version < 1 ? undefined : { 'If-Match': `"${version}"` }
 
-const parseEvents = (values: unknown[]) =>
-  values.map(parseCalendarEvent).filter((event): event is CalendarEvent => event !== null)
+const parseEvents = (values: unknown) => parseList(values, parseCalendarEvent)
 
-const parseEvent = (value: unknown) => {
-  const event = parseCalendarEvent(value)
-  if (!event) throw new AppError('unknown')
-  return event
-}
+const parseEvent = (value: unknown) => requireValue(parseCalendarEvent(value))
 
 export class RemoteEventRepository implements EventRepository {
   readonly #api: ApiClient

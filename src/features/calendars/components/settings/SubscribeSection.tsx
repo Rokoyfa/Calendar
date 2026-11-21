@@ -1,19 +1,11 @@
-import { useCallback, useState } from 'react'
-import { Button } from '../../../../components/Button.tsx'
-import { PageSection } from '../../../../components/PageSection.tsx'
-import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
-import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
-import { useAsyncResource } from '../../../../hooks/useAsyncResource.ts'
+import { useMemo } from 'react'
 import { useI18n } from '../../../../i18n/index.ts'
-import { isApiError } from '../../../../utils/apiError.ts'
 import { useCalendars } from '../../hooks/useCalendars.ts'
+import { useSecretLink, type SecretLinkOperations } from '../../hooks/useSecretLink.ts'
 import type { CalendarRepository, CalendarSummary } from '../../types/calendar.ts'
+import { SecretLinkSection } from './SecretLinkSection.tsx'
 
 type FeedRepository = Required<Pick<CalendarRepository, 'getFeed' | 'createFeed' | 'deleteFeed'>>
-
-type FeedState = { supported: boolean; url: string | null }
-
-const UNKNOWN: FeedState = { supported: false, url: null }
 
 const toWebcal = (url: string) => url.replace(/^https?:/, 'webcal:')
 
@@ -28,75 +20,29 @@ export function SubscribeSection({ calendar }: { calendar: CalendarSummary }) {
 function FeedSection({ calendar, repository }: { calendar: CalendarSummary; repository: FeedRepository }) {
   const { m } = useI18n()
   const { feed } = m.calendars
-  const [current, setCurrent] = useState<FeedState | null>(null)
-  const [copied, setCopied] = useState(false)
-
-  const load = useCallback(
-    () =>
-      repository
-        .getFeed(calendar.id)
-        .then((url): FeedState => ({ supported: true, url }))
-        .catch((error: unknown) => {
-          if (isApiError(error) && error.isNotFound) return UNKNOWN
-          throw error
-        }),
-    [repository, calendar.id],
+  const operations = useMemo<SecretLinkOperations>(
+    () => ({
+      get: (id) => repository.getFeed(id),
+      create: (id) => repository.createFeed(id),
+      remove: (id) => repository.deleteFeed(id),
+    }),
+    [repository],
   )
-  const { data: loaded, error: loadError, isLoading } = useAsyncResource(load, UNKNOWN)
-  const state = current ?? loaded
-
-  const create = useAsyncAction(async () => {
-    setCopied(false)
-    setCurrent({ supported: true, url: await repository.createFeed(calendar.id) })
-  })
-  const remove = useAsyncAction(async () => {
-    setCopied(false)
-    await repository.deleteFeed(calendar.id)
-    setCurrent({ supported: true, url: null })
-  })
-
-  const copy = async () => {
-    if (!state.url) return
-    await navigator.clipboard.writeText(state.url)
-    setCopied(true)
-  }
-
-  if (isLoading || !state.supported) return null
+  const link = useSecretLink(calendar.id, operations)
+  const url = link.value
 
   return (
-    <PageSection title={feed.title} description={feed.description}>
-      {state.url ? (
-        <>
-          <label className="field">
-            <span className="descriptor">{feed.label}</span>
-            <input className="input feedUrl" readOnly value={state.url} onFocus={(event) => event.target.select()} />
-          </label>
-          <div className="buttonRow">
-            <Button variant="outline" onClick={() => void copy()}>
-              {copied ? feed.copied : feed.copy}
-            </Button>
-            <a className="button button--outline" href={toWebcal(state.url)}>
-              {feed.openApp}
-            </a>
-          </div>
-          <p className="formHint">{feed.warning}</p>
-          <div className="buttonRow">
-            <Button variant="outline" isPending={create.isPending} onClick={() => void create.run()}>
-              {feed.renew}
-            </Button>
-            <Button variant="danger" isPending={remove.isPending} onClick={() => void remove.run()}>
-              {feed.remove}
-            </Button>
-          </div>
-        </>
-      ) : (
-        <div className="buttonRow">
-          <Button isPending={create.isPending} onClick={() => void create.run()}>
-            {feed.create}
-          </Button>
-        </div>
-      )}
-      <ActionFeedback error={loadError ?? create.error ?? remove.error} />
-    </PageSection>
+    <SecretLinkSection
+      texts={feed}
+      link={link}
+      field={url ? { label: feed.label, value: url } : null}
+      openAction={
+        url && (
+          <a className="button button--outline" href={toWebcal(url)}>
+            {feed.openApp}
+          </a>
+        )
+      }
+    />
   )
 }

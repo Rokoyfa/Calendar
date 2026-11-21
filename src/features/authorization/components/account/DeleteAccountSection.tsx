@@ -10,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth.ts'
 import type { AccountDeletionInput } from '../../types/auth.ts'
 import { validateAccountDeletion } from '../../utils/validation.ts'
 import { CurrentPasswordField } from '../AuthFields.tsx'
+import { FormActions } from '../../../../components/FormActions.tsx'
 
 const EMPTY_DELETION: AccountDeletionInput = { password: '' }
 
@@ -30,20 +31,15 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
           <strong>{m.auth.account.deleteWarningStrong}</strong>
           {m.auth.account.deleteWarningAfter}
         </p>
-        <CurrentPasswordField
-          label={m.auth.account.deletePassword}
-          {...bind('password')}
-          data-autofocus
-        />
+        <CurrentPasswordField label={m.auth.account.deletePassword} {...bind('password')} data-autofocus />
         <ActionFeedback error={error} />
-        <div className="formActions">
-          <Button variant="secondary" onClick={onClose}>
-            {m.common.cancel}
-          </Button>
-          <Button type="submit" variant="danger" isPending={isPending} pendingLabel={m.auth.account.deletePending}>
-            {m.auth.account.deleteSubmit}
-          </Button>
-        </div>
+        <FormActions
+          isPending={isPending}
+          onCancel={onClose}
+          variant="danger"
+          submitLabel={m.auth.account.deleteSubmit}
+          pendingLabel={m.auth.account.deletePending}
+        />
       </Form>
     </Modal>
   )

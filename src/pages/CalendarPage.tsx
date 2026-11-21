@@ -8,15 +8,16 @@ import type { ChatAccess } from '../features/chat/index.ts'
 import { isISODate } from '../utils/date.ts'
 import {
   ActiveCalendarIndicator,
+  type CalendarSummary,
   CalendarSwitcher,
-  getSharedCalendars,
-  hasPermission,
-  isPersonalCalendar,
-  useCalendars,
   canDeleteEntry,
   canEditEntry,
   canManageCategories,
   getDistinctTeamName,
+  getSharedCalendars,
+  hasPermission,
+  isPersonalCalendar,
+  useCalendars,
 } from '../features/calendars/index.ts'
 import type { CalendarEvent } from '../utils/event.ts'
 import { usePreferences } from '../features/preferences/index.ts'
@@ -79,30 +80,35 @@ export function CalendarPage() {
       { replace: true },
     )
 
+  const calendarById = useMemo(() => new Map(calendars.map((calendar) => [calendar.id, calendar])), [calendars])
+  const isTeamCalendar = useCallback(
+    (calendarId: string) => {
+      const calendar = calendarById.get(calendarId)
+      return Boolean(calendar && !isPersonalCalendar(calendar))
+    },
+    [calendarById],
+  )
+  const userId = user?.id ?? null
   const chatAccess = useMemo<ChatAccess | undefined>(() => {
     if (!host.features.chat || !user) return undefined
-    const find = (calendarId: string) => calendars.find((calendar) => calendar.id === calendarId)
     return {
       currentUserId: user.id,
-      isAvailable: (calendarId) => {
-        const calendar = find(calendarId)
-        return Boolean(calendar && !isPersonalCalendar(calendar))
-      },
+      isAvailable: isTeamCalendar,
       canModerate: (calendarId) => {
-        const calendar = find(calendarId)
+        const calendar = calendarById.get(calendarId)
         return Boolean(calendar && hasPermission(calendar, 'manage_calendars'))
       },
     }
-  }, [host.features.chat, user, calendars])
+  }, [host.features.chat, user, isTeamCalendar, calendarById])
   const loadAttendeeCandidates = useMemo(() => {
     if (!host.features.attendees || !user) return undefined
     return async (calendarId: string) => {
-      const calendar = calendars.find((entry) => entry.id === calendarId)
+      const calendar = calendarById.get(calendarId)
       if (!calendar || isPersonalCalendar(calendar)) return []
       const members = await repository.listMembers(calendar.teamId)
       return members.map(({ email, name }) => ({ email, name }))
     }
-  }, [host.features.attendees, user, calendars, repository])
+  }, [host.features.attendees, user, calendarById, repository])
   const external = useExternalCalendars()
   const caldav = useCaldav()
   const caldavById = useMemo(
@@ -122,31 +128,34 @@ export function CalendarPage() {
       ]),
     [calendars, activeCalendar, external.calendars, caldavById],
   )
-  const isHistoryAvailable = useCallback(
-    (calendarId: string) => {
-      const calendar = calendars.find((entry) => entry.id === calendarId)
-      return Boolean(calendar && !isPersonalCalendar(calendar))
-    },
-    [calendars],
-  )
+
   const initialView =
     host.initialView ?? nearestView(getStartView(preferences, isCompactWidth(root.clientWidth)), host.views)
 
-  const mayEditEvent = useCallback(
-    (event: CalendarEvent) => {
+  const eventAccess = useCallback(
+    (event: CalendarEvent, check: (calendar: CalendarSummary) => boolean, unknownCalendar: boolean) => {
       if (isExternalEvent(event)) return false
       if (isCaldavEvent(event)) return caldavById.get(event.calendarId)?.readOnly === false
-      const calendar = calendars.find((entry) => entry.id === event.calendarId)
-      return calendar === undefined || canEditEntry(calendar, event.createdBy, user?.id ?? null)
+      const calendar = calendarById.get(event.calendarId)
+      return calendar ? check(calendar) : unknownCalendar
     },
-    [calendars, user, caldavById],
+    [calendarById, caldavById],
+  )
+  const mayEditEvent = useCallback(
+    (event: CalendarEvent) => eventAccess(event, (calendar) => canEditEntry(calendar, event.createdBy, userId), true),
+    [eventAccess, userId],
+  )
+  const mayMoveEvent = useCallback(
+    (event: CalendarEvent) =>
+      eventAccess(event, (calendar) => canDeleteEntry(calendar, event.createdBy, userId), false),
+    [eventAccess, userId],
   )
   const mayManageCategories = useCallback(
     (calendarId: string) => {
-      const calendar = calendars.find((entry) => entry.id === calendarId)
+      const calendar = calendarById.get(calendarId)
       return calendar !== undefined && canManageCategories(calendar)
     },
-    [calendars],
+    [calendarById],
   )
   const calendarNames = useMemo(() => new Map(calendars.map((calendar) => [calendar.id, calendar.name])), [calendars])
   const calendarChoices = useMemo(() => {
@@ -162,15 +171,6 @@ export function CalendarPage() {
       .map((calendar) => ({ id: caldavCalendarId(calendar.id), name: `${calendar.name} (${calendar.accountName})` }))
     return [...own, ...remote]
   }, [calendars, activeCalendar, caldav.calendars])
-  const mayMoveEvent = useCallback(
-    (event: CalendarEvent) => {
-      if (isExternalEvent(event)) return false
-      if (isCaldavEvent(event)) return caldavById.get(event.calendarId)?.readOnly === false
-      const calendar = calendars.find((entry) => entry.id === event.calendarId)
-      return calendar !== undefined && canDeleteEntry(calendar, event.createdBy, user?.id ?? null)
-    },
-    [calendars, user, caldavById],
-  )
 
   return (
     <div className="app">
@@ -185,14 +185,14 @@ export function CalendarPage() {
         calendarNames={calendarNames}
         canManageCategories={mayManageCategories}
         canEditEvent={mayEditEvent}
-        currentUserId={user?.id ?? null}
+        currentUserId={userId}
         initialView={initialView}
         headerContext={<ActiveCalendarIndicator />}
         currentUserEmail={user?.email ?? null}
         loadAttendeeCandidates={loadAttendeeCandidates}
         chat={chatAccess}
         externalEvents={external.events}
-        isHistoryAvailable={isHistoryAvailable}
+        isHistoryAvailable={isTeamCalendar}
         openEvent={openEvent}
         onOpenEventDone={clearLink}
         headerAccessory={

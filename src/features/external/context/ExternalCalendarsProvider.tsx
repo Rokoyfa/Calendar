@@ -14,6 +14,7 @@ import {
   NO_EXTERNAL_CALENDARS,
   type ExternalCalendarsContextValue,
 } from './ExternalCalendarsContext.ts'
+import { removeById, replaceById } from '../../../utils/list.ts'
 
 type Converter = typeof import('../../../utils/externalEvents.ts').toExternalEvents
 
@@ -116,13 +117,13 @@ function ActiveProvider({ repository, children }: ActiveProviderProps) {
       },
       update: async (id: string, changes: ExternalCalendarChanges) => {
         const updated = await repository.update(id, changes)
-        updateList((current) => current.map((calendar) => (calendar.id === id ? updated : calendar)))
+        updateList((current) => replaceById(current, updated))
         if (changes.url !== undefined || (changes.shown && !requested.current.has(id))) fetchContent(id)
       },
       remove: async (id: string) => {
         await repository.remove(id)
         requested.current.delete(id)
-        updateList((current) => current.filter((calendar) => calendar.id !== id))
+        updateList((current) => removeById(current, id))
         setContents((current) => {
           const next = new Map(current)
           next.delete(id)

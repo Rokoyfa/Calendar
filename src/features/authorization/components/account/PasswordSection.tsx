@@ -1,5 +1,4 @@
 import { useI18n } from '../../../../i18n/index.ts'
-import { Button } from '../../../../components/Button.tsx'
 import { Form } from '../../../../components/Form.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
@@ -7,6 +6,7 @@ import { useForm } from '../../../../hooks/useForm.ts'
 import { useAuth } from '../../hooks/useAuth.ts'
 import { validatePasswordChange, type PasswordChangeFormValues } from '../../utils/validation.ts'
 import { CurrentPasswordField, NewPasswordFields } from '../AuthFields.tsx'
+import { FormActions } from '../../../../components/FormActions.tsx'
 
 const EMPTY_PASSWORD_CHANGE: PasswordChangeFormValues = { currentPassword: '', password: '', passwordConfirmation: '' }
 
@@ -32,11 +32,11 @@ export function PasswordSection() {
         />
         <NewPasswordFields label={m.auth.account.newPassword} values={values} errors={errors} onChange={setField} />
         <ActionFeedback error={error} success={isSuccess && m.auth.account.passwordChanged} />
-        <div className="formActions">
-          <Button type="submit" isPending={isPending} pendingLabel={m.auth.account.passwordPending}>
-            {m.auth.account.passwordSubmit}
-          </Button>
-        </div>
+        <FormActions
+          isPending={isPending}
+          submitLabel={m.auth.account.passwordSubmit}
+          pendingLabel={m.auth.account.passwordPending}
+        />
       </Form>
     </PageSection>
   )

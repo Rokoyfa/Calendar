@@ -17,6 +17,8 @@ import {
   type EventInput,
 } from '../../../utils/event.ts'
 import type { CaldavEventSource, CaldavRepository, EventQuery, EventRepository } from '../types/storage.ts'
+import { requireValue } from '../../../utils/parse.ts'
+import { removeById, replaceById } from '../../../utils/list.ts'
 
 const CACHE_MS = 60_000
 
@@ -167,7 +169,7 @@ export class CaldavEventRepository implements CaldavEventSource {
         id,
         series.id,
       )
-      return this.#save(found, [...found.events.filter((event) => event.id !== id), override], id)
+      return this.#save(found, [...removeById(found.events, id), override], id)
     }
     const calendar = this.#calendar(rawCalendarId(calendarId))
     if (calendar.readOnly) throw new AppError('forbidden')
@@ -176,9 +178,7 @@ export class CaldavEventRepository implements CaldavEventSource {
     const data = buildCaldavObject(null, [draft], calendar.color)
     const created = await this.#api.createObject(calendar.id, data)
     this.#remember(calendar.id, created)
-    const [event] = toCaldavEvents(calendar, created)
-    if (!event) throw new AppError('unknown')
-    return event
+    return requireValue(toCaldavEvents(calendar, created)[0])
   }
 
   async update(id: string, input: EventInput) {
@@ -194,10 +194,7 @@ export class CaldavEventRepository implements CaldavEventSource {
       originalDate: event.originalDate,
       uid: event.uid,
     }
-    const events =
-      event.seriesId === null && !changed.recurrence
-        ? [changed]
-        : found.events.map((entry) => (entry.id === id ? changed : entry))
+    const events = event.seriesId === null && !changed.recurrence ? [changed] : replaceById(found.events, changed)
     return this.#save(found, events, id)
   }
 
@@ -205,11 +202,7 @@ export class CaldavEventRepository implements CaldavEventSource {
     const found = await this.#find(id)
     if (found.event.seriesId !== null) {
       const series = found.events.find((event) => event.seriesId === null)!
-      await this.#save(
-        found,
-        found.events.filter((event) => event.id !== id),
-        series.id,
-      )
+      await this.#save(found, removeById(found.events, id), series.id)
       return
     }
     await this.#guard(found.calendar.id, () =>

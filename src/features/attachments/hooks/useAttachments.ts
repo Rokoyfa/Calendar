@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { AppError } from '../../../utils/appError.ts'
-import { saveBlob, type Attachment } from '../../../utils/attachment.ts'
+import type { Attachment } from '../../../utils/attachment.ts'
+import { saveBlob } from '../../../utils/download.ts'
 import { useStorage } from '../../storage/index.ts'
+import { removeById } from '../../../utils/list.ts'
 
 type Loaded = { eventId: string; attachments: Attachment[] }
 
@@ -64,7 +66,7 @@ export function useAttachments(eventId: string | null) {
     async (attachment: Attachment) => {
       if (!repository) throw new AppError('unknown')
       await repository.remove(attachment.id)
-      change((current) => current.filter((entry) => entry.id !== attachment.id))
+      change((current) => removeById(current, attachment.id))
       invalidate()
     },
     [repository, change, invalidate],

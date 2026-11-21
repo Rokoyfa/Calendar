@@ -14,6 +14,7 @@ import { useAuth } from '../../authorization/index.ts'
 import { useCalendars } from '../../calendars/index.ts'
 import { useStorage } from '../../storage/index.ts'
 import { useNotifications } from '../hooks/useNotifications.ts'
+import { ItemList } from '../../../components/ItemList.tsx'
 
 const POPOVER_ID = 'notificationMenu'
 const MAX_BADGE = 99
@@ -90,35 +91,31 @@ function ActiveBell({ repository }: { repository: NonNullable<ReturnType<typeof 
           )}
         </div>
         <ErrorMessage message={error} />
-        {notifications.length === 0 ? (
-          <p className="emptyHint">{text.empty}</p>
-        ) : (
-          <ul className="notificationList">
-            {notifications.map((notification) => (
-              <li key={notification.id} className={classNames('notificationItem', !notification.readAt && 'isUnread')}>
-                <button
-                  type="button"
-                  className="notificationOpen"
-                  onClick={(event) => open(notification, event.currentTarget.closest<HTMLElement>('[popover]'))}
-                >
-                  <span className="notificationText">{describe(notification)}</span>
-                  <time className="notificationTime" dateTime={notification.createdAt}>
-                    {formatTimestamp(notification.createdAt, locale, timeZone)}
-                  </time>
-                </button>
-                <button
-                  type="button"
-                  className="iconButton iconButton--plain notificationRemove"
-                  aria-label={text.remove}
-                  title={text.remove}
-                  onClick={() => void remove(notification.id)}
-                >
-                  <CloseIcon size={16} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+        <ItemList items={notifications} empty={text.empty} className="notificationList">
+          {(notification) => (
+            <li key={notification.id} className={classNames('notificationItem', !notification.readAt && 'isUnread')}>
+              <button
+                type="button"
+                className="notificationOpen"
+                onClick={(event) => open(notification, event.currentTarget.closest<HTMLElement>('[popover]'))}
+              >
+                <span className="notificationText">{describe(notification)}</span>
+                <time className="notificationTime" dateTime={notification.createdAt}>
+                  {formatTimestamp(notification.createdAt, locale, timeZone)}
+                </time>
+              </button>
+              <button
+                type="button"
+                className="iconButton iconButton--plain notificationRemove"
+                aria-label={text.remove}
+                title={text.remove}
+                onClick={() => void remove(notification.id)}
+              >
+                <CloseIcon size={16} />
+              </button>
+            </li>
+          )}
+        </ItemList>
         {hasMore && (
           <button type="button" className="linkButton" onClick={() => void loadMore()}>
             {text.loadMore}

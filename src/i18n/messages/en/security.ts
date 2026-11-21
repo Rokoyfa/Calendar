@@ -31,8 +31,6 @@ export const security = {
     recoveryTitle: 'Recovery codes',
     recoveryHint:
       'Keep these codes in a safe place. Each code signs you in once if you cannot use your app. They are only shown now.',
-    copy: 'Copy',
-    copied: 'Copied',
     download: 'Download',
     done: 'Done',
     enabledNotice: 'Two-factor sign-in is on. Your other devices were signed out.',

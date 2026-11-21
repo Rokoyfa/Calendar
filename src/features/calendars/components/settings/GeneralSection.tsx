@@ -1,5 +1,4 @@
 import { useI18n } from '../../../../i18n/index.ts'
-import { Button } from '../../../../components/Button.tsx'
 import { Form } from '../../../../components/Form.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
@@ -12,6 +11,7 @@ import { hasPermission, isPersonalCalendar } from '../../utils/permissions.ts'
 import { CalendarPreview } from '../CalendarPreview.tsx'
 import { ColorStep } from '../create/ColorStep.tsx'
 import { DetailsStep } from '../create/DetailsStep.tsx'
+import { FormActions } from '../../../../components/FormActions.tsx'
 
 type GeneralValues = { name: string; description: string; color: EventColor }
 
@@ -39,10 +39,7 @@ export function GeneralSection({ calendar }: { calendar: CalendarSummary }) {
     values.color !== calendar.color
 
   return (
-    <PageSection
-      title={general.title}
-      description={isTeam ? general.teamDescription : general.personalDescription}
-    >
+    <PageSection title={general.title} description={isTeam ? general.teamDescription : general.personalDescription}>
       <Form onSubmit={handleSubmit}>
         {isTeam ? (
           <DetailsStep
@@ -70,11 +67,7 @@ export function GeneralSection({ calendar }: { calendar: CalendarSummary }) {
         )}
         <ActionFeedback error={error} success={isSuccess && !isDirty && m.common.saved} />
         {(canEditCalendar || canEditTeam) && (
-          <div className="formActions">
-            <Button type="submit" isPending={isPending} pendingLabel={general.pending} disabled={!isDirty}>
-              {m.common.save}
-            </Button>
-          </div>
+          <FormActions isPending={isPending} pendingLabel={general.pending} disabled={!isDirty} />
         )}
       </Form>
     </PageSection>

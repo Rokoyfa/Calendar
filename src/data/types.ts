@@ -1,38 +1,9 @@
 import type { AuthRepository } from '../features/authorization/index.ts'
 import type { CalendarRepository } from '../features/calendars/index.ts'
-import type {
-  ColorRepository,
-  EventRepository,
-  AttachmentRepository,
-  CategoryRepository,
-  ChatRepository,
-  HolidayRepository,
-  PreferencesRepository,
-  SharedCalendarRepository,
-  StorageMode,
-  ExternalCalendarRepository,
-  HistoryRepository,
-  NotificationRepository,
-  AppPasswordRepository,
-  CaldavRepository,
-} from '../features/storage/index.ts'
+import type { StorageRepositories } from '../features/storage/index.ts'
 
-export type DataRepositories = {
-  mode: StorageMode
-  events: EventRepository
+export type DataRepositories = Omit<StorageRepositories, 'caldavEvents'> & {
   calendars: CalendarRepository
-  colors: ColorRepository
-  preferences: PreferencesRepository
-  holidays?: HolidayRepository
-  chat?: ChatRepository
-  categories?: CategoryRepository
-  shared?: SharedCalendarRepository
-  attachments?: AttachmentRepository
-  externalCalendars?: ExternalCalendarRepository
-  history?: HistoryRepository
-  notifications?: NotificationRepository
-  appPasswords?: AppPasswordRepository
-  caldav?: CaldavRepository
 }
 
 export type DataSourceContext = {

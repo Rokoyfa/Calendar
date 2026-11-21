@@ -1,5 +1,6 @@
 import { isISODate } from './date.ts'
-import { asRecord, isOneOf } from './object.ts'
+import { isOneOf } from './object.ts'
+import { asRecord, parseList, textOrEmpty } from './parse.ts'
 
 export const NOTIFICATION_KINDS = [
   'teamInvitation',
@@ -26,11 +27,9 @@ export type AppNotification = {
 
 export type NotificationPage = { notifications: AppNotification[]; unread: number; hasMore: boolean }
 
-const text = (value: unknown) => (typeof value === 'string' ? value : '')
-
 const named = (value: unknown) => {
   const record = asRecord(value)
-  return typeof record.id === 'string' ? { id: record.id, name: text(record.name) } : null
+  return typeof record.id === 'string' ? { id: record.id, name: textOrEmpty(record.name) } : null
 }
 
 export const parseNotification = (value: unknown): AppNotification | null => {
@@ -51,7 +50,7 @@ export const parseNotification = (value: unknown): AppNotification | null => {
         ? {
             id: event.id,
             calendarId: event.calendarId,
-            title: text(event.title),
+            title: textOrEmpty(event.title),
             startDate: event.startDate,
             occurrenceDate: isISODate(event.occurrenceDate) ? event.occurrenceDate : null,
           }
@@ -65,9 +64,7 @@ export const parseNotification = (value: unknown): AppNotification | null => {
 
 export const parseNotificationPage = (value: unknown): NotificationPage => {
   const record = asRecord(value)
-  const notifications = (Array.isArray(record.notifications) ? record.notifications : [])
-    .map(parseNotification)
-    .filter((entry): entry is AppNotification => entry !== null)
+  const notifications = parseList(record.notifications, parseNotification)
   return {
     notifications,
     unread: typeof record.unread === 'number' && record.unread >= 0 ? Math.floor(record.unread) : 0,

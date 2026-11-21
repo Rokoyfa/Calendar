@@ -44,8 +44,6 @@ export const caldav = {
       'Show and edit your calendars in Apple Calendar, Thunderbird, DAVx⁵ (Android), Outlook with a CalDAV add-in or other programs. Enter the server address and your email address there, and an app password as the password.',
     serverUrl: 'Server address',
     username: 'User name',
-    copy: 'Copy',
-    copied: 'Copied',
     passwordsTitle: 'App passwords',
     passwordsDescription:
       'Create a separate password for every program. Your account password does not work there, so two-factor sign-in stays effective. Changing your account password revokes all app passwords.',

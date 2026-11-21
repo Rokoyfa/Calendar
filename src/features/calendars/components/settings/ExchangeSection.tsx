@@ -12,20 +12,9 @@ import { createCategoryResolver, importEvents, listAllEvents } from '../../../ev
 import { useStorage } from '../../../storage/index.ts'
 import type { CalendarSummary } from '../../types/calendar.ts'
 import { canManageCategories, hasPermission } from '../../utils/permissions.ts'
+import { saveBlob } from '../../../../utils/download.ts'
 
 const toFileName = (name: string) => `${name.replace(/[\\/:*?"<>|]+/g, '').trim() || 'calendar'}.ics`
-
-const download = (content: string, fileName: string) => {
-  const url = URL.createObjectURL(new Blob([content], { type: 'text/calendar;charset=utf-8' }))
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName
-  link.hidden = true
-  document.body.append(link)
-  link.click()
-  link.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 0)
-}
 
 export function ExchangeSection({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
@@ -47,7 +36,10 @@ export function ExchangeSection({ calendar }: { calendar: CalendarSummary }) {
       return
     }
     const categoryNames = new Map(categories.map((category) => [category.id, category.name]))
-    download(toICalendar(events, calendar.name, { categoryNames }), toFileName(calendar.name))
+    saveBlob(
+      new Blob([toICalendar(events, calendar.name, { categoryNames })], { type: 'text/calendar;charset=utf-8' }),
+      toFileName(calendar.name),
+    )
   }, [repository, calendar, ical, categories])
 
   const importFile = useCallback(

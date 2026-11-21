@@ -6,6 +6,7 @@ import { useI18n } from '../../../i18n/index.ts'
 import { toISODate } from '../../../utils/date.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { PendingInvitation } from '../types/calendar.ts'
+import { ItemList } from '../../../components/ItemList.tsx'
 
 function InvitationRow({ invitation }: { invitation: PendingInvitation }) {
   const { m, format } = useI18n()
@@ -59,19 +60,10 @@ export function InvitationList() {
   const { invitations } = useCalendars()
 
   return (
-    <PageSection
-      title={m.calendars.invitations.title}
-      description={m.calendars.invitations.description}
-    >
-      {invitations.length === 0 ? (
-        <p className="emptyHint">{m.calendars.invitations.empty}</p>
-      ) : (
-        <ul className="calendarSettingList">
-          {invitations.map((invitation) => (
-            <InvitationRow key={invitation.id} invitation={invitation} />
-          ))}
-        </ul>
-      )}
+    <PageSection title={m.calendars.invitations.title} description={m.calendars.invitations.description}>
+      <ItemList items={invitations} empty={m.calendars.invitations.empty} className="calendarSettingList">
+        {(invitation) => <InvitationRow key={invitation.id} invitation={invitation} />}
+      </ItemList>
     </PageSection>
   )
 }

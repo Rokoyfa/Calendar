@@ -28,6 +28,7 @@ import {
 import { isRule, normalizeRule, RECURRENCE_DATES_MAX, splitRuleParts, toSimpleRecurrence } from './rrule.ts'
 import { convertWallTime, isTimeZone, toInstant } from './timeZone.ts'
 import { timeZonesOf, vtimezoneLines } from './vtimezone.ts'
+import { isPresent } from './parse.ts'
 
 const LINE_LIMIT = 75
 const ICAL_WEEKDAYS = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
@@ -425,7 +426,7 @@ const toImportedEvent = (component: Component): ImportedEvent | null => {
   const reminders = component.children
     .filter((child) => child.name === 'VALARM')
     .map(parseReminder)
-    .filter((minutes): minutes is number => minutes !== null)
+    .filter(isPresent)
 
   const categoryNames = all('CATEGORIES')
     .flatMap((property) => splitTextList(property.value))
@@ -446,7 +447,7 @@ const toImportedEvent = (component: Component): ImportedEvent | null => {
       categoryIds: [],
       links: [...all('URL'), ...all('ATTACH')]
         .map(parseLink)
-        .filter((link): link is EventLink => link !== null)
+        .filter(isPresent)
         .filter((link, index, links) => links.findIndex(({ url }) => url === link.url) === index)
         .slice(0, MAX_EVENT_LINKS),
       startDate: start.date,
@@ -461,9 +462,7 @@ const toImportedEvent = (component: Component): ImportedEvent | null => {
       excludedDates,
       ...NO_SERIES_LINK,
       reminders: [...new Set(reminders)].sort((a, b) => a - b),
-      attendees: all('ATTENDEE')
-        .map(parseAttendee)
-        .filter((attendee): attendee is Attendee => attendee !== null),
+      attendees: all('ATTENDEE').map(parseAttendee).filter(isPresent),
     },
   }
 }
@@ -474,6 +473,6 @@ export function parseICalendar(text: string): ICalendarImport | null {
   const calendar = parseComponents(text).children.find((component) => component.name === 'VCALENDAR')
   if (!calendar) return null
   const components = calendar.children.filter((component) => component.name === 'VEVENT')
-  const events = components.map(toImportedEvent).filter((event): event is ImportedEvent => event !== null)
+  const events = components.map(toImportedEvent).filter(isPresent)
   return { events, skipped: components.length - events.length }
 }

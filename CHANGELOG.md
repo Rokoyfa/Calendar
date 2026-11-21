@@ -44,6 +44,10 @@ Version 2 of the REST contract. Three endpoints have clearer paths, and host tok
 - `npm run check:size`: the initial load of the CDN bundle (now 184 KB gzip) must stay under 200 KB; it runs after `build:lib`. The parsers for iCal, CalDAV objects and subscribed calendars load only when needed
 - Accessibility checks with axe (WCAG 2.2 AA) for sign-in, all calendar views in light and dark, the event dialog and all settings pages in the end-to-end tests
 
+### Changed
+
+- Texts: the button labels for copying are now `common.copy` and `common.copied`. `caldav.server.copy`, `caldav.server.copied`, `security.twoFactor.copy`, `security.twoFactor.copied`, `calendars.share.copied` and `calendars.feed.copied` are gone; hosts that override them in `messages` use the new keys
+
 ### Fixed
 
 - With `teams` off, the component no longer loads `GET /invitations`, so a backend without teams needs no endpoint for it
@@ -53,6 +57,8 @@ Version 2 of the REST contract. Three endpoints have clearer paths, and host tok
 - `api/openapi.yaml`: `POST` and `PATCH /external-calendars` list `502` (`externalCalendarUnavailable`)
 - Accessibility: events in the month view and the "more" button are at least 24 px high, links inside text are underlined, and green status badges have enough contrast
 - French texts use non-breaking spaces before `? ! ; :` and inside « », Dutch calls the viewer role "Lezer"
+- Copying the public link or the subscription link no longer fails silently when the browser blocks the clipboard
+- The confirmations in the trash have the same button order as all other confirmations
 
 ## 1.4.0 – 2026-11-18
 

@@ -8,6 +8,7 @@ import {
 } from '../../../utils/category.ts'
 import type { CategoryRepository } from '../types/storage.ts'
 import { LocalStorageList } from '../utils/localStorageList.ts'
+import { removeById, replaceById } from '../../../utils/list.ts'
 
 const DEFAULT_STORAGE_KEY = 'calendar.categories.v1'
 
@@ -38,11 +39,11 @@ export class LocalCategoryRepository implements CategoryRepository {
     if (!current) throw new AppError('categoryNotFound')
     if (isCategoryNameTaken(categories, current.calendarId, name, id)) throw new AppError('categoryExists')
     const renamed = { ...current, name: normalizeCategoryName(name) }
-    this.#categories.write(categories.map((category) => (category.id === id ? renamed : category)))
+    this.#categories.write(replaceById(categories, renamed))
     return renamed
   }
 
   async remove(id: string) {
-    this.#categories.update((categories) => categories.filter((category) => category.id !== id))
+    this.#categories.update((categories) => removeById(categories, id))
   }
 }

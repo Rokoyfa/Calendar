@@ -11,6 +11,8 @@ export const common = {
   saved: 'Saved.',
   delete: 'Delete',
   deleting: 'Deleting …',
+  copy: 'Copy',
+  copied: 'Copied',
   backToCalendar: 'Back to calendar',
   backToSettings: 'Back to settings',
   settings: 'Settings',

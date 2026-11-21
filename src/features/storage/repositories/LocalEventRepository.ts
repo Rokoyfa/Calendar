@@ -11,6 +11,7 @@ import { addTrashDays, isExpired, parseTrashedEvent, type TrashedEvent } from '.
 import { ANY_EVENT_CHANGE, type EventChange } from '../../../utils/eventChange.ts'
 import type { EventQuery, EventRepository, EventSearchQuery } from '../types/storage.ts'
 import { LocalStorageList } from '../utils/localStorageList.ts'
+import { removeById, replaceById } from '../../../utils/list.ts'
 
 const DEFAULT_STORAGE_KEY = 'calendar.events.v1'
 const LEGACY_CALENDAR_ID = 'local'
@@ -90,7 +91,7 @@ export class LocalEventRepository implements EventRepository {
       version: existing.version + 1,
       updatedAt: new Date().toISOString(),
     }
-    this.#events.update((events) => events.map((event) => (event.id === id ? updated : event)))
+    this.#events.update((events) => replaceById(events, updated))
     return updated
   }
 
@@ -131,7 +132,7 @@ export class LocalEventRepository implements EventRepository {
       },
       ...this.#current(entries).filter((entry) => entry.event.id !== id),
     ])
-    this.#events.update((events) => events.filter((event) => event.id !== id))
+    this.#events.update((events) => removeById(events, id))
   }
 
   async listTrash(calendarId: string) {
@@ -149,7 +150,7 @@ export class LocalEventRepository implements EventRepository {
       version: entry.event.version + 1,
       updatedAt: new Date().toISOString(),
     }
-    this.#events.write([...events.filter((event) => event.id !== id), restored])
+    this.#events.write([...removeById(events, id), restored])
     this.#trash.update((entries) => entries.filter((candidate) => candidate.event.id !== id))
     return restored
   }

@@ -8,17 +8,13 @@ import {
   type ChatKey,
   type ChatMessage,
 } from '../../../utils/chat.ts'
-import { AppError } from '../../../utils/appError.ts'
 import type { ChatRepository } from '../types/storage.ts'
 import { LiveSocket } from '../utils/liveSocket.ts'
+import { requireValue } from '../../../utils/parse.ts'
 
 type Listener = (event: ChatEvent) => void
 
-const parseMessage = (value: unknown): ChatMessage => {
-  const message = parseChatMessage(value)
-  if (!message) throw new AppError('unknown')
-  return message
-}
+const parseMessage = (value: unknown): ChatMessage => requireValue(parseChatMessage(value))
 
 export class RemoteChatRepository implements ChatRepository {
   readonly #api: ApiClient

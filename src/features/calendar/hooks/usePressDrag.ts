@@ -105,7 +105,11 @@ export function usePressDrag<T>({ containerRef, enabled, delay, vibrateMs = 10, 
     const track = (point: Point) => {
       lastPoint = point
       if (isActive && press) latest.current.move(press, point)
-      else if (pressTimer && pressPoint && Math.hypot(point.x - pressPoint.x, point.y - pressPoint.y) > MOVE_TOLERANCE_PX)
+      else if (
+        pressTimer &&
+        pressPoint &&
+        Math.hypot(point.x - pressPoint.x, point.y - pressPoint.y) > MOVE_TOLERANCE_PX
+      )
         finish(false)
     }
 

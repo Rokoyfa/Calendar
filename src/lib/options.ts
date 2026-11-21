@@ -10,6 +10,7 @@ import {
   type HolidaySource,
   type StorageMode,
 } from './defaults.ts'
+import { isRecord } from '../utils/parse.ts'
 
 export const ROUTING_MODES = ['memory', 'browser'] as const
 
@@ -68,9 +69,6 @@ export const isCssColor = (value: unknown): value is string =>
 export const isFontFamily = (value: unknown): value is string =>
   typeof value === 'string' && value.trim() !== '' && value.length <= 200 && FONT_FAMILY.test(value)
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
 const text: Reader = (value) => (typeof value === 'string' && value.trim() !== '' ? value.trim() : INVALID)
 
 const oneOf =
@@ -84,8 +82,7 @@ const linkParam: Reader = (value) => (value === false ? false : text(value, ''))
 
 const flag: Reader = (value) => (typeof value === 'boolean' ? value : INVALID)
 
-const messages: Reader = (value) =>
-  isPlainObject(value) && Object.values(value).every(isPlainObject) ? value : INVALID
+const messages: Reader = (value) => (isRecord(value) && Object.values(value).every(isRecord) ? value : INVALID)
 
 const EXPECTED: Record<CalendarOptionName, string> = {
   tenant: 'a non-empty string',
@@ -114,10 +111,10 @@ export const OPTION_NAMES = Object.keys(EXPECTED) as CalendarOptionName[]
 
 export function parseCalendarOptions(value: unknown): ParsedOptions {
   const issues: string[] = []
-  if (!isPlainObject(value)) return { options: {}, issues: ['The configuration must be an object.'] }
+  if (!isRecord(value)) return { options: {}, issues: ['The configuration must be an object.'] }
 
   const features: Reader = (raw) => {
-    if (!isPlainObject(raw)) return INVALID
+    if (!isRecord(raw)) return INVALID
     const result: Partial<CalendarFeatures> = {}
     for (const [name, enabled] of Object.entries(raw)) {
       if (!isOneOf(FEATURE_NAMES, name)) issues.push(`Unknown feature "${name}".`)
@@ -128,7 +125,7 @@ export function parseCalendarOptions(value: unknown): ParsedOptions {
   }
 
   const appearance: Reader = (raw) => {
-    if (!isPlainObject(raw)) return INVALID
+    if (!isRecord(raw)) return INVALID
     const result: CalendarAppearance = {}
     for (const [name, value] of Object.entries(raw)) {
       if (name === 'accentColor' && isCssColor(value)) result.accentColor = value.trim()

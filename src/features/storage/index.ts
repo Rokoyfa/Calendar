@@ -39,4 +39,5 @@ export type {
   PreferencesRepository,
   SharedCalendarRepository,
   StorageMode,
+  StorageRepositories,
 } from './types/storage.ts'

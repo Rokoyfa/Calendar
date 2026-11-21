@@ -13,6 +13,7 @@ import { DEFAULT_INVITATION_ROLE } from '../../constants/calendars.ts'
 import type { CalendarSummary, InvitableRole, Invitation, TeamInvitation, TeamMember } from '../../types/calendar.ts'
 import { validateInvitation } from '../../utils/draft.ts'
 import { getInvitableRoles, outranks } from '../../utils/permissions.ts'
+import { ItemList } from '../../../../components/ItemList.tsx'
 
 type TeamInvitationsSectionProps = {
   calendar: CalendarSummary
@@ -41,7 +42,8 @@ function InvitationRow({
       <span className="itemRowMain">
         <span className="itemRowTitle">{invitation.email}</span>
         <span className="itemRowMeta">
-          {roles[invitation.role]} · {invitations.validUntil(format.longDate(toISODate(new Date(invitation.expiresAt))))}
+          {roles[invitation.role]} ·{' '}
+          {invitations.validUntil(format.longDate(toISODate(new Date(invitation.expiresAt))))}
         </span>
         <ActionFeedback error={error} />
       </span>
@@ -91,10 +93,7 @@ export function TeamInvitationsSection({
   }
 
   return (
-    <PageSection
-      title={text.title}
-      description={text.description}
-    >
+    <PageSection title={text.title} description={text.description}>
       <Form
         onSubmit={(event) => {
           event.preventDefault()
@@ -132,20 +131,16 @@ export function TeamInvitationsSection({
       </Form>
 
       <ErrorMessage message={error} />
-      {invitations.length === 0 ? (
-        <p className="emptyHint">{text.none}</p>
-      ) : (
-        <ul className="itemList">
-          {invitations.map((invitation) => (
-            <InvitationRow
-              key={invitation.id}
-              invitation={invitation}
-              canRevoke={outranks(calendar.role, invitation.role)}
-              onRevoke={() => onRevoke(invitation.id)}
-            />
-          ))}
-        </ul>
-      )}
+      <ItemList items={invitations} empty={text.none}>
+        {(invitation) => (
+          <InvitationRow
+            key={invitation.id}
+            invitation={invitation}
+            canRevoke={outranks(calendar.role, invitation.role)}
+            onRevoke={() => onRevoke(invitation.id)}
+          />
+        )}
+      </ItemList>
     </PageSection>
   )
 }

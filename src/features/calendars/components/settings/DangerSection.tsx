@@ -41,18 +41,14 @@ export function DangerSection({ calendar, members, currentUserId, onOwnershipTra
     <PageSection title={danger.title} tone="danger">
       {isOwner && (
         <div className="dangerAction">
-          <p className="formHint">
-            {candidates.length > 0 ? danger.transferHint : danger.transferUnavailable}
-          </p>
+          <p className="formHint">{candidates.length > 0 ? danger.transferHint : danger.transferUnavailable}</p>
           <Button variant="outline" disabled={candidates.length === 0} onClick={() => setAction({ type: 'transfer' })}>
             {danger.transfer}
           </Button>
         </div>
       )}
       <div className="dangerAction">
-        <p className="formHint">
-          {isLastOwner ? danger.lastOwnerHint : danger.leaveHint}
-        </p>
+        <p className="formHint">{isLastOwner ? danger.lastOwnerHint : danger.leaveHint}</p>
         <Button variant="outline" disabled={isLastOwner} onClick={() => setAction({ type: 'leave' })}>
           {m.calendars.list.leave}
         </Button>
@@ -81,7 +77,6 @@ export function DangerSection({ calendar, members, currentUserId, onOwnershipTra
           onConfirm={async () => {
             await transferOwnership(calendar, action.member.userId)
             onOwnershipTransferred()
-            setAction(null)
           }}
           onClose={() => setAction(null)}
         >

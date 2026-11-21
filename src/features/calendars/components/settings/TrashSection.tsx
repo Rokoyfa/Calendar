@@ -3,8 +3,8 @@ import { Button } from '../../../../components/Button.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { ErrorMessage } from '../../../../components/StatusMessage.tsx'
 import { useAsyncResource } from '../../../../hooks/useAsyncResource.ts'
-import { getErrorMessage, useI18n } from '../../../../i18n/index.ts'
-import { Modal } from '../../../../components/Modal.tsx'
+import { useI18n } from '../../../../i18n/index.ts'
+import { ConfirmModal } from '../../../../components/ConfirmModal.tsx'
 import { TextField } from '../../../../components/TextField.tsx'
 import { timeToMinutes, toISODate } from '../../../../utils/date.ts'
 import type { TrashedEvent } from '../../../../utils/trash.ts'
@@ -13,6 +13,8 @@ import { useStorage } from '../../../storage/index.ts'
 import type { EventRepository } from '../../../storage/types/storage.ts'
 import type { CalendarSummary } from '../../types/calendar.ts'
 import { canDeleteEntry } from '../../utils/permissions.ts'
+import { useConfirm } from '../../../../hooks/useConfirm.ts'
+import { useActionError } from '../../../../hooks/useActionError.ts'
 
 type TrashRepository = EventRepository & Required<Pick<EventRepository, 'listTrash' | 'restore' | 'purge'>>
 
@@ -44,23 +46,17 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
   const { user } = useAuth()
   const { version, invalidate } = useStorage()
   const [pendingId, setPendingId] = useState<string | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
-  const [toDelete, setToDelete] = useState<TrashedEvent | null>(null)
+  const { error: actionError, attempt } = useActionError()
+  const deletion = useConfirm<TrashedEvent>()
+  const toDelete = deletion.target
   const [confirmEmpty, setConfirmEmpty] = useState(false)
   const load = useCallback(() => repository.listTrash(calendar.id), [repository, calendar.id])
   const { data: entries, error, isLoading } = useAsyncResource(load, NO_ENTRIES, version)
 
   const run = async (id: string, action: () => Promise<unknown>) => {
     setPendingId(id)
-    setActionError(null)
-    try {
-      await action()
-      invalidate()
-    } catch (caught) {
-      setActionError(getErrorMessage(caught, m))
-    } finally {
-      setPendingId(null)
-    }
+    if (await attempt(action)) invalidate()
+    setPendingId(null)
   }
 
   const deletable = entries.filter((entry) => canDeleteEntry(calendar, entry.event.createdBy, user?.id ?? null))
@@ -138,7 +134,7 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
                       variant="dangerOutline"
                       disabled={pendingId !== null}
                       aria-label={text.deleteForeverLabel(event.title)}
-                      onClick={() => setToDelete(entry)}
+                      onClick={() => deletion.ask(entry)}
                     >
                       {text.deleteForever}
                     </Button>
@@ -157,47 +153,28 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
         </div>
       )}
       {toDelete && (
-        <Modal title={text.confirmTitle} variant="danger" onClose={() => setToDelete(null)}>
-          <p className="modalMessage">{text.confirmDelete(toDelete.event.title)}</p>
-          <div className="modalActions">
-            <Button
-              variant="danger"
-              onClick={() => {
-                const { id } = toDelete.event
-                setToDelete(null)
-                void run(id, () => repository.purge(calendar.id, id))
-              }}
-            >
-              {text.deleteForever}
-            </Button>
-            <Button variant="secondary" onClick={() => setToDelete(null)} data-autofocus>
-              {m.common.cancel}
-            </Button>
-          </div>
-        </Modal>
+        <ConfirmModal
+          title={text.confirmTitle}
+          confirmLabel={text.deleteForever}
+          pendingLabel={m.common.deleting}
+          onConfirm={() => run(toDelete.event.id, () => repository.purge(calendar.id, toDelete.event.id))}
+          onClose={deletion.close}
+        >
+          {text.confirmDelete(toDelete.event.title)}
+        </ConfirmModal>
       )}
       {confirmEmpty && emptyTrash && (
-        <Modal title={text.emptyTitle} variant="danger" onClose={() => setConfirmEmpty(false)}>
-          <p className="modalMessage">
-            {deletable.length === entries.length
-              ? text.emptyConfirm(deletable.length)
-              : text.emptyConfirmOwn(deletable.length, entries.length)}
-          </p>
-          <div className="modalActions">
-            <Button
-              variant="danger"
-              onClick={() => {
-                setConfirmEmpty(false)
-                void run(EMPTY_ID, () => emptyTrash(calendar.id))
-              }}
-            >
-              {text.emptyAction}
-            </Button>
-            <Button variant="secondary" onClick={() => setConfirmEmpty(false)} data-autofocus>
-              {m.common.cancel}
-            </Button>
-          </div>
-        </Modal>
+        <ConfirmModal
+          title={text.emptyTitle}
+          confirmLabel={text.emptyAction}
+          pendingLabel={m.common.deleting}
+          onConfirm={() => run(EMPTY_ID, () => emptyTrash(calendar.id))}
+          onClose={() => setConfirmEmpty(false)}
+        >
+          {deletable.length === entries.length
+            ? text.emptyConfirm(deletable.length)
+            : text.emptyConfirmOwn(deletable.length, entries.length)}
+        </ConfirmModal>
       )}
     </PageSection>
   )

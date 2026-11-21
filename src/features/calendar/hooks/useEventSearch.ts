@@ -3,12 +3,7 @@ import { useDebouncedValue } from '../../../hooks/useDebouncedValue.ts'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
 import { matchesEventText } from '../../../utils/event.ts'
 import { useStorage } from '../../storage/index.ts'
-import {
-  getFallbackSearchRange,
-  SEARCH_MIN_LENGTH,
-  toSearchResults,
-  type SearchResult,
-} from '../utils/search.ts'
+import { getFallbackSearchRange, SEARCH_MIN_LENGTH, toSearchResults, type SearchResult } from '../utils/search.ts'
 
 const DEBOUNCE_MS = 250
 
