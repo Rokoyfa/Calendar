@@ -714,6 +714,7 @@ paths:
       - { name: eventId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Events]
+      x-feature: teams
       summary: Move an event to another calendar
       description: |
         Moves a single event or a whole series with its detached events. Needs the right to delete the event in its

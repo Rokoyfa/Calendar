@@ -44,6 +44,7 @@ export type {
   TeamRole,
 } from '../features/calendars/index.ts'
 export type {
+  AttachmentRepository,
   CategoryRepository,
   ChatRepository,
   SharedCalendarRepository,
@@ -58,6 +59,9 @@ export type {
 export type { Attendee, AttendeeStatus, CalendarEvent, EventInput, EventLink } from '../utils/event.ts'
 export type { ChatEvent, ChatKey, ChatMessage, ChatPage, ChatUnread } from '../utils/chat.ts'
 export type { Category } from '../utils/category.ts'
+export type { Attachment } from '../utils/attachment.ts'
+export type { TrashedEvent } from '../utils/trash.ts'
+export type { EventChange } from '../utils/eventChange.ts'
 export type { SharedCalendar } from '../utils/sharedCalendar.ts'
 export type { Preferences } from '../utils/preferences.ts'
 export type { PublicHoliday } from '../utils/holidays.ts'

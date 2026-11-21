@@ -2,16 +2,15 @@
 
 An embeddable calendar for React apps and any other website. It runs without a backend, with data kept in the browser, or against your own REST backend.
 
-- Day, week, month and year views with drag and drop
-- Recurring and all-day events, time zones, reminders, locations and links
-- Team calendars with roles, invitations, attendees and a chat per event
-- Public holidays for over 200 countries, search, undo, keyboard shortcuts
-- iCalendar import, export and subscription links for other calendar apps
+- Day, week, month, year and agenda views with drag and drop
+- Recurring and all-day events, time zones, reminders, locations, links and attachments
+- Team calendars with roles, invitations, attendees, a chat per event, change history and notifications
+- Two-way sync with other calendar apps over CalDAV, iCalendar import and export, subscription links and subscribed calendars
+- Public holidays for over 200 countries, search, undo, a trash, categories, read-only mode and public links
 - English, German, French, Spanish, Italian, Dutch, Polish and Portuguese built in, more through your own texts
-- Styles isolated in a Shadow DOM, so your page and the calendar never affect each other
-- Categories with a filter, a read-only mode and public read-only links
+- Styles isolated in a Shadow DOM, built for WCAG 2.2 AA
 - Your page can steer it (`goToDate()`, `setView()`, `openEvent()`) and match it to your design with CSS variables
-- Every optional feature can be switched off
+- Every optional feature can be switched off, and your backend only needs the endpoints of the features that are on
 
 ## Quick start
 
@@ -81,6 +80,7 @@ Commented example files with every option: [`demo/calendar.config.yaml`](demo/ca
 | --- | --- |
 | [Developer Guide](DEVELOPER_GUIDE.md) | Embedding, all options and features, the configuration file, languages, sign-in, data adapters, exported types, and what your backend has to provide |
 | [`api/openapi.yaml`](api/openapi.yaml) | The REST contract for your own backend (OpenAPI 3.1), also shipped as `@rokoyfa/calendar/openapi.yaml` |
+| [`api/caldav.md`](api/caldav.md) | What a backend's CalDAV server has to support, for the `caldav` feature |
 | [`schema/calendar-config.schema.json`](schema/calendar-config.schema.json) | JSON Schema for configuration files, also shipped as `@rokoyfa/calendar/config.schema.json` |
 | [CHANGELOG.md](CHANGELOG.md) | Changes per version |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Working on the calendar itself: building, the test backend and internals (in German) |

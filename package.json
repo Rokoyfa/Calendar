@@ -48,6 +48,7 @@
   "files": [
     "dist-lib",
     "api/openapi.yaml",
+    "api/caldav.md",
     "schema",
     "demo/calendar.config.yaml",
     "demo/calendar.config.jsonc",

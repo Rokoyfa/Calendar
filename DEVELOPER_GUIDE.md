@@ -29,6 +29,7 @@ Everything you need to put `@rokoyfa/calendar` on your page: embedding, all opti
 23. [Subscribed calendars](#23-subscribed-calendars)
 24. [Change history](#24-change-history)
 25. [Notifications](#25-notifications)
+26. [CalDAV](#26-caldav)
 
 ## 1. Embedding
 
@@ -146,10 +147,11 @@ Every option can be given in three ways: as a React prop, as an attribute of the
 Several places can set the same thing. From strongest to weakest:
 
 1. What the user chose in the calendar's settings (language, theme, time zone, holidays, start view). Exception: `initialView` wins over the user's start view.
-2. Props and attributes.
-3. The configuration file.
-4. The browser or device (language, time zone, light or dark).
-5. The defaults in the tables above.
+2. With `tenant`: the tenant settings from the backend, see [Tenants](#tenants).
+3. Props and attributes.
+4. The configuration file.
+5. The browser or device (language, time zone, light or dark).
+6. The defaults in the tables above.
 
 ## 3. Features
 
@@ -168,7 +170,7 @@ Your backend only needs the endpoints of the features that are on, plus a small 
 | Feature | Attribute | Default | What it covers | Your backend needs |
 | --- | --- | --- | --- | --- |
 | `auth` | `feature-auth` | off | Sign-in and accounts | `/auth/me`, `/auth/login`, `/auth/logout`, `/auth/me/password`, `/auth/password-reset*`, `/auth/verify-email*` |
-| `teams` | `feature-teams` | on | Team calendars, members, roles, invitations | `POST /calendars`, `DELETE /calendars/:id`, `PUT /calendars/:id/display`, `/teams/*`, `/invitations/*` |
+| `teams` | `feature-teams` | on | Team calendars, members, roles, invitations, moving events between calendars | `POST /calendars`, `DELETE /calendars/:id`, `PUT /calendars/:id/display`, `POST /events/:id/move`, `/teams/*`, `/invitations/*` |
 | `chat` | `feature-chat` | on | Chat per event in team calendars | Chat endpoints and the WebSocket, see [Event chat](#11-event-chat) |
 | `attendees` | `feature-attendees` | on | Inviting members to events, replies | `POST /events/:id/response`, `POST /events/email-response` |
 | `recurrence` | `feature-recurrence` | on | Creating and editing recurring events | – |
@@ -206,7 +208,6 @@ Good to know:
 - With `recurrence`, `links` or `reminders` off, existing data is kept when an event is saved. It is only no longer shown or editable.
 - With `timeZones` off, the calendar always uses the automatic zone (your `timeZone`, otherwise the browser's).
 - With a single entry in `views`, the view switch disappears.
-- The attributes `auth` and `teams` still work as short forms of `feature-auth` and `feature-teams`.
 
 ## 4. Configuration file
 
@@ -258,30 +259,7 @@ features:
 
 ### What can be in the file
 
-All options from [Options](#2-options) under their prop names, except those that cannot be written as data: `dataSource`, `getUserToken`, the event callbacks, `className`, `style`, and `config` itself.
-
-| Field | Type | Default |
-| --- | --- | --- |
-| `storageMode` | `"local"` or `"remote"` | `"local"` |
-| `apiBaseUrl` | text | `"/api"` |
-| `apiTimeoutMs` | whole number above 0 | `10000` |
-| `tenant` | text | – |
-| `features` | object of feature names and `true` / `false` | see [Features](#3-features) |
-| `views` | list of `day`, `week`, `month`, `year` | all four |
-| `initialView` | `day`, `week`, `month` or `year` | user's start view |
-| `locale` | text | browser |
-| `messages` | object: language → texts | – |
-| `theme` | `"light"` or `"dark"` | follows the device |
-| `timeZone` | text (IANA zone) | browser |
-| `holidays` | text (region or `"off"`) | from `locale` |
-| `holidaySource` | `"library"` or `"backend"` | `"library"` |
-| `mapUrl` | text with `{query}` | Google Maps |
-| `readOnly` | `true` or `false` | `false` |
-| `appearance` | object with `accentColor`, `fontFamily`, `radius`, `density` | – |
-| `routing` | `"memory"` or `"browser"` | `"memory"` |
-| `basename` | text | – |
-| `initialPath` | text | `/` |
-| `linkParam` | text or `false` | `"calendarPath"` |
+All options from [Options](#2-options) under their prop names, except those that cannot be written as data: `dataSource`, `getUserToken`, the event callbacks, `className`, `style` and `config` itself. `features` is an object of feature names with `true` or `false`, `messages` an object of language → texts, `appearance` an object with `accentColor`, `fontFamily`, `radius` and `density`.
 
 ### How the file is read
 
@@ -389,7 +367,9 @@ There are three ways to handle users.
 - In this mode there are no sign-in, registration or password pages, no sign-out button and no account tab. The account belongs to your site.
 - With `null` the calendar works like for guests, in the browser.
 
-**Tenants.** `tenant` is for a backend that serves several host pages. Every request then carries the header `X-Calendar-Tenant`, and sign-in is always on, whatever the `auth` feature says. With `storageMode="local"` the tenant is ignored and everything stays in the browser. What the backend has to check is described in the OpenAPI file.
+### Tenants
+
+`tenant` is for a backend that serves several host pages. Every request then carries the header `X-Calendar-Tenant`, and sign-in is always on, whatever the `auth` feature says. With `storageMode="local"` the tenant is ignored and everything stays in the browser. What the backend has to check is described in the OpenAPI file.
 
 - **The tenant id is public.** It only says which tenant a request belongs to and is no secret. The secret is the key your server signs the `getUserToken` tokens with; it never goes into the page.
 - **Settings from the backend.** With `tenant` set, the calendar loads `GET /tenant/config` once at start. What the backend sets there wins over the page: built-in defaults, then the settings on the page (attributes, props or config file), then the tenant settings. Whatever the backend leaves out still comes from the page. So a host can change features, look, language and views in an admin dashboard without touching the page. Without `tenant` nothing changes: the page alone decides.
@@ -397,7 +377,11 @@ There are three ways to handle users.
 - **Turning features off for real.** The calendar only hides a feature. Your backend must also refuse it, with `403` and the code `featureDisabled`.
 - **No open sign-up.** When users only come through your page, turn `registration` off in the tenant settings. The sign-up page then disappears, and the backend refuses `POST /auth/register`. Otherwise anyone who knows the public tenant id could create accounts in your tenant.
 
-**Signing user tokens** (for the public tenant service; with your own backend you decide what the token looks like). `getUserToken` must return a token that your server signs at that moment, for the user who is signed in on your site. Never build it in the browser and never put the private key into the page.
+### Public tenant service
+
+This part only applies when your page uses the public tenant service. With your own backend you decide what the token looks like and how users are deleted.
+
+**Signing user tokens.** `getUserToken` must return a token that your server signs at that moment, for the user who is signed in on your site. Never build it in the browser and never put the private key into the page.
 
 1. Create a key pair. Use `ES256` (recommended), `EdDSA` or `RS256` with at least 2048 bits. Shared secrets (`HS256`) are not accepted.
 
@@ -506,7 +490,7 @@ const myDataSource: CalendarDataSource = {
 - `createAuthRepository` is optional. Without it there is no sign-in in the widget.
 - `holidays`, `chat`, `categories` and `shared` are optional. Without `chat` there is no chat, without `categories` no categories, without `shared` public links cannot be opened, and without `holidays` they are computed in the browser.
 - `mode: 'remote'` makes the calendar offer to move local events into the account after sign-in.
-- Optional methods switch their feature on: `events.search`, `events.respond`, `events.setReminders`, `events.subscribe` (live updates), `events.listTrash` / `restore` / `purge` (trash), `calendars.getFeed` / `createFeed` / `deleteFeed`, `calendars.getShare` / `createShare` / `deleteShare`. Without `search` the calendar searches the last and next year itself.
+- Optional methods switch their feature on: `events.search`, `events.respond`, `events.setReminders`, `events.subscribe` (live updates), `events.listTrash` / `restore` / `purge` (trash), `events.move` (moving events to another calendar), `calendars.getFeed` / `createFeed` / `deleteFeed`, `calendars.getShare` / `createShare` / `deleteShare`. Without `search` the calendar searches the last and next year itself.
 - Call `onUnauthorized` when a session has run out. `getLanguage` returns the current language for your requests.
 - Errors with a known `code` are shown translated, others with their `message`.
 - `events.update(id, input, version)` and `events.remove(id, version)` get the `version` the user saw. Throw an error with code `eventChanged` if the stored event is newer; without `version`, save without checking.
@@ -538,79 +522,14 @@ Everything below is exported from `@rokoyfa/calendar`.
 | `CalendarFeatures`, `CalendarFeature` | types | All feature switches, and the name of one |
 | `DEFAULT_FEATURES`, `FEATURE_NAMES` | values | Defaults and names of the features |
 | `parseCalendarOptions`, `ParsedOptions` | function, type | Checks a configuration and returns `{ options, issues }` |
-| `CalendarView` | type | `'day' | 'week' | 'month' | 'year'` |
+| `CalendarView` | type | `'day' | 'week' | 'month' | 'year' | 'agenda'` |
 | `CalendarRouting`, `StorageMode`, `HolidaySource`, `HostTheme` | types | The values of `routing`, `storageMode`, `holidaySource`, `theme` |
 | `EventCallbacks`, `DeletedEvent` | types | The three callbacks, and `{ id }` |
 | `CalendarHandle`, `CalendarState`, `NewEventDraft` | types | The methods of `ref` and of the element, the state they report, and the argument of `createEvent()` |
 | `CalendarAppearance` | type | The value of `appearance` |
 | `Messages`, `PartialMessages`, `MessageOverrides`, `DeepPartial` | types | All texts, a part of them, and the type of `messages` |
 
-```ts
-type CalendarOptions = {
-  tenant?: string
-  storageMode?: 'local' | 'remote'
-  apiBaseUrl?: string
-  apiTimeoutMs?: number
-  features?: Partial<CalendarFeatures>
-  views?: readonly CalendarView[]
-  routing?: 'memory' | 'browser'
-  basename?: string
-  initialPath?: string
-  linkParam?: string | false
-  locale?: string
-  messages?: MessageOverrides
-  theme?: 'light' | 'dark'
-  initialView?: CalendarView
-  timeZone?: string
-  holidays?: string
-  holidaySource?: 'library' | 'backend'
-  mapUrl?: string
-  readOnly?: boolean
-  appearance?: CalendarAppearance
-}
-
-type CalendarAppearance = {
-  accentColor?: string
-  fontFamily?: string
-  radius?: number
-  density?: 'comfortable' | 'compact'
-}
-
-type CalendarProps = CalendarOptions &
-  EventCallbacks & {
-    config?: string | CalendarOptions
-    ref?: Ref<CalendarHandle>
-    onViewChange?: (state: CalendarState) => void
-    dataSource?: CalendarDataSource
-    getUserToken?: UserTokenProvider
-    className?: string
-    style?: CSSProperties
-  }
-
-type CalendarFeatures = {
-  auth: boolean
-  teams: boolean
-  chat: boolean
-  attendees: boolean
-  recurrence: boolean
-  reminders: boolean
-  links: boolean
-  mapLinks: boolean
-  holidays: boolean
-  search: boolean
-  undo: boolean
-  duplicate: boolean
-  shortcuts: boolean
-  subscriptions: boolean
-  importExport: boolean
-  emailNotifications: boolean
-  timeZones: boolean
-  customColors: boolean
-  categories: boolean
-  publicLinks: boolean
-  attachments: boolean
-}
-```
+The fields of `CalendarOptions` are the options in [Options](#2-options); `CalendarFeatures` has one `boolean` per feature in [Features](#3-features).
 
 ### Data
 
@@ -623,6 +542,7 @@ type CalendarFeatures = {
 | `PublicHoliday` | `{ date, name }` |
 | `Category` | `{ id, calendarId, name }` |
 | `Attachment` | `{ id, eventId, name, type, size, createdAt, uploadedBy }` |
+| `TrashedEvent`, `EventChange` | An entry in the trash, and a message of `events.subscribe` (live updates) |
 | `SharedCalendar` | `{ id, name, color, categories }`, what a public link shows of a calendar |
 | `ChatMessage`, `ChatKey`, `ChatPage`, `ChatUnread`, `ChatEvent` | Chat, see [Event chat](#11-event-chat) |
 
@@ -662,6 +582,8 @@ type DataRepositories = {
   categories?: CategoryRepository
   shared?: SharedCalendarRepository
   attachments?: AttachmentRepository
+  // externalCalendars, history, notifications, appPasswords and caldav are filled by restDataSource;
+  // leave them out in your own adapter and the matching features stay hidden
 }
 
 interface AttachmentRepository {
@@ -697,6 +619,7 @@ interface EventRepository {
   restore?(id: string): Promise<CalendarEvent>
   purge?(calendarId: string, id: string): Promise<void>
   emptyTrash?(calendarId: string): Promise<number>
+  move?(id: string, calendarId: string, version?: number): Promise<CalendarEvent>
 }
 
 type TrashedEvent = {
@@ -830,6 +753,7 @@ The backend stores series as one event. The component expands occurrences itself
 | Widget loads | `GET /auth/me` (only with `auth`), then `GET /preferences`, `GET /colors`, `GET /calendars`, `GET /invitations` |
 | Visible range changes | `GET /events?from=…&to=…&calendarId=…` with the calendars shown. The range is two days wider than the view to cover time zone shifts. Return every event in the range **and** every series that can occur in it. |
 | Create event | `POST /events` with `EventInput` + `calendarId` |
+| Move to another calendar | `POST /events/:id/move` with `{ calendarId }` and `If-Match`, after saving the other changes |
 | Edit event / whole series | `PUT /events/:id` with the full `EventInput` |
 | Edit only this occurrence | `PUT` the series with the date added to `excludedDates`, then `POST` a detached event with `seriesId` and `originalDate` |
 | Edit this and following | `PUT` the series with `until` set to the day before (and `count: null`), `POST` a new series, `PUT` later detached events to relink them |
@@ -863,12 +787,11 @@ Before editing "following" or "all" of a series, the component loads its detache
 
 - **Security:** the rules under "Public tenant service" in `api/openapi.yaml` (host tokens, sessions, origin checks, `404` for items of others) are binding for the tenant service. For your own backend they are a good checklist, not a requirement.
 - **Sessions:** requests use `credentials: 'include'`. Set an `HttpOnly` cookie on sign-in. If the widget runs on another domain: CORS for that origin with `Access-Control-Allow-Credentials: true`, allowed headers `Content-Type`, `Accept`, `Accept-Language`, `Authorization`, `If-Match`, `X-Calendar-Tenant`, and the cookie as `SameSite=None; Secure`. Answer `401` when the session is gone.
-- **Errors:** always `{ code, message }`. Known codes such as `invalidCredentials`, `emailTaken`, `forbidden`, `lastOwner` are shown translated, others with `message`.
+- **Errors:** always a `Problem` `{ code, message }` with a code from the table in `api/openapi.yaml` (status and meaning per code). The component translates known codes and shows `message` for others.
 - **Language:** every request carries `Accept-Language`. Use it, or the stored `locale`, for emails.
 - **Emails about events** (your backend sends them, the component only stores the user's choice): an invitation with yes / maybe / no links to `/respond?status=accepted&token=…` when someone is added as attendee (`emailInvites`), a notice when title, time, place or repetition change or the event is cancelled (`emailChanges`), and reminders at the user's own reminder times even while the calendar is closed (`emailReminders`, off by default). Only to verified addresses, never to the person who made the change.
 - **Subscriptions:** `GET /feeds/:token.ics` answers without a session with the calendar as iCalendar (RFC 5545), the subscriber's own reminders and the category names as `CATEGORIES` (comma-separated, with `,` and `;` inside a name escaped as `\,` and `\;`). Keep one secret token per user and calendar, a new one replaces the old. Stop serving it when the user leaves the calendar.
 - **Version:** this is version 2 of the REST contract (`api/openapi.yaml`, `info.version`). Serve it under a versioned base path such as `/api/v2` and set `apiBaseUrl` / `api-base-url` to it, so a later major version can run next to it.
-- **Error codes:** every error is a `Problem` with a `code` from the table in `api/openapi.yaml` (status and meaning per code). The component translates them; for unknown codes it shows `message`.
 - **Rate limits:** any endpoint may answer `429` with `Retry-After` (seconds or HTTP date) and the code `rateLimited` or a more specific one. The component shows how long to wait. Cross-origin backends must list `Retry-After` in `Access-Control-Expose-Headers`.
 - **Editing at the same time:** every event has a `version` that starts at 1. Raise it on every `PUT`, attendee response and removed category, but not when someone only changes their own reminders. `PUT` and `DELETE /events/:id` send `If-Match: "<version>"` with the version the user saw, but only when your events carry a `version`; without it nothing changes for your backend. If the event has a newer version, answer `412` with `eventChanged` and change nothing. The dialog then offers to save anyway (sent without `If-Match`) or to load the current version. Without `If-Match`, or with `*`, skip the check.
 - **Categories:** belong to one calendar, names are unique per calendar without regard to case. Reject an event whose `categoryIds` are not from its calendar, and remove a deleted category from all events.
@@ -903,7 +826,7 @@ Without a WebSocket on your backend, turn the feature off: `features: { chat: fa
 
 ## 12. Calendar subscriptions
 
-With a backend that serves `/calendars/:id/feed` and `/feeds/:token.ics`, every signed-in user can subscribe to a calendar in another calendar app and see its events there, for example on the phone. Users get the link in the calendar settings: **Import & export** tab for team calendars, on the settings page for the personal calendar → **Subscribe** → **Create subscription link**. They can copy the link or open it in their calendar app.
+With a backend that serves `/calendars/:id/feed` and `/feeds/:token.ics`, every signed-in user can subscribe to a calendar in another calendar app and see its events there, for example on the phone. Users get the link in the calendar settings: **Import & export** tab → **Subscribe** → **Create subscription link**. They can copy the link or open it in their calendar app.
 
 - The subscription is **read-only**. Changes made in the other app do not come back.
 - The link is **personal and secret**: it contains the user's own reminders, and anyone who has it can see all events of the calendar. **Create new link** turns the old one off, **End subscription** removes it.
@@ -934,7 +857,7 @@ A subscription is not live: the app downloads the whole calendar again at interv
 | Outlook.com / web / new Outlook | Microsoft's own schedule, roughly every 3 hours, sometimes more than 24 hours. Cannot be changed. |
 | Classic Outlook for Windows | Follows the update limit in the feed (one hour here) and Outlook's send/receive settings. |
 
-The feed asks clients to reload every hour (`REFRESH-INTERVAL` and `X-PUBLISHED-TTL`), but most apps follow their own settings. For changes that must show up immediately, users should open this calendar directly. Two-way sync with near-instant updates would need a CalDAV server, which this component does not cover.
+The feed asks clients to reload every hour (`REFRESH-INTERVAL` and `X-PUBLISHED-TTL`), but most apps follow their own settings. For changes that must show up immediately, users should open this calendar directly, or connect the app over [CalDAV](#26-caldav), which syncs both ways.
 
 Without the feed endpoints, turn the feature off: `features: { subscriptions: false }`.
 
@@ -1017,7 +940,7 @@ function Page() {
 | --- | --- |
 | `getState()` | `{ view, date, from, to }`: the view, the date it is centred on and the first and last day shown. `null` while the calendar itself is not on screen |
 | `goToDate(date)` | Shows the date. Takes `'YYYY-MM-DD'` or a `Date` |
-| `setView(view)` | Switches to `day`, `week`, `month` or `year` |
+| `setView(view)` | Switches to `day`, `week`, `month`, `year` or `agenda` |
 | `next()`, `previous()`, `today()` | The same as the buttons in the header |
 | `openEvent(eventId, date)` | Goes to the date and opens the event. For a recurring event the date picks the occurrence |
 | `createEvent(draft?)` | Opens the dialog for a new event, optionally filled in: `{ title, startDate, start, end, endDate, allDay, location, description }`. Nothing is stored until the user saves |
@@ -1136,9 +1059,8 @@ The calendar aims at WCAG 2.2 AA and is checked with axe-core in light and dark 
 - **Keyboard.** Every event is a button and can be reached with `Tab`. On an event, `↑` and `↓` move to the previous or next event of the same day, `←` and `→` to the nearest event on the previous or next day with events, `Home` and `End` to the first and last event in view, `Enter` opens it. The other shortcuts are listed in the tooltips of the header buttons.
 - **Screen readers.** Each day column and month cell is a group named after its date, with "today" and public holidays. Events are announced with title, time, place, repetition, calendar, the user's own response and the number of attachments. The period title in the header is a live region, so moving to the next week is announced. Dialogs are labelled by their title and move the focus into the dialog.
 - **Contrast.** Text and event colors meet 4.5:1 in both themes. In dark mode, text on the built-in event colors and the accent is dark. If you change colors with `--calendar-*` properties, check the contrast of your own colors.
-- **Creating events.** In the day and week view, `Tab` reaches the time grid. The arrow keys pick the hour (`↑` / `↓`) and the day (`←` / `→`), `Home` and `End` jump to 0:00 and 23:00, `Enter` or `Space` opens the dialog for that time. Only one slot is a tab stop, so the grid costs a single `Tab`. The **+** button and `N` work as before.
+- **Creating events.** In the day and week view, `Tab` reaches the time grid. The arrow keys pick the hour (`↑` / `↓`) and the day (`←` / `→`), `Home` and `End` jump to 0:00 and 23:00, `Enter` or `Space` opens the dialog for that time. Only one slot is a tab stop, so the grid costs a single `Tab`. The **+** button and `N` create an event at the current time.
 - **Focus.** Closing a dialog returns the focus to where it was, for example to the event or slot that opened it.
-
 
 ## 22. Two-factor sign-in and devices
 

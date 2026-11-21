@@ -41,8 +41,9 @@ Version 2 of the REST contract. Three endpoints have clearer paths, and host tok
 - Repetitions from other programs that the simple fields cannot describe (for example "last working day of the month" or "on the 1st and 15th") are shown exactly and kept unchanged: `Recurrence` gains `rule` (an `RRULE` without `UNTIL` and `COUNT`) and `dates` (`RDATE`). The dialog shows them as **Custom rule** and keeps them when other details change. Import, export, CalDAV (both directions) and the test backend support them
 - Calendar field in the event dialog: new events can go to any calendar with the right to add events, including writable CalDAV calendars, and existing events or whole series move to another calendar with undo. New endpoint `POST /events/{eventId}/move`, optional `EventRepository.move`
 - Test backend: CalDAV also under `/dav/{tenantPublicId}/` with `TENANT_PUBLIC_ID`
-- `npm run check:size`: the initial load of the CDN bundle (now 184 KB gzip) must stay under 200 KB; it runs after `build:lib`. The parsers for iCal, CalDAV objects and subscribed calendars load only when needed
+- `npm run check:size`: the initial load of the CDN bundle (now 185 KB gzip) must stay under 200 KB; it runs after `build:lib`. The parsers for iCal, CalDAV objects and subscribed calendars load only when needed
 - Accessibility checks with axe (WCAG 2.2 AA) for sign-in, all calendar views in light and dark, the event dialog and all settings pages in the end-to-end tests
+- Exported types `Attachment`, `AttachmentRepository`, `TrashedEvent` and `EventChange` for own data adapters, and `move` as an optional method of `EventRepository`
 
 ### Changed
 
