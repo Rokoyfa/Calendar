@@ -73,4 +73,5 @@ export const getViewOptions = (m: Messages, views: readonly CalendarView[] = CAL
     value: view,
     label: m.views[view].label,
     title: shortcuts ? withShortcut(m.views[view].label, VIEW_SHORTCUTS[view]) : undefined,
+    separated: view === 'agenda',
   }))

@@ -92,6 +92,15 @@
   border-radius: var(--radius-pill);
 }
 
+.segmentSeparator {
+  flex: none;
+  align-self: center;
+  width: 1px;
+  height: 1.1em;
+  margin: 0 var(--space-1);
+  background-color: var(--color-grid);
+}
+
 .segment {
   flex: 1;
   padding: var(--space-2) var(--space-3);
