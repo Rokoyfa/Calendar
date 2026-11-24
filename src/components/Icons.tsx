@@ -62,6 +62,8 @@ export const PrinterIcon = (props: IconProps) => (
   />
 )
 
+export const MenuIcon = (props: IconProps) => <IconBase {...props} strokeWidth={2.5} path="M4 6h16M4 12h16M4 18h16" />
+
 export const FilterIcon = (props: IconProps) => <IconBase {...props} strokeWidth={2.5} path="M4 6h16M7 12h10M10 18h4" />
 
 export const PaperclipIcon = (props: IconProps) => (

@@ -202,7 +202,7 @@ Your backend only needs the endpoints of the features that are on, plus a small 
 | `caldav` | `feature-caldav` | on | Using the calendars in other programs over CalDAV with app passwords, see [CalDAV](#26-caldav). Not in local mode | `/auth/app-passwords*`, `GET /caldav`, the CalDAV server from `api/caldav.md` |
 | `caldavAccounts` | `feature-caldav-accounts` | on | Connecting accounts of other CalDAV services and editing their calendars, see [CalDAV](#26-caldav). Not in local mode | `/caldav-accounts*`, `/caldav-calendars*` |
 | `overlapWarnings` | `feature-overlap-warnings` | on | A note in the event dialog when the time overlaps other events of the shown calendars | – |
-| `print` | `feature-print` | on | A button in the header that prints the visible range or saves it as PDF | – |
+| `print` | `feature-print` | on | An entry in the calendar menu that prints the visible range or saves it as PDF | – |
 | `bookingPages` | `feature-booking-pages` | on | Public pages where others book a free time, see [Booking pages](#27-booking-pages). Not in local mode | `/calendars/:id/booking-pages`, `/booking-pages/*`, `/booking/*`, `/bookings/*` |
 
 Good to know:
@@ -870,7 +870,7 @@ Without the feed endpoints, turn the feature off: `features: { subscriptions: fa
 
 ## 13. Categories
 
-Every calendar can have its own categories, for example "Training" and "Match". Events get up to five of them, and a filter in the header shows only the chosen ones.
+Every calendar can have its own categories, for example "Training" and "Match". Events get up to five of them, and a filter in the calendar menu shows only the chosen ones.
 
 - **Managing.** Categories are created, renamed and deleted in the calendar's settings, by members with `manage_calendars` and by the owner of a personal calendar. A calendar holds up to 30.
 - **Assigning.** The event dialog shows the categories of the event's calendar as chips. Anyone who may edit the event may assign them. Whoever may manage the categories can also create a new one right there with "+ New category"; it is selected at once.
@@ -1063,7 +1063,7 @@ Turn it off with `features: { dataExport: false }`, for example when your page a
 
 The calendar aims at WCAG 2.2 AA and is checked with axe-core in light and dark mode.
 
-- **Keyboard.** Every event is a button and can be reached with `Tab`. On an event, `↑` and `↓` move to the previous or next event of the same day, `←` and `→` to the nearest event on the previous or next day with events, `Home` and `End` to the first and last event in view, `Enter` opens it. The other shortcuts are listed in the tooltips of the header buttons.
+- **Keyboard.** Every event is a button and can be reached with `Tab`. On an event, `↑` and `↓` move to the previous or next event of the same day, `←` and `→` to the nearest event on the previous or next day with events, `Home` and `End` to the first and last event in view, `Enter` opens it. The other shortcuts are listed in the tooltips of the header buttons and next to the entries of the calendar menu.
 - **Screen readers.** Each day column and month cell is a group named after its date, with "today" and public holidays. Events are announced with title, time, place, repetition, calendar, the user's own response and the number of attachments. The period title in the header is a live region, so moving to the next week is announced. Dialogs are labelled by their title and move the focus into the dialog.
 - **Contrast.** Text and event colors meet 4.5:1 in both themes. In dark mode, text on the built-in event colors and the accent is dark. If you change colors with `--calendar-*` properties, check the contrast of your own colors.
 - **Creating events.** In the day and week view, `Tab` reaches the time grid. The arrow keys pick the hour (`↑` / `↓`) and the day (`←` / `→`), `Home` and `End` jump to 0:00 and 23:00, `Enter` or `Space` opens the dialog for that time. Only one slot is a tab stop, so the grid costs a single `Tab`. The **+** button and `N` create an event at the current time.

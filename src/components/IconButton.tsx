@@ -6,11 +6,22 @@ type IconButtonProps = {
   title?: string
   plain?: boolean
   disabled?: boolean
+  opensDialog?: boolean
+  expanded?: boolean
   onClick: () => void
   children: ReactNode
 }
 
-export function IconButton({ label, title = label, plain, disabled, onClick, children }: IconButtonProps) {
+export function IconButton({
+  label,
+  title = label,
+  plain,
+  disabled,
+  opensDialog,
+  expanded,
+  onClick,
+  children,
+}: IconButtonProps) {
   return (
     <button
       type="button"
@@ -18,6 +29,8 @@ export function IconButton({ label, title = label, plain, disabled, onClick, chi
       aria-label={label}
       title={title}
       disabled={disabled}
+      aria-haspopup={opensDialog ? 'dialog' : undefined}
+      aria-expanded={expanded}
       onClick={onClick}
     >
       {children}

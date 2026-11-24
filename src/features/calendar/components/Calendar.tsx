@@ -58,6 +58,7 @@ import { getSourceText } from '../utils/eventLabels.ts'
 import type { CalendarView, CalendarViewProps } from '../types/view.ts'
 import { groupSegmentsByDate } from '../utils/segmentEvents.ts'
 import { CalendarHeader } from './CalendarHeader.tsx'
+import type { CalendarMenuItem } from './CalendarMenu.tsx'
 import { MonthView } from './MonthView.tsx'
 import { TimeGridView } from './TimeGridView.tsx'
 import { YearView } from './YearView.tsx'
@@ -95,6 +96,7 @@ type CalendarProps = {
   initialView?: CalendarView
   headerContext?: ReactNode
   headerAccessory?: ReactNode
+  menuItems?: readonly CalendarMenuItem[]
   currentUserEmail?: string | null
   loadAttendeeCandidates?: AttendeeCandidateLoader
   chat?: ChatAccess
@@ -132,6 +134,7 @@ export function Calendar({
   initialView,
   headerContext,
   headerAccessory,
+  menuItems,
   currentUserEmail = null,
   loadAttendeeCandidates,
   chat,
@@ -462,6 +465,7 @@ export function Calendar({
                 onCreateEvent={canCreate ? createNow : undefined}
                 context={headerContext}
                 accessory={headerAccessory}
+                menuItems={menuItems}
               />
 
               <ErrorMessage message={error} className="textCenter" />

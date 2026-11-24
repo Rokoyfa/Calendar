@@ -6,7 +6,6 @@ import { useHost } from '../../../context/HostContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { getViewOptions, withShortcut as addShortcut } from '../constants/views.ts'
 import type { CalendarView } from '../types/view.ts'
-import { classNames } from '../../../utils/classNames.ts'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -15,6 +14,8 @@ import {
   PrinterIcon,
   SearchIcon,
 } from '../../../components/Icons.tsx'
+import { compact } from '../../../utils/list.ts'
+import { CalendarMenu, type CalendarMenuItem } from './CalendarMenu.tsx'
 
 type CalendarHeaderProps = {
   view: CalendarView
@@ -29,6 +30,7 @@ type CalendarHeaderProps = {
   onFilter?: () => void
   onPrint?: () => void
   isFiltered?: boolean
+  menuItems?: readonly CalendarMenuItem[]
   context?: ReactNode
   accessory?: ReactNode
 }
@@ -46,6 +48,7 @@ export function CalendarHeader({
   onFilter,
   onPrint,
   isFiltered = false,
+  menuItems = [],
   context,
   accessory,
 }: CalendarHeaderProps) {
@@ -53,9 +56,28 @@ export function CalendarHeader({
   const { views, features } = useHost()
   const withShortcut = (label: string, key: string) => (features.shortcuts ? addShortcut(label, key) : label)
   const { previous: previousLabel, next: nextLabel } = m.views[view]
+  const items = compact<CalendarMenuItem>([
+    onSearch && {
+      key: 'search',
+      label: m.calendar.search.open,
+      icon: <SearchIcon size={18} />,
+      shortcut: features.shortcuts ? '/' : undefined,
+      onSelect: onSearch,
+    },
+    onFilter && {
+      key: 'filter',
+      label: m.calendar.filter.title,
+      icon: <FilterIcon size={18} />,
+      badge: isFiltered ? m.calendar.menu.active : undefined,
+      onSelect: onFilter,
+    },
+    onPrint && { key: 'print', label: m.calendar.print.open, icon: <PrinterIcon size={18} />, onSelect: onPrint },
+    ...menuItems,
+  ])
   return (
     <header className="header">
       <div className="headerNav">
+        <CalendarMenu items={items} isMarked={isFiltered} />
         <IconButton label={previousLabel} title={withShortcut(previousLabel, '←')} plain onClick={onPrevious}>
           <ChevronLeftIcon />
         </IconButton>
@@ -85,32 +107,6 @@ export function CalendarHeader({
           />
         )}
         <span className="headerCreate">
-          {onFilter && (
-            <span className={classNames('filterButton', isFiltered && 'filterButton--active')}>
-              <IconButton
-                label={isFiltered ? m.calendar.filter.openActive : m.calendar.filter.open}
-                plain
-                onClick={onFilter}
-              >
-                <FilterIcon size={18} />
-              </IconButton>
-            </span>
-          )}
-          {onPrint && (
-            <IconButton label={m.calendar.print.open} plain onClick={onPrint}>
-              <PrinterIcon size={18} />
-            </IconButton>
-          )}
-          {onSearch && (
-            <IconButton
-              label={m.calendar.search.open}
-              title={withShortcut(m.calendar.search.open, '/')}
-              plain
-              onClick={onSearch}
-            >
-              <SearchIcon size={18} />
-            </IconButton>
-          )}
           {onCreateEvent && (
             <IconButton
               label={m.calendar.newEvent}

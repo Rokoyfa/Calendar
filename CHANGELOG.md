@@ -9,7 +9,8 @@ New features; the REST contract only grows, nothing changes for existing endpoin
 ### Added
 
 - Overlap warning (feature `overlapWarnings`): the event dialog notes when the time overlaps other events of the shown calendars, with up to three titles and times. Saving stays possible
-- Printing (feature `print`): a printer button in the header prints the visible day, week, month, year or agenda as a clean list, or saves it as PDF through the browser's print dialog
+- Calendar menu: a ☰ button on the left of the header opens a side panel with search, category filter, printing and, without an account menu, settings. The header keeps navigation, title, views, new event, notifications and the account menu. Pages can add entries through the `menuItems` prop of `Calendar`
+- Printing (feature `print`): an entry in the calendar menu prints the visible day, week, month, year or agenda as a clean list, or saves it as PDF through the browser's print dialog
 - Booking pages (feature `bookingPages`): in the new **Booking pages** tab of the calendar settings, members with `manage_calendars` create up to 10 pages per calendar with duration, start-time step, break, minimum notice, horizon, daily limit, time zone and weekly times. Anyone with the link books a free time at `/book/:token` without an account; the booking counts after the confirmation link from the email (`/booking/confirm`), and the second email links to `/booking/cancel`. Confirmed bookings become events in the calendar
 - Endpoints `/calendars/:id/booking-pages`, `/booking-pages/:id`, `/booking-pages/:id/renew`, `/booking/:token`, `/booking/:token/slots`, `/bookings/confirm`, `/bookings/lookup`, `/bookings/cancel` (tag "Booking pages" in `api/openapi.yaml`)
 - Notification kinds `bookingCreated` and `bookingCanceled` in the bell

@@ -10,9 +10,17 @@ type ModalProps = {
   children: ReactNode
   variant?: 'default' | 'danger'
   size?: 'default' | 'large'
+  placement?: 'center' | 'start'
 }
 
-export function Modal({ title, onClose, children, variant = 'default', size = 'default' }: ModalProps) {
+export function Modal({
+  title,
+  onClose,
+  children,
+  variant = 'default',
+  size = 'default',
+  placement = 'center',
+}: ModalProps) {
   const { m } = useI18n()
   const root = useRootElement()
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -34,7 +42,12 @@ export function Modal({ title, onClose, children, variant = 'default', size = 'd
   return createPortal(
     <dialog
       ref={dialogRef}
-      className={classNames('modal', variant === 'danger' && 'modal--danger', size === 'large' && 'modal--large')}
+      className={classNames(
+        'modal',
+        variant === 'danger' && 'modal--danger',
+        size === 'large' && 'modal--large',
+        placement === 'start' && 'modal--start',
+      )}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault()

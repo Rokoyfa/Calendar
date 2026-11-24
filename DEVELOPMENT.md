@@ -141,7 +141,7 @@ document.querySelector('calendar-widget').getUserToken = async () => (await fetc
 
 - Das Widget fragt erst `GET /auth/me`. Bei `401` holt es ein Token und tauscht es an `POST /auth/token` gegen eine Sitzung. Läuft die Sitzung später ab, passiert das automatisch noch einmal.
 - In diesem Modus gibt es keine Anmelde-, Registrierungs- und Passwort-Seiten, keinen Abmelden-Button, keinen Konto-Tab und keine Bestätigungsleiste. Das Konto gehört dem Gastgeber.
-- Liefert `getUserToken` `null`, arbeitet das Widget wie für Gäste im Browser. Statt des Kontomenüs gibt es dann das Zahnrad für die Einstellungen.
+- Liefert `getUserToken` `null`, arbeitet das Widget wie für Gäste im Browser. Statt des Kontomenüs stehen die Einstellungen dann im Kalendermenü.
 - Die Eigenschaft kann vor oder nach dem Laden der Script-Datei gesetzt werden.
 - Als Daten-Adapter: `tenantDataSource({ tenant, baseUrl, getUserToken })`.
 
@@ -563,7 +563,7 @@ Beim Speichern mit Fehlern springt der Dialog zum ersten Tab mit Fehlern, sofern
 
 ### Suche
 
-Die Lupe im Kopf öffnet die Suche über Titel, Ort, Beschreibung und Links der angezeigten Kalender (ab 2 Zeichen, 250 ms Verzögerung). Treffer stehen nach dem nächsten Vorkommen sortiert, vergangene danach. Ein Klick springt zum Datum und öffnet den Termin. Das Backend sucht über `GET /events/search`. Adapter ohne `search` werden über das letzte und nächste Jahr aus `GET /events` durchsucht (`features/calendar/utils/search.ts`).
+**Suchen** im Kalendermenü (oder `/`) öffnet die Suche über Titel, Ort, Beschreibung und Links der angezeigten Kalender (ab 2 Zeichen, 250 ms Verzögerung). Treffer stehen nach dem nächsten Vorkommen sortiert, vergangene danach. Ein Klick springt zum Datum und öffnet den Termin. Das Backend sucht über `GET /events/search`. Adapter ohne `search` werden über das letzte und nächste Jahr aus `GET /events` durchsucht (`features/calendar/utils/search.ts`).
 
 ### Import und Export (iCalendar)
 
@@ -649,7 +649,7 @@ Angelegt wird über `POST /calendars` mit Name, Beschreibung, Farbe und Einladun
 
 ### Einstellungen
 
-Seite `/settings`, erreichbar über **Einstellungen** im Kontomenü (runder Button mit dem Anfangsbuchstaben). Mit `VITE_FEATURE_AUTH=true` nur für Angemeldete: `/settings` leitet sonst zum Kalender um, auch direkt nach dem Löschen des Kontos. Ohne Anmeldefunktion gibt es kein Kontomenü, dann führt ein Zahnrad in der Kopfzeile zu den Einstellungen.
+Seite `/settings`, erreichbar über **Einstellungen** im Kontomenü (runder Button mit dem Anfangsbuchstaben). Mit `VITE_FEATURE_AUTH=true` nur für Angemeldete: `/settings` leitet sonst zum Kalender um, auch direkt nach dem Löschen des Kontos. Ohne Anmeldefunktion gibt es kein Kontomenü, dann stehen die Einstellungen im Kalendermenü (☰ links in der Kopfzeile).
 
 Oben wechseln Tabs zwischen **Kalender**, **Einladungen** (nur mit bestätigter E-Mail und Team-Funktionen, Anzahl offener Einladungen im Tab), **Darstellung** (Sprache und Region, Farbschema, Startansicht, eigene Farben) und **Konto** (nur angemeldet). Der gewählte Tab steht in der Adresse (`/settings?tab=appearance`), bleibt also beim Neuladen erhalten und lässt sich verlinken. Pfeiltasten links/rechts wechseln den Tab.
 
@@ -681,15 +681,15 @@ Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, r
 | Zu heute                         | `T` oder **Heute** im Header       |
 | Ansicht wechseln                 | `D` / `W` / `M` / `Y` (auch `J`) oder Tag / Woche / Monat / Jahr |
 | Neuer Termin                     | `N` oder **+** im Header           |
-| Suche                            | `/` oder Lupe im Header            |
+| Suche                            | `/` oder **Suchen** im Kalendermenü |
 | Letzte Aktion rückgängig         | `Strg+Z` / `⌘Z`, solange der Hinweis sichtbar ist |
 | Fenster schließen                | `Esc` oder Klick neben das Fenster |
 | Termin per Tastatur anlegen      | Mit `Tab` ins Raster der Tages- oder Wochenansicht, mit den Pfeiltasten die Uhrzeit wählen (`↑` / `↓` eine Stunde, `←` / `→` ein Tag, `Pos1` / `Ende` 0 bzw. 23 Uhr), `Enter` öffnet den Dialog |
 | Zwischen Terminen wechseln       | Auf einem Termin: `↑` / `↓` im selben Tag, `←` / `→` zum nächsten Tag mit Terminen, `Pos1` / `Ende` zum ersten / letzten Termin |
 
-Die Kürzel wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt nach dem Laden oder nach dem Schließen eines Fensters). Sind mehrere Kalender auf der Seite, reagiert der zuletzt benutzte, anfangs der erste. Solange ein Eingabefeld, ein Fenster oder ein Element der Host-Seite den Fokus hat, sind sie aus. So bleibt z. B. `Strg+Z` in Eingabefeldern das normale Rückgängig des Browsers (`hooks/useKeyboardShortcuts.ts`, die Tasten stehen in `Calendar.tsx`, die Ansichtstasten in `VIEW_SHORTCUTS`). Die Tooltips der Buttons im Header nennen die Taste.
+Die Kürzel wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt nach dem Laden oder nach dem Schließen eines Fensters). Sind mehrere Kalender auf der Seite, reagiert der zuletzt benutzte, anfangs der erste. Solange ein Eingabefeld, ein Fenster oder ein Element der Host-Seite den Fokus hat, sind sie aus. So bleibt z. B. `Strg+Z` in Eingabefeldern das normale Rückgängig des Browsers (`hooks/useKeyboardShortcuts.ts`, die Tasten stehen in `Calendar.tsx`, die Ansichtstasten in `VIEW_SHORTCUTS`). Die Tooltips der Buttons im Header und die Einträge im Kalendermenü nennen die Taste.
 
-**Barrierefreiheit:** Die Pfeiltasten auf einem Termin übernimmt `useEventNavigation` (vor den globalen Kürzeln, deshalb blättert `←` / `→` dort nicht den Zeitraum). Tage und Monatszellen sind Gruppen mit Datum, „heute“ und Feiertag als Namen (`getDayLabel`), Termine haben einen vollständigen Namen (`getEventLabel`, bei Chips sichtbarer Text plus versteckte Details). Der Titel im Header ist eine Live-Region. Gedämpfter Text ist `#616161` (hell), im Dunkelmodus steht dunkler Text auf Eventfarben und Akzent. Geprüft mit axe-core in allen Ansichten, im Dialog und in den Einstellungen, hell und dunkel.
+**Barrierefreiheit:** Die Pfeiltasten auf einem Termin übernimmt `useEventNavigation` (vor den globalen Kürzeln, deshalb blättert `←` / `→` dort nicht den Zeitraum). Tage und Monatszellen sind Gruppen mit Datum, „heute“ und Feiertag als Namen (`getDayLabel`), Termine haben einen vollständigen Namen (`getEventLabel`, bei Chips sichtbarer Text plus versteckte Details). Der Titel im Header ist eine Live-Region. Gedämpfter Text ist `#616161` (hell), im Dunkelmodus steht dunkler Text auf Eventfarben und Akzent. Geprüft mit axe-core in allen Ansichten, im Dialog, im Kalendermenü und in den Einstellungen, hell und dunkel.
 
 ### Feiertage
 
@@ -719,7 +719,7 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 ### Kategorien
 
 - Kategorien gehören zu einem Kalender (`utils/category.ts`, höchstens 30 pro Kalender, Namen ohne Groß-/Kleinschreibung eindeutig). Termine tragen bis zu 5 davon in `categoryIds`.
-- Verwaltung in den Kalender-Einstellungen (`CategoriesSection`), Zuordnung im Termin-Dialog (`CategoryField`, dort auch „+ Neue Kategorie“). Verwalten darf, wer `manage_calendars` hat, und im persönlichen Kalender immer der Besitzer (`canManageCategories` in `permissions.ts`, weil der lokale persönliche Kalender kein `manage_calendars` hat), Filter im Kopf (`CategoryFilterModal`). Der Filter lebt nur im Zustand von `Calendar` und kennt zusätzlich „Ohne Kategorie“. Unbekannte Ids (gelöschte Kategorien) zählen als „ohne“.
+- Verwaltung in den Kalender-Einstellungen (`CategoriesSection`), Zuordnung im Termin-Dialog (`CategoryField`, dort auch „+ Neue Kategorie“). Verwalten darf, wer `manage_calendars` hat, und im persönlichen Kalender immer der Besitzer (`canManageCategories` in `permissions.ts`, weil der lokale persönliche Kalender kein `manage_calendars` hat), Filter über das Kalendermenü (`CategoryFilterModal`). Der Filter lebt nur im Zustand von `Calendar` und kennt zusätzlich „Ohne Kategorie“. Unbekannte Ids (gelöschte Kategorien) zählen als „ohne“.
 - Export und Import: `toICalendar` schreibt die Namen als `CATEGORIES`, `parseICalendar` liefert sie als `categoryNames`. Beim Import ordnet `createCategoryResolver` (`features/events/utils/icalExchange.ts`) sie über den Namen zu und legt fehlende an, wenn man den Kalender verwalten darf. Hat die Datei keine Kategorien, behält ein bekannter Termin seine.
 - Speicherung über `CategoryRepository` (lokal `LocalCategoryRepository`, sonst `RemoteCategoryRepository`). Fehlt das Repository im Daten-Adapter, gibt es die Funktion nicht.
 
@@ -738,7 +738,8 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 ### Überschneidungen, Drucken, Buchungsseiten
 
 - **Überschneidungen** (Schalter `overlapWarnings`): `OverlapNotice` im Termin-Dialog prüft 400 ms nach der letzten Eingabe über `Calendar.checkOverlaps`, ob der Zeitraum andere Termine der angezeigten Kalender schneidet (`findOverlaps` in `utils/overlap.ts`, Vergleich als Zeitpunkte in der Zeitzone des Betrachters). Ganztägige Termine, der Termin selbst und abgelehnte Einladungen zählen nicht. Gezeigt werden höchstens drei, dahinter „+N“. Nur ein Hinweis, Speichern bleibt möglich; nicht im Nur-Lesen-Modus und nicht bei CalDAV-Terminen.
-- **Drucken** (Schalter `print`): Drucker-Button in der Kopfzeile. `buildPrintDocument` (`features/calendar/utils/print.ts`) baut aus dem sichtbaren Zeitraum ein eigenes HTML-Dokument (Liste je Tag, im Monat ein Raster mit Feiertagen, alle Texte maskiert), `printDocument` druckt es in einem unsichtbaren `iframe` und räumt danach auf. Speichern als PDF geht über den Druckdialog des Browsers.
+- **Kalendermenü:** Der Button ☰ links in der Kopfzeile öffnet eine Leiste von links (`CalendarMenu`, `Modal` mit `placement="start"`) mit **Suchen**, **Nach Kategorie filtern** (nur mit Kategorien, Markierung „aktiv“ und Punkt am Button, solange ein Filter wirkt), **Drucken** und ohne Kontomenü **Einstellungen**. Seiten geben weitere Einträge über die Prop `menuItems` von `Calendar` mit (Aktion oder Link). Ein Eintrag schließt die Leiste, der Fokus geht danach zurück auf ☰. In der Kopfzeile bleiben Blättern, Heute, Titel, Ansichten, **+**, Glocke und Kontomenü. Ohne Einträge gibt es keinen ☰.
+- **Drucken** (Schalter `print`): Eintrag im Kalendermenü. `buildPrintDocument` (`features/calendar/utils/print.ts`) baut aus dem sichtbaren Zeitraum ein eigenes HTML-Dokument (Liste je Tag, im Monat ein Raster mit Feiertagen, alle Texte maskiert), `printDocument` druckt es in einem unsichtbaren `iframe` und räumt danach auf. Speichern als PDF geht über den Druckdialog des Browsers.
 - **Buchungsseiten** (Schalter `bookingPages`, nur mit Backend): Tab „Buchungsseiten“ in den Kalender-Einstellungen (persönlich und Team, mit `manage_calendars`), Code in `features/bookings/`. `BookingPageForm` mit `BookingHoursField` (Zeiten je Wochentag, Ende `00:00` = `24:00`), Liste über `ManagedListSection`, Link wie beim öffentlichen Link über `buildHostLink` (`utils/hostLink.ts`). Öffentliche Seiten ohne Anmeldung: `/book/:token` (`pages/BookingPage.tsx`, freie Zeiten einer Woche in der Zeitzone des Besuchers, dann Name, E-Mail, Notiz), `/booking/confirm?token=` und `/booking/cancel?token=` (`pages/BookingLinkPage.tsx`). Bestätigen und Absagen laufen erst auf Knopfdruck, damit Link-Scanner in Mailprogrammen nichts auslösen. `RemoteBookingRepository` steckt in `restDataSource`, auch für Gäste. Regeln für freie Zeiten und Grenzen stehen im DEVELOPER_GUIDE (Abschnitt 27) und in `api/openapi.yaml`.
 
 ### Steuerung durch den Gastgeber
@@ -891,7 +892,7 @@ src/
 │  └─ RootElementContext.ts    Wurzel-Element des Widgets (Theme, Modals, Tasten, Breakpoints)
 ├─ router.tsx                  Routen und createCalendarRouter (memory oder browser): /, /settings, /calendars/new, /login, …
 ├─ pages/
-│  ├─ CalendarPage.tsx         Kalender mit Startansicht, Kontomenü (Zahnrad nur ohne Anmeldefunktion), Bestätigungsleiste und Übernahme-Abfrage
+│  ├─ CalendarPage.tsx         Kalender mit Startansicht, Kontomenü (ohne Anmeldefunktion Einstellungen im Kalendermenü), Bestätigungsleiste und Übernahme-Abfrage
 │  ├─ RespondPage.tsx          Antwort aus dem Link einer Einladungs-E-Mail speichern und ändern (ohne Anmeldung)
 │  ├─ BookingPage.tsx          Öffentliche Buchungsseite /book/:token: freie Zeiten, Name, E-Mail, Notiz (ohne Anmeldung)
 │  ├─ BookingLinkPage.tsx      Buchung aus den E-Mail-Links bestätigen und absagen (ohne Anmeldung)

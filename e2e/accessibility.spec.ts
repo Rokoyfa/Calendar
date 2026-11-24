@@ -68,6 +68,14 @@ test('the calendar views and the event dialog are accessible', async ({ browser 
   await page.getByRole('button', { name: 'Neuer Termin', exact: true }).click()
   await expect(page.locator('dialog[open]')).toBeVisible()
   await audit(page, 'new event dialog')
+  await page.keyboard.press('Escape')
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme })
+    await page.getByRole('button', { name: 'Menü öffnen' }).click()
+    await expect(page.getByRole('dialog', { name: 'Menü' })).toBeVisible()
+    await audit(page, `${scheme} menu`)
+    await page.keyboard.press('Escape')
+  }
   verify()
 })
 

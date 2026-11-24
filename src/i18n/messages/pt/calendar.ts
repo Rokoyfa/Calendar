@@ -38,6 +38,12 @@ export const calendar: Messages['calendar'] = {
     deleted: (title) => `“${title}” eliminado`,
     moved: (title) => `“${title}” movido`,
   },
+  menu: {
+    open: 'Abrir menu',
+    openMarked: 'Abrir menu (filtro ativo)',
+    title: 'Menu',
+    active: 'ativo',
+  },
   filter: {
     open: 'Filtrar por categoria',
     openActive: 'Filtrar por categoria (ativo)',

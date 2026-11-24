@@ -36,6 +36,12 @@ export const calendar = {
     deleted: (title: string) => `“${title}” deleted`,
     moved: (title: string) => `“${title}” moved`,
   },
+  menu: {
+    open: 'Open menu',
+    openMarked: 'Open menu (filter active)',
+    title: 'Menu',
+    active: 'active',
+  },
   filter: {
     open: 'Filter by category',
     openActive: 'Filter by category (active)',

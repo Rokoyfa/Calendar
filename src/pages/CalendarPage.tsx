@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { SettingsIcon } from '../components/Icons.tsx'
 import { ROUTES } from '../config/routes.ts'
 import { AccountMenu, EmailVerificationBanner, useAuth } from '../features/authorization/index.ts'
@@ -195,13 +195,13 @@ export function CalendarPage() {
         isHistoryAvailable={isTeamCalendar}
         openEvent={openEvent}
         onOpenEventDone={clearLink}
+        menuItems={
+          hasAccountMenu
+            ? undefined
+            : [{ key: 'settings', label: m.common.settings, icon: <SettingsIcon size={18} />, to: ROUTES.settings }]
+        }
         headerAccessory={
           <>
-            {!hasAccountMenu && (
-              <Link to={ROUTES.settings} className="iconLink" aria-label={m.common.settings} title={m.common.settings}>
-                <SettingsIcon size={20} />
-              </Link>
-            )}
             <NotificationBell />
             <AccountMenu menuItems={host.features.teams ? <CalendarSwitcher /> : undefined} />
           </>
