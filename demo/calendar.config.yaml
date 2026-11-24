@@ -138,6 +138,16 @@ features:
   # Needs the /caldav-accounts and /caldav-calendars endpoints.
   caldavAccounts: true
 
+  # Warning in the event dialog when the time overlaps other events of the shown calendars.
+  overlapWarnings: true
+
+  # Print button in the header: prints the shown period or saves it as PDF.
+  print: true
+
+  # Public booking pages where others book a free slot after confirming their email address.
+  # Needs the /booking-pages and /booking endpoints.
+  bookingPages: true
+
 # Shows events without letting anyone create, change, move, delete or import them.
 readOnly: false
 

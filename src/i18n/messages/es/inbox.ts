@@ -17,5 +17,7 @@ export const inbox: Messages['inbox'] = {
     attendeeResponse: (actor, title) => `${actor} ha respondido a «${title}»`,
     chatMessage: (actor, title) => `${actor} ha escrito sobre «${title}»`,
     reminder: (title) => `Recordatorio: «${title}»`,
+    bookingCreated: (title) => `Nueva reserva: «${title}»`,
+    bookingCanceled: (title) => `Reserva cancelada: «${title}»`,
   },
 }

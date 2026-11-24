@@ -133,6 +133,7 @@ export const calendars: Messages['calendars'] = {
       members: 'Mitglieder',
       invitations: 'Einladungen',
       danger: 'Gefahrenbereich',
+      booking: 'Buchungsseiten',
       exchange: 'Import & Export',
       trash: 'Papierkorb',
     },

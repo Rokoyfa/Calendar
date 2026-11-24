@@ -1,4 +1,5 @@
 import type { HostLinks } from '../context/HostContext.ts'
+import { buildHostLink } from './hostLink.ts'
 import { parseCategories, type Category } from './category.ts'
 import { isEventColor, type EventColor } from './event.ts'
 
@@ -20,17 +21,5 @@ export const parseSharedCalendar = (value: unknown): SharedCalendar | null => {
 
 export const getSharedPath = (token: string) => `${SHARED_PATH}/${encodeURIComponent(token)}`
 
-export const buildSharedLink = (token: string, links: HostLinks | undefined, pageUrl: string) => {
-  const path = getSharedPath(token)
-  if (!links || !URL.canParse(pageUrl)) return null
-  const url = new URL(pageUrl)
-  url.hash = ''
-  if (links.routing === 'browser') {
-    url.pathname = `${(links.basename ?? '').replace(/\/+$/, '')}${path}`
-    url.search = ''
-    return url.toString()
-  }
-  if (!links.linkParam) return null
-  url.search = new URLSearchParams({ [links.linkParam]: path }).toString()
-  return url.toString()
-}
+export const buildSharedLink = (token: string, links: HostLinks | undefined, pageUrl: string) =>
+  buildHostLink(getSharedPath(token), links, pageUrl)

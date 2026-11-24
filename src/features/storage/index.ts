@@ -12,6 +12,7 @@ export { LocalCategoryRepository } from './repositories/LocalCategoryRepository.
 export { RemoteCategoryRepository } from './repositories/RemoteCategoryRepository.ts'
 export { RemoteAttachmentRepository } from './repositories/RemoteAttachmentRepository.ts'
 export { RemoteSharedCalendarRepository } from './repositories/RemoteSharedCalendarRepository.ts'
+export { RemoteBookingRepository } from './repositories/RemoteBookingRepository.ts'
 export { RemoteChatRepository } from './repositories/RemoteChatRepository.ts'
 export { RemoteExternalCalendarRepository } from './repositories/RemoteExternalCalendarRepository.ts'
 export { RemoteHistoryRepository } from './repositories/RemoteHistoryRepository.ts'
@@ -22,6 +23,7 @@ export { CaldavEventRepository, withCaldavEvents } from './repositories/CaldavEv
 export { LiveSocket, type LiveMessage } from './utils/liveSocket.ts'
 export type {
   AttachmentRepository,
+  BookingRepository,
   CategoryRepository,
   ColorRepository,
   EventQuery,

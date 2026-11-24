@@ -54,6 +54,14 @@ export const SearchIcon = (props: IconProps) => (
   <IconBase {...props} strokeWidth={2.5} path="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5.2-5.2" />
 )
 
+export const PrinterIcon = (props: IconProps) => (
+  <IconBase
+    {...props}
+    strokeWidth={2}
+    path="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z"
+  />
+)
+
 export const FilterIcon = (props: IconProps) => <IconBase {...props} strokeWidth={2.5} path="M4 6h16M7 12h10M10 18h4" />
 
 export const PaperclipIcon = (props: IconProps) => (

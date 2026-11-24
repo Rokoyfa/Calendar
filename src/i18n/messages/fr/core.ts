@@ -91,6 +91,11 @@ export const errors: Messages['errors'] = {
   tooManyAppPasswords: 'Vous pouvez créer au maximum 20 mots de passe d’application.',
   tooManyCaldavAccounts: 'Vous pouvez connecter au maximum 5 comptes CalDAV.',
   caldavAuthFailed: 'Le serveur CalDAV n’a pas accepté le nom d’utilisateur ou le mot de passe.',
+  tooManyBookingPages: 'Un calendrier peut avoir au maximum 10 pages de réservation.',
+  bookingPageNotFound: 'Cette page de réservation n’existe pas ou a été désactivée.',
+  bookingNotFound: 'Ce lien de réservation est invalide ou n’est plus valable.',
+  slotUnavailable: 'Ce créneau n’est plus disponible. Choisissez-en un autre.',
+  bookingExpired: 'La réservation n’a pas été confirmée dans les 15 minutes. Veuillez réserver à nouveau.',
   status: {
     400: 'La requête n’était pas valide.',
     401: 'Veuillez vous connecter.',

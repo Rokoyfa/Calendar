@@ -53,4 +53,8 @@ export const calendar: Messages['calendar'] = {
     empty: 'Keine Termine gefunden.',
     searching: 'Suche läuft …',
   },
+  print: {
+    open: 'Drucken oder als PDF speichern',
+    empty: 'Keine Termine in diesem Zeitraum.',
+  },
 }

@@ -91,6 +91,11 @@ export const errors: Messages['errors'] = {
   tooManyAppPasswords: 'Du kannst höchstens 20 App-Passwörter anlegen.',
   tooManyCaldavAccounts: 'Du kannst höchstens 5 CalDAV-Konten verbinden.',
   caldavAuthFailed: 'Der CalDAV-Server hat Benutzername oder Passwort nicht akzeptiert.',
+  tooManyBookingPages: 'Ein Kalender kann höchstens 10 Buchungsseiten haben.',
+  bookingPageNotFound: 'Diese Buchungsseite gibt es nicht oder sie wurde abgeschaltet.',
+  bookingNotFound: 'Dieser Buchungslink ist ungültig oder nicht mehr gültig.',
+  slotUnavailable: 'Diese Zeit ist nicht mehr frei. Bitte wähle eine andere.',
+  bookingExpired: 'Die Buchung wurde nicht innerhalb von 15 Minuten bestätigt. Bitte buche erneut.',
   status: {
     400: 'Die Anfrage war ungültig.',
     401: 'Bitte melde dich an.',

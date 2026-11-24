@@ -52,7 +52,9 @@ function ActiveBell({ repository }: { repository: NonNullable<ReturnType<typeof 
       case 'teamInvitation':
         return text.kinds.teamInvitation(actor, notification.team?.name ?? '')
       case 'reminder':
-        return text.kinds.reminder(title)
+      case 'bookingCreated':
+      case 'bookingCanceled':
+        return text.kinds[notification.kind](title)
       default:
         return text.kinds[notification.kind](actor, title)
     }

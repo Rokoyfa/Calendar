@@ -142,6 +142,7 @@ export const calendars: Messages['calendars'] = {
       members: 'Membres',
       invitations: 'Invitations',
       danger: 'Zone de danger',
+      booking: 'Pages de réservation',
       exchange: 'Import et export',
       trash: 'Corbeille',
     },

@@ -63,6 +63,11 @@ const ERROR_CODES = [
   'tooManyAppPasswords',
   'tooManyCaldavAccounts',
   'caldavAuthFailed',
+  'tooManyBookingPages',
+  'bookingPageNotFound',
+  'bookingNotFound',
+  'slotUnavailable',
+  'bookingExpired',
 ] as const
 
 export const isErrorCode = (value: unknown): value is ErrorCode =>

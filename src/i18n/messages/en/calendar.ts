@@ -51,4 +51,8 @@ export const calendar = {
     empty: 'No events found.',
     searching: 'Searching …',
   },
+  print: {
+    open: 'Print or save as PDF',
+    empty: 'No events in this period.',
+  },
 }

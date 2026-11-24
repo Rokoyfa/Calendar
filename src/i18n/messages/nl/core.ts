@@ -91,6 +91,11 @@ export const errors: Messages['errors'] = {
   tooManyAppPasswords: 'Je kunt maximaal 20 app-wachtwoorden aanmaken.',
   tooManyCaldavAccounts: 'Je kunt maximaal 5 CalDAV-accounts koppelen.',
   caldavAuthFailed: 'De CalDAV-server heeft de gebruikersnaam of het wachtwoord niet geaccepteerd.',
+  tooManyBookingPages: 'Een agenda kan maximaal 10 boekingspagina’s hebben.',
+  bookingPageNotFound: 'Deze boekingspagina bestaat niet of is uitgeschakeld.',
+  bookingNotFound: 'Deze boekingslink is ongeldig of niet meer geldig.',
+  slotUnavailable: 'Dit tijdstip is niet meer vrij. Kies een ander tijdstip.',
+  bookingExpired: 'De boeking is niet binnen 15 minuten bevestigd. Boek opnieuw.',
   status: {
     400: 'Het verzoek was ongeldig.',
     401: 'Log in.',

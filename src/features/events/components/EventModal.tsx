@@ -53,6 +53,7 @@ import type { ChatKey } from '../../../utils/chat.ts'
 import { ReminderField } from './ReminderField.tsx'
 import { TimeZoneField } from './TimeZoneField.tsx'
 import { HistoryPanel } from './HistoryPanel.tsx'
+import { OverlapNotice, type OverlapCheck } from './OverlapNotice.tsx'
 import { compact } from '../../../utils/list.ts'
 
 const DEFAULT_START = '09:00'
@@ -116,6 +117,7 @@ type EventModalProps = {
   onCreateCategory?: (name: string) => Promise<Category>
   readOnly?: boolean
   canEditAttachments?: boolean
+  checkOverlaps?: OverlapCheck
   onClose: () => void
 }
 
@@ -144,6 +146,7 @@ export function EventModal({
   onCreateCategory,
   readOnly = false,
   canEditAttachments = !readOnly,
+  checkOverlaps,
   onClose,
 }: EventModalProps) {
   const i18n = useI18n()
@@ -319,6 +322,7 @@ export function EventModal({
             <TimeZoneField value={values.timeZone} onChange={(timeZone) => setField('timeZone', timeZone)} />
           )}
           {viewerHint && <p className="formHint">{viewerHint}</p>}
+          {checkOverlaps && !readOnly && <OverlapNotice values={values} check={checkOverlaps} />}
 
           {features.reminders && !readOnly && (
             <ReminderField value={values.reminders} onChange={(reminders) => setField('reminders', reminders)} />

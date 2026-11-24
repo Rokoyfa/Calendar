@@ -27,6 +27,14 @@ import type {
   CreatedAppPassword,
 } from '../../../utils/caldav.ts'
 import type { AppNotification, NotificationPage } from '../../../utils/notification.ts'
+import type {
+  BookingHold,
+  BookingPage,
+  BookingPageSettings,
+  BookingRequest,
+  BookingSummary,
+  PublicBookingPage,
+} from '../../../utils/booking.ts'
 
 export type EventQuery = DateRange & { calendarIds: readonly string[] }
 
@@ -118,6 +126,20 @@ export interface SharedCalendarRepository {
   listEvents(token: string, range: DateRange): Promise<CalendarEvent[]>
 }
 
+export interface BookingRepository {
+  listPages(calendarId: string): Promise<BookingPage[]>
+  createPage(calendarId: string, settings: BookingPageSettings): Promise<BookingPage>
+  updatePage(id: string, changes: Partial<BookingPageSettings>): Promise<BookingPage>
+  renewPage(id: string): Promise<BookingPage>
+  removePage(id: string): Promise<void>
+  getPublic(token: string): Promise<PublicBookingPage>
+  listSlots(token: string, range: DateRange): Promise<string[]>
+  book(token: string, request: BookingRequest): Promise<BookingHold>
+  confirm(token: string): Promise<BookingSummary>
+  lookup(token: string): Promise<BookingSummary>
+  cancel(token: string): Promise<BookingSummary>
+}
+
 export interface PreferencesRepository {
   get(): Promise<Preferences>
   update(changes: Partial<Preferences>): Promise<Preferences>
@@ -150,6 +172,7 @@ export type StorageRepositories = {
   chat?: ChatRepository
   categories?: CategoryRepository
   shared?: SharedCalendarRepository
+  bookings?: BookingRepository
   attachments?: AttachmentRepository
   externalCalendars?: ExternalCalendarRepository
   history?: HistoryRepository

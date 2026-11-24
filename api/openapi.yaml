@@ -119,6 +119,8 @@ info:
     | `categoryNotFound` | 404 | The category does not exist |
     | `attachmentNotFound` | 404 | The attachment does not exist |
     | `shareNotFound` | 404 | The public link is unknown or turned off |
+    | `bookingPageNotFound` | 404 | The booking page is unknown or turned off |
+    | `bookingNotFound` | 404 | The link of a booking email is unknown |
     | `emailTaken` | 409 | An account with this email exists |
     | `alreadyMember` | 409 | The invited person is already a member |
     | `alreadyInvited` | 409 | The address is already invited |
@@ -141,9 +143,12 @@ info:
     | `tooManyExternalCalendars` | 409 | More than 10 external calendars |
     | `tooManyAppPasswords` | 409 | More than 20 app passwords |
     | `tooManyCaldavAccounts` | 409 | More than 5 CalDAV accounts |
+    | `tooManyBookingPages` | 409 | More than 10 booking pages in a calendar |
+    | `slotUnavailable` | 409 | The chosen time of a booking is no longer free |
     | `twoFactorExpired` | 410 | The sign-in step for the code expired; sign in again |
     | `invalidLink` | 410 | The link from an email is invalid or expired |
     | `invitationExpired` | 410 | The invitation is no longer valid |
+    | `bookingExpired` | 410 | A booking was not confirmed within 15 minutes |
     | `eventChanged` | 412 | `If-Match` names an older `version` of the event |
     | `payloadTooLarge` | 413 | The body is too large |
     | `attachmentTooLarge` | 413 | The file is larger than 10 MB |
@@ -191,6 +196,11 @@ tags:
     description: CalDAV accounts of other services (Nextcloud, iCloud …), shown and edited next to the own calendars.
   - name: External calendars
     description: Read-only calendars from other services (`.ics` addresses), shown next to the own calendars.
+  - name: Booking pages
+    description: |
+      Public pages where others book a free time in a personal or team calendar. The `/booking` and `/bookings` paths
+      need no session. A booking counts only after the booker confirms it with the link from the email; until then
+      the time stays reserved for 15 minutes.
   - name: Notifications
     description: |
       In-app notifications (bell). New notifications also arrive over the WebSocket as
@@ -2189,6 +2199,219 @@ paths:
               schema: { type: array, items: { $ref: '#/components/schemas/CalendarEvent' } }
         '400': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
+  /calendars/{calendarId}/booking-pages:
+    parameters:
+      - { $ref: '#/components/parameters/CalendarId' }
+    get:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: Booking pages of a calendar
+      description: Needs `manage_calendars`. `personal` names the own personal calendar.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: Booking pages
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/BookingPage' } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: Create a booking page
+      description: |
+        Needs `manage_calendars`. At most 10 per calendar (`409` with `tooManyBookingPages`). Fields left out get their
+        defaults: 30 minutes, no buffer, 2 hours notice, 60 days ahead, Monday to Friday 9:00–17:00.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BookingPageInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BookingPage' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /booking-pages/{pageId}:
+    parameters:
+      - { name: pageId, in: path, required: true, schema: { type: string } }
+    patch:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: Change a booking page
+      description: Needs `manage_calendars` in the page's calendar. Only the fields sent change.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BookingPageInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BookingPage' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: Delete a booking page
+      description: The link stops working at once. Events of confirmed bookings stay in the calendar.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /booking-pages/{pageId}/renew:
+    parameters:
+      - { name: pageId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: New link for a booking page
+      description: The old link stops working at once.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: The page with its new token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BookingPage' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /booking/{token}:
+    parameters:
+      - { name: token, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: A booking page
+      description: No session needed. `404` with `bookingPageNotFound` for unknown or inactive pages.
+      security: []
+      responses:
+        '200':
+          description: What the visitor sees
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicBookingPage' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: Book a time
+      description: |
+        No session needed. Reserves the time for 15 minutes and sends the booker an email with a confirmation link
+        (`/booking/confirm?token=…` on the host page). `409` with `slotUnavailable` when the time is not free,
+        `429` with `rateLimited` for too many requests from one address or too many open bookings of one email address.
+        Count requests per client and per page, and never tell whether an email address already booked.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [start, name, email]
+              properties:
+                start: { type: string, format: date-time, description: 'A start from GET /booking/{token}/slots' }
+                name: { type: string, maxLength: 80 }
+                email: { type: string, format: email, maxLength: 254 }
+                note: { type: string, maxLength: 1000 }
+      responses:
+        '202':
+          description: Reserved until the booker confirms
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [expiresAt]
+                properties:
+                  expiresAt: { type: string, format: date-time }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+  /booking/{token}/slots:
+    parameters:
+      - { name: token, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: Free times of a booking page
+      description: |
+        No session needed. Dates are in the page's time zone, at most 42 days apart. A time is free when it lies in
+        the page's hours, respects notice and horizon, keeps the buffer to every busy time and the day has not reached
+        `maxPerDay`. Busy are the events of the page's calendar; for a personal calendar also the team calendars the
+        owner shows in it, the shown CalDAV calendars of the owner and reserved, not yet confirmed bookings.
+        Events the owner declined do not count. Never reveal anything about the busy events.
+      security: []
+      parameters:
+        - { name: from, in: query, required: true, schema: { $ref: '#/components/schemas/ISODate' } }
+        - { name: to, in: query, required: true, schema: { $ref: '#/components/schemas/ISODate' } }
+      responses:
+        '200':
+          description: Start times in UTC, in order
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [slots]
+                properties:
+                  slots: { type: array, items: { type: string, format: date-time } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /bookings/confirm:
+    post:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: Confirm a booking
+      description: |
+        No session needed; `token` comes from the confirmation email. Creates the event in the page's calendar with
+        the booker as attendee, sends an email with a cancel link (`/booking/cancel?token=…`) and notifies the owner of
+        a personal page or the creator of a team page. Confirming again returns the booking unchanged.
+        `410` with `bookingExpired` after 15 minutes, `409` with `slotUnavailable` when the time was taken meanwhile.
+      security: []
+      requestBody: { $ref: '#/components/requestBodies/BookingToken' }
+      responses:
+        '200': { $ref: '#/components/responses/Booking' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
+  /bookings/lookup:
+    post:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: A booking by its cancel link
+      description: No session needed; `token` comes from the email after confirming. Deleted events count as canceled.
+      security: []
+      requestBody: { $ref: '#/components/requestBodies/BookingToken' }
+      responses:
+        '200': { $ref: '#/components/responses/Booking' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /bookings/cancel:
+    post:
+      tags: [Booking pages]
+      x-feature: bookingPages
+      summary: Cancel a booking
+      description: |
+        No session needed. Moves the event to the trash and notifies the owner. Only before the booking starts
+        (`409` with `slotUnavailable` afterwards). Canceling again returns the booking unchanged.
+      security: []
+      requestBody: { $ref: '#/components/requestBodies/BookingToken' }
+      responses:
+        '200': { $ref: '#/components/responses/Booking' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
 components:
   securitySchemes:
     sessionCookie:
@@ -2229,7 +2452,22 @@ components:
       in: path
       required: true
       schema: { type: string }
+  requestBodies:
+    BookingToken:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token]
+            properties:
+              token: { type: string, maxLength: 200 }
   responses:
+    Booking:
+      description: The booking
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BookingSummary' }
     Problem:
       description: Error
       content:
@@ -2408,7 +2646,7 @@ components:
       required: [id, kind, actor, event, team, invitationId, createdAt, readAt]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [teamInvitation, eventInvitation, eventChanged, eventCanceled, attendeeResponse, chatMessage, reminder] }
+        kind: { type: string, enum: [teamInvitation, eventInvitation, eventChanged, eventCanceled, attendeeResponse, chatMessage, reminder, bookingCreated, bookingCanceled] }
         actor:
           oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
         event:
@@ -2619,7 +2857,64 @@ components:
         responses: { type: array, items: { type: object } }
         chatMessages: { type: array, items: { type: object } }
         attachments: { type: array, items: { type: object } }
+        bookingPages: { type: array, items: { type: object }, description: 'Booking pages the user created, without their token' }
       additionalProperties: true
+    BookingHours:
+      type: object
+      required: [weekday, start, end]
+      properties:
+        weekday: { type: integer, minimum: 0, maximum: 6, description: '0 = Monday … 6 = Sunday' }
+        start: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+        end: { type: string, pattern: '^(([01][0-9]|2[0-3]):[0-5][0-9]|24:00)$' }
+    BookingPageInput:
+      type: object
+      description: Times on the same weekday must not overlap.
+      properties:
+        title: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 1000 }
+        location: { type: string, maxLength: 200 }
+        durationMinutes: { type: integer, minimum: 5, maximum: 480, multipleOf: 5 }
+        bufferMinutes: { type: integer, minimum: 0, maximum: 240, multipleOf: 5, description: Free time kept before and after every busy time }
+        minNoticeMinutes: { type: integer, minimum: 0, maximum: 43200, multipleOf: 5, description: How long before the start a time can still be booked }
+        horizonDays: { type: integer, minimum: 1, maximum: 365, description: How far ahead times can be booked }
+        maxPerDay: { oneOf: [{ type: integer, minimum: 1, maximum: 50 }, { type: 'null' }] }
+        stepMinutes: { type: integer, minimum: 5, maximum: 240, multipleOf: 5, description: Distance between offered start times }
+        timeZone: { type: string, description: 'IANA time zone of the hours, required when creating' }
+        hours: { type: array, maxItems: 21, items: { $ref: '#/components/schemas/BookingHours' } }
+        active: { type: boolean }
+    BookingPage:
+      allOf:
+        - { $ref: '#/components/schemas/BookingPageInput' }
+        - type: object
+          required: [id, calendarId, token, title, description, location, durationMinutes, bufferMinutes, minNoticeMinutes, horizonDays, maxPerDay, stepMinutes, timeZone, hours, active, createdAt, updatedAt]
+          properties:
+            id: { type: string }
+            calendarId: { type: string }
+            token: { type: string, description: 'The page is reached at /book/<token> on the host page' }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    PublicBookingPage:
+      type: object
+      required: [title, description, location, durationMinutes, timeZone, hostName, color]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        location: { type: string }
+        durationMinutes: { type: integer }
+        timeZone: { type: string }
+        hostName: { type: string, description: 'Name of the owner of a personal page, or of the team' }
+        color: { type: string }
+    BookingSummary:
+      type: object
+      required: [status, title, location, hostName, start, end, timeZone]
+      properties:
+        status: { type: string, enum: [pending, confirmed, canceled] }
+        title: { type: string }
+        location: { type: string }
+        hostName: { type: string }
+        start: { type: string, format: date-time }
+        end: { type: string, format: date-time }
+        timeZone: { type: string }
     TrashedEvent:
       type: object
       required: [event, deletedAt, deletedBy, deletedByName, expiresAt, detachedCount]

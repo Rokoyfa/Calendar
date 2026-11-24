@@ -30,6 +30,7 @@ Everything you need to put `@rokoyfa/calendar` on your page: embedding, all opti
 24. [Change history](#24-change-history)
 25. [Notifications](#25-notifications)
 26. [CalDAV](#26-caldav)
+27. [Booking pages](#27-booking-pages)
 
 ## 1. Embedding
 
@@ -200,6 +201,9 @@ Your backend only needs the endpoints of the features that are on, plus a small 
 | `notifications` | `feature-notifications` | on | Bell with notifications, see [Notifications](#25-notifications). Not in local mode | `/notifications*`, `notification.created` over the WebSocket |
 | `caldav` | `feature-caldav` | on | Using the calendars in other programs over CalDAV with app passwords, see [CalDAV](#26-caldav). Not in local mode | `/auth/app-passwords*`, `GET /caldav`, the CalDAV server from `api/caldav.md` |
 | `caldavAccounts` | `feature-caldav-accounts` | on | Connecting accounts of other CalDAV services and editing their calendars, see [CalDAV](#26-caldav). Not in local mode | `/caldav-accounts*`, `/caldav-calendars*` |
+| `overlapWarnings` | `feature-overlap-warnings` | on | A note in the event dialog when the time overlaps other events of the shown calendars | – |
+| `print` | `feature-print` | on | A button in the header that prints the visible range or saves it as PDF | – |
+| `bookingPages` | `feature-booking-pages` | on | Public pages where others book a free time, see [Booking pages](#27-booking-pages). Not in local mode | `/calendars/:id/booking-pages`, `/booking-pages/*`, `/booking/*`, `/bookings/*` |
 
 Good to know:
 
@@ -582,7 +586,7 @@ type DataRepositories = {
   categories?: CategoryRepository
   shared?: SharedCalendarRepository
   attachments?: AttachmentRepository
-  // externalCalendars, history, notifications, appPasswords and caldav are filled by restDataSource;
+  // externalCalendars, history, notifications, appPasswords, caldav and bookings are filled by restDataSource;
   // leave them out in your own adapter and the matching features stay hidden
 }
 
@@ -780,6 +784,8 @@ The backend stores series as one event. The component expands occurrences itself
 | Subscribed calendars | `GET /external-calendars` on start, `GET /external-calendars/:id/ics` for every shown one and again every 15 minutes, `POST`, `PATCH` and `DELETE /external-calendars/:id` from the settings |
 | Change history | `GET /events/:id/history` when the "History" tab of an event is opened |
 | Notifications | `GET /notifications` on start, `notification.created` over the WebSocket, `POST /notifications/read`, `DELETE /notifications/:id` |
+| Overlap note | `GET /events` for the day before to the day after the edited event, while the dialog is open |
+| Booking pages | "Booking pages" tab of the calendar settings: `GET`/`POST /calendars/:id/booking-pages`, `PATCH`/`DELETE /booking-pages/:id`, `POST /booking-pages/:id/renew`. The public page calls `GET /booking/:token`, `GET /booking/:token/slots?from=…&to=…` and `POST /booking/:token`, the pages behind the email links `POST /bookings/confirm`, `/bookings/lookup` and `/bookings/cancel`, all without a session |
 
 Before editing "following" or "all" of a series, the component loads its detached events with `GET /events?seriesId=…`.
 
@@ -797,6 +803,7 @@ Before editing "following" or "all" of a series, the component loads its detache
 - **Categories:** belong to one calendar, names are unique per calendar without regard to case. Reject an event whose `categoryIds` are not from its calendar, and remove a deleted category from all events.
 - **Attachments:** at most 10 MB per file and 20 per event. Store the files outside the database, keep only the file name, and serve them with `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`, because uploaded files are untrusted. Delete them together with their event, calendar or team. Never hand them out through public links or subscription feeds.
 - **Public links:** one unguessable token per calendar. `GET /shared/:token/events` must leave out everything personal: empty `attendees` and `reminders`, no `createdBy`, and never chat messages. A new link, or stopping the share, must make the old token fail at once.
+- **Booking pages:** see [Booking pages](#27-booking-pages). The page token is as secret as a public link; the confirm and cancel tokens of a booking are stored only as hashes. Never show the booker who else booked, and never show the owner's events on the public page, only free times.
 - **Data export:** `GET /auth/me/export` returns everything stored about the signed-in user as JSON (see `AccountExport` in the OpenAPI file). Leave out password hashes, sessions, tokens and secret links, and never include other people's events or messages.
 - **Trash:** `DELETE /events/:id` moves the event to the trash instead of deleting it, together with the detached events of a series. Keep attachments, chat and email response links. Deleted events must no longer appear anywhere else: lists, search, feeds, public links, reminders. Restoring keeps the id and raises `version`; refuse a detached event whose series is still in the trash with `409 seriesDeleted`. After 30 days delete the event for good with its attachments and chat, and do the same at once when its calendar or team is deleted.
 - **Live updates:** after every change to an event (create, `PUT`, `DELETE`, attendee response, attachment added or removed, category removed) send `{ "type": "event.changed", "calendarId", "eventId", "version", "changedBy" }` over the WebSocket to every connected member of the calendar's team. `version` is the new version, `null` when the event was deleted. `changedBy` is the user id, or `null` for changes without a session such as answers from an email link. Send one message per event, also for detached events deleted with their series.
@@ -1111,3 +1118,19 @@ A bell next to the account button shows notifications with a badge for the unrea
 - The **Calendar** field of the event dialog lists the own calendars with the right to add events and the writable CalDAV calendars, so new events can go there directly and existing ones can move between all of them. A move between the component's calendars uses `POST /events/{eventId}/move`; a move to or from CalDAV creates the event in the target and then deletes the original (attachments and chat stay in the trash of the original).
 - Repetitions the simple fields cannot describe keep their original rule in `recurrence.rule` and additional dates in `recurrence.dates`, so editing the title of such a series in the component does not change its repetition on the other server.
 - Credentials are stored encrypted by the backend. Only `https`, no private networks, every redirect checked again (see [Rules for the backend](#rules-for-the-backend)).
+
+## 27. Booking pages
+
+Booking pages let people without an account book a free time in a calendar, like an appointment page. A member with `manage_calendars` manages them in the **Booking pages** tab of the calendar settings, for the personal calendar and for team calendars.
+
+- **Settings per page.** Title, description, place, duration (5 to 480 minutes), start times every 5 to 240 minutes, a break between bookings, a minimum notice, how many days ahead people can book (up to 365), an optional limit per day, the time zone and the available times per weekday (up to 21 time ranges, `24:00` as the end of a day). Up to 10 pages per calendar. A page can be switched off without deleting it.
+- **Link.** Every page has its own secret link, built like a public link: with `routing: memory` your page with the link parameter (`calendarPath=%2Fbook%2F<token>`), with `routing: browser` `/book/<token>` under your `basename`. **Create new link** turns the old one off; bookings already made stay valid.
+- **Free times.** The backend offers only times that fit the weekly times, the notice and the horizon, and that do not overlap any event, open booking or confirmed booking, including the break before and after. For the personal calendar every event the owner sees counts as busy: the personal calendar, team calendars shown in it, and connected CalDAV calendars. For a team calendar only that calendar counts. Events the owner declined are ignored; all-day events block their whole day.
+- **The public page** (`/book/:token`) shows title, host name, duration, place and description, and the free times of one week in the visitor's time zone. The visitor enters name, email address and an optional note.
+- **Confirmation by email.** A booking first holds the time for 15 minutes and sends an email with a link to `/booking/confirm?token=…`. Only when the visitor presses **Confirm booking** there does the booking count: the backend checks the time again, creates the event in the calendar (title "<page title>: <name>", the visitor as accepted attendee, the note as description), notifies the owner (`bookingCreated`) and sends a second email with a link to `/booking/cancel?token=…`. The confirmation needs a button press, so link scanners in mail programs cannot confirm bookings.
+- **Cancelling.** The cancel page shows the booking and cancels it until it starts. The event moves to the trash and the owner gets `bookingCanceled`. If the owner deletes the event, the booking counts as cancelled.
+- **Limits.** At most 10 booking requests per hour from one address, 3 open requests per email address and page, 30 open requests per page (`rateLimited`). Codes: `tooManyBookingPages`, `bookingPageNotFound`, `bookingNotFound`, `slotUnavailable`, `bookingExpired`.
+- **Your backend** implements the endpoints tagged "Booking pages" in `api/openapi.yaml`. The email links point at your page like the other email links; your host page passes them on to the widget.
+
+Turn the feature off with `features: { bookingPages: false }`. Existing links then show "This booking page does not exist or was turned off".
+

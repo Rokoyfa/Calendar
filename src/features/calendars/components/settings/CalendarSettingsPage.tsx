@@ -22,6 +22,8 @@ import { GeneralSection } from './GeneralSection.tsx'
 import { MembersSection } from './MembersSection.tsx'
 import { TeamInvitationsSection } from './TeamInvitationsSection.tsx'
 import { compact } from '../../../../utils/list.ts'
+import { BookingPagesSection } from '../../../bookings/index.ts'
+import { useStorage } from '../../../storage/index.ts'
 
 function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
@@ -32,14 +34,23 @@ function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
   )
 }
 
-type TeamTab = 'general' | 'members' | 'invitations' | 'exchange' | 'trash' | 'danger'
-type PersonalTab = 'general' | 'exchange' | 'trash'
+type TeamTab = 'general' | 'members' | 'invitations' | 'booking' | 'exchange' | 'trash' | 'danger'
+type PersonalTab = 'general' | 'booking' | 'exchange' | 'trash'
 
 function useCommonTabs(calendar: CalendarSummary, canOpenTrash: boolean) {
   const { m } = useI18n()
   const { settings } = m.calendars
-  const { subscriptions, importExport, trash } = useFeatures()
+  const { subscriptions, importExport, trash, bookingPages } = useFeatures()
+  const { bookings, mode } = useStorage()
   return {
+    booking: bookingPages &&
+      bookings &&
+      mode === 'remote' &&
+      hasPermission(calendar, 'manage_calendars') && {
+        value: 'booking' as const,
+        label: settings.tabs.booking,
+        content: <BookingPagesSection calendarId={calendar.id} repository={bookings} />,
+      },
     exchange: (subscriptions || importExport) && {
       value: 'exchange' as const,
       label: settings.tabs.exchange,
@@ -110,6 +121,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
         />
       ),
     },
+    common.booking,
     common.exchange,
     common.trash,
     {
@@ -151,6 +163,7 @@ function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
         </>
       ),
     },
+    common.booking,
     common.exchange,
     common.trash,
   ])

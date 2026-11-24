@@ -53,4 +53,8 @@ export const calendar: Messages['calendar'] = {
     empty: 'Geen afspraken gevonden.',
     searching: 'Zoeken …',
   },
+  print: {
+    open: 'Afdrukken of opslaan als pdf',
+    empty: 'Geen afspraken in deze periode.',
+  },
 }

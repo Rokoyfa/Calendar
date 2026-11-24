@@ -628,9 +628,9 @@ Eigene Seite `/calendars/:calendarId/settings` je Kalender (nur angemeldet), err
 
 **Leitung übertragen:** Ein Fenster listet alle Mitglieder außer dir und bestehenden Owners, oben mit Suche nach Name oder E-Mail. Nach Auswahl und „Bestätigen“ folgt eine zweite Rückfrage, die den neuen Owner nennt und sagt, was sich ändert. Erst „Endgültig übertragen“ ruft `POST /teams/:teamId/transfer-ownership` auf: Das Mitglied wird Owner, du wirst Administrator, beides in einem Schritt. Danach verschwinden „Leitung übertragen“ und „Team löschen“, Verlassen ist möglich.
 
-Der persönliche Kalender hat keine Tabs, nur **Allgemein** (Name und Farbe) und einen Hinweis, dass er sich nicht teilen oder löschen lässt. Ohne Zugriff (z. B. nach dem Entfernen) zeigt die Seite „Diesen Kalender gibt es nicht, oder du hast keinen Zugriff mehr.“
+Der persönliche Kalender hat die Tabs **Allgemein** (Name und Farbe, Hinweis, dass er sich nicht teilen oder löschen lässt), **Buchungsseiten**, **Import & Export** und **Papierkorb**. Ohne Zugriff (z. B. nach dem Entfernen) zeigt die Seite „Diesen Kalender gibt es nicht, oder du hast keinen Zugriff mehr.“
 
-Die Seite liegt in `features/calendars/components/settings/`, Mitglieder und Einladungen lädt `useTeam`. Bestätigungen laufen über den allgemeinen `ConfirmModal` aus `components/` zusammen mit `useConfirm`, auch „Kalender verlassen“ in der Liste und der Papierkorb. Die Tabs „Austausch“ und „Papierkorb“ beschreibt `useCommonTabs` einmal für persönliche und Team-Kalender; bedingte Tabs stehen mit `bedingung && { … }` in der Liste, `compact` entfernt die leeren.
+Die Seite liegt in `features/calendars/components/settings/`, Mitglieder und Einladungen lädt `useTeam`. Bestätigungen laufen über den allgemeinen `ConfirmModal` aus `components/` zusammen mit `useConfirm`, auch „Kalender verlassen“ in der Liste und der Papierkorb. Die Tabs „Buchungsseiten“, „Austausch“ und „Papierkorb“ beschreibt `useCommonTabs` einmal für persönliche und Team-Kalender; bedingte Tabs stehen mit `bedingung && { … }` in der Liste, `compact` entfernt die leeren.
 
 ### Kalender erstellen
 
@@ -734,6 +734,12 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 - `readOnly` (Option des Gastgebers) landet im `HostContext`. `Calendar` setzt damit `canCreate` auf `false`, der Termin-Dialog zeigt seine Felder in einem deaktivierten `fieldset` und nur noch „Schließen“, der Import ist ausgeblendet.
 - Öffentlicher Link: `ShareSection` in den Kalender-Einstellungen holt ein Token (`getShare`, `createShare`, `deleteShare` am `CalendarRepository`) und baut daraus mit `buildSharedLink` die Adresse, je nach Routing über den Link-Parameter der Gastgeberseite oder als `/shared/:token`.
 - Die Seite `/shared/:token` (`SharedCalendarPage`) braucht keine Anmeldung. Sie lädt den Kalender über `SharedCalendarRepository` und setzt einen eigenen `StorageProvider` mit nur lesenden Repositories um die normale `Calendar`-Komponente.
+
+### Überschneidungen, Drucken, Buchungsseiten
+
+- **Überschneidungen** (Schalter `overlapWarnings`): `OverlapNotice` im Termin-Dialog prüft 400 ms nach der letzten Eingabe über `Calendar.checkOverlaps`, ob der Zeitraum andere Termine der angezeigten Kalender schneidet (`findOverlaps` in `utils/overlap.ts`, Vergleich als Zeitpunkte in der Zeitzone des Betrachters). Ganztägige Termine, der Termin selbst und abgelehnte Einladungen zählen nicht. Gezeigt werden höchstens drei, dahinter „+N“. Nur ein Hinweis, Speichern bleibt möglich; nicht im Nur-Lesen-Modus und nicht bei CalDAV-Terminen.
+- **Drucken** (Schalter `print`): Drucker-Button in der Kopfzeile. `buildPrintDocument` (`features/calendar/utils/print.ts`) baut aus dem sichtbaren Zeitraum ein eigenes HTML-Dokument (Liste je Tag, im Monat ein Raster mit Feiertagen, alle Texte maskiert), `printDocument` druckt es in einem unsichtbaren `iframe` und räumt danach auf. Speichern als PDF geht über den Druckdialog des Browsers.
+- **Buchungsseiten** (Schalter `bookingPages`, nur mit Backend): Tab „Buchungsseiten“ in den Kalender-Einstellungen (persönlich und Team, mit `manage_calendars`), Code in `features/bookings/`. `BookingPageForm` mit `BookingHoursField` (Zeiten je Wochentag, Ende `00:00` = `24:00`), Liste über `ManagedListSection`, Link wie beim öffentlichen Link über `buildHostLink` (`utils/hostLink.ts`). Öffentliche Seiten ohne Anmeldung: `/book/:token` (`pages/BookingPage.tsx`, freie Zeiten einer Woche in der Zeitzone des Besuchers, dann Name, E-Mail, Notiz), `/booking/confirm?token=` und `/booking/cancel?token=` (`pages/BookingLinkPage.tsx`). Bestätigen und Absagen laufen erst auf Knopfdruck, damit Link-Scanner in Mailprogrammen nichts auslösen. `RemoteBookingRepository` steckt in `restDataSource`, auch für Gäste. Regeln für freie Zeiten und Grenzen stehen im DEVELOPER_GUIDE (Abschnitt 27) und in `api/openapi.yaml`.
 
 ### Steuerung durch den Gastgeber
 
@@ -887,6 +893,8 @@ src/
 ├─ pages/
 │  ├─ CalendarPage.tsx         Kalender mit Startansicht, Kontomenü (Zahnrad nur ohne Anmeldefunktion), Bestätigungsleiste und Übernahme-Abfrage
 │  ├─ RespondPage.tsx          Antwort aus dem Link einer Einladungs-E-Mail speichern und ändern (ohne Anmeldung)
+│  ├─ BookingPage.tsx          Öffentliche Buchungsseite /book/:token: freie Zeiten, Name, E-Mail, Notiz (ohne Anmeldung)
+│  ├─ BookingLinkPage.tsx      Buchung aus den E-Mail-Links bestätigen und absagen (ohne Anmeldung)
 │  └─ SettingsPage.tsx         Einstellungen in Tabs: Kalender, Einladungen, Darstellung, Benachrichtigungen, Konto
 ├─ main.tsx                    Einstieg der Website: <Calendar routing="browser" /> mit Werten aus der .env
 ├─ env.d.ts                    Typen der Umgebungsvariablen
@@ -959,6 +967,8 @@ src/
 │  ├─ preferences.ts           Einstellungen: Typen, Standardwerte, Prüfung, Startansicht
 │  ├─ recurrence.ts            Wiederholungsregeln, Berechnung der Vorkommen
 │  ├─ series.ts                Serien ausnehmen, aufteilen, ändern
+│  ├─ booking.ts               Buchungsseiten: Typen, Prüfung der Antworten, Wochenzeiten, freie Zeiten je Tag, Link
+│  ├─ hostLink.ts              Link auf einen Pfad des Widgets über die Gastgeberseite (öffentliche Links, Buchungsseiten)
 │  └─ validation.ts            Fehler je Feld, gemeinsame Prüfung „gibt es Fehler?“, E-Mail prüfen
 └─ features/
    ├─ calendar/                Anzeige: Tag, Woche, Monat, Jahr

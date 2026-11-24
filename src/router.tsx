@@ -39,6 +39,9 @@ const TwoFactorPage = lazyPage(
 )
 const RespondPage = lazyPage(() => import('./pages/RespondPage.tsx'), 'RespondPage')
 const SharedCalendarPage = lazyPage(() => import('./pages/SharedCalendarPage.tsx'), 'SharedCalendarPage')
+const BookingPage = lazyPage(() => import('./pages/BookingPage.tsx'), 'BookingPage')
+const BookingConfirmPage = lazyPage(() => import('./pages/BookingLinkPage.tsx'), 'BookingConfirmPage')
+const BookingCancelPage = lazyPage(() => import('./pages/BookingLinkPage.tsx'), 'BookingCancelPage')
 
 const loaded = (page: ReactNode) => <Suspense fallback={<PageLoading />}>{page}</Suspense>
 
@@ -65,6 +68,9 @@ const routes: RouteObject[] = [
   { path: ROUTES.twoFactor, element: accountsOnly(<TwoFactorPage />) },
   { path: ROUTES.respond, element: withAuth(<RespondPage />) },
   { path: ROUTES.shared, element: loaded(<SharedCalendarPage />) },
+  { path: ROUTES.booking, element: loaded(<BookingPage />) },
+  { path: ROUTES.bookingConfirm, element: loaded(<BookingConfirmPage />) },
+  { path: ROUTES.bookingCancel, element: loaded(<BookingCancelPage />) },
   { path: '*', element: <Navigate to={ROUTES.calendar} replace /> },
 ]
 

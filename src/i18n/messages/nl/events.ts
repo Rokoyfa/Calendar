@@ -78,6 +78,13 @@ export const events: Messages['events'] = {
   lastOccurrence: 'Laatste afspraak',
   calendar: 'Agenda',
   moveSeriesHint: 'De hele reeks gaat naar de andere agenda, ook apart bewerkte afspraken.',
+  overlapItem: (title: string, start: string, end: string) => `‘${title}’ ${start}–${end}`,
+  overlap: (list: string, more: number) =>
+    more === 0
+      ? `Overlapt met ${list}.`
+      : more === 1
+        ? `Overlapt met ${list} en nog één afspraak.`
+        : `Overlapt met ${list} en nog ${more} afspraken.`,
   customRule: 'Eigen regel',
   customRuleHint:
     'Deze reeks gebruikt een regel uit een ander programma die hier niet kan worden bewerkt. Die blijft behouden als je andere gegevens wijzigt. Kies een andere herhaling om haar te vervangen.',

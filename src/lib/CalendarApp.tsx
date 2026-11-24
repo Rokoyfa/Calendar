@@ -50,6 +50,7 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
       chat: repositories.chat,
       categories: repositories.categories,
       shared: repositories.shared,
+      bookings: repositories.bookings,
       attachments: repositories.attachments,
       externalCalendars: repositories.externalCalendars,
       history: repositories.history,

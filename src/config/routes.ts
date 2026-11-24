@@ -11,6 +11,9 @@ export const ROUTES = {
   calendarSettings: '/calendars/:calendarId/settings',
   respond: '/respond',
   shared: '/shared/:token',
+  booking: '/book/:token',
+  bookingConfirm: '/booking/confirm',
+  bookingCancel: '/booking/cancel',
 } as const
 
 export const calendarSettingsPath = (calendarId: string) =>

@@ -76,6 +76,13 @@ export const events = {
   lastOccurrence: 'Last event',
   calendar: 'Calendar',
   moveSeriesHint: 'The whole series moves to the other calendar, including separately edited events.',
+  overlapItem: (title: string, start: string, end: string) => `“${title}” ${start}–${end}`,
+  overlap: (list: string, more: number) =>
+    more === 0
+      ? `Overlaps with ${list}.`
+      : more === 1
+        ? `Overlaps with ${list} and one more event.`
+        : `Overlaps with ${list} and ${more} more events.`,
   customRule: 'Custom rule',
   customRuleHint:
     'This series uses a rule from another program that cannot be edited here. It stays unchanged when you edit other details. Choose another repetition to replace it.',

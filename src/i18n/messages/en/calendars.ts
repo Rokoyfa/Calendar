@@ -133,6 +133,7 @@ export const calendars = {
       members: 'Members',
       invitations: 'Invitations',
       danger: 'Danger zone',
+      booking: 'Booking pages',
       exchange: 'Import & export',
       trash: 'Trash',
     },

@@ -53,4 +53,8 @@ export const calendar: Messages['calendar'] = {
     empty: 'No se han encontrado eventos.',
     searching: 'Buscando …',
   },
+  print: {
+    open: 'Imprimir o guardar como PDF',
+    empty: 'No hay eventos en este periodo.',
+  },
 }

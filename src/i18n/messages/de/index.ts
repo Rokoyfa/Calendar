@@ -8,6 +8,7 @@ import { security } from './security.ts'
 import { inbox } from './inbox.ts'
 import { external } from './external.ts'
 import { caldav } from './caldav.ts'
+import { bookings } from './bookings.ts'
 import { calendar, views } from './calendar.ts'
 import { colors, common, errors, recurrence, themes, validation } from './core.ts'
 
@@ -29,4 +30,5 @@ export const de: Messages = {
   inbox,
   external,
   caldav,
+  bookings,
 }

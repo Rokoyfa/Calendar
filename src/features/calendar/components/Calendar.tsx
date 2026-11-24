@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useHost } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
@@ -66,6 +66,9 @@ import { useEventEditor, type OpenEventRequest } from '../hooks/useEventEditor.t
 import { useUndo } from '../hooks/useUndo.ts'
 import { useActionError } from '../../../hooks/useActionError.ts'
 import { getEditorAccess, withCurrentCalendar } from '../utils/editorAccess.ts'
+import { findOverlaps, overlapRange, type OverlapQuery } from '../../../utils/overlap.ts'
+import { buildPrintDocument } from '../utils/print.ts'
+import { printDocument } from '../utils/printDocument.ts'
 
 const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = {
   day: TimeGridView,
@@ -223,6 +226,31 @@ export function Calendar({
   const createNow = () => editor.openCreate(view === 'day' ? anchor : today, now.getHours())
 
   const closeEditor = editor.close
+
+  const print = () =>
+    printDocument(
+      buildPrintDocument({
+        title,
+        subtitle,
+        view,
+        dates,
+        occurrences,
+        holidays,
+        calendarName: (calendarId) => calendarNames.get(calendarId) ?? eventSources.get(calendarId)?.name,
+        language: i18n.locale,
+        format: i18n.format,
+        texts: { allDay: i18n.m.events.allDay, empty: i18n.m.calendar.print.empty },
+      }),
+    )
+
+  const checkOverlaps = useCallback(
+    async (query: OverlapQuery) => {
+      const { from, to } = overlapRange(query)
+      const found = await eventRepository.list({ from, to, calendarIds })
+      return findOverlaps(query, [...found, ...externalEvents], viewerTimeZone, currentUserEmail)
+    },
+    [eventRepository, calendarIds, externalEvents, viewerTimeZone, currentUserEmail],
+  )
 
   const openSearchResult = (event: CalendarEvent, date: string) => {
     setIsSearchOpen(false)
@@ -428,6 +456,7 @@ export function Calendar({
                 onNext={next}
                 onToday={goToToday}
                 onSearch={features.search ? () => setIsSearchOpen(true) : undefined}
+                onPrint={features.print ? print : undefined}
                 onFilter={categories.length > 0 ? () => setIsFilterOpen(true) : undefined}
                 isFiltered={activeFilter !== null}
                 onCreateEvent={canCreate ? createNow : undefined}
@@ -478,6 +507,11 @@ export function Calendar({
                     }
                     key={shownEditor.occurrence?.occurrenceKey ?? 'new'}
                     calendarField={calendarField}
+                    checkOverlaps={
+                      features.overlapWarnings && !readOnly && !editorIsExternal && !editorIsLocked
+                        ? checkOverlaps
+                        : undefined
+                    }
                     initialValue={shownEditor.initialValue}
                     occurrence={shownEditor.occurrence}
                     attendeeOptions={

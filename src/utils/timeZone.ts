@@ -67,7 +67,7 @@ export const toInstant = (wallTime: WallTime, timeZone: string) => {
   return Math.max(first, second)
 }
 
-const fromInstant = (instant: number, timeZone: string) => toWallTime(instant, timeZone)
+export const fromInstant = (instant: number, timeZone: string) => toWallTime(instant, timeZone)
 
 export const convertWallTime = (wallTime: WallTime, from: string, to: string): WallTime =>
   from === to ? wallTime : fromInstant(toInstant(wallTime, from), to)

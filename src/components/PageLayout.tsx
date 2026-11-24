@@ -5,7 +5,7 @@ import { useI18n } from '../i18n/index.ts'
 
 type PageLayoutProps = {
   title: string
-  back?: { to: string; label: string }
+  back?: { to: string; label: string } | false
   variant?: 'card' | 'full'
   footer?: ReactNode
   children: ReactNode
@@ -16,9 +16,11 @@ export function PageLayout({ title, back, variant = 'card', footer, children }: 
   const backLink = back ?? { to: ROUTES.calendar, label: m.common.backToCalendar }
   const heading = (
     <>
-      <Link to={backLink.to} className="pageBack">
-        ← {backLink.label}
-      </Link>
+      {backLink && (
+        <Link to={backLink.to} className="pageBack">
+          ← {backLink.label}
+        </Link>
+      )}
       <h1 className="pageTitle">{title}</h1>
     </>
   )

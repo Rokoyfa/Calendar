@@ -13,6 +13,7 @@ import {
   RemoteHolidayRepository,
   RemotePreferencesRepository,
   RemoteSharedCalendarRepository,
+  RemoteBookingRepository,
   RemoteExternalCalendarRepository,
   RemoteAppPasswordRepository,
   RemoteCaldavRepository,
@@ -84,6 +85,7 @@ export function restDataSource({
       holidays: holidaySource === 'backend' ? new RemoteHolidayRepository(api) : undefined,
       categories: new RemoteCategoryRepository(api),
       shared: new RemoteSharedCalendarRepository(api),
+      bookings: new RemoteBookingRepository(api),
       attachments: new RemoteAttachmentRepository(api),
       chat: chat && socket ? new RemoteChatRepository(api, socket) : undefined,
       externalCalendars: new RemoteExternalCalendarRepository(api),
@@ -94,6 +96,12 @@ export function restDataSource({
     }
   }
 
+  const guestRepositories = (api: ReturnType<typeof createApi>): DataRepositories => ({
+    ...createLocalRepositories(),
+    shared: new RemoteSharedCalendarRepository(api),
+    bookings: new RemoteBookingRepository(api),
+  })
+
   return {
     createAuthRepository: !auth
       ? undefined
@@ -101,8 +109,6 @@ export function restDataSource({
         ? (context) => new HostTokenAuthRepository(createApi(context), getUserToken)
         : (context) => new RemoteAuthRepository(createApi(context)),
     connect: (session, context) =>
-      auth && !session.isAuthenticated
-        ? { ...createLocalRepositories(), shared: new RemoteSharedCalendarRepository(createApi(context)) }
-        : createRemoteRepositories(context),
+      auth && !session.isAuthenticated ? guestRepositories(createApi(context)) : createRemoteRepositories(context),
   }
 }

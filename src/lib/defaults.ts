@@ -40,6 +40,9 @@ export const DEFAULT_FEATURES = {
   notifications: true,
   caldav: true,
   caldavAccounts: true,
+  overlapWarnings: true,
+  print: true,
+  bookingPages: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES

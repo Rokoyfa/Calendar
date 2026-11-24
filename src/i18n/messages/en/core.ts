@@ -98,6 +98,11 @@ export const errors: Record<ErrorCode, string> & {
   tooManyAppPasswords: 'You can create at most 20 app passwords.',
   tooManyCaldavAccounts: 'You can connect at most 5 CalDAV accounts.',
   caldavAuthFailed: 'The CalDAV server did not accept the user name or password.',
+  tooManyBookingPages: 'A calendar can have at most 10 booking pages.',
+  bookingPageNotFound: 'This booking page does not exist or was turned off.',
+  bookingNotFound: 'This booking link is invalid or no longer valid.',
+  slotUnavailable: 'This time is no longer available. Please choose another one.',
+  bookingExpired: 'The booking was not confirmed within 15 minutes. Please book again.',
   status: {
     400: 'The request was invalid.',
     401: 'Please sign in.',

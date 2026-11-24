@@ -78,6 +78,13 @@ export const events: Messages['events'] = {
   lastOccurrence: 'Último evento',
   calendar: 'Calendario',
   moveSeriesHint: 'Toda la serie pasa al otro calendario, incluidos los eventos editados por separado.',
+  overlapItem: (title: string, start: string, end: string) => `«${title}» ${start}–${end}`,
+  overlap: (list: string, more: number) =>
+    more === 0
+      ? `Se solapa con ${list}.`
+      : more === 1
+        ? `Se solapa con ${list} y otro evento.`
+        : `Se solapa con ${list} y ${more} eventos más.`,
   customRule: 'Regla propia',
   customRuleHint:
     'Esta serie usa una regla de otro programa que no se puede editar aquí. Se conserva al cambiar otros datos. Elige otra repetición para sustituirla.',

@@ -10,6 +10,8 @@ export const NOTIFICATION_KINDS = [
   'attendeeResponse',
   'chatMessage',
   'reminder',
+  'bookingCreated',
+  'bookingCanceled',
 ] as const
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]

@@ -7,7 +7,14 @@ import { useI18n } from '../../../i18n/index.ts'
 import { getViewOptions, withShortcut as addShortcut } from '../constants/views.ts'
 import type { CalendarView } from '../types/view.ts'
 import { classNames } from '../../../utils/classNames.ts'
-import { ChevronLeftIcon, ChevronRightIcon, FilterIcon, PlusIcon, SearchIcon } from '../../../components/Icons.tsx'
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  FilterIcon,
+  PlusIcon,
+  PrinterIcon,
+  SearchIcon,
+} from '../../../components/Icons.tsx'
 
 type CalendarHeaderProps = {
   view: CalendarView
@@ -20,6 +27,7 @@ type CalendarHeaderProps = {
   onCreateEvent?: () => void
   onSearch?: () => void
   onFilter?: () => void
+  onPrint?: () => void
   isFiltered?: boolean
   context?: ReactNode
   accessory?: ReactNode
@@ -36,6 +44,7 @@ export function CalendarHeader({
   onCreateEvent,
   onSearch,
   onFilter,
+  onPrint,
   isFiltered = false,
   context,
   accessory,
@@ -86,6 +95,11 @@ export function CalendarHeader({
                 <FilterIcon size={18} />
               </IconButton>
             </span>
+          )}
+          {onPrint && (
+            <IconButton label={m.calendar.print.open} plain onClick={onPrint}>
+              <PrinterIcon size={18} />
+            </IconButton>
           )}
           {onSearch && (
             <IconButton

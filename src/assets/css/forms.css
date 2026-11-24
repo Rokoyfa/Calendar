@@ -452,3 +452,110 @@ button.attachmentName:hover {
   font-size: var(--font-size-md);
   font-weight: 600;
 }
+
+.overlapNotice {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-yellow);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-yellow) 14%, transparent);
+  color: var(--color-text);
+}
+
+.bookingHours {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bookingHoursDay {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.bookingHoursName {
+  flex: 0 0 110px;
+  padding-top: var(--space-2);
+  font-size: var(--font-size-md);
+}
+
+.bookingHoursWindows {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 220px;
+}
+
+.bookingHoursWindow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bookingHoursWindow .input {
+  width: auto;
+}
+
+.bookingDescription {
+  white-space: pre-wrap;
+}
+
+.bookingSlots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bookingWeek {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.bookingWeekTitle {
+  font-size: var(--font-size-base);
+  text-align: center;
+}
+
+.bookingDays {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bookingDayTitle {
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.bookingTimes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: var(--space-2);
+}
+
+.bookingSelected {
+  font-weight: 600;
+}
+
+.bookingSent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bookingHost {
+  align-self: flex-start;
+}

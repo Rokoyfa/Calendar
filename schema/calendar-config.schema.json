@@ -192,6 +192,21 @@
           "type": "boolean",
           "default": true,
           "description": "Lets users connect accounts of other CalDAV services (Nextcloud, iCloud …) and show and edit their calendars next to their own. Needs the /caldav-accounts and /caldav-calendars endpoints; not available in local mode."
+        },
+        "overlapWarnings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Warns in the event dialog when the chosen time overlaps other events of the shown calendars. Uses GET /events, no extra endpoint."
+        },
+        "print": {
+          "type": "boolean",
+          "default": true,
+          "description": "Adds a print button to the header that prints the shown period or saves it as PDF through the browser's print dialog."
+        },
+        "bookingPages": {
+          "type": "boolean",
+          "default": true,
+          "description": "Booking pages: public links where others book a free slot in a personal or team calendar after confirming their email address. Needs the /booking-pages and /booking endpoints; not available in local mode."
         }
       }
     },
