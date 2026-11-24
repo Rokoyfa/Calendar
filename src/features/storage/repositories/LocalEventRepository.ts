@@ -1,6 +1,7 @@
 import { AppError } from '../../../utils/appError.ts'
 import { PERSONAL_CALENDAR_ID } from '../../../config/calendars.ts'
 import {
+  newEventMeta,
   eventOccursInRange,
   matchesEventText,
   parseCalendarEvent,
@@ -73,12 +74,7 @@ export class LocalEventRepository implements EventRepository {
       ...input,
       id: crypto.randomUUID(),
       calendarId,
-      request: null,
-      attachmentCount: 0,
-      version: 1,
-      createdBy: null,
-      createdAt: now,
-      updatedAt: now,
+      ...newEventMeta(now),
     }
     this.#events.update((events) => [...events, event])
     return event

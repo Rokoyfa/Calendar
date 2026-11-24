@@ -6,7 +6,7 @@ import { useAsyncResource } from '../../../../hooks/useAsyncResource.ts'
 import { useI18n } from '../../../../i18n/index.ts'
 import { ConfirmModal } from '../../../../components/ConfirmModal.tsx'
 import { TextField } from '../../../../components/TextField.tsx'
-import { timeToMinutes, toISODate } from '../../../../utils/date.ts'
+import { timeToMinutes } from '../../../../utils/date.ts'
 import type { TrashedEvent } from '../../../../utils/trash.ts'
 import { useAuth } from '../../../authorization/index.ts'
 import { useStorage } from '../../../storage/index.ts'
@@ -68,7 +68,7 @@ function TrashList({ calendar, repository }: { calendar: CalendarSummary; reposi
     event.allDay
       ? format.longDate(event.startDate)
       : `${format.longDate(event.startDate)}, ${format.time(timeToMinutes(event.start))}`
-  const dayOf = (timestamp: string) => format.fullDay(toISODate(new Date(timestamp)))
+  const dayOf = (timestamp: string) => format.fullDayOf(timestamp)
 
   return (
     <PageSection title={text.title} description={text.description}>

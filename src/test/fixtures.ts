@@ -1,4 +1,4 @@
-import { NO_SERIES_LINK, type CalendarEvent, type EventInput } from '../utils/event.ts'
+import { newEventMeta, NO_SERIES_LINK, type CalendarEvent, type EventInput } from '../utils/event.ts'
 import type { Recurrence } from '../utils/recurrence.ts'
 
 export const recurrence = (overrides: Partial<Recurrence> = {}): Recurrence => ({
@@ -42,11 +42,6 @@ export const calendarEvent = (overrides: Partial<CalendarEvent> = {}): CalendarE
   ...eventInput(),
   id: `event-${nextId++}`,
   calendarId: 'personal',
-  attachmentCount: 0,
-  request: null,
-  version: 1,
-  createdBy: null,
-  createdAt: '2026-11-01T00:00:00.000Z',
-  updatedAt: '2026-11-01T00:00:00.000Z',
+  ...newEventMeta('2026-11-01T00:00:00.000Z'),
   ...overrides,
 })

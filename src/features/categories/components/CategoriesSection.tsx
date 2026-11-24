@@ -1,6 +1,5 @@
 import { useState, type SubmitEventHandler } from 'react'
 import { Button } from '../../../components/Button.tsx'
-import { IconButton } from '../../../components/IconButton.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
@@ -8,6 +7,7 @@ import { useI18n } from '../../../i18n/index.ts'
 import { CATEGORY_NAME_MAX_LENGTH, MAX_CATEGORIES, normalizeCategoryName } from '../../../utils/category.ts'
 import { useCategories } from '../hooks/useCategories.ts'
 import { ItemList } from '../../../components/ItemList.tsx'
+import { RemoveButton } from '../../../components/RemoveButton.tsx'
 
 type CategoriesSectionProps = {
   calendarId: string
@@ -75,14 +75,11 @@ export function CategoriesSection({ calendarId, canManage }: CategoriesSectionPr
                     <Button variant="outline" onClick={() => setEditing({ id: category.id, name: category.name })}>
                       {text.rename}
                     </Button>
-                    <IconButton
+                    <RemoveButton
                       label={text.remove(category.name)}
-                      plain
                       disabled={removing.isPending}
                       onClick={() => void removing.run(category.id)}
-                    >
-                      ×
-                    </IconButton>
+                    />
                   </>
                 )}
               </>

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useI18n } from '../../../i18n/index.ts'
+import { CloseButton } from '../../../components/RemoveButton.tsx'
 
 const VISIBLE_MS = 8000
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -29,9 +30,7 @@ export function UndoNotice({ message, onUndo, onDismiss }: UndoNoticeProps) {
       >
         {m.calendar.undo.action}
       </button>
-      <button type="button" className="closeButton" aria-label={m.calendar.dismiss} onClick={onDismiss}>
-        ×
-      </button>
+      <CloseButton label={m.calendar.dismiss} onClick={onDismiss} />
     </div>
   )
 }

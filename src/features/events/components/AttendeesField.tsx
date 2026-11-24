@@ -5,6 +5,7 @@ import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { Button } from '../../../components/Button.tsx'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
 import { MAX_ATTENDEES, type Attendee, type AttendeeStatus } from '../../../utils/event.ts'
+import { CloseButton } from '../../../components/RemoveButton.tsx'
 
 export type AttendeeCandidate = { email: string; name: string }
 
@@ -93,14 +94,10 @@ export function AttendeesField({ attendees, candidates, ownEmail, onChange, onRe
               <span className={`attendeeStatus attendeeStatus--${attendee.status}`}>
                 {m.events.attendeeStatus[attendee.status]}
               </span>
-              <button
-                type="button"
-                className="closeButton"
-                aria-label={m.events.removeAttendee(attendee.name || attendee.email)}
+              <CloseButton
+                label={m.events.removeAttendee(attendee.name || attendee.email)}
                 onClick={() => onChange(attendees.filter((entry) => entry !== attendee))}
-              >
-                ×
-              </button>
+              />
             </li>
           ))}
         </ul>

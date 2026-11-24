@@ -1,5 +1,5 @@
 import type { EventRepository } from '../features/storage/index.ts'
-import type { CalendarEvent } from '../utils/event.ts'
+import { newEventMeta, type CalendarEvent } from '../utils/event.ts'
 
 export function createMemoryEventRepository(initial: CalendarEvent[] = []) {
   const events = new Map(initial.map((event) => [event.id, event]))
@@ -15,12 +15,7 @@ export function createMemoryEventRepository(initial: CalendarEvent[] = []) {
         ...input,
         id: `new-${nextId++}`,
         calendarId,
-        request: null,
-        attachmentCount: 0,
-        version: 1,
-        createdBy: null,
-        createdAt: '',
-        updatedAt: '',
+        ...newEventMeta(),
       }
       events.set(event.id, event)
       calls.push(`create ${event.id}`)

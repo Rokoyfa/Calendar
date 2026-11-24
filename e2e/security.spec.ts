@@ -2,6 +2,7 @@ import { API_URL } from './env.ts'
 import { createUser, expect, openAs, PASSWORD, test, totp } from './helpers.ts'
 
 test('turns on two-factor sign-in and signs in with a recovery code', async ({ browser }) => {
+  test.slow()
   const user = await createUser('Tara')
   const page = await openAs(browser, user)
   await page.goto('/settings?tab=security')

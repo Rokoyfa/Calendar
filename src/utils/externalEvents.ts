@@ -1,4 +1,4 @@
-import type { CalendarEvent } from './event.ts'
+import { newEventMeta, type CalendarEvent } from './event.ts'
 import { externalCalendarId, type ExternalCalendar } from './externalCalendar.ts'
 import { parseICalendar } from './ical.ts'
 
@@ -21,12 +21,7 @@ export const toExternalEvents = (calendar: ExternalCalendar, text: string): Cale
       reminders: [],
       seriesId: recurrenceId,
       originalDate: recurrenceId,
-      attachmentCount: 0,
-      request: null,
-      version: 1,
-      createdBy: null,
-      createdAt: '',
-      updatedAt: '',
+      ...newEventMeta(),
     })
   })
   const linked = events.map((event) => {

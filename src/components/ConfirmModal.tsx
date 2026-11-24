@@ -11,10 +11,22 @@ type ConfirmModalProps = {
   pendingLabel: string
   onConfirm: () => Promise<void>
   onClose: () => void
+  tone?: 'danger' | 'neutral'
+  details?: ReactNode
   children: ReactNode
 }
 
-export function ConfirmModal({ title, confirmLabel, pendingLabel, onConfirm, onClose, children }: ConfirmModalProps) {
+export function ConfirmModal({
+  title,
+  confirmLabel,
+  pendingLabel,
+  onConfirm,
+  onClose,
+  tone = 'danger',
+  details,
+  children,
+}: ConfirmModalProps) {
+  const isDanger = tone === 'danger'
   const { m } = useI18n()
   const confirm = useCallback(async () => {
     await onConfirm()
@@ -23,15 +35,21 @@ export function ConfirmModal({ title, confirmLabel, pendingLabel, onConfirm, onC
   const { run, isPending, error } = useAsyncAction(confirm)
 
   return (
-    <Modal title={title} variant="danger" onClose={onClose}>
+    <Modal title={title} variant={isDanger ? 'danger' : undefined} onClose={onClose}>
       <div className="formSection">
         <p className="modalMessage">{children}</p>
+        {details}
         <ActionFeedback error={error} />
         <div className="formActions">
           <Button variant="secondary" onClick={onClose} data-autofocus>
             {m.common.cancel}
           </Button>
-          <Button variant="danger" isPending={isPending} pendingLabel={pendingLabel} onClick={() => void run()}>
+          <Button
+            variant={isDanger ? 'danger' : undefined}
+            isPending={isPending}
+            pendingLabel={pendingLabel}
+            onClick={() => void run()}
+          >
             {confirmLabel}
           </Button>
         </div>

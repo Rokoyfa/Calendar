@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import { Button } from '../../../components/Button.tsx'
+import { EditToggle } from '../../../components/EditToggle.tsx'
 import { Form } from '../../../components/Form.tsx'
 import { PasswordField } from '../../../components/PasswordField.tsx'
 import { ActionFeedback, ErrorMessage } from '../../../components/StatusMessage.tsx'
@@ -38,7 +38,6 @@ function CaldavCalendarRow({ calendar }: { calendar: CaldavCalendar }) {
   const { m } = useI18n()
   const text = m.caldav.accounts
   const { updateCalendar } = useCaldav()
-  const [isEditing, setIsEditing] = useState(false)
 
   return (
     <li className="caldavCalendar">
@@ -52,26 +51,58 @@ function CaldavCalendarRow({ calendar }: { calendar: CaldavCalendar }) {
         checked={calendar.shown}
         onChange={(shown) => updateCalendar(calendar.id, { shown })}
       />
-      {isEditing ? (
-        <NameColorForm
-          initialValues={{ name: calendar.name, color: calendar.color }}
-          nameLabel={text.name}
-          nameRequired={text.nameRequired}
-          maxLength={CALDAV_NAME_MAX_LENGTH}
-          onSubmit={async (values) => {
-            await updateCalendar(calendar.id, values)
-            setIsEditing(false)
-          }}
-          onCancel={() => setIsEditing(false)}
-        />
-      ) : (
-        <div className="formActions">
-          <Button variant="outline" onClick={() => setIsEditing(true)}>
-            {text.editCalendar}
-          </Button>
-        </div>
-      )}
+      <EditToggle editLabel={text.editCalendar}>
+        {(close) => (
+          <NameColorForm
+            initialValues={{ name: calendar.name, color: calendar.color }}
+            nameLabel={text.name}
+            nameRequired={text.nameRequired}
+            maxLength={CALDAV_NAME_MAX_LENGTH}
+            onSubmit={async (values) => {
+              await updateCalendar(calendar.id, values)
+              close()
+            }}
+            onCancel={close}
+          />
+        )}
+      </EditToggle>
     </li>
+  )
+}
+
+function CaldavAccountForm({ account, onDone }: { account: CaldavAccount; onDone: () => void }) {
+  const { m } = useI18n()
+  const text = m.caldav.accounts
+  const { update } = useCaldav()
+  const edit = useForm({
+    initialValues: { name: account.name, password: '' },
+    validate: ({ name }) => (name.trim() ? {} : { name: text.nameRequired }),
+    onSubmit: async ({ name, password }) => {
+      await update(account.id, { name: name.trim(), ...(password ? { password } : {}) })
+      onDone()
+    },
+  })
+
+  return (
+    <Form onSubmit={edit.handleSubmit}>
+      <TextField
+        label={text.name}
+        name="name"
+        maxLength={CALDAV_NAME_MAX_LENGTH}
+        autoComplete="off"
+        {...edit.bind('name')}
+      />
+      <PasswordField
+        label={text.newPassword}
+        name="password"
+        autoComplete="new-password"
+        maxLength={CALDAV_PASSWORD_MAX_LENGTH}
+        {...edit.bind('password')}
+      />
+      <p className="formHint">{text.newPasswordHint}</p>
+      <ActionFeedback error={edit.error} />
+      <FormActions isPending={edit.isPending} onCancel={onDone} />
+    </Form>
   )
 }
 
@@ -79,17 +110,8 @@ function CaldavAccountCard({ account, onRemove }: { account: CaldavAccount; onRe
   const { m, locale } = useI18n()
   const text = m.caldav.accounts
   const timeZone = useViewerTimeZone()
-  const { update, sync } = useCaldav()
-  const [isEditing, setIsEditing] = useState(false)
+  const { sync } = useCaldav()
   const syncNow = useAsyncAction(() => sync(account.id))
-  const edit = useForm({
-    initialValues: { name: account.name, password: '' },
-    validate: ({ name }) => (name.trim() ? {} : { name: text.nameRequired }),
-    onSubmit: async ({ name, password }) => {
-      await update(account.id, { name: name.trim(), ...(password ? { password } : {}) })
-      setIsEditing(false)
-    },
-  })
   const syncError = account.syncError && isErrorCode(account.syncError) ? account.syncError : null
 
   return (
@@ -112,28 +134,11 @@ function CaldavAccountCard({ account, onRemove }: { account: CaldavAccount; onRe
         <ItemList items={account.calendars} empty={text.noCalendars} className="caldavCalendarList">
           {(calendar) => <CaldavCalendarRow key={calendar.id} calendar={calendar} />}
         </ItemList>
-        {isEditing ? (
-          <Form onSubmit={edit.handleSubmit}>
-            <TextField
-              label={text.name}
-              name="name"
-              maxLength={CALDAV_NAME_MAX_LENGTH}
-              autoComplete="off"
-              {...edit.bind('name')}
-            />
-            <PasswordField
-              label={text.newPassword}
-              name="password"
-              autoComplete="new-password"
-              maxLength={CALDAV_PASSWORD_MAX_LENGTH}
-              {...edit.bind('password')}
-            />
-            <p className="formHint">{text.newPasswordHint}</p>
-            <ActionFeedback error={edit.error} />
-            <FormActions isPending={edit.isPending} onCancel={() => setIsEditing(false)} />
-          </Form>
-        ) : (
-          <div className="formActions">
+        <EditToggle
+          editLabel={text.edit}
+          removeLabel={text.remove}
+          onRemove={onRemove}
+          before={
             <Button
               variant="outline"
               isPending={syncNow.isPending}
@@ -142,14 +147,10 @@ function CaldavAccountCard({ account, onRemove }: { account: CaldavAccount; onRe
             >
               {text.sync}
             </Button>
-            <Button variant="outline" onClick={() => setIsEditing(true)}>
-              {text.edit}
-            </Button>
-            <Button variant="dangerOutline" onClick={onRemove}>
-              {text.remove}
-            </Button>
-          </div>
-        )}
+          }
+        >
+          {(close) => <CaldavAccountForm account={account} onDone={close} />}
+        </EditToggle>
       </div>
     </li>
   )

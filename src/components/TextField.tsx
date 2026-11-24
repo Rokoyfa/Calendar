@@ -1,5 +1,6 @@
 import type { InputHTMLAttributes, ReactNode } from 'react'
 import { classNames } from '../utils/classNames.ts'
+import { EMAIL_MAX_LENGTH } from '../utils/validation.ts'
 import { FormField } from './FormField.tsx'
 
 export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> & {
@@ -36,5 +37,18 @@ export function TextField({ label, error, addon, onChange, className, ...inputPr
 export function UrlField(props: Omit<TextFieldProps, 'type'>) {
   return (
     <TextField type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder="https://" {...props} />
+  )
+}
+
+export function EmailTextField(props: Omit<TextFieldProps, 'type'>) {
+  return (
+    <TextField
+      type="email"
+      inputMode="email"
+      autoComplete="off"
+      spellCheck={false}
+      maxLength={EMAIL_MAX_LENGTH}
+      {...props}
+    />
   )
 }

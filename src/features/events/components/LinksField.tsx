@@ -10,6 +10,7 @@ import {
   normalizeLinkUrl,
   type EventLink,
 } from '../../../utils/event.ts'
+import { CloseButton } from '../../../components/RemoveButton.tsx'
 
 type LinksFieldProps = {
   links: readonly EventLink[]
@@ -76,16 +77,11 @@ export function LinksField({ links, error, onChange }: LinksFieldProps) {
                     <ExternalLinkIcon size={18} />
                   </span>
                 )}
-                <button
-                  type="button"
-                  className="closeButton"
-                  aria-label={m.events.removeLink(name)}
-                  title={m.events.removeLink(name)}
+                <CloseButton
+                  label={m.events.removeLink(name)}
                   disabled={links.length === 0}
                   onClick={() => remove(index)}
-                >
-                  ×
-                </button>
+                />
               </span>
             </li>
           )

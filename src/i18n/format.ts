@@ -57,6 +57,8 @@ export function createFormatter(locale: string, firstDay: number) {
     shortDay: (isoDate: string) => shortDay.format(fromISODate(isoDate)),
     fullDay: (isoDate: string) => fullDay.format(fromISODate(isoDate)),
     longDate: (isoDate: string) => longDate.format(fromISODate(isoDate)),
+    longDateOf: (timestamp: string) => longDate.format(new Date(timestamp)),
+    fullDayOf: (timestamp: string) => fullDay.format(new Date(timestamp)),
     monthName: (isoDate: string) => month.format(fromISODate(isoDate)),
     monthYear: (isoDate: string) => monthYear.format(fromISODate(isoDate)),
     time: (minutes: number) => time.format(atMinutes(minutes)),

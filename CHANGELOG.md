@@ -22,6 +22,11 @@ New features; the REST contract only grows, nothing changes for existing endpoin
 - Notification kinds `calendarShareInvitation`, `eventRequested`, `eventRequestAccepted`, `eventRequestDeclined` and `eventRequestWithdrawn`
 - New error codes `sharingDisabled`, `alreadyShared`, `tooManyViewers`, `sharedCalendarNotFound`, `requestNotFound` and `requestAnswered`, translated in all languages
 
+### Changed
+
+- Repeated interface parts (accept/decline buttons, edit toggles, remove buttons, email fields, confirmations) now share one implementation each; behaviour is unchanged
+- Browser tests check every feature switch with its own controls on and off
+
 ### Fixed
 
 - Searching no longer sends the ids of connected CalDAV calendars to `GET /events/search`

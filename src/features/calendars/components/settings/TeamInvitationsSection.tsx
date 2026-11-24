@@ -4,11 +4,10 @@ import { Form } from '../../../../components/Form.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { SelectField } from '../../../../components/SelectField.tsx'
 import { ActionFeedback, ErrorMessage } from '../../../../components/StatusMessage.tsx'
-import { TextField } from '../../../../components/TextField.tsx'
+import { EmailTextField } from '../../../../components/TextField.tsx'
 import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
 import { useI18n } from '../../../../i18n/index.ts'
-import { toISODate } from '../../../../utils/date.ts'
-import { EMAIL_MAX_LENGTH, normalizeEmail } from '../../../../utils/validation.ts'
+import { normalizeEmail } from '../../../../utils/validation.ts'
 import { DEFAULT_INVITATION_ROLE } from '../../constants/calendars.ts'
 import type { CalendarSummary, InvitableRole, Invitation, TeamInvitation, TeamMember } from '../../types/calendar.ts'
 import { validateInvitation } from '../../utils/draft.ts'
@@ -42,8 +41,7 @@ function InvitationRow({
       <span className="itemRowMain">
         <span className="itemRowTitle">{invitation.email}</span>
         <span className="itemRowMeta">
-          {roles[invitation.role]} ·{' '}
-          {invitations.validUntil(format.longDate(toISODate(new Date(invitation.expiresAt))))}
+          {roles[invitation.role]} · {invitations.validUntil(format.longDateOf(invitation.expiresAt))}
         </span>
         <ActionFeedback error={error} />
       </span>
@@ -101,13 +99,9 @@ export function TeamInvitationsSection({
         }}
       >
         <div className="formRow inviteRow">
-          <TextField
+          <EmailTextField
             label={invite.email}
             name="inviteEmail"
-            type="email"
-            inputMode="email"
-            autoComplete="off"
-            maxLength={EMAIL_MAX_LENGTH}
             value={email}
             error={fieldError}
             onChange={(value) => {

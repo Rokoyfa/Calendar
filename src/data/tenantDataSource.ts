@@ -16,24 +16,5 @@ export type TenantDataSourceOptions = {
   notifications?: boolean
 }
 
-export const tenantDataSource = ({
-  tenant,
-  baseUrl,
-  timeoutMs,
-  getUserToken,
-  holidaySource,
-  chat,
-  liveUpdates,
-  notifications,
-}: TenantDataSourceOptions): CalendarDataSource =>
-  restDataSource({
-    baseUrl,
-    timeoutMs,
-    auth: true,
-    headers: { [TENANT_HEADER]: tenant },
-    getUserToken,
-    holidaySource,
-    chat,
-    liveUpdates,
-    notifications,
-  })
+export const tenantDataSource = ({ tenant, ...options }: TenantDataSourceOptions): CalendarDataSource =>
+  restDataSource({ ...options, auth: true, headers: { [TENANT_HEADER]: tenant } })

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AsyncSwitch } from '../../../components/AsyncSwitch.tsx'
 import { Button } from '../../../components/Button.tsx'
+import { EditToggle } from '../../../components/EditToggle.tsx'
 import { ConfirmModal } from '../../../components/ConfirmModal.tsx'
 import { CopyButton } from '../../../components/CopyButton.tsx'
 import { ManagedListSection } from '../../../components/ManagedListSection.tsx'
@@ -39,7 +40,6 @@ function BookingPageRow({ page, pages, onRemove }: { page: BookingPage; pages: B
   const i18n = useI18n()
   const text = i18n.m.bookings
   const { links } = useHost()
-  const [isEditing, setIsEditing] = useState(false)
   const [isRenewing, setIsRenewing] = useState(false)
   const url = buildBookingLink(page.token, links, window.location.href)
   const link = url ?? getBookingPath(page.token)
@@ -76,31 +76,30 @@ function BookingPageRow({ page, pages, onRemove }: { page: BookingPage; pages: B
             </a>
           )}
         </div>
-        {isEditing ? (
-          <BookingPageForm
-            initialValues={initialValues}
-            submitLabel={text.save}
-            pendingLabel={text.saving}
-            successText={text.saved}
-            onSubmit={async (values) => {
-              await pages.change(page.id, values)
-              setIsEditing(false)
-            }}
-            onCancel={() => setIsEditing(false)}
-          />
-        ) : (
-          <div className="formActions">
-            <Button variant="outline" onClick={() => setIsEditing(true)}>
-              {text.edit}
-            </Button>
+        <EditToggle
+          editLabel={text.edit}
+          removeLabel={text.remove}
+          onRemove={onRemove}
+          after={
             <Button variant="outline" onClick={() => setIsRenewing(true)}>
               {text.renew}
             </Button>
-            <Button variant="dangerOutline" onClick={onRemove}>
-              {text.remove}
-            </Button>
-          </div>
-        )}
+          }
+        >
+          {(close) => (
+            <BookingPageForm
+              initialValues={initialValues}
+              submitLabel={text.save}
+              pendingLabel={text.saving}
+              successText={text.saved}
+              onSubmit={async (values) => {
+                await pages.change(page.id, values)
+                close()
+              }}
+              onCancel={close}
+            />
+          )}
+        </EditToggle>
       </div>
       {isRenewing && (
         <ConfirmModal

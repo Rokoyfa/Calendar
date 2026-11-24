@@ -1,9 +1,8 @@
 import { useI18n } from '../../../i18n/index.ts'
 import { PasswordField } from '../../../components/PasswordField.tsx'
-import { TextField } from '../../../components/TextField.tsx'
+import { EmailTextField, TextField } from '../../../components/TextField.tsx'
 import type { FieldErrors } from '../../../utils/validation.ts'
 import {
-  EMAIL_MAX_LENGTH,
   NAME_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -25,15 +24,7 @@ export function NameField(props: FieldProps) {
 export function EmailField({ isNewAccount = false, ...props }: FieldProps & { isNewAccount?: boolean }) {
   const { m } = useI18n()
   return (
-    <TextField
-      {...props}
-      label={m.auth.email}
-      name="email"
-      type="email"
-      inputMode="email"
-      autoComplete={isNewAccount ? 'email' : 'username'}
-      maxLength={EMAIL_MAX_LENGTH}
-    />
+    <EmailTextField {...props} label={m.auth.email} name="email" autoComplete={isNewAccount ? 'email' : 'username'} />
   )
 }
 

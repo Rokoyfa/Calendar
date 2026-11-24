@@ -1,5 +1,4 @@
 import { useRef, useState, type DragEvent } from 'react'
-import { IconButton } from '../../../components/IconButton.tsx'
 import { PaperclipIcon } from '../../../components/Icons.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
@@ -14,6 +13,7 @@ import {
 } from '../../../utils/attachment.ts'
 import { classNames } from '../../../utils/classNames.ts'
 import { useAttachments } from '../hooks/useAttachments.ts'
+import { RemoveButton } from '../../../components/RemoveButton.tsx'
 
 type AttachmentsFieldProps = {
   eventId: string | null
@@ -84,14 +84,11 @@ export function AttachmentsField({ eventId, canEdit, pending, onPendingChange }:
               </button>
               <span className="attachmentMeta">{describe(attachment)}</span>
               {canEdit && (
-                <IconButton
+                <RemoveButton
                   label={text.remove(attachment.name)}
-                  plain
                   disabled={removing.isPending}
                   onClick={() => void removing.run(attachment)}
-                >
-                  ×
-                </IconButton>
+                />
               )}
             </li>
           ))}
@@ -100,13 +97,10 @@ export function AttachmentsField({ eventId, canEdit, pending, onPendingChange }:
               <PaperclipIcon size={16} />
               <span className="attachmentName">{file.name}</span>
               <span className="attachmentMeta">{formatFileSize(file.size, locale)}</span>
-              <IconButton
+              <RemoveButton
                 label={text.remove(file.name)}
-                plain
                 onClick={() => onPendingChange(pending.filter((_, position) => position !== index))}
-              >
-                ×
-              </IconButton>
+              />
             </li>
           ))}
         </ul>

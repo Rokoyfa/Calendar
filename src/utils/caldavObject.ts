@@ -1,5 +1,5 @@
 import { caldavCalendarId, caldavEventId, type CaldavCalendar, type CaldavObject } from './caldav.ts'
-import { isEventColor, type CalendarEvent, type EventColor } from './event.ts'
+import { isEventColor, newEventMeta, type CalendarEvent, type EventColor } from './event.ts'
 import { eventLines, foldLine, overrideDatesOf, parseICalendar, utcStamp } from './ical.ts'
 import { convertWallTime, isTimeZone } from './timeZone.ts'
 import { vtimezoneLines } from './vtimezone.ts'
@@ -113,12 +113,7 @@ export const toCaldavEvents = (calendar: CaldavCalendar, object: CaldavObject): 
   const base = {
     calendarId: caldavCalendarId(calendar.id),
     categoryIds: [],
-    attachmentCount: 0,
-    version: 1,
-    createdBy: null,
-    createdAt: '',
-    updatedAt: '',
-    request: null,
+    ...newEventMeta(),
   }
   const toEvent = (component: RawComponent, originalDate: string | null): CalendarEvent | null => {
     const parsed = parseICalendar(wrap(component))?.events[0]

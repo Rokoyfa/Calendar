@@ -350,6 +350,20 @@ export const createEventInputForSlots = (first: HourSlot, last: HourSlot, timeZo
   }
 }
 
+export type EventRecordMeta = Pick<
+  CalendarEvent,
+  'request' | 'attachmentCount' | 'version' | 'createdBy' | 'createdAt' | 'updatedAt'
+>
+
+export const newEventMeta = (timestamp = ''): EventRecordMeta => ({
+  request: null,
+  attachmentCount: 0,
+  version: 1,
+  createdBy: null,
+  createdAt: timestamp,
+  updatedAt: timestamp,
+})
+
 export const createEventInput = (date: string, hour: number, timeZone: string | null) =>
   createEventInputForSlots({ date, hour }, { date, hour }, timeZone)
 

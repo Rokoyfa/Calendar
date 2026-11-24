@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useRootElement } from '../context/RootElementContext.ts'
 import { classNames } from '../utils/classNames.ts'
 import { useI18n } from '../i18n/index.ts'
+import { CloseButton } from './RemoveButton.tsx'
 
 type ModalProps = {
   title: string
@@ -62,9 +63,7 @@ export function Modal({
           <h2 id={titleId} className="modalTitle">
             {title}
           </h2>
-          <button type="button" className="closeButton" aria-label={m.common.close} onClick={onClose}>
-            ×
-          </button>
+          <CloseButton label={m.common.close} onClick={onClose} />
         </div>
         {children}
       </div>

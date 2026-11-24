@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Button } from '../../../components/Button.tsx'
+import { EditToggle } from '../../../components/EditToggle.tsx'
 import { Form } from '../../../components/Form.tsx'
 import { ActionFeedback, ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { TextField, UrlField } from '../../../components/TextField.tsx'
@@ -32,7 +31,6 @@ function ExternalCalendarRow({ calendar, onRemove }: { calendar: ExternalCalenda
   const text = m.external
   const timeZone = useViewerTimeZone()
   const { update, failedIds } = useExternalCalendars()
-  const [isEditing, setIsEditing] = useState(false)
   const error = calendar.error && isErrorCode(calendar.error) ? calendar.error : null
   const failed = failedIds.has(calendar.id) || error !== null
 
@@ -52,28 +50,21 @@ function ExternalCalendarRow({ calendar, onRemove }: { calendar: ExternalCalenda
       <div className="calendarSettingBody">
         {failed && <ErrorMessage message={m.errors[error ?? 'externalCalendarUnavailable']} />}
         <AsyncSwitch label={text.show} checked={calendar.shown} onChange={(shown) => update(calendar.id, { shown })} />
-        {isEditing ? (
-          <NameColorForm
-            initialValues={{ name: calendar.name, color: calendar.color }}
-            nameLabel={text.name}
-            nameRequired={text.nameRequired}
-            maxLength={EXTERNAL_CALENDAR_NAME_MAX_LENGTH}
-            onSubmit={async (values) => {
-              await update(calendar.id, values)
-              setIsEditing(false)
-            }}
-            onCancel={() => setIsEditing(false)}
-          />
-        ) : (
-          <div className="formActions">
-            <Button variant="outline" onClick={() => setIsEditing(true)}>
-              {text.edit}
-            </Button>
-            <Button variant="dangerOutline" onClick={onRemove}>
-              {text.remove}
-            </Button>
-          </div>
-        )}
+        <EditToggle editLabel={text.edit} removeLabel={text.remove} onRemove={onRemove}>
+          {(close) => (
+            <NameColorForm
+              initialValues={{ name: calendar.name, color: calendar.color }}
+              nameLabel={text.name}
+              nameRequired={text.nameRequired}
+              maxLength={EXTERNAL_CALENDAR_NAME_MAX_LENGTH}
+              onSubmit={async (values) => {
+                await update(calendar.id, values)
+                close()
+              }}
+              onCancel={close}
+            />
+          )}
+        </EditToggle>
       </div>
     </li>
   )

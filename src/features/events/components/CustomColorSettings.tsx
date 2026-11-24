@@ -1,5 +1,4 @@
 import { useI18n } from '../../../i18n/index.ts'
-import { IconButton } from '../../../components/IconButton.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
@@ -7,6 +6,7 @@ import { getEventColorAttributes, getEventColorLabel } from '../../../utils/even
 import { MAX_CUSTOM_COLORS } from '../constants/colors.ts'
 import { useCustomColors } from '../hooks/useCustomColors.ts'
 import { ItemList } from '../../../components/ItemList.tsx'
+import { RemoveButton } from '../../../components/RemoveButton.tsx'
 
 export function CustomColorSettings() {
   const { m } = useI18n()
@@ -22,14 +22,7 @@ export function CustomColorSettings() {
             <li key={color} className="itemRow">
               <span {...getEventColorAttributes(color, 'colorSwatch')} aria-hidden="true" />
               <span className="itemRowMain colorCode">{label}</span>
-              <IconButton
-                label={m.events.removeColor(label)}
-                plain
-                disabled={isPending}
-                onClick={() => void run(color)}
-              >
-                ×
-              </IconButton>
+              <RemoveButton label={m.events.removeColor(label)} disabled={isPending} onClick={() => void run(color)} />
             </li>
           )
         }}

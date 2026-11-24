@@ -5,6 +5,7 @@ import { formatEventPeriod } from '../../utils/event.ts'
 import { getNotificationState } from '../../utils/notifications.ts'
 import type { ScheduledReminder } from '../../utils/reminders.ts'
 import { useReminders } from './useReminders.ts'
+import { CloseButton } from '../../components/RemoveButton.tsx'
 
 export function ReminderNotices() {
   const i18n = useI18n()
@@ -44,14 +45,10 @@ export function ReminderNotices() {
               : m.events.reminderDue(occurrence.title, format.time(timeToMinutes(occurrence.start)))}
             {occurrence.location && <span className="reminderNoticeLocation">{occurrence.location}</span>}
           </span>
-          <button
-            type="button"
-            className="closeButton"
-            aria-label={m.calendar.dismiss}
+          <CloseButton
+            label={m.calendar.dismiss}
             onClick={() => setNotices((current) => current.filter((notice) => notice.key !== key))}
-          >
-            ×
-          </button>
+          />
         </div>
       ))}
     </div>

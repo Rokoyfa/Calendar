@@ -9,6 +9,7 @@ import {
   type CaldavObject,
 } from '../../../utils/caldav.ts'
 import {
+  newEventMeta,
   createEventUid,
   NO_SERIES_LINK,
   toEventInput,
@@ -147,14 +148,9 @@ export class CaldavEventRepository implements CaldavEventSource {
       ...input,
       id,
       calendarId: caldavCalendarId(calendar.id),
-      request: null,
+      ...newEventMeta(),
       categoryIds: [],
       seriesId,
-      attachmentCount: 0,
-      version: 1,
-      createdBy: null,
-      createdAt: '',
-      updatedAt: '',
     }
   }
 

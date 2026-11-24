@@ -4,55 +4,22 @@ import { ConfirmModal } from '../../../components/ConfirmModal.tsx'
 import { Form } from '../../../components/Form.tsx'
 import { ItemList } from '../../../components/ItemList.tsx'
 import { LimitedAdd } from '../../../components/LimitedAdd.tsx'
-import { Modal } from '../../../components/Modal.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
 import { ActionFeedback, ErrorMessage } from '../../../components/StatusMessage.tsx'
-import { TextField } from '../../../components/TextField.tsx'
+import { EmailTextField } from '../../../components/TextField.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { useConfirm } from '../../../hooks/useConfirm.ts'
 import { useI18n } from '../../../i18n/index.ts'
-import { toISODate } from '../../../utils/date.ts'
 import { removeById } from '../../../utils/list.ts'
 import { MAX_VIEWERS, type SharingState, type SharingViewer } from '../../../utils/peerCalendar.ts'
-import { EMAIL_MAX_LENGTH, normalizeEmail, validateEmail } from '../../../utils/validation.ts'
+import { normalizeEmail, validateEmail } from '../../../utils/validation.ts'
 import { useAuth } from '../../authorization/index.ts'
 import type { PersonalSharingRepository } from '../../storage/index.ts'
 
 const INITIAL: SharingState = { enabled: false, viewers: [] }
 
 type SharingSectionProps = { repository: PersonalSharingRepository }
-
-function EnableModal({ onConfirm, onClose }: { onConfirm: () => Promise<void>; onClose: () => void }) {
-  const { m } = useI18n()
-  const text = m.peers.sharing
-  const { run, isPending, error } = useAsyncAction(async () => {
-    await onConfirm()
-    onClose()
-  })
-
-  return (
-    <Modal title={text.confirmTitle} onClose={onClose}>
-      <div className="formSection">
-        <p className="modalMessage">{text.confirmIntro}</p>
-        <ul className="sharingPoints">
-          {text.confirmPoints.map((point) => (
-            <li key={point}>{point}</li>
-          ))}
-        </ul>
-        <ActionFeedback error={error} />
-        <div className="formActions">
-          <Button variant="secondary" onClick={onClose} data-autofocus>
-            {m.common.cancel}
-          </Button>
-          <Button isPending={isPending} pendingLabel={text.enabling} onClick={() => void run()}>
-            {text.confirm}
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  )
-}
 
 function ViewerRow({ viewer, onRemove }: { viewer: SharingViewer; onRemove: () => void }) {
   const { m, format } = useI18n()
@@ -65,9 +32,7 @@ function ViewerRow({ viewer, onRemove }: { viewer: SharingViewer; onRemove: () =
         <span className="itemRowTitle">{viewer.name ?? viewer.email}</span>
         <span className="itemRowMeta">
           {viewer.name && `${viewer.email} · `}
-          {isPending && viewer.expiresAt
-            ? text.validUntil(format.longDate(toISODate(new Date(viewer.expiresAt))))
-            : text.accepted}
+          {isPending && viewer.expiresAt ? text.validUntil(format.longDateOf(viewer.expiresAt)) : text.accepted}
         </span>
       </span>
       {isPending && <span className="badge">{text.pending}</span>}
@@ -134,13 +99,9 @@ export function SharingSection({ repository }: SharingSectionProps) {
                 >
                   <h3 className="formSubtitle">{text.inviteTitle}</h3>
                   <div className="formRow inviteRow">
-                    <TextField
+                    <EmailTextField
                       label={text.email}
                       name="sharingEmail"
-                      type="email"
-                      inputMode="email"
-                      autoComplete="off"
-                      maxLength={EMAIL_MAX_LENGTH}
                       value={email}
                       error={fieldError}
                       onChange={(value) => {
@@ -175,10 +136,23 @@ export function SharingSection({ repository }: SharingSectionProps) {
         </>
       )}
       {isConfirming && (
-        <EnableModal
+        <ConfirmModal
+          tone="neutral"
+          title={text.confirmTitle}
+          confirmLabel={text.confirm}
+          pendingLabel={text.enabling}
+          details={
+            <ul className="sharingPoints">
+              {text.confirmPoints.map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
+          }
           onConfirm={async () => setData(await repository.setSharing(true))}
           onClose={() => setIsConfirming(false)}
-        />
+        >
+          {text.confirmIntro}
+        </ConfirmModal>
       )}
       {isDisabling && (
         <ConfirmModal

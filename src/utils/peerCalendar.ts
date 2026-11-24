@@ -1,5 +1,12 @@
 import { isISODate, isTime } from './date.ts'
-import { ALL_DAY_TIME, isEventColor, NO_SERIES_LINK, type CalendarEvent, type EventColor } from './event.ts'
+import {
+  ALL_DAY_TIME,
+  isEventColor,
+  newEventMeta,
+  NO_SERIES_LINK,
+  type CalendarEvent,
+  type EventColor,
+} from './event.ts'
 import { isOneOf } from './object.ts'
 import { asRecord, parseList, textOrEmpty } from './parse.ts'
 import { parseRecurrence } from './recurrence.ts'
@@ -170,12 +177,8 @@ export const toPeerCalendarEvent = (calendar: PeerCalendar, peer: PeerEvent, bus
     reminders: [],
     attendees: [],
     visibility: 'private',
+    ...newEventMeta(),
     request: peer.request ? { status: peer.request.status, requester: null, mine: true } : null,
-    attachmentCount: 0,
-    version: 1,
-    createdBy: null,
-    createdAt: '',
-    updatedAt: '',
   }
 }
 

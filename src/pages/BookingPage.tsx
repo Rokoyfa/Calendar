@@ -8,7 +8,7 @@ import { IconButton } from '../components/IconButton.tsx'
 import { ChevronLeftIcon, ChevronRightIcon } from '../components/Icons.tsx'
 import { PageLayout } from '../components/PageLayout.tsx'
 import { ActionFeedback, ErrorMessage } from '../components/StatusMessage.tsx'
-import { TextField } from '../components/TextField.tsx'
+import { EmailTextField, TextField } from '../components/TextField.tsx'
 import { useHost } from '../context/HostContext.ts'
 import { useViewerTimeZone } from '../context/TimeZoneContext.ts'
 import { useStorage, type BookingRepository } from '../features/storage/index.ts'
@@ -29,7 +29,7 @@ import {
 import { addDaysToISODate, DAYS_PER_WEEK, fromISODate, startOfWeekISO, timeToMinutes } from '../utils/date.ts'
 import { getEventColorAttributes } from '../utils/event.ts'
 import { formatTimeZoneLabel, fromInstant } from '../utils/timeZone.ts'
-import { EMAIL_MAX_LENGTH, normalizeEmail, validateEmail } from '../utils/validation.ts'
+import { normalizeEmail, validateEmail } from '../utils/validation.ts'
 
 const MAX_WEEKS_AHEAD = 53
 const NO_SLOTS: string[] = []
@@ -181,14 +181,7 @@ function BookerForm({
         data-autofocus
         {...form.bind('name')}
       />
-      <TextField
-        label={text.email}
-        name="email"
-        type="email"
-        autoComplete="email"
-        maxLength={EMAIL_MAX_LENGTH}
-        {...form.bind('email')}
-      />
+      <EmailTextField label={text.email} name="email" autoComplete="email" {...form.bind('email')} />
       <FormField label={text.note}>
         <textarea
           className="textarea"

@@ -97,3 +97,17 @@ button:disabled {
     transition-duration: 0.01ms !important;
   }
 }
+
+.sessionList,
+.notificationList,
+.agendaList,
+.memberPicker,
+.caldavCalendarList,
+.historyList,
+.bookingHours,
+.bookingDays,
+.drawerMenu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

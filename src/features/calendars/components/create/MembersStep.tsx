@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { Button } from '../../../../components/Button.tsx'
-import { IconButton } from '../../../../components/IconButton.tsx'
 import { SelectField } from '../../../../components/SelectField.tsx'
-import { TextField } from '../../../../components/TextField.tsx'
-import { normalizeEmail, EMAIL_MAX_LENGTH } from '../../../../utils/validation.ts'
+import { EmailTextField } from '../../../../components/TextField.tsx'
+import { normalizeEmail } from '../../../../utils/validation.ts'
 import { useI18n } from '../../../../i18n/index.ts'
 import { DEFAULT_INVITATION_ROLE, INVITABLE_ROLES } from '../../constants/calendars.ts'
 import type { InvitableRole, Invitation } from '../../types/calendar.ts'
 import { validateInvitation } from '../../utils/draft.ts'
 import { ItemList } from '../../../../components/ItemList.tsx'
+import { RemoveButton } from '../../../../components/RemoveButton.tsx'
 
 type MembersStepProps = {
   invitations: readonly Invitation[]
@@ -36,13 +36,9 @@ export function MembersStep({ invitations, ownEmail, onChange }: MembersStepProp
   return (
     <>
       <div className="formRow inviteRow">
-        <TextField
+        <EmailTextField
           label={invite.email}
           name="inviteEmail"
-          type="email"
-          inputMode="email"
-          autoComplete="off"
-          maxLength={EMAIL_MAX_LENGTH}
           value={email}
           error={error}
           onChange={(value) => {
@@ -69,13 +65,10 @@ export function MembersStep({ invitations, ownEmail, onChange }: MembersStepProp
               <span className="itemRowTitle">{invitation.email}</span>
               <span className="itemRowMeta">{roles[invitation.role]}</span>
             </span>
-            <IconButton
+            <RemoveButton
               label={invite.remove(invitation.email)}
-              plain
               onClick={() => onChange(invitations.filter((entry) => entry.email !== invitation.email))}
-            >
-              ×
-            </IconButton>
+            />
           </li>
         )}
       </ItemList>
