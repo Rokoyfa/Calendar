@@ -97,6 +97,12 @@ export const errors: Messages['errors'] = {
   bookingNotFound: 'Ten link rezerwacji jest nieprawidłowy lub już nieważny.',
   slotUnavailable: 'Ten termin nie jest już wolny. Wybierz inny.',
   bookingExpired: 'Rezerwacja nie została potwierdzona w ciągu 15 minut. Zarezerwuj ponownie.',
+  sharingDisabled: 'Najpierw włącz udostępnianie kalendarza.',
+  alreadyShared: 'Ta osoba już widzi twój kalendarz.',
+  tooManyViewers: 'Możesz udostępnić kalendarz najwyżej 50 osobom.',
+  sharedCalendarNotFound: 'Ten kalendarz nie jest już dla ciebie udostępniony.',
+  requestNotFound: 'Ta prośba już nie istnieje.',
+  requestAnswered: 'Na tę prośbę już odpowiedziano.',
   status: {
     400: 'Żądanie było nieprawidłowe.',
     401: 'Zaloguj się.',

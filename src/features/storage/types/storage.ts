@@ -28,6 +28,14 @@ import type {
 } from '../../../utils/caldav.ts'
 import type { AppNotification, NotificationPage } from '../../../utils/notification.ts'
 import type {
+  EventRequestInput,
+  PeerCalendar,
+  PeerCalendarChanges,
+  PeerEvent,
+  SharingState,
+  SharingViewer,
+} from '../../../utils/peerCalendar.ts'
+import type {
   BookingHold,
   BookingPage,
   BookingPageSettings,
@@ -105,6 +113,10 @@ export interface CaldavRepository {
   removeObject(calendarId: string, objectId: string, etag: string): Promise<void>
 }
 
+export interface PeerEventSource {
+  setCalendars(calendars: readonly PeerCalendar[]): void
+}
+
 export interface CaldavEventSource {
   setCalendars(calendars: readonly CaldavCalendar[]): void
   forget(calendarIds?: readonly string[]): void
@@ -124,6 +136,24 @@ export interface NotificationRepository {
 export interface SharedCalendarRepository {
   get(token: string): Promise<SharedCalendar>
   listEvents(token: string, range: DateRange): Promise<CalendarEvent[]>
+}
+
+export interface PersonalSharingRepository {
+  getSharing(): Promise<SharingState>
+  setSharing(enabled: boolean): Promise<SharingState>
+  invite(email: string): Promise<SharingViewer>
+  removeViewer(id: string): Promise<void>
+  listPeers(): Promise<PeerCalendar[]>
+  acceptPeer(id: string): Promise<PeerCalendar>
+  declinePeer(id: string): Promise<void>
+  updatePeer(id: string, changes: PeerCalendarChanges): Promise<PeerCalendar>
+  leavePeer(id: string): Promise<void>
+  listPeerEvents(id: string, range: DateRange): Promise<PeerEvent[]>
+  createRequest(id: string, input: EventRequestInput): Promise<PeerEvent>
+  updateRequest(id: string, eventId: string, input: EventRequestInput): Promise<PeerEvent>
+  withdrawRequest(id: string, eventId: string): Promise<void>
+  acceptRequest(eventId: string): Promise<CalendarEvent>
+  declineRequest(eventId: string): Promise<void>
 }
 
 export interface BookingRepository {
@@ -173,6 +203,8 @@ export type StorageRepositories = {
   categories?: CategoryRepository
   shared?: SharedCalendarRepository
   bookings?: BookingRepository
+  personalSharing?: PersonalSharingRepository
+  peerEvents?: PeerEventSource
   attachments?: AttachmentRepository
   externalCalendars?: ExternalCalendarRepository
   history?: HistoryRepository

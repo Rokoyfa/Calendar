@@ -96,6 +96,12 @@ export const errors: Messages['errors'] = {
   bookingNotFound: 'Dieser Buchungslink ist ungültig oder nicht mehr gültig.',
   slotUnavailable: 'Diese Zeit ist nicht mehr frei. Bitte wähle eine andere.',
   bookingExpired: 'Die Buchung wurde nicht innerhalb von 15 Minuten bestätigt. Bitte buche erneut.',
+  sharingDisabled: 'Schalte zuerst die Freigabe deines Kalenders ein.',
+  alreadyShared: 'Diese Person sieht deinen Kalender bereits.',
+  tooManyViewers: 'Du kannst deinen Kalender für höchstens 50 Personen freigeben.',
+  sharedCalendarNotFound: 'Dieser Kalender ist nicht mehr für dich freigegeben.',
+  requestNotFound: 'Diese Anfrage gibt es nicht mehr.',
+  requestAnswered: 'Diese Anfrage wurde bereits beantwortet.',
   status: {
     400: 'Die Anfrage war ungültig.',
     401: 'Bitte melde dich an.',

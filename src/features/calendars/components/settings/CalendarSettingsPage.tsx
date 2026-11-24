@@ -24,6 +24,7 @@ import { TeamInvitationsSection } from './TeamInvitationsSection.tsx'
 import { compact } from '../../../../utils/list.ts'
 import { BookingPagesSection } from '../../../bookings/index.ts'
 import { useStorage } from '../../../storage/index.ts'
+import { SharingSection } from '../../../peers/index.ts'
 
 function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
@@ -35,7 +36,7 @@ function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
 }
 
 type TeamTab = 'general' | 'members' | 'invitations' | 'booking' | 'exchange' | 'trash' | 'danger'
-type PersonalTab = 'general' | 'booking' | 'exchange' | 'trash'
+type PersonalTab = 'general' | 'sharing' | 'booking' | 'exchange' | 'trash'
 
 function useCommonTabs(calendar: CalendarSummary, canOpenTrash: boolean) {
   const { m } = useI18n()
@@ -145,7 +146,9 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
 function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
   const { settings } = m.calendars
-  const { publicLinks } = useFeatures()
+  const { publicLinks, personalSharing: sharingFeature } = useFeatures()
+  const { personalSharing, mode } = useStorage()
+  const { user } = useAuth()
   const common = useCommonTabs(calendar, true)
   const canManage = hasPermission(calendar, 'manage_calendars')
   const tabs = compact<TabDefinition<PersonalTab>>([
@@ -163,6 +166,14 @@ function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
         </>
       ),
     },
+    sharingFeature &&
+      personalSharing &&
+      mode === 'remote' &&
+      user && {
+        value: 'sharing',
+        label: m.peers.sharing.tab,
+        content: <SharingSection repository={personalSharing} />,
+      },
     common.booking,
     common.exchange,
     common.trash,

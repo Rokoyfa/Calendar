@@ -22,6 +22,7 @@ export const toExternalEvents = (calendar: ExternalCalendar, text: string): Cale
       seriesId: recurrenceId,
       originalDate: recurrenceId,
       attachmentCount: 0,
+      request: null,
       version: 1,
       createdBy: null,
       createdAt: '',

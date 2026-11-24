@@ -147,6 +147,7 @@ features:
   # Public booking pages where others book a free slot after confirming their email address.
   # Needs the /booking-pages and /booking endpoints.
   bookingPages: true
+  personalSharing: true
 
 # Shows events without letting anyone create, change, move, delete or import them.
 readOnly: false

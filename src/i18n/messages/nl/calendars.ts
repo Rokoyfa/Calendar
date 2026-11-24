@@ -134,6 +134,7 @@ export const calendars: Messages['calendars'] = {
       invitations: 'Uitnodigingen',
       danger: 'Gevarenzone',
       booking: 'Boekingspagina’s',
+      sharing: 'Delen',
       exchange: 'Import en export',
       trash: 'Prullenbak',
     },
@@ -141,7 +142,7 @@ export const calendars: Messages['calendars'] = {
     displayDescription: 'Geldt alleen voor jou. Andere leden stellen dit zelf in.',
     personalTitle: 'Persoonlijke agenda',
     personalHint:
-      'Alleen jij ziet deze agenda. Die kan niet worden gedeeld, verlaten of verwijderd. Afspraken uit teamagenda’s toon of verberg je in hun instellingen.',
+      'Alleen jij ziet deze agenda. Die kan niet worden verlaten of verwijderd. Afspraken uit teamagenda’s toon of verberg je in hun instellingen.',
   },
   general: {
     title: 'Algemeen',

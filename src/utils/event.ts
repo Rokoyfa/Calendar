@@ -51,6 +51,20 @@ export type Attendee = { email: string; name: string; status: AttendeeStatus }
 
 export type EventLink = { url: string; label: string }
 
+export const EVENT_VISIBILITIES = ['private', 'public'] as const
+
+export type EventVisibility = (typeof EVENT_VISIBILITIES)[number]
+
+export const EVENT_REQUEST_STATUSES = ['pending', 'accepted'] as const
+
+export type EventRequestStatus = (typeof EVENT_REQUEST_STATUSES)[number]
+
+export type EventRequest = {
+  status: EventRequestStatus
+  requester: { id: string; name: string } | null
+  mine: boolean
+}
+
 export type CalendarEvent = {
   id: string
   calendarId: string
@@ -73,6 +87,8 @@ export type CalendarEvent = {
   originalDate: string | null
   reminders: number[]
   attendees: Attendee[]
+  visibility: EventVisibility
+  request: EventRequest | null
   attachmentCount: number
   version: number
   createdBy: string | null
@@ -100,6 +116,7 @@ const EVENT_INPUT_KEYS = [
   'originalDate',
   'reminders',
   'attendees',
+  'visibility',
 ] as const satisfies readonly (keyof CalendarEvent)[]
 
 export type EventInput = Pick<CalendarEvent, (typeof EVENT_INPUT_KEYS)[number]>
@@ -230,6 +247,19 @@ export const parseEventResponse = (value: unknown): EventResponse => {
 
 export const createEventUid = () => crypto.randomUUID()
 
+const parseRequest = (value: unknown): EventRequest | null => {
+  if (!isRecord(value) || !isOneOf(EVENT_REQUEST_STATUSES, value.status)) return null
+  const requester = isRecord(value.requester) ? value.requester : null
+  return {
+    status: value.status,
+    requester:
+      requester && typeof requester.id === 'string' && typeof requester.name === 'string'
+        ? { id: requester.id, name: requester.name }
+        : null,
+    mine: value.mine === true,
+  }
+}
+
 export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
   if (typeof value !== 'object' || value === null) return null
   const { date, ...rest } = value as Record<string, unknown>
@@ -279,6 +309,8 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
     originalDate,
     reminders: parseReminders(rest.reminders),
     attendees: parseAttendees(rest.attendees),
+    visibility: isOneOf(EVENT_VISIBILITIES, rest.visibility) ? rest.visibility : 'private',
+    request: parseRequest(rest.request),
     version: Number.isInteger(rest.version) && (rest.version as number) > 0 ? (rest.version as number) : 0,
     createdBy: typeof rest.createdBy === 'string' && rest.createdBy !== '' ? rest.createdBy : null,
     attachmentCount:
@@ -314,6 +346,7 @@ export const createEventInputForSlots = (first: HourSlot, last: HourSlot, timeZo
     ...NO_SERIES_LINK,
     reminders: [],
     attendees: [],
+    visibility: 'private',
   }
 }
 

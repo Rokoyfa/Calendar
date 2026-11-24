@@ -12,6 +12,11 @@ export const NOTIFICATION_KINDS = [
   'reminder',
   'bookingCreated',
   'bookingCanceled',
+  'calendarShareInvitation',
+  'eventRequested',
+  'eventRequestAccepted',
+  'eventRequestDeclined',
+  'eventRequestWithdrawn',
 ] as const
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]

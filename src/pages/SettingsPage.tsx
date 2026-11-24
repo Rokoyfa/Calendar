@@ -14,6 +14,7 @@ import {
   useCaldav,
   useIsCaldavServerAvailable,
 } from '../features/caldav/index.ts'
+import { PeerCalendarSettings, PeerInvitationList, usePeerCalendars } from '../features/peers/index.ts'
 import { useI18n } from '../i18n/index.ts'
 import { compact } from '../utils/list.ts'
 
@@ -29,28 +30,38 @@ export function SettingsPage() {
   const external = useExternalCalendars()
   const caldavAccounts = useCaldav()
   const caldavServer = useIsCaldavServerAvailable()
+  const peers = usePeerCalendars()
   const tabs = compact<TabDefinition<SettingsTab>>([
     {
       value: 'calendars',
       label: m.settings.tabs.calendars,
       content: <CalendarSettings />,
     },
-    (external.isAvailable || caldavAccounts.isAvailable || caldavServer) && {
+    (external.isAvailable || caldavAccounts.isAvailable || caldavServer || peers.isAvailable) && {
       value: 'connections',
       label: m.settings.tabs.connections,
       content: (
         <>
+          <PeerCalendarSettings />
           <ExternalCalendarSettings />
           <CaldavAccountSettings />
           <CaldavServerSettings />
         </>
       ),
     },
-    teams &&
+    (teams || peers.isAvailable) &&
       user?.emailVerified && {
         value: 'invitations',
-        label: m.calendars.settings.withCount(m.settings.tabs.invitations, invitations.length),
-        content: <InvitationList />,
+        label: m.calendars.settings.withCount(
+          m.settings.tabs.invitations,
+          (teams ? invitations.length : 0) + peers.invitations.length,
+        ),
+        content: (
+          <>
+            <PeerInvitationList hideWhenEmpty={teams} />
+            {teams && <InvitationList />}
+          </>
+        ),
       },
     {
       value: 'appearance',

@@ -118,6 +118,7 @@ export const toCaldavEvents = (calendar: CaldavCalendar, object: CaldavObject): 
     createdBy: null,
     createdAt: '',
     updatedAt: '',
+    request: null,
   }
   const toEvent = (component: RawComponent, originalDate: string | null): CalendarEvent | null => {
     const parsed = parseICalendar(wrap(component))?.events[0]

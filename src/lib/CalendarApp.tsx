@@ -6,13 +6,21 @@ import { AuthProvider, useAuth } from '../features/authorization/index.ts'
 import { CalendarsProvider } from '../features/calendars/index.ts'
 import { PreferencesProvider } from '../features/preferences/index.ts'
 import { ReminderNotices } from '../features/reminders/ReminderNotices.tsx'
-import { CaldavEventRepository, StorageProvider, withCaldavEvents } from '../features/storage/index.ts'
+import {
+  CaldavEventRepository,
+  PeerEventRepository,
+  StorageProvider,
+  type EventRepository,
+  withCaldavEvents,
+  withPeerEvents,
+} from '../features/storage/index.ts'
 import { CaldavProvider } from '../features/caldav/index.ts'
 import { useI18n, useLocaleGetter } from '../i18n/index.ts'
 import { createCalendarRouter } from '../router.tsx'
 import type { CalendarRouting } from './config.ts'
 import { withEventCallbacks, type EventCallbacks } from './eventCallbacks.ts'
 import { ExternalCalendarsProvider } from '../features/external/index.ts'
+import { PeerCalendarsProvider } from '../features/peers/index.ts'
 
 type EventCallbacksRef = RefObject<EventCallbacks>
 
@@ -22,11 +30,14 @@ type SessionProvidersProps = {
   children: ReactNode
 }
 
+const withPeers = (events: EventRepository, peers: PeerEventRepository | undefined) =>
+  peers ? withPeerEvents(events, peers) : events
+
 function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvidersProps) {
   const { m } = useI18n()
   const getLanguage = useLocaleGetter()
   const { status, user, expireSession } = useAuth()
-  const { reminders, caldav, caldavAccounts } = useFeatures()
+  const { reminders, caldav, caldavAccounts, personalSharing } = useFeatures()
   const isAuthenticated = status === 'authenticated'
   const repositories = useMemo(
     () => dataSource.connect({ isAuthenticated }, { getLanguage, onUnauthorized: expireSession }),
@@ -37,11 +48,14 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
     [caldavAccounts, repositories],
   )
   useEffect(() => caldavEvents?.setEmail(user?.email ?? null), [caldavEvents, user])
+  const sharing = personalSharing ? repositories.personalSharing : undefined
+  const peerEvents = useMemo(() => (sharing ? new PeerEventRepository(sharing) : undefined), [sharing])
+  useEffect(() => peerEvents?.setBusyTitle(m.peers.busy), [peerEvents, m])
   const storage = useMemo(
     () => ({
       mode: repositories.mode,
       events: withEventCallbacks(
-        caldavEvents ? withCaldavEvents(repositories.events, caldavEvents) : repositories.events,
+        withPeers(caldavEvents ? withCaldavEvents(repositories.events, caldavEvents) : repositories.events, peerEvents),
         () => eventCallbacks.current,
       ),
       colors: repositories.colors,
@@ -51,6 +65,8 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
       categories: repositories.categories,
       shared: repositories.shared,
       bookings: repositories.bookings,
+      personalSharing: sharing,
+      peerEvents,
       attachments: repositories.attachments,
       externalCalendars: repositories.externalCalendars,
       history: repositories.history,
@@ -59,7 +75,7 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
       caldav: caldavEvents ? repositories.caldav : undefined,
       caldavEvents,
     }),
-    [repositories, eventCallbacks, caldav, caldavEvents],
+    [repositories, eventCallbacks, caldav, caldavEvents, sharing, peerEvents],
   )
 
   if (status === 'loading') return <p className="appLoading">{m.common.loading}</p>
@@ -73,8 +89,10 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
         >
           <ExternalCalendarsProvider>
             <CaldavProvider>
-              {children}
-              {reminders && <ReminderNotices />}
+              <PeerCalendarsProvider>
+                {children}
+                {reminders && <ReminderNotices />}
+              </PeerCalendarsProvider>
             </CaldavProvider>
           </ExternalCalendarsProvider>
         </CalendarsProvider>

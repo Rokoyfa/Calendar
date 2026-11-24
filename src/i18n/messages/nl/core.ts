@@ -96,6 +96,12 @@ export const errors: Messages['errors'] = {
   bookingNotFound: 'Deze boekingslink is ongeldig of niet meer geldig.',
   slotUnavailable: 'Dit tijdstip is niet meer vrij. Kies een ander tijdstip.',
   bookingExpired: 'De boeking is niet binnen 15 minuten bevestigd. Boek opnieuw.',
+  sharingDisabled: 'Zet eerst het delen van je agenda aan.',
+  alreadyShared: 'Deze persoon ziet je agenda al.',
+  tooManyViewers: 'Je kunt je agenda met maximaal 50 personen delen.',
+  sharedCalendarNotFound: 'Deze agenda wordt niet meer met je gedeeld.',
+  requestNotFound: 'Dit verzoek bestaat niet meer.',
+  requestAnswered: 'Dit verzoek is al beantwoord.',
   status: {
     400: 'Het verzoek was ongeldig.',
     401: 'Log in.',

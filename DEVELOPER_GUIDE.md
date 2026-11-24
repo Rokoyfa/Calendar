@@ -31,6 +31,7 @@ Everything you need to put `@rokoyfa/calendar` on your page: embedding, all opti
 25. [Notifications](#25-notifications)
 26. [CalDAV](#26-caldav)
 27. [Booking pages](#27-booking-pages)
+28. [Sharing the personal calendar](#28-sharing-the-personal-calendar)
 
 ## 1. Embedding
 
@@ -204,6 +205,7 @@ Your backend only needs the endpoints of the features that are on, plus a small 
 | `overlapWarnings` | `feature-overlap-warnings` | on | A note in the event dialog when the time overlaps other events of the shown calendars | – |
 | `print` | `feature-print` | on | An entry in the calendar menu that prints the visible range or saves it as PDF | – |
 | `bookingPages` | `feature-booking-pages` | on | Public pages where others book a free time, see [Booking pages](#27-booking-pages). Not in local mode | `/calendars/:id/booking-pages`, `/booking-pages/*`, `/booking/*`, `/bookings/*` |
+| `personalSharing` | `feature-personal-sharing` | on | Showing the personal calendar to invited people, who see private events only as busy time and can request events, see [Sharing the personal calendar](#28-sharing-the-personal-calendar). Not in local mode | `/personal-sharing*`, `/peer-calendars*`, `/events/:id/request/*` |
 
 Good to know:
 
@@ -586,7 +588,7 @@ type DataRepositories = {
   categories?: CategoryRepository
   shared?: SharedCalendarRepository
   attachments?: AttachmentRepository
-  // externalCalendars, history, notifications, appPasswords, caldav and bookings are filled by restDataSource;
+  // externalCalendars, history, notifications, appPasswords, caldav, bookings and personalSharing are filled by restDataSource;
   // leave them out in your own adapter and the matching features stay hidden
 }
 
@@ -689,6 +691,7 @@ type CalendarEvent = EventInput & {
   createdAt: string             // ISO date-time
   updatedAt: string
   version: number               // starts at 1, goes up on every change, read-only
+  request: { status: 'pending' | 'accepted'; requester: { id: string; name: string } | null } | null // read-only
 }
 
 type EventInput = {
@@ -711,6 +714,7 @@ type EventInput = {
   originalDate: string | null   // its original date in that series
   reminders: number[]           // minutes before the start, per user (see below)
   attendees: Attendee[]
+  visibility: 'private' | 'public' // for people the personal calendar is shared with, default 'private'
 }
 
 type Attendee = { email: string; name: string; status: 'needsAction' | 'accepted' | 'tentative' | 'declined' }
@@ -786,6 +790,7 @@ The backend stores series as one event. The component expands occurrences itself
 | Notifications | `GET /notifications` on start, `notification.created` over the WebSocket, `POST /notifications/read`, `DELETE /notifications/:id` |
 | Overlap note | `GET /events` for the day before to the day after the edited event, while the dialog is open |
 | Booking pages | "Booking pages" tab of the calendar settings: `GET`/`POST /calendars/:id/booking-pages`, `PATCH`/`DELETE /booking-pages/:id`, `POST /booking-pages/:id/renew`. The public page calls `GET /booking/:token`, `GET /booking/:token/slots?from=…&to=…` and `POST /booking/:token`, the pages behind the email links `POST /bookings/confirm`, `/bookings/lookup` and `/bookings/cancel`, all without a session |
+| Sharing the personal calendar | "Sharing" tab of the personal calendar: `GET`/`PUT /personal-sharing`, `POST /personal-sharing/viewers`, `DELETE /personal-sharing/viewers/:id`. People it is shared with: `GET /peer-calendars` on start, `POST /peer-calendars/:id/accept` or `/decline`, `PATCH`/`DELETE /peer-calendars/:id`, `GET /peer-calendars/:id/events?from=…&to=…` for every shown one, `POST /peer-calendars/:id/requests`, `PUT`/`DELETE /peer-calendars/:id/requests/:eventId`. The owner answers with `POST /events/:id/request/accept` or `/decline` |
 
 Before editing "following" or "all" of a series, the component loads its detached events with `GET /events?seriesId=…`.
 
@@ -1133,4 +1138,18 @@ Booking pages let people without an account book a free time in a calendar, like
 - **Your backend** implements the endpoints tagged "Booking pages" in `api/openapi.yaml`. The email links point at your page like the other email links; your host page passes them on to the widget.
 
 Turn the feature off with `features: { bookingPages: false }`. Existing links then show "This booking page does not exist or was turned off".
+
+## 28. Sharing the personal calendar
+
+People can show their personal calendar to chosen others, for example to colleagues who want to find a free time. Nobody gets access without an invitation, and nobody can change anything in it.
+
+- **Turning it on.** In the **Sharing** tab of the personal calendar's settings. The confirmation explains what invited people will see. Turning it off again removes every access and open invitation at once.
+- **Invitations by email.** Up to 50 people, at most 20 invitations per hour. An invitation is valid for 7 days and is accepted under Settings › Invitations; it only works for an account with the same, confirmed email address. The owner can remove anyone at any time, the other person can remove the calendar under Settings › Connections and change its color or hide it there.
+- **What others see.** New events are **private**: others only see the time as "Busy", without title, place or description. An event switched to **Visible to people you share your calendar with** shows title, time and place. Events of team calendars shown in the personal calendar and of connected CalDAV calendars always appear as busy time. Events the owner declined are left out. Busy events carry an id that cannot be linked to the real event.
+- **Where it appears.** Shared calendars are shown in the personal calendar view next to the own events, in their own color.
+- **Requesting events.** In the event dialog, **Request to …** in the Calendar field sends a request instead of creating an event: title, time, place and a note. The owner gets the notification `eventRequested`, sees the event in their calendar and accepts or declines it in the event dialog. The person who asked may change the request while it is open and withdraw it at any time; the owner gets `eventRequestWithdrawn`, the person who asked `eventRequestAccepted` or `eventRequestDeclined`. Up to 10 open requests per person, only in the future, at most 14 days long. Open requests do not block booking pages and do not appear in public links.
+- **Codes:** `sharingDisabled`, `alreadyShared`, `tooManyViewers`, `sharedCalendarNotFound`, `requestNotFound`, `requestAnswered`.
+- **Your backend** implements the endpoints tagged "Personal sharing" in `api/openapi.yaml` and returns `visibility` and `request` on events.
+
+Turn the feature off with `features: { personalSharing: false }`.
 

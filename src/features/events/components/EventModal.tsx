@@ -55,6 +55,7 @@ import { TimeZoneField } from './TimeZoneField.tsx'
 import { HistoryPanel } from './HistoryPanel.tsx'
 import { OverlapNotice, type OverlapCheck } from './OverlapNotice.tsx'
 import { compact } from '../../../utils/list.ts'
+import { RequestDecision, type RequestDecisionOptions } from './RequestDecision.tsx'
 
 const DEFAULT_START = '09:00'
 const DEFAULT_END = '10:00'
@@ -118,6 +119,9 @@ type EventModalProps = {
   readOnly?: boolean
   canEditAttachments?: boolean
   checkOverlaps?: OverlapCheck
+  requestTo?: string
+  showVisibility?: boolean
+  decision?: RequestDecisionOptions
   onClose: () => void
 }
 
@@ -147,6 +151,9 @@ export function EventModal({
   readOnly = false,
   canEditAttachments = !readOnly,
   checkOverlaps,
+  requestTo,
+  showVisibility = false,
+  decision,
   onClose,
 }: EventModalProps) {
   const i18n = useI18n()
@@ -155,6 +162,7 @@ export function EventModal({
   const viewerTimeZone = useViewerTimeZone()
   const getLocationUrl = useLocationUrl()
   const mode: EventModalMode = occurrence ? 'edit' : 'create'
+  const isRequest = requestTo !== undefined
   const isMoving = occurrence !== null && calendarField !== undefined && calendarField.value !== occurrence.calendarId
   const [values, setValues] = useState(initialValue)
   const [errors, setErrors] = useState<EventValidationErrors>({})
@@ -324,13 +332,23 @@ export function EventModal({
           {viewerHint && <p className="formHint">{viewerHint}</p>}
           {checkOverlaps && !readOnly && <OverlapNotice values={values} check={checkOverlaps} />}
 
-          {features.reminders && !readOnly && (
+          {features.reminders && !readOnly && !isRequest && (
             <ReminderField value={values.reminders} onChange={(reminders) => setField('reminders', reminders)} />
+          )}
+          {showVisibility && !isRequest && (
+            <>
+              <Switch
+                label={m.peers.visibility}
+                checked={values.visibility === 'public'}
+                onChange={(shown) => setField('visibility', shown ? 'public' : 'private')}
+              />
+              <p className="formHint">{m.peers.visibilityHint}</p>
+            </>
           )}
         </>
       ),
     },
-    {
+    !isRequest && {
       value: 'appearance',
       label: m.events.tabs.appearance,
       content: (
@@ -345,19 +363,21 @@ export function EventModal({
         </>
       ),
     },
-    features.recurrence && {
-      value: 'recurrence',
-      label: m.events.tabs.recurrence,
-      content: (
-        <RecurrenceFields
-          value={values.recurrence}
-          startDate={values.startDate}
-          errors={errors.recurrence ?? {}}
-          onChange={setRecurrence}
-        />
-      ),
-    },
+    features.recurrence &&
+      !isRequest && {
+        value: 'recurrence',
+        label: m.events.tabs.recurrence,
+        content: (
+          <RecurrenceFields
+            value={values.recurrence}
+            startDate={values.startDate}
+            errors={errors.recurrence ?? {}}
+            onChange={setRecurrence}
+          />
+        ),
+      },
     attendeeOptions &&
+      !isRequest &&
       (attendeeOptions.candidates.length > 0 || values.attendees.length > 0) && {
         value: 'attendees',
         label: m.calendars.settings.withCount(m.events.tabs.attendees, values.attendees.length),
@@ -400,11 +420,11 @@ export function EventModal({
             }
           />
 
-          {features.links && (
+          {features.links && !isRequest && (
             <LinksField links={values.links} error={errors.links} onChange={(links) => setField('links', links)} />
           )}
 
-          <FormField label={m.events.description} error={errors.description}>
+          <FormField label={isRequest ? m.peers.note : m.events.description} error={errors.description}>
             <textarea
               className="textarea eventDescription"
               name="description"
@@ -415,7 +435,7 @@ export function EventModal({
           </FormField>
         </>
       ),
-      after: attachmentRepository && showAttachments && (
+      after: attachmentRepository && showAttachments && !isRequest && (
         <AttachmentsField
           eventId={occurrence?.id ?? null}
           canEdit={canEditAttachments}
@@ -461,11 +481,22 @@ export function EventModal({
   return (
     <>
       <Modal
-        title={readOnly ? m.events.viewTitle : mode === 'create' ? m.events.createTitle : m.events.editTitle}
+        title={
+          isRequest
+            ? mode === 'create'
+              ? m.peers.requestTitle
+              : m.peers.editRequestTitle
+            : readOnly
+              ? m.events.viewTitle
+              : mode === 'create'
+                ? m.events.createTitle
+                : m.events.editTitle
+        }
         onClose={onClose}
       >
         <Form className="eventForm" onSubmit={handleSubmit}>
           {notice && <p className="formHint eventNotice">{notice}</p>}
+          {decision && <RequestDecision {...decision} />}
           <Tabs label={m.events.tabsLabel} tabs={tabs} value={activeTab} stable onChange={setActiveTab} />
 
           <ErrorMessage message={submitError ?? deleteError} />
@@ -504,15 +535,15 @@ export function EventModal({
           <div className="modalActions">
             {!readOnly && (
               <Button type="submit" isPending={isPending} pendingLabel={m.common.saving}>
-                {m.common.save}
+                {isRequest && mode === 'create' ? m.peers.sendRequest : m.common.save}
               </Button>
             )}
-            {onDelete && !readOnly && (
+            {onDelete && (!readOnly || isRequest) && (
               <Button variant="danger" disabled={isPending} isPending={isDeleting} onClick={() => void remove()}>
-                {m.common.delete}
+                {isRequest ? m.peers.withdraw : m.common.delete}
               </Button>
             )}
-            {onDuplicate && !readOnly && (
+            {onDuplicate && !readOnly && !isRequest && (
               <Button variant="outline" disabled={isPending || isDeleting} onClick={() => onDuplicate(values)}>
                 {m.events.duplicate}
               </Button>

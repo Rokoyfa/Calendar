@@ -17,5 +17,10 @@ export const inbox = {
     reminder: (title: string) => `Reminder: “${title}”`,
     bookingCreated: (title: string) => `New booking: “${title}”`,
     bookingCanceled: (title: string) => `Booking cancelled: “${title}”`,
+    calendarShareInvitation: (actor: string) => `${actor} wants to show you their calendar`,
+    eventRequested: (actor: string, title: string) => `${actor} requested “${title}”`,
+    eventRequestAccepted: (actor: string, title: string) => `${actor} accepted your request “${title}”`,
+    eventRequestDeclined: (actor: string, title: string) => `${actor} declined your request “${title}”`,
+    eventRequestWithdrawn: (actor: string, title: string) => `${actor} withdrew the request “${title}”`,
   },
 }

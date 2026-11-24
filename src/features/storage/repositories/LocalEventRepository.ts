@@ -73,6 +73,7 @@ export class LocalEventRepository implements EventRepository {
       ...input,
       id: crypto.randomUUID(),
       calendarId,
+      request: null,
       attachmentCount: 0,
       version: 1,
       createdBy: null,

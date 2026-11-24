@@ -134,6 +134,7 @@ export const calendars: Messages['calendars'] = {
       invitations: 'Einladungen',
       danger: 'Gefahrenbereich',
       booking: 'Buchungsseiten',
+      sharing: 'Freigabe',
       exchange: 'Import & Export',
       trash: 'Papierkorb',
     },
@@ -141,7 +142,7 @@ export const calendars: Messages['calendars'] = {
     displayDescription: 'Gilt nur für dich. Andere Mitglieder stellen das selbst ein.',
     personalTitle: 'Persönlicher Kalender',
     personalHint:
-      'Nur du siehst diesen Kalender. Er lässt sich nicht teilen, verlassen oder löschen. Termine aus Team-Kalendern blendest du in deren Einstellungen ein oder aus.',
+      'Nur du siehst diesen Kalender. Er lässt sich nicht verlassen oder löschen. Termine aus Team-Kalendern blendest du in deren Einstellungen ein oder aus.',
   },
   general: {
     title: 'Allgemein',

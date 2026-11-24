@@ -15,6 +15,7 @@ export function createMemoryEventRepository(initial: CalendarEvent[] = []) {
         ...input,
         id: `new-${nextId++}`,
         calendarId,
+        request: null,
         attachmentCount: 0,
         version: 1,
         createdBy: null,

@@ -13,6 +13,8 @@ export { RemoteCategoryRepository } from './repositories/RemoteCategoryRepositor
 export { RemoteAttachmentRepository } from './repositories/RemoteAttachmentRepository.ts'
 export { RemoteSharedCalendarRepository } from './repositories/RemoteSharedCalendarRepository.ts'
 export { RemoteBookingRepository } from './repositories/RemoteBookingRepository.ts'
+export { RemotePersonalSharingRepository } from './repositories/RemotePersonalSharingRepository.ts'
+export { PeerEventRepository, withPeerEvents } from './repositories/PeerEventRepository.ts'
 export { RemoteChatRepository } from './repositories/RemoteChatRepository.ts'
 export { RemoteExternalCalendarRepository } from './repositories/RemoteExternalCalendarRepository.ts'
 export { RemoteHistoryRepository } from './repositories/RemoteHistoryRepository.ts'
@@ -24,6 +26,8 @@ export { LiveSocket, type LiveMessage } from './utils/liveSocket.ts'
 export type {
   AttachmentRepository,
   BookingRepository,
+  PersonalSharingRepository,
+  PeerEventSource,
   CategoryRepository,
   ColorRepository,
   EventQuery,

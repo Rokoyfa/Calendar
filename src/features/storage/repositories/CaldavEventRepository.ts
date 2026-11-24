@@ -147,6 +147,7 @@ export class CaldavEventRepository implements CaldavEventSource {
       ...input,
       id,
       calendarId: caldavCalendarId(calendar.id),
+      request: null,
       categoryIds: [],
       seriesId,
       attachmentCount: 0,
@@ -273,7 +274,12 @@ export const withCaldavEvents = (main: EventRepository, caldav: CaldavEventRepos
     update: (id, input, version) =>
       isCaldavCalendarId(id) ? caldav.update(id, input) : main.update(id, input, version),
     remove: (id, version) => (isCaldavCalendarId(id) ? caldav.remove(id) : main.remove(id, version)),
-    search: main.search && ((query) => main.search!(query)),
+    search:
+      main.search &&
+      ((query) => {
+        const calendarIds = query.calendarIds.filter((id) => !isCaldavCalendarId(id))
+        return calendarIds.length > 0 ? main.search!({ ...query, calendarIds }) : Promise.resolve([])
+      }),
     respond:
       main.respond &&
       ((id, status) => (isCaldavCalendarId(id) ? caldav.respond(id, status) : main.respond!(id, status))),

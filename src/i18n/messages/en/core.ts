@@ -103,6 +103,12 @@ export const errors: Record<ErrorCode, string> & {
   bookingNotFound: 'This booking link is invalid or no longer valid.',
   slotUnavailable: 'This time is no longer available. Please choose another one.',
   bookingExpired: 'The booking was not confirmed within 15 minutes. Please book again.',
+  sharingDisabled: 'Turn on sharing your calendar first.',
+  alreadyShared: 'This person can already see your calendar.',
+  tooManyViewers: 'You can share your calendar with at most 50 people.',
+  sharedCalendarNotFound: 'This calendar is no longer shared with you.',
+  requestNotFound: 'This request no longer exists.',
+  requestAnswered: 'This request has already been answered.',
   status: {
     400: 'The request was invalid.',
     401: 'Please sign in.',

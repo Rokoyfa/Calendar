@@ -18,9 +18,16 @@ import { ItemList } from '../../../components/ItemList.tsx'
 
 const POPOVER_ID = 'notificationMenu'
 const MAX_BADGE = 99
+const NO_TARGET_KINDS: ReadonlySet<AppNotification['kind']> = new Set([
+  'eventRequestAccepted',
+  'eventRequestDeclined',
+  'eventRequestWithdrawn',
+])
 
 const targetOf = (notification: AppNotification, calendarIds: ReadonlySet<string>) => {
-  if (notification.kind === 'teamInvitation') return SETTINGS_INVITATIONS_PATH
+  if (notification.kind === 'teamInvitation' || notification.kind === 'calendarShareInvitation')
+    return SETTINGS_INVITATIONS_PATH
+  if (NO_TARGET_KINDS.has(notification.kind)) return null
   const { event } = notification
   if (!event || !calendarIds.has(event.calendarId)) return null
   const params = new URLSearchParams({ calendar: event.calendarId, event: event.id, date: event.startDate })
@@ -51,6 +58,8 @@ function ActiveBell({ repository }: { repository: NonNullable<ReturnType<typeof 
     switch (notification.kind) {
       case 'teamInvitation':
         return text.kinds.teamInvitation(actor, notification.team?.name ?? '')
+      case 'calendarShareInvitation':
+        return text.kinds.calendarShareInvitation(actor)
       case 'reminder':
       case 'bookingCreated':
       case 'bookingCanceled':

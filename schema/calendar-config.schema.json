@@ -207,6 +207,11 @@
           "type": "boolean",
           "default": true,
           "description": "Booking pages: public links where others book a free slot in a personal or team calendar after confirming their email address. Needs the /booking-pages and /booking endpoints; not available in local mode."
+        },
+        "personalSharing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sharing the personal calendar with chosen people by email: they see private events as busy time and public ones with title, time and place, and can request events. Needs the /personal-sharing and /peer-calendars endpoints; not available in local mode."
         }
       }
     },

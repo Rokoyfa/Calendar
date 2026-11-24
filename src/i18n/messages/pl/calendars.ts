@@ -137,6 +137,7 @@ export const calendars: Messages['calendars'] = {
       invitations: 'Zaproszenia',
       danger: 'Strefa zagrożenia',
       booking: 'Strony rezerwacji',
+      sharing: 'Udostępnianie',
       exchange: 'Import i eksport',
       trash: 'Kosz',
     },
@@ -144,7 +145,7 @@ export const calendars: Messages['calendars'] = {
     displayDescription: 'Dotyczy tylko Ciebie. Inni członkowie ustawiają to sami.',
     personalTitle: 'Kalendarz osobisty',
     personalHint:
-      'Tylko Ty widzisz ten kalendarz. Nie można go udostępnić, opuścić ani usunąć. Wydarzenia z kalendarzy zespołów pokazujesz lub ukrywasz w ich ustawieniach.',
+      'Tylko Ty widzisz ten kalendarz. Nie można go opuścić ani usunąć. Wydarzenia z kalendarzy zespołów pokazujesz lub ukrywasz w ich ustawieniach.',
   },
   general: {
     title: 'Ogólne',

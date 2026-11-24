@@ -2,7 +2,7 @@ import type { AuthRepository } from '../features/authorization/index.ts'
 import type { CalendarRepository } from '../features/calendars/index.ts'
 import type { StorageRepositories } from '../features/storage/index.ts'
 
-export type DataRepositories = Omit<StorageRepositories, 'caldavEvents'> & {
+export type DataRepositories = Omit<StorageRepositories, 'caldavEvents' | 'peerEvents'> & {
   calendars: CalendarRepository
 }
 

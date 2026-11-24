@@ -68,6 +68,12 @@ const ERROR_CODES = [
   'bookingNotFound',
   'slotUnavailable',
   'bookingExpired',
+  'sharingDisabled',
+  'alreadyShared',
+  'tooManyViewers',
+  'sharedCalendarNotFound',
+  'requestNotFound',
+  'requestAnswered',
 ] as const
 
 export const isErrorCode = (value: unknown): value is ErrorCode =>

@@ -19,5 +19,10 @@ export const inbox: Messages['inbox'] = {
     reminder: (title: string) => `Erinnerung: „${title}“`,
     bookingCreated: (title) => `Neue Buchung: „${title}“`,
     bookingCanceled: (title) => `Buchung abgesagt: „${title}“`,
+    calendarShareInvitation: (actor) => `${actor} möchte dir den eigenen Kalender zeigen`,
+    eventRequested: (actor, title) => `${actor} hat „${title}“ angefragt`,
+    eventRequestAccepted: (actor, title) => `${actor} hat deine Anfrage „${title}“ angenommen`,
+    eventRequestDeclined: (actor, title) => `${actor} hat deine Anfrage „${title}“ abgelehnt`,
+    eventRequestWithdrawn: (actor, title) => `${actor} hat die Anfrage „${title}“ zurückgezogen`,
   },
 }

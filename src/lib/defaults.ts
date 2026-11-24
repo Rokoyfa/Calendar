@@ -43,6 +43,7 @@ export const DEFAULT_FEATURES = {
   overlapWarnings: true,
   print: true,
   bookingPages: true,
+  personalSharing: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES

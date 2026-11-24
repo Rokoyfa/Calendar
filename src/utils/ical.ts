@@ -156,6 +156,7 @@ export const eventLines = (
     `DTSTART${start.params}:${start.value}`,
     `DTEND${end.params}:${end.value}`,
     `SUMMARY:${escapeText(event.title)}`,
+    `CLASS:${event.visibility === 'public' ? 'PUBLIC' : 'PRIVATE'}`,
   ]
   if (series && event.originalDate) {
     const original = toTimeProperty(series, event.originalDate, series.start)
@@ -463,6 +464,7 @@ const toImportedEvent = (component: Component): ImportedEvent | null => {
       ...NO_SERIES_LINK,
       reminders: [...new Set(reminders)].sort((a, b) => a - b),
       attendees: all('ATTENDEE').map(parseAttendee).filter(isPresent),
+      visibility: get('CLASS')?.value.trim().toUpperCase() === 'PUBLIC' ? 'public' : 'private',
     },
   }
 }

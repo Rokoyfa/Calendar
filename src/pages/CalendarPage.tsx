@@ -32,6 +32,8 @@ import { externalCalendarId, isExternalEvent } from '../utils/externalCalendar.t
 import { NotificationBell } from '../features/notifications/index.ts'
 import { useCaldav } from '../features/caldav/index.ts'
 import { caldavCalendarId, isCaldavEvent } from '../utils/caldav.ts'
+import { usePeerCalendars } from '../features/peers/index.ts'
+import { isOwnPendingRequest, isPeerEvent, peerCalendarId } from '../utils/peerCalendar.ts'
 
 const LINK_PARAMS = {
   calendar: 'calendar',
@@ -115,18 +117,30 @@ export function CalendarPage() {
     () => new Map(caldav.calendars.map((calendar) => [caldavCalendarId(calendar.id), calendar])),
     [caldav.calendars],
   )
+  const peers = usePeerCalendars()
+  const showsPeers = isPersonalCalendar(activeCalendar)
+  const shownPeers = useMemo(
+    () => (showsPeers ? peers.calendars.filter((calendar) => calendar.shown) : []),
+    [showsPeers, peers.calendars],
+  )
   const calendarIds = useMemo(() => {
-    const shown = caldav.calendars.filter((calendar) => calendar.shown).map(({ id }) => caldavCalendarId(id))
+    const shown = [
+      ...caldav.calendars.filter((calendar) => calendar.shown).map(({ id }) => caldavCalendarId(id)),
+      ...shownPeers.map(({ id }) => peerCalendarId(id)),
+    ]
     return shown.length > 0 ? [...visibleCalendarIds, ...shown] : visibleCalendarIds
-  }, [visibleCalendarIds, caldav.calendars])
+  }, [visibleCalendarIds, caldav.calendars, shownPeers])
   const eventSources = useMemo(
     () =>
       new Map([
         ...getSharedCalendars(calendars, activeCalendar).map(({ id, name, color }) => [id, { name, color }] as const),
         ...external.calendars.map(({ id, name, color }) => [externalCalendarId(id), { name, color }] as const),
         ...[...caldavById].map(([id, { name, color }]) => [id, { name, color }] as const),
+        ...peers.calendars.map(
+          ({ id, ownerName, color }) => [peerCalendarId(id), { name: m.peers.calendarName(ownerName), color }] as const,
+        ),
       ]),
-    [calendars, activeCalendar, external.calendars, caldavById],
+    [calendars, activeCalendar, external.calendars, caldavById, peers.calendars, m],
   )
 
   const initialView =
@@ -135,6 +149,7 @@ export function CalendarPage() {
   const eventAccess = useCallback(
     (event: CalendarEvent, check: (calendar: CalendarSummary) => boolean, unknownCalendar: boolean) => {
       if (isExternalEvent(event)) return false
+      if (isPeerEvent(event)) return isOwnPendingRequest(event)
       if (isCaldavEvent(event)) return caldavById.get(event.calendarId)?.readOnly === false
       const calendar = calendarById.get(event.calendarId)
       return calendar ? check(calendar) : unknownCalendar
@@ -169,8 +184,19 @@ export function CalendarPage() {
     const remote = caldav.calendars
       .filter((calendar) => calendar.shown && !calendar.readOnly)
       .map((calendar) => ({ id: caldavCalendarId(calendar.id), name: `${calendar.name} (${calendar.accountName})` }))
-    return [...own, ...remote]
-  }, [calendars, activeCalendar, caldav.calendars])
+    const requests = shownPeers.map((calendar) => ({
+      id: peerCalendarId(calendar.id),
+      name: m.peers.requestChoice(calendar.ownerName),
+    }))
+    return [...own, ...remote, ...requests]
+  }, [calendars, activeCalendar, caldav.calendars, shownPeers, m])
+  const canSetVisibility = useCallback(
+    (calendarId: string) => {
+      const calendar = calendarById.get(calendarId)
+      return Boolean(calendar && isPersonalCalendar(calendar))
+    },
+    [calendarById],
+  )
 
   return (
     <div className="app">
@@ -193,6 +219,7 @@ export function CalendarPage() {
         chat={chatAccess}
         externalEvents={external.events}
         isHistoryAvailable={isTeamCalendar}
+        canSetVisibility={canSetVisibility}
         openEvent={openEvent}
         onOpenEventDone={clearLink}
         menuItems={

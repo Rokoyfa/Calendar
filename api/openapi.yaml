@@ -121,6 +121,8 @@ info:
     | `shareNotFound` | 404 | The public link is unknown or turned off |
     | `bookingPageNotFound` | 404 | The booking page is unknown or turned off |
     | `bookingNotFound` | 404 | The link of a booking email is unknown |
+    | `sharedCalendarNotFound` | 404 | The personal calendar is not (or no longer) shared with the caller |
+    | `requestNotFound` | 404 | The event request is unknown or not the caller's own |
     | `emailTaken` | 409 | An account with this email exists |
     | `alreadyMember` | 409 | The invited person is already a member |
     | `alreadyInvited` | 409 | The address is already invited |
@@ -145,6 +147,10 @@ info:
     | `tooManyCaldavAccounts` | 409 | More than 5 CalDAV accounts |
     | `tooManyBookingPages` | 409 | More than 10 booking pages in a calendar |
     | `slotUnavailable` | 409 | The chosen time of a booking is no longer free |
+    | `sharingDisabled` | 409 | Inviting someone while the own calendar sharing is off |
+    | `alreadyShared` | 409 | The invited address can already see the calendar |
+    | `tooManyViewers` | 409 | More than 50 people for the own calendar |
+    | `requestAnswered` | 409 | The request was already accepted and can only be withdrawn |
     | `twoFactorExpired` | 410 | The sign-in step for the code expired; sign in again |
     | `invalidLink` | 410 | The link from an email is invalid or expired |
     | `invitationExpired` | 410 | The invitation is no longer valid |
@@ -201,6 +207,13 @@ tags:
       Public pages where others book a free time in a personal or team calendar. The `/booking` and `/bookings` paths
       need no session. A booking counts only after the booker confirms it with the link from the email; until then
       the time stays reserved for 15 minutes.
+  - name: Personal sharing
+    description: |
+      A user shares the personal calendar with chosen people by email. They see it read-only: private events (the
+      default, `visibility: private`) only as busy time without any content, public events with title, time and place,
+      events of team calendars and connected CalDAV calendars always as busy time. Events the viewer is invited to or
+      requested show title, time and place. Viewers can request events; the owner accepts or declines them.
+      `/personal-sharing` is the owner's side, `/peer-calendars` the viewer's side.
   - name: Notifications
     description: |
       In-app notifications (bell). New notifications also arrive over the WebSocket as
@@ -2412,6 +2425,261 @@ paths:
         '200': { $ref: '#/components/responses/Booking' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
+  /personal-sharing:
+    get:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Own calendar sharing
+      description: Whether the personal calendar is shared and with whom (open invitations and people who accepted).
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: Sharing state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SharingState' }
+    put:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Turn calendar sharing on or off
+      description: Turning it off removes every invitation and every viewer at once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [enabled], properties: { enabled: { type: boolean } } }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: Sharing state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SharingState' }
+        '400': { $ref: '#/components/responses/Problem' }
+  /personal-sharing/viewers:
+    post:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Invite someone to see the own calendar
+      description: Sends an email and, for an existing account, a notification. The invitation is valid for 7 days and is accepted in the settings of the invited account (verified email address).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [email], properties: { email: { type: string, format: email } } }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '201':
+          description: The invitation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SharingViewer' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+  /personal-sharing/viewers/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    delete:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Withdraw an invitation or remove a viewer
+      description: The person loses access at once.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '204': { description: Removed }
+        '404': { $ref: '#/components/responses/Problem' }
+  /peer-calendars:
+    get:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Calendars others share with me
+      description: Accepted shares plus open invitations to the own verified email address.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: Shared calendars
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/PeerCalendar' } }
+  /peer-calendars/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    patch:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Change color or visibility of a shared calendar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PeerCalendarChanges' }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: The shared calendar
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PeerCalendar' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Stop seeing a shared calendar
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '204': { description: Removed }
+        '404': { $ref: '#/components/responses/Problem' }
+  /peer-calendars/{id}/accept:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Accept an invitation
+      description: Needs a verified email address that matches the invitation.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: The shared calendar
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PeerCalendar' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
+  /peer-calendars/{id}/decline:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Decline an invitation
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '204': { description: Declined }
+        '404': { $ref: '#/components/responses/Problem' }
+        '410': { $ref: '#/components/responses/Problem' }
+  /peer-calendars/{id}/events:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: from, in: query, required: true, schema: { $ref: '#/components/schemas/ISODate' } }
+      - { name: to, in: query, required: true, schema: { $ref: '#/components/schemas/ISODate' } }
+    get:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Events of a shared calendar
+      description: At most 400 days per request. See the tag description for what a viewer sees.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: Events as the viewer may see them
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/PeerEvent' } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /peer-calendars/{id}/requests:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Request an event
+      description: Creates a pending event in the personal calendar of the owner, with the requester as accepted attendee, and notifies the owner. At most 10 open requests per person and calendar (429).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventRequestInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '201':
+          description: The request as the requester sees it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PeerEvent' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+  /peer-calendars/{id}/requests/{eventId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: eventId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Change an open request
+      description: Only while it is pending, afterwards 409 with requestAnswered.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventRequestInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: The request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PeerEvent' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Withdraw a request
+      description: Also for accepted requests. The event disappears from the calendar of the owner, who is notified.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '204': { description: Withdrawn }
+        '404': { $ref: '#/components/responses/Problem' }
+  /events/{id}/request/accept:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Accept a requested event
+      description: Only the owner of the personal calendar. Notifies the requester.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: The event
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CalendarEvent' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /events/{id}/request/decline:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Personal sharing]
+      x-feature: personalSharing
+      summary: Decline a requested event
+      description: Removes the pending event and notifies the requester.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '204': { description: Declined }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
 components:
   securitySchemes:
     sessionCookie:
@@ -2646,7 +2914,7 @@ components:
       required: [id, kind, actor, event, team, invitationId, createdAt, readAt]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [teamInvitation, eventInvitation, eventChanged, eventCanceled, attendeeResponse, chatMessage, reminder, bookingCreated, bookingCanceled] }
+        kind: { type: string, enum: [teamInvitation, eventInvitation, eventChanged, eventCanceled, attendeeResponse, chatMessage, reminder, bookingCreated, bookingCanceled, calendarShareInvitation, eventRequested, eventRequestAccepted, eventRequestDeclined, eventRequestWithdrawn] }
         actor:
           oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
         event:
@@ -2778,6 +3046,14 @@ components:
           maxItems: 100
           default: []
           items: { $ref: '#/components/schemas/Attendee' }
+        visibility:
+          type: string
+          enum: [private, public]
+          default: private
+          description: |
+            Only matters for the personal calendar when it is shared (see "Personal sharing"): private events appear to
+            viewers as busy time without content, public ones with title, time and place. In iCalendar `CLASS:PRIVATE`
+            or `CLASS:PUBLIC`; a missing `CLASS` counts as private.
     Category:
       type: object
       required: [id, calendarId, name]
@@ -2838,6 +3114,18 @@ components:
               minimum: 0
               default: 0
               description: Number of attachments of this event. Read-only, ignored on input. 0 in public links.
+            request:
+              description: |
+                Set when someone who can see the personal calendar requested this event. `pending` until the owner
+                accepts; pending requests are not busy for booking pages and other viewers. Read-only, `null` otherwise.
+              oneOf:
+                - type: object
+                  required: [status, requester]
+                  properties:
+                    status: { type: string, enum: [pending, accepted] }
+                    requester:
+                      oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
+                - { type: 'null' }
     AccountExport:
       type: object
       required: [format, version, exportedAt, user]
@@ -2858,7 +3146,107 @@ components:
         chatMessages: { type: array, items: { type: object } }
         attachments: { type: array, items: { type: object } }
         bookingPages: { type: array, items: { type: object }, description: 'Booking pages the user created, without their token' }
+        personalSharing:
+          type: object
+          description: Whether the own calendar is shared, with whom, and which calendars others share with the user
+          properties:
+            enabled: { type: boolean }
+            viewers: { type: array, items: { type: object } }
+            sharedWithMe: { type: array, items: { type: object } }
       additionalProperties: true
+    SharingViewer:
+      type: object
+      required: [id, email, name, status, invitedAt, expiresAt, acceptedAt]
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        name:
+          description: Name of the account, once the invitation is accepted
+          oneOf: [{ type: string }, { type: 'null' }]
+        status: { type: string, enum: [pending, accepted] }
+        invitedAt: { type: string, format: date-time }
+        expiresAt:
+          description: End of an open invitation (7 days)
+          oneOf: [{ type: string, format: date-time }, { type: 'null' }]
+        acceptedAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }
+    SharingState:
+      type: object
+      required: [enabled, viewers]
+      properties:
+        enabled: { type: boolean }
+        viewers: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/SharingViewer' } }
+    PeerCalendar:
+      type: object
+      required: [id, ownerName, status, color, shown, expiresAt]
+      properties:
+        id: { type: string }
+        ownerName:
+          type: string
+          description: Only the name; the email address of the owner stays private
+        status:
+          type: string
+          enum: [pending, accepted]
+          description: An open invitation is pending and can be accepted or declined
+        color: { $ref: '#/components/schemas/EventColor' }
+        shown: { type: boolean }
+        expiresAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }
+    PeerCalendarChanges:
+      type: object
+      minProperties: 1
+      properties:
+        color: { $ref: '#/components/schemas/EventColor' }
+        shown: { type: boolean }
+    PeerEvent:
+      type: object
+      description: |
+        An event of a shared personal calendar as the viewer may see it. Busy events carry no content: `title`,
+        `location` and `description` are empty and `id` is an opaque id that changes per share. Only the viewer's own
+        requests carry the real event id, the description and `request`.
+      required: [id, uid, title, location, description, startDate, start, endDate, end, allDay, timeZone, recurrence, excludedDates, seriesId, originalDate, busy, request]
+      properties:
+        id: { type: string }
+        uid: { type: string }
+        title: { type: string }
+        location: { type: string }
+        description: { type: string }
+        startDate: { $ref: '#/components/schemas/ISODate' }
+        start: { $ref: '#/components/schemas/Time' }
+        endDate: { $ref: '#/components/schemas/ISODate' }
+        end: { $ref: '#/components/schemas/Time' }
+        allDay: { type: boolean }
+        timeZone: { oneOf: [{ type: string }, { type: 'null' }] }
+        recurrence: { oneOf: [{ $ref: '#/components/schemas/Recurrence' }, { type: 'null' }] }
+        excludedDates: { type: array, items: { $ref: '#/components/schemas/ISODate' } }
+        seriesId: { oneOf: [{ type: string }, { type: 'null' }] }
+        originalDate: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
+        busy: { type: boolean }
+        request:
+          oneOf:
+            - type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [pending, accepted] }
+            - { type: 'null' }
+    EventRequestInput:
+      type: object
+      required: [title, startDate, start, endDate, end]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 100 }
+        location: { type: string, maxLength: 200, default: '' }
+        description:
+          type: string
+          maxLength: 2000
+          default: ''
+          description: A note for the owner
+        startDate: { $ref: '#/components/schemas/ISODate' }
+        start: { $ref: '#/components/schemas/Time' }
+        endDate: { $ref: '#/components/schemas/ISODate' }
+        end: { $ref: '#/components/schemas/Time' }
+        allDay: { type: boolean, default: false }
+        timeZone:
+          description: Required for requests with a time. The start must lie in the future, at most 14 days long.
+          oneOf: [{ type: string }, { type: 'null' }]
+          default: null
     BookingHours:
       type: object
       required: [weekday, start, end]

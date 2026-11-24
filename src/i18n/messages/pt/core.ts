@@ -97,6 +97,12 @@ export const errors: Messages['errors'] = {
   bookingNotFound: 'Este link de reserva é inválido ou não é mais válido.',
   slotUnavailable: 'Este horário não está mais disponível. Escolha outro.',
   bookingExpired: 'A reserva não foi confirmada em 15 minutos. Reserve novamente.',
+  sharingDisabled: 'Ative primeiro o compartilhamento do seu calendário.',
+  alreadyShared: 'Esta pessoa já pode ver seu calendário.',
+  tooManyViewers: 'Você pode compartilhar seu calendário com no máximo 50 pessoas.',
+  sharedCalendarNotFound: 'Este calendário não está mais compartilhado com você.',
+  requestNotFound: 'Esta solicitação não existe mais.',
+  requestAnswered: 'Esta solicitação já foi respondida.',
   status: {
     400: 'A solicitação era inválida.',
     401: 'Faça login.',

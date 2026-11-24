@@ -96,6 +96,12 @@ export const errors: Messages['errors'] = {
   bookingNotFound: 'Ce lien de réservation est invalide ou n’est plus valable.',
   slotUnavailable: 'Ce créneau n’est plus disponible. Choisissez-en un autre.',
   bookingExpired: 'La réservation n’a pas été confirmée dans les 15 minutes. Veuillez réserver à nouveau.',
+  sharingDisabled: 'Activez d’abord le partage de votre calendrier.',
+  alreadyShared: 'Cette personne voit déjà votre calendrier.',
+  tooManyViewers: 'Vous pouvez partager votre calendrier avec 50 personnes au maximum.',
+  sharedCalendarNotFound: 'Ce calendrier n’est plus partagé avec vous.',
+  requestNotFound: 'Cette demande n’existe plus.',
+  requestAnswered: 'Cette demande a déjà reçu une réponse.',
   status: {
     400: 'La requête n’était pas valide.',
     401: 'Veuillez vous connecter.',

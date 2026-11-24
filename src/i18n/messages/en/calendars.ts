@@ -134,6 +134,7 @@ export const calendars = {
       invitations: 'Invitations',
       danger: 'Danger zone',
       booking: 'Booking pages',
+      sharing: 'Sharing',
       exchange: 'Import & export',
       trash: 'Trash',
     },
@@ -141,7 +142,7 @@ export const calendars = {
     displayDescription: 'Applies only to you. Other members set this themselves.',
     personalTitle: 'Personal calendar',
     personalHint:
-      'Only you see this calendar. It cannot be shared, left or deleted. You show or hide events from team calendars in their settings.',
+      'Only you see this calendar. It cannot be left or deleted. You show or hide events from team calendars in their settings.',
   },
   general: {
     title: 'General',

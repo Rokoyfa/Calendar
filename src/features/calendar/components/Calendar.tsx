@@ -36,7 +36,9 @@ import {
 import { ChatProvider, type ChatAccess } from '../../chat/index.ts'
 import { getChatKey } from '../../../utils/chat.ts'
 import { isExternalEvent } from '../../../utils/externalCalendar.ts'
-import { isCaldavEvent } from '../../../utils/caldav.ts'
+import { isCaldavCalendarId, isCaldavEvent } from '../../../utils/caldav.ts'
+import { isPeerCalendarId, isPeerEvent, shareIdOf } from '../../../utils/peerCalendar.ts'
+import { usePeerCalendars } from '../../peers/index.ts'
 import { CurrentUserEmailContext } from '../context/CurrentUserContext.ts'
 import { DraggingEventContext } from '../context/DragContext.ts'
 import { useAttendeeCandidates, type AttendeeCandidateLoader } from '../hooks/useAttendeeCandidates.ts'
@@ -102,6 +104,7 @@ type CalendarProps = {
   chat?: ChatAccess
   externalEvents?: readonly CalendarEvent[]
   isHistoryAvailable?: (calendarId: string) => boolean
+  canSetVisibility?: (calendarId: string) => boolean
   openEvent?: OpenEventRequest
   onOpenEventDone?: () => void
 }
@@ -140,12 +143,14 @@ export function Calendar({
   chat,
   externalEvents = NO_EXTERNAL_EVENTS,
   isHistoryAvailable = NEVER,
+  canSetVisibility = NEVER,
   openEvent: linkedEvent,
   onOpenEventDone,
 }: CalendarProps) {
   const i18n = useI18n()
   const { features, views, readOnly: hostReadOnly = false } = useHost()
-  const { invalidate, events: eventRepository } = useStorage()
+  const { invalidate, events: eventRepository, personalSharing } = useStorage()
+  const peers = usePeerCalendars()
   const attachmentRepository = useAttachmentRepository()
   const readOnly = forcedReadOnly || hostReadOnly
   const canCreate = mayCreate && !readOnly
@@ -160,7 +165,11 @@ export function Calendar({
   })
   const holidays = useHolidays(range)
   const viewerTimeZone = useViewerTimeZone()
-  const { isAvailable: hasCategories, categories, create: createCategory } = useCategories(calendarIds)
+  const categoryCalendarIds = useMemo(
+    () => calendarIds.filter((id) => !isCaldavCalendarId(id) && !isPeerCalendarId(id)),
+    [calendarIds],
+  )
+  const { isAvailable: hasCategories, categories, create: createCategory } = useCategories(categoryCalendarIds)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const activeFilter = categories.length > 0 ? categoryFilter : null
@@ -173,6 +182,7 @@ export function Calendar({
       (occurrence) =>
         isExternalEvent(occurrence) ||
         isCaldavEvent(occurrence) ||
+        isPeerEvent(occurrence) ||
         matchesCategoryFilter(occurrence.categoryIds, known, activeFilter),
     )
   }, [events, externalEvents, range, viewerTimeZone, categories, activeFilter])
@@ -181,7 +191,9 @@ export function Calendar({
       new Map(
         occurrences
           .filter(
-            (occurrence) => !isExternalEvent(occurrence) && (!isCaldavEvent(occurrence) || canEditEvent(occurrence)),
+            (occurrence) =>
+              !isExternalEvent(occurrence) &&
+              ((!isCaldavEvent(occurrence) && !isPeerEvent(occurrence)) || canEditEvent(occurrence)),
           )
           .map((occurrence) => [occurrence.occurrenceKey, occurrence]),
       ),
@@ -246,13 +258,19 @@ export function Calendar({
       }),
     )
 
+  const overlapCalendarId = editorCalendarId && isPeerCalendarId(editorCalendarId) ? editorCalendarId : null
   const checkOverlaps = useCallback(
     async (query: OverlapQuery) => {
       const { from, to } = overlapRange(query)
-      const found = await eventRepository.list({ from, to, calendarIds })
+      if (overlapCalendarId) {
+        const busy = await eventRepository.list({ from, to, calendarIds: [overlapCalendarId] })
+        return findOverlaps(query, busy, viewerTimeZone, currentUserEmail)
+      }
+      const own = calendarIds.filter((id) => !isPeerCalendarId(id))
+      const found = await eventRepository.list({ from, to, calendarIds: own })
       return findOverlaps(query, [...found, ...externalEvents], viewerTimeZone, currentUserEmail)
     },
-    [eventRepository, calendarIds, externalEvents, viewerTimeZone, currentUserEmail],
+    [eventRepository, calendarIds, overlapCalendarId, externalEvents, viewerTimeZone, currentUserEmail],
   )
 
   const openSearchResult = (event: CalendarEvent, date: string) => {
@@ -417,6 +435,7 @@ export function Calendar({
   const {
     isExternal: editorIsExternal,
     isCaldav: editorIsCaldav,
+    isPeer: editorIsPeer,
     isLocked: editorIsLocked,
     canChooseCalendar,
   } = getEditorAccess({
@@ -442,6 +461,43 @@ export function Calendar({
           ),
           onChange: editor.setCalendarId,
         }
+      : undefined
+  const peerShareId = editorCalendarId ? shareIdOf(editorCalendarId) : null
+  const peerOwner = peerShareId
+    ? (peers.calendars.find((calendar) => calendar.id === peerShareId)?.ownerName ?? '')
+    : undefined
+  const editorRequest = editorOccurrence?.request ?? null
+  const isOwnRequest = editorIsPeer && editorRequest?.mine === true
+  const isForeign = editorIsExternal || editorIsCaldav || editorIsPeer
+  const peerNotice =
+    peerOwner === undefined
+      ? undefined
+      : !editorOccurrence
+        ? i18n.m.peers.requestHint(peerOwner)
+        : isOwnRequest
+          ? editorRequest?.status === 'pending'
+            ? i18n.m.peers.requestPending(peerOwner)
+            : i18n.m.peers.requestAccepted(peerOwner)
+          : i18n.m.peers.eventNotice(peerOwner)
+  const decision =
+    personalSharing && editorOccurrence && !editorIsPeer && editorRequest?.status === 'pending' && !readOnly
+      ? {
+          requester: editorRequest.requester?.name ?? null,
+          onAccept: async () => {
+            await personalSharing.acceptRequest(editorOccurrence.id)
+            closeEditor()
+            invalidate()
+          },
+          onDecline: async () => {
+            await personalSharing.declineRequest(editorOccurrence.id)
+            closeEditor()
+            invalidate()
+          },
+        }
+      : undefined
+  const requesterNotice =
+    !editorIsPeer && editorRequest?.status === 'accepted' && editorRequest.requester
+      ? i18n.m.peers.decision.acceptedBy(editorRequest.requester.name)
       : undefined
 
   return (
@@ -492,12 +548,11 @@ export function Calendar({
                 <Suspense fallback={null}>
                   <EventModal
                     readOnly={readOnly || editorIsExternal || editorIsLocked}
-                    showAttachments={!editorIsExternal && !editorIsCaldav}
+                    showAttachments={!isForeign}
                     history={
                       features.history &&
                       shownEditor.occurrence &&
-                      !editorIsExternal &&
-                      !editorIsCaldav &&
+                      !isForeign &&
                       isHistoryAvailable(shownEditor.occurrence.calendarId)
                         ? { eventId: shownEditor.occurrence.id, calendarNames }
                         : undefined
@@ -524,14 +579,24 @@ export function Calendar({
                             candidates: attendeeCandidates,
                             ownEmail: currentUserEmail,
                             onRespond:
-                              respond && shownEditor.occurrence && !editorIsExternal
+                              respond && shownEditor.occurrence && !editorIsExternal && !editorIsPeer
                                 ? (status) => respond(shownEditor.occurrence!, status)
                                 : undefined,
                           }
                         : undefined
                     }
+                    requestTo={peerOwner}
+                    showVisibility={
+                      features.personalSharing &&
+                      Boolean(personalSharing) &&
+                      editorCalendarId !== null &&
+                      canSetVisibility(editorCalendarId)
+                    }
+                    decision={decision}
                     notice={
                       shownEditor.notice ??
+                      peerNotice ??
+                      requesterNotice ??
                       (editorIsExternal && editorSource
                         ? i18n.m.external.eventNotice(editorSource.name)
                         : editorIsCaldav && editorSource
@@ -545,7 +610,7 @@ export function Calendar({
                       invalidate()
                     }}
                     onDelete={
-                      shownEditor.occurrence && !editorIsExternal
+                      shownEditor.occurrence && !editorIsExternal && (!editorIsPeer || isOwnRequest)
                         ? () => requestDelete(shownEditor.occurrence!)
                         : undefined
                     }
@@ -560,9 +625,11 @@ export function Calendar({
                         : undefined
                     }
                     initialTab={shownEditor.initialTab}
-                    onDuplicate={features.duplicate && shownEditor.occurrence && canCreate ? duplicate : undefined}
+                    onDuplicate={
+                      features.duplicate && shownEditor.occurrence && canCreate && !editorIsPeer ? duplicate : undefined
+                    }
                     onRemindersChange={
-                      setReminders && shownEditor.occurrence && !editorIsExternal
+                      setReminders && shownEditor.occurrence && !editorIsExternal && !editorIsPeer
                         ? async (reminders) => {
                             await setReminders(shownEditor.occurrence!, reminders)
                             closeEditor()

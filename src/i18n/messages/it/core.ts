@@ -96,6 +96,12 @@ export const errors: Messages['errors'] = {
   bookingNotFound: 'Questo link di prenotazione non è valido o non è più valido.',
   slotUnavailable: 'Questo orario non è più disponibile. Scegline un altro.',
   bookingExpired: 'La prenotazione non è stata confermata entro 15 minuti. Prenota di nuovo.',
+  sharingDisabled: 'Attiva prima la condivisione del tuo calendario.',
+  alreadyShared: 'Questa persona vede già il tuo calendario.',
+  tooManyViewers: 'Puoi condividere il tuo calendario con al massimo 50 persone.',
+  sharedCalendarNotFound: 'Questo calendario non è più condiviso con te.',
+  requestNotFound: 'Questa richiesta non esiste più.',
+  requestAnswered: 'Questa richiesta ha già ricevuto una risposta.',
   status: {
     400: 'La richiesta non era valida.',
     401: 'Accedi.',

@@ -16,6 +16,14 @@ New features; the REST contract only grows, nothing changes for existing endpoin
 - Endpoints `/calendars/:id/booking-pages`, `/booking-pages/:id`, `/booking-pages/:id/renew`, `/booking/:token`, `/booking/:token/slots`, `/bookings/confirm`, `/bookings/lookup`, `/bookings/cancel` (tag "Booking pages" in `api/openapi.yaml`)
 - Notification kinds `bookingCreated` and `bookingCanceled` in the bell
 - New error codes `tooManyBookingPages`, `bookingPageNotFound`, `bookingNotFound`, `slotUnavailable` and `bookingExpired`, translated in all languages
+- Sharing the personal calendar (feature `personalSharing`): after a confirmation in the new **Sharing** tab of the personal calendar, its owner invites up to 50 people by email. They accept under Settings › Invitations and see the calendar next to their own events, private events only as busy time. Events have a new `visibility` (`private` by default, `public` shows title, time and place). Invited people can request events through **Request to …** in the event dialog; the owner accepts or declines them in the event dialog, and the person who asked can change open requests and withdraw them
+- Endpoints `/personal-sharing`, `/personal-sharing/viewers`, `/peer-calendars`, `/peer-calendars/:id/events`, `/peer-calendars/:id/requests` and `/events/:id/request/accept|decline` (tag "Personal sharing" in `api/openapi.yaml`); events carry `visibility` and the read-only `request`, and iCalendar exports write `CLASS`
+- Notification kinds `calendarShareInvitation`, `eventRequested`, `eventRequestAccepted`, `eventRequestDeclined` and `eventRequestWithdrawn`
+- New error codes `sharingDisabled`, `alreadyShared`, `tooManyViewers`, `sharedCalendarNotFound`, `requestNotFound` and `requestAnswered`, translated in all languages
+
+### Fixed
+
+- Searching no longer sends the ids of connected CalDAV calendars to `GET /events/search`
 
 ## 2.0.0 – 2026-11-20
 
