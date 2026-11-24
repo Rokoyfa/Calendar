@@ -25,13 +25,13 @@ export const events: Messages['events'] = {
   deleteTrashHint: 'O evento vai para o lixo, onde pode ser restaurado durante 30 dias.',
   remoteChange: {
     updated: 'Outra pessoa acabou de alterar este evento. Recarregue-o antes de continuar.',
-    deleted: 'Outra pessoa acabou de eliminar este evento.',
+    deleted: 'Outra pessoa acabou de excluir este evento.',
     reload: 'Recarregar',
   },
   conflict: {
     message:
-      'Outra pessoa alterou este evento enquanto o editava. Pode guardar a sua versão mesmo assim ou carregar a versão atual.',
-    overwrite: 'Guardar mesmo assim',
+      'Outra pessoa alterou este evento enquanto você o editava. Você pode salvar sua versão mesmo assim ou carregar a versão atual.',
+    overwrite: 'Salvar mesmo assim',
     reload: 'Descartar e recarregar',
   },
   attachments: {
@@ -78,7 +78,7 @@ export const events: Messages['events'] = {
   lastOccurrence: 'Último evento',
   calendar: 'Calendário',
   moveSeriesHint: 'A série inteira vai para o outro calendário, incluindo os eventos editados separadamente.',
-  overlapItem: (title: string, start: string, end: string) => `«${title}» ${start}–${end}`,
+  overlapItem: (title: string, start: string, end: string) => `“${title}” ${start}–${end}`,
   overlap: (list: string, more: number) =>
     more === 0
       ? `Sobrepõe-se a ${list}.`
@@ -132,15 +132,15 @@ export const events: Messages['events'] = {
     sendHint: 'Enter envia, Shift+Enter cria uma nova linha',
     edit: 'Editar',
     edited: 'editada',
-    confirmDelete: 'Eliminar mesmo',
+    confirmDelete: 'Excluir mesmo assim',
     loadOlder: 'Carregar mensagens anteriores',
     unread: (count) => `${count} mensagens não lidas`,
     offline: 'Sem ligação em direto. As novas mensagens aparecem quando voltar.',
     you: 'Tu',
-    removedAuthor: 'Conta eliminada',
+    removedAuthor: 'Conta excluída',
   },
   duplicate: 'Duplicar',
-  duplicateNotice: (title) => `Cópia de “${title}”. É criada ao guardar.`,
+  duplicateNotice: (title) => `Cópia de “${title}”. É criada ao salvar.`,
   history: {
     tab: 'Histórico',
     none: 'Nenhuma alteração registrada ainda.',
@@ -176,9 +176,9 @@ export const events: Messages['events'] = {
   },
   respondPage: {
     title: 'Responder ao convite',
-    sending: 'A guardar a tua resposta…',
+    sending: 'Salvando sua resposta…',
     incompleteLink: 'Este link está incompleto. Abre-o novamente a partir do e-mail.',
-    recurring: 'É um evento recorrente. A tua resposta aplica-se a toda a série.',
+    recurring: 'É um evento recorrente. Sua resposta vale para toda a série.',
     saved: (status) => `Guardado: ${status}`,
   },
 }

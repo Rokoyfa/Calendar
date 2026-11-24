@@ -35,7 +35,7 @@ export const calendar: Messages['calendar'] = {
   undo: {
     action: 'Anular',
     ctrlZ: 'Ctrl+Z',
-    deleted: (title) => `“${title}” eliminado`,
+    deleted: (title) => `“${title}” excluído`,
     moved: (title) => `“${title}” movido`,
   },
   menu: {
@@ -60,7 +60,7 @@ export const calendar: Messages['calendar'] = {
     searching: 'Buscando …',
   },
   print: {
-    open: 'Imprimir ou guardar como PDF',
+    open: 'Imprimir ou salvar como PDF',
     empty: 'Sem eventos neste período.',
   },
 }

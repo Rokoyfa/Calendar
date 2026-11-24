@@ -38,7 +38,7 @@ export const errors: Messages['errors'] = {
   attachmentNotFound: 'Este anexo não existe mais.',
   attachmentTooLarge: 'O arquivo é grande demais.',
   eventChanged: 'Outra pessoa alterou este evento entretanto.',
-  seriesDeleted: 'A série deste evento foi eliminada. Restaure primeiro a série.',
+  seriesDeleted: 'A série deste evento foi excluída. Restaure a série primeiro.',
   tooManyAttachments: 'Este evento já tem o número máximo de anexos.',
   saveDecisionFailed: 'Não foi possível salvar sua escolha neste navegador.',
   invalidLink: 'Este link é inválido ou expirou.',

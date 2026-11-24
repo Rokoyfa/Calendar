@@ -13,12 +13,12 @@ export const settings: Messages['settings'] = {
     connections: 'Conexões',
   },
   dataExport: {
-    title: 'Os seus dados',
+    title: 'Seus dados',
     accountDescription:
-      'Transfira tudo o que está guardado na sua conta: perfil, definições, cores, associações, os seus eventos, respostas, mensagens de chat e os dados dos seus anexos. O ficheiro está em formato JSON.',
+      'Baixe tudo o que está salvo na sua conta: perfil, configurações, cores, associações, seus eventos, respostas, mensagens de chat e os dados dos seus anexos. O arquivo está em formato JSON.',
     localDescription:
-      'Transfira todos os eventos e definições que este navegador guarda. O ficheiro está em formato JSON.',
-    download: 'Transferir dados',
+      'Baixe todos os eventos e configurações que este navegador salva. O arquivo está em formato JSON.',
+    download: 'Baixar dados',
   },
   languageTitle: 'Idioma e região',
   languageDescription: 'Define o idioma, os formatos de data e hora e o primeiro dia da semana.',
@@ -38,8 +38,8 @@ export const settings: Messages['settings'] = {
   notifications: {
     title: 'E-mails sobre eventos',
     description:
-      'E-mails para o teu endereço confirmado. Os lembretes por e-mail chegam mesmo com o calendário fechado.',
-    unverified: 'Confirma o teu endereço de e-mail para receber e-mails.',
+      'E-mails para o seu endereço confirmado. Os lembretes por e-mail chegam mesmo com o calendário fechado.',
+    unverified: 'Confirme seu endereço de e-mail para receber e-mails.',
     emailInvites: 'Quando alguém me convida para um evento',
     emailChanges: 'Quando um evento para o qual fui convidado muda ou é cancelado',
     emailReminders: 'Lembretes por e-mail',
