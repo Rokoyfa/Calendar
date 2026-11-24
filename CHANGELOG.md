@@ -2,21 +2,25 @@
 
 All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning](https://semver.org/). From 1.0 on, breaking changes to props, attributes, DOM events, exported types, the data adapter and the REST contract only come with a new major version.
 
-## 2.1.0 – unreleased
+## 2.1.0 – 2026-11-24
 
-New features; the REST contract only grows, nothing changes for existing endpoints.
+New features; the REST contract only grows, nothing changes for existing endpoints. The new event fields `visibility` and `request` are optional in `CalendarEvent` and `EventInput`, so existing data adapters and host code compile unchanged.
+
+### Upgrading from 2.0
+
+- `bookingPages` and `personalSharing` are on by default and need new endpoints. If your backend does not offer them yet, switch them off (`features: { bookingPages: false, personalSharing: false }` or `feature-booking-pages="false" feature-personal-sharing="false"`). Without the endpoints the widget hides sharing on its own (`404`, `405` or `501` on `GET /peer-calendars`); the booking pages tab would show an error.
+- Everything else works with a 2.0 backend. Events without `visibility` count as private, events without `request` as no request.
 
 ### Added
 
 - Overlap warning (feature `overlapWarnings`): the event dialog notes when the time overlaps other events of the shown calendars, with up to three titles and times. Saving stays possible
-- Calendar menu: a ☰ button on the left of the header opens a side panel with search, category filter, printing and, without an account menu, settings. The header keeps navigation, title, views, new event, notifications and the account menu. Pages can add entries through the `menuItems` prop of `Calendar`
+- Calendar menu: a ☰ button on the left of the header opens a side panel with search, category filter, printing and, without an account menu, settings. The header keeps navigation, title, views, new event, notifications and the account menu. Below them, a group links to the settings of the active calendar (general settings, members, sharing, booking pages, import & export, trash, as far as available)
 - A thin line in the view switch separates Agenda from the views Day to Year
 - Printing (feature `print`): an entry in the calendar menu prints the visible day, week, month, year or agenda as a clean list, or saves it as PDF through the browser's print dialog
 - Booking pages (feature `bookingPages`): in the new **Booking pages** tab of the calendar settings, members with `manage_calendars` create up to 10 pages per calendar with duration, start-time step, break, minimum notice, horizon, daily limit, time zone and weekly times. Anyone with the link books a free time at `/book/:token` without an account; the booking counts after the confirmation link from the email (`/booking/confirm`), and the second email links to `/booking/cancel`. Confirmed bookings become events in the calendar
 - Endpoints `/calendars/:id/booking-pages`, `/booking-pages/:id`, `/booking-pages/:id/renew`, `/booking/:token`, `/booking/:token/slots`, `/bookings/confirm`, `/bookings/lookup`, `/bookings/cancel` (tag "Booking pages" in `api/openapi.yaml`)
 - Notification kinds `bookingCreated` and `bookingCanceled` in the bell
 - New error codes `tooManyBookingPages`, `bookingPageNotFound`, `bookingNotFound`, `slotUnavailable` and `bookingExpired`, translated in all languages
-- The menu on the left of the calendar header links to the settings of the active calendar: general settings and, where available, members, sharing, booking pages, import & export and trash
 - Sharing the personal calendar (feature `personalSharing`): after a confirmation in the new **Sharing** tab of the personal calendar, its owner invites up to 50 people by email. They accept under Settings › Invitations and see the calendar next to their own events, private events only as busy time. Events have a new `visibility` (`private` by default, `public` shows title, time and place). Invited people can request events through **Request to …** in the event dialog; the owner accepts or declines them in the event dialog, and the person who asked can change open requests and withdraw them
 - Endpoints `/personal-sharing`, `/personal-sharing/viewers`, `/peer-calendars`, `/peer-calendars/:id/events`, `/peer-calendars/:id/requests` and `/events/:id/request/accept|decline` (tag "Personal sharing" in `api/openapi.yaml`); events carry `visibility` and the read-only `request`, and iCalendar exports write `CLASS`
 - Notification kinds `calendarShareInvitation`, `eventRequested`, `eventRequestAccepted`, `eventRequestDeclined` and `eventRequestWithdrawn`

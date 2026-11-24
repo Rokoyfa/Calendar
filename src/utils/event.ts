@@ -87,8 +87,8 @@ export type CalendarEvent = {
   originalDate: string | null
   reminders: number[]
   attendees: Attendee[]
-  visibility: EventVisibility
-  request: EventRequest | null
+  visibility?: EventVisibility
+  request?: EventRequest | null
   attachmentCount: number
   version: number
   createdBy: string | null

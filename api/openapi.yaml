@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Calendar API
-  version: 2.0.0
+  version: 2.1.0
   description: |
     REST contract between the calendar component (`restDataSource`) and a backend.
     The test backend (`TestBE`) is the reference implementation.

@@ -82,3 +82,6 @@ export class ApiError extends Error {
 }
 
 export const isApiError = (error: unknown): error is ApiError => error instanceof ApiError
+
+export const isUnsupportedEndpoint = (error: unknown) =>
+  isApiError(error) && (error.status === 404 || error.status === 405 || error.status === 501)

@@ -691,7 +691,7 @@ type CalendarEvent = EventInput & {
   createdAt: string             // ISO date-time
   updatedAt: string
   version: number               // starts at 1, goes up on every change, read-only
-  request: { status: 'pending' | 'accepted'; requester: { id: string; name: string } | null } | null // read-only
+  request?: { status: 'pending' | 'accepted'; requester: { id: string; name: string } | null } | null // read-only, missing means null
 }
 
 type EventInput = {
@@ -714,7 +714,7 @@ type EventInput = {
   originalDate: string | null   // its original date in that series
   reminders: number[]           // minutes before the start, per user (see below)
   attendees: Attendee[]
-  visibility: 'private' | 'public' // for people the personal calendar is shared with, default 'private'
+  visibility?: 'private' | 'public' // for people the personal calendar is shared with, missing means 'private'
 }
 
 type Attendee = { email: string; name: string; status: 'needsAction' | 'accepted' | 'tentative' | 'declined' }
@@ -1151,5 +1151,13 @@ People can show their personal calendar to chosen others, for example to colleag
 - **Codes:** `sharingDisabled`, `alreadyShared`, `tooManyViewers`, `sharedCalendarNotFound`, `requestNotFound`, `requestAnswered`.
 - **Your backend** implements the endpoints tagged "Personal sharing" in `api/openapi.yaml` and returns `visibility` and `request` on events.
 
-Turn the feature off with `features: { personalSharing: false }`.
+What your backend has to enforce, because the widget only shows what it receives:
+
+- **Access.** Only accepted shares give access, and only to `GET /peer-calendars/:id/events` and the request endpoints. The normal event, calendar, attachment, history and chat endpoints stay closed to the person the calendar is shared with. Unknown, pending or removed shares answer `sharedCalendarNotFound`, so nobody can probe which shares exist.
+- **Accepting.** Only the invited account can accept, and only if its confirmed email equals the invited address and the invitation has not expired. The owner cannot invite their own address.
+- **What `/peer-calendars/:id/events` returns.** Private events and every event of team calendars or connected CalDAV calendars shown in the personal calendar: `busy: true`, empty `title`, `location` and `description`, and an id that is derived from the share and the event (for example an HMAC), so ids cannot be linked across shares or to the real event. Public events: title, time and place, still without description, attendees or attachments. Events the viewer requested, or where the viewer's confirmed email is an attendee, keep their details; the viewer's own requests also carry the description, the real id and `request.status`. Leave out events the owner declined and open requests of other people. Allow at most 400 days per query.
+- **Requests.** A request is an event in the owner's personal calendar with `request = { status: 'pending' }`, the requester as accepted attendee and `visibility: 'private'`. The requester may change it only while it is pending and may withdraw it at any time; the owner accepts (`pending` → `accepted`) or declines. Declining and withdrawing move the event to the trash. Answered requests cannot be answered again (`requestAnswered`). Pending requests are not busy time for booking pages and are left out of public links; iCalendar exports write them with `STATUS:TENTATIVE` and every event with `CLASS:PUBLIC` or `CLASS:PRIVATE` (a missing `CLASS` on import counts as private).
+- **Clean-up.** Turning sharing off deletes all shares and open invitations of that owner. Deleting an account deletes its sharing and every share where it is the owner or the viewer. Expired open invitations can be deleted by a scheduled job.
+
+Turn the feature off with `features: { personalSharing: false }`. If `GET /peer-calendars` answers `404`, `405` or `501`, the widget treats sharing as not offered by the backend and hides it.
 

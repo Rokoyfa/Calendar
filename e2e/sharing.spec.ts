@@ -141,3 +141,15 @@ test('requests an event, the owner accepts it and the requester withdraws it', a
   await expect(own).toHaveCount(0)
   await expect.poll(async () => (await ownEvents(anna)).length).toBe(0)
 })
+
+test('hides sharing when the backend does not offer it', async ({ browser }) => {
+  const anna = await createUser('Anna')
+  const { data: calendars } = await api<{ id: string }[]>(anna, 'GET', '/calendars')
+  const page = await openAs(browser, anna)
+  await page.route('**/api/peer-calendars', (route) => route.fulfill({ status: 404, body: '' }))
+  await page.goto(`/calendars/${calendars[0].id}/settings`)
+  await expect(page.getByRole('tab', { name: 'Allgemein' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Freigabe' })).toHaveCount(0)
+  await page.goto('/settings?tab=connections')
+  await expect(page.getByRole('heading', { name: 'Kalender anderer Personen' })).toHaveCount(0)
+})

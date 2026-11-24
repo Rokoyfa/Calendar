@@ -52,7 +52,7 @@ import { Calendar } from '@rokoyfa/calendar'
 **Alle anderen Seiten (Script-Tag):**
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@1/dist-lib/cdn/calendar-widget.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@2/dist-lib/cdn/calendar-widget.js"></script>
 <calendar-widget storage-mode="remote" api-base-url="https://api.example.com" auth style="height: 700px"></calendar-widget>
 ```
 
@@ -243,27 +243,27 @@ Das Paket heißt **`@rokoyfa/calendar`** und erscheint öffentlich auf npm unter
 
 ```bash
 npm run build:lib
-npm pack                       # erzeugt rokoyfa-calendar-1.0.0.tgz
+npm pack                       # erzeugt rokoyfa-calendar-2.1.0.tgz
 ```
 
-- In einem anderen Projekt: `npm install ../Calendar/rokoyfa-calendar-1.0.0.tgz`, dann `import { Calendar } from '@rokoyfa/calendar'`.
+- In einem anderen Projekt: `npm install ../Calendar/rokoyfa-calendar-2.1.0.tgz`, dann `import { Calendar } from '@rokoyfa/calendar'`.
 - Ohne npm: `demo/local.html` über einen beliebigen statischen Server öffnen (z. B. `npx serve .` im Projektordner), sie lädt `dist-lib/cdn/calendar-widget.js`.
 
 **Veröffentlichen:**
 
 1. Version mit `npm version patch|minor|major --no-git-tag-version` erhöhen und `CHANGELOG.md` ergänzen. Ab 1.0 gilt SemVer streng: `1.0.1` für Korrekturen, `1.1.0` für Neues, das bestehende Einbindungen nicht bricht, `2.0.0` für alles, was Props, Attribute, DOM-Events, exportierte Typen, den Daten-Adapter oder den REST-Vertrag inkompatibel ändert.
 2. `npm publish`. Vorher laufen automatisch Lint, Typprüfung, Tests und `build:lib`. `publishConfig.access` ist `public`, nötig für gescopete Pakete.
-3. Commit taggen, z. B. `git tag v1.0.0 && git push --tags`.
+3. Commit taggen, z. B. `git tag v2.1.0 && git push --tags`.
 
 **Danach erreichbar** (CDN nach wenigen Minuten):
 
 | Weg | Adresse |
 | --- | --- |
 | npm | `npm install @rokoyfa/calendar` |
-| jsDelivr | `https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@1/dist-lib/cdn/calendar-widget.js` |
-| unpkg | `https://unpkg.com/@rokoyfa/calendar@1/dist-lib/cdn/calendar-widget.js` |
+| jsDelivr | `https://cdn.jsdelivr.net/npm/@rokoyfa/calendar@2/dist-lib/cdn/calendar-widget.js` |
+| unpkg | `https://unpkg.com/@rokoyfa/calendar@2/dist-lib/cdn/calendar-widget.js` |
 
-`demo/cdn.html` bindet die veröffentlichte Version über jsDelivr ein und zeigt alle Einbindungsarten (lokal, mit Backend, Ereignisse, Theme). `@1` holt immer die neueste `1.x`, für feste Stände die volle Version angeben (z. B. `@1.0.0`).
+`demo/cdn.html` bindet die veröffentlichte Version über jsDelivr ein und zeigt alle Einbindungsarten (lokal, mit Backend, Ereignisse, Theme). `@2` holt immer die neueste `2.x`, für feste Stände die volle Version angeben (z. B. `@2.1.0`).
 
 **Im Paket** stehen nur `dist-lib/` (npm-Build mit Typen, CDN-Script, Source-Maps), `api/openapi.yaml`, `schema/`, die beiden Beispiel-Konfigurationen aus `demo/`, `DEVELOPER_GUIDE.md`, `CHANGELOG.md`, `README.md`, `LICENSE` und `package.json`. Die Version steht zur Laufzeit in `VERSION` (Export) bzw. `customElements.get('calendar-widget').version`.
 

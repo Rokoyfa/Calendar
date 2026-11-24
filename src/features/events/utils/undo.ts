@@ -1,4 +1,4 @@
-import { isApiError } from '../../../utils/apiError.ts'
+import { isUnsupportedEndpoint } from '../../../utils/apiError.ts'
 import { isAppError } from '../../../utils/appError.ts'
 import { toEventInput, type CalendarEvent } from '../../../utils/event.ts'
 import type { EventRepository } from '../../storage/index.ts'
@@ -9,8 +9,7 @@ type Change =
   | { type: 'removed'; before: CalendarEvent }
 
 const isMissing = (error: unknown) =>
-  (isApiError(error) && (error.status === 404 || error.status === 405 || error.status === 501)) ||
-  (isAppError(error) && error.code === 'eventNotFound')
+  isUnsupportedEndpoint(error) || (isAppError(error) && error.code === 'eventNotFound')
 
 const restoreFromTrash = async (repository: EventRepository, id: string) => {
   if (!repository.restore) return null
