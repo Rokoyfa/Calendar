@@ -13,6 +13,7 @@ export type ViewDefinition = {
   step: (anchor: string, direction: 1 | -1) => string
   getTitle: (anchor: string, i18n: ViewI18n) => string
   getSubtitle?: (anchor: string, i18n: ViewI18n) => string
+  isFixed?: boolean
 }
 
 export type CalendarViewProps = {

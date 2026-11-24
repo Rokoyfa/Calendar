@@ -56,6 +56,12 @@ export const VIEW_DEFINITIONS: Record<CalendarView, ViewDefinition> = {
     getTitle: (anchor, { m, format }) =>
       m.views.agenda.range(format.shortDay(anchor), format.fullDay(addDaysToISODate(anchor, AGENDA_DAYS - 1))),
   },
+  tasks: {
+    getRange: (anchor) => ({ from: anchor, to: anchor }),
+    step: (anchor) => anchor,
+    getTitle: (_anchor, { m }) => m.views.tasks.label,
+    isFixed: true,
+  },
 }
 
 export const VIEW_SHORTCUTS: Record<CalendarView, string> = {
@@ -64,6 +70,7 @@ export const VIEW_SHORTCUTS: Record<CalendarView, string> = {
   month: 'm',
   year: 'y',
   agenda: 'a',
+  tasks: 'k',
 }
 
 export const withShortcut = (label: string, key: string) => `${label} (${key.toUpperCase()})`

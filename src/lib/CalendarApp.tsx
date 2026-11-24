@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode, type RefObject } from 'react'
-import { RouterProvider } from 'react-router'
+import { useEffect, useMemo, type ReactNode, type RefObject } from 'react'
 import type { CalendarDataSource } from '../data/index.ts'
 import { useFeatures } from '../context/HostContext.ts'
 import { AuthProvider, useAuth } from '../features/authorization/index.ts'
@@ -16,7 +15,7 @@ import {
 } from '../features/storage/index.ts'
 import { CaldavProvider } from '../features/caldav/index.ts'
 import { useI18n, useLocaleGetter } from '../i18n/index.ts'
-import { createCalendarRouter } from '../router.tsx'
+import { CalendarRouter } from '../router.tsx'
 import type { CalendarRouting } from './config.ts'
 import { withEventCallbacks, type EventCallbacks } from './eventCallbacks.ts'
 import { ExternalCalendarsProvider } from '../features/external/index.ts'
@@ -37,7 +36,7 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
   const { m } = useI18n()
   const getLanguage = useLocaleGetter()
   const { status, user, expireSession } = useAuth()
-  const { reminders, caldav, caldavAccounts, personalSharing } = useFeatures()
+  const { reminders, caldav, caldavAccounts, personalSharing, tasks } = useFeatures()
   const isAuthenticated = status === 'authenticated'
   const repositories = useMemo(
     () => dataSource.connect({ isAuthenticated }, { getLanguage, onUnauthorized: expireSession }),
@@ -74,8 +73,9 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
       appPasswords: caldav ? repositories.appPasswords : undefined,
       caldav: caldavEvents ? repositories.caldav : undefined,
       caldavEvents,
+      tasks: tasks ? repositories.tasks : undefined,
     }),
-    [repositories, eventCallbacks, caldav, caldavEvents, sharing, peerEvents],
+    [repositories, eventCallbacks, caldav, caldavEvents, sharing, peerEvents, tasks],
   )
 
   if (status === 'loading') return <p className="appLoading">{m.common.loading}</p>
@@ -115,12 +115,11 @@ export function CalendarApp({ dataSource, eventCallbacks, routing, basename, ini
     () => dataSource.createAuthRepository?.({ getLanguage }) ?? null,
     [dataSource, getLanguage],
   )
-  const [router] = useState(() => createCalendarRouter(routing, { basename, initialPath }))
 
   return (
     <AuthProvider repository={authRepository}>
       <SessionProviders dataSource={dataSource} eventCallbacks={eventCallbacks}>
-        <RouterProvider router={router} />
+        <CalendarRouter routing={routing} basename={basename} initialPath={initialPath} />
       </SessionProviders>
     </AuthProvider>
   )

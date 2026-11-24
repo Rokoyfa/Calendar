@@ -4,6 +4,7 @@ import { SelectField } from '../../../components/SelectField.tsx'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
+import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
 import { Button } from '../../../components/Button.tsx'
 import { DateTimeField } from '../../../components/DateTimeField.tsx'
 import { Form } from '../../../components/Form.tsx'
@@ -122,6 +123,7 @@ type EventModalProps = {
   requestTo?: string
   showVisibility?: boolean
   decision?: RequestDecisionOptions
+  onSwitchToTask?: (draft: { title: string; date: string | null }) => void
   onClose: () => void
 }
 
@@ -154,6 +156,7 @@ export function EventModal({
   requestTo,
   showVisibility = false,
   decision,
+  onSwitchToTask,
   onClose,
 }: EventModalProps) {
   const i18n = useI18n()
@@ -495,6 +498,23 @@ export function EventModal({
         onClose={onClose}
       >
         <Form className="eventForm" onSubmit={handleSubmit}>
+          {mode === 'create' && onSwitchToTask && (
+            <SegmentedControl
+              label={m.tasks.kind.label}
+              value="event"
+              options={[
+                { value: 'event', label: m.tasks.kind.event },
+                { value: 'task', label: m.tasks.kind.task },
+              ]}
+              onChange={(kind) => {
+                if (kind === 'task')
+                  onSwitchToTask({
+                    title: values.title.trim(),
+                    date: isISODate(values.startDate) ? values.startDate : null,
+                  })
+              }}
+            />
+          )}
           {notice && <p className="formHint eventNotice">{notice}</p>}
           {decision && <RequestDecision {...decision} />}
           <Tabs label={m.events.tabsLabel} tabs={tabs} value={activeTab} stable onChange={setActiveTab} />

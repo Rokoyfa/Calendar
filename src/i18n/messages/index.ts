@@ -1,11 +1,11 @@
 import { DEFAULT_LANGUAGE, isBuiltInLanguage, type BuiltInLanguage, type Language } from '../locale.ts'
-import { en } from './en/index.ts'
 import type { Messages, PartialMessages } from './types.ts'
 import { isRecord } from '../../utils/parse.ts'
 
 export type { DeepPartial, MessageOverrides, Messages, PartialMessages } from './types.ts'
 
-const LOADERS: Record<Exclude<BuiltInLanguage, 'en'>, () => Promise<Messages>> = {
+const LOADERS: Record<BuiltInLanguage, () => Promise<Messages>> = {
+  en: () => import('./en/index.ts').then((module) => module.en),
   de: () => import('./de/index.ts').then((module) => module.de),
   fr: () => import('./fr/index.ts').then((module) => module.fr),
   es: () => import('./es/index.ts').then((module) => module.es),
@@ -15,15 +15,14 @@ const LOADERS: Record<Exclude<BuiltInLanguage, 'en'>, () => Promise<Messages>> =
   pt: () => import('./pt/index.ts').then((module) => module.pt),
 }
 
-const loaded = new Map<Language, Messages>([[DEFAULT_LANGUAGE, en]])
+const loaded = new Map<Language, Messages>()
 
 export const getLoadedMessages = (language: Language) => loaded.get(language) ?? null
 
 export async function loadMessages(language: Language): Promise<Messages> {
   const cached = loaded.get(language)
   if (cached) return cached
-  if (!isBuiltInLanguage(language) || language === 'en') return en
-  const messages = await LOADERS[language]()
+  const messages = await LOADERS[isBuiltInLanguage(language) ? language : DEFAULT_LANGUAGE]()
   loaded.set(language, messages)
   return messages
 }

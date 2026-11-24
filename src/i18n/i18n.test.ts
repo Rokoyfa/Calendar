@@ -28,6 +28,13 @@ describe('i18n', () => {
     expect(createFormatter('en-US', 0).shortWeekdays[0].weekday).toBe(6)
   })
 
+  it('formats task effort in hours and minutes', () => {
+    const format = createFormatter('en-US', 0)
+    expect(format.effort(150)).toBe('2 hr 30 min')
+    expect(format.effort(60)).toBe('1 hr')
+    expect(format.effort(45)).toBe('45 min')
+  })
+
   it('translates week numbers', async () => {
     expect(en.views.weekNumber(45)).toBe('Wk 45')
     expect((await loadMessages('de')).views.weekNumber(45)).toBe('KW 45')

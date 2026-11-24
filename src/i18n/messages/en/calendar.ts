@@ -12,6 +12,7 @@ export const views = {
     allDay: 'All day',
     empty: 'No events in these 30 days.',
   },
+  tasks: { label: 'Tasks' },
   weekNumber: (week: number) => `Wk ${week}`,
   weekNumberLong: (week: number) => `Week ${week}`,
 }

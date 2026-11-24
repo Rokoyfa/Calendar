@@ -24,5 +24,6 @@ export const inbox: Messages['inbox'] = {
     eventRequestAccepted: (actor, title) => `${actor} aceptó tu solicitud «${title}»`,
     eventRequestDeclined: (actor, title) => `${actor} rechazó tu solicitud «${title}»`,
     eventRequestWithdrawn: (actor, title) => `${actor} retiró la solicitud «${title}»`,
+    taskAssigned: (actor, title) => `${actor} te asignó la tarea «${title}»`,
   },
 }

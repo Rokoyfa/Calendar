@@ -115,7 +115,7 @@ export const showCalendar = async (page: Page, name: string) => {
   await expect(page.locator('dialog[open]')).toHaveCount(0)
 }
 
-export const showView = async (page: Page, view: 'Tag' | 'Woche' | 'Monat' | 'Jahr' | 'Agenda') => {
+export const showView = async (page: Page, view: 'Tag' | 'Woche' | 'Monat' | 'Jahr' | 'Agenda' | 'Aufgaben') => {
   await page.locator('.segment', { hasText: view }).click()
 }
 

@@ -36,12 +36,14 @@ import { useCaldav } from '../features/caldav/index.ts'
 import { caldavCalendarId, isCaldavEvent } from '../utils/caldav.ts'
 import { usePeerCalendars } from '../features/peers/index.ts'
 import { isOwnPendingRequest, isPeerEvent, peerCalendarId } from '../utils/peerCalendar.ts'
+import type { TaskAccess, TaskSetup } from '../features/tasks/index.ts'
 
 const LINK_PARAMS = {
   calendar: 'calendar',
   event: 'event',
   date: 'date',
   tab: 'tab',
+  task: 'task',
 } as const
 
 export function CalendarPage() {
@@ -110,6 +112,7 @@ export function CalendarPage() {
   const linkedEventId = searchParams.get(LINK_PARAMS.event)
   const linkedDate = searchParams.get(LINK_PARAMS.date)
   const linkedTab = searchParams.get(LINK_PARAMS.tab)
+  const linkedTaskId = searchParams.get(LINK_PARAMS.task)
   const openEvent = useMemo<OpenEventRequest | undefined>(
     () =>
       linkedEventId && isISODate(linkedDate)
@@ -127,15 +130,18 @@ export function CalendarPage() {
     if (linkedCalendarId && linkedCalendarExists) selectCalendar(linkedCalendarId)
   }, [linkedCalendarId, linkedCalendarExists, selectCalendar])
 
-  const clearLink = () =>
-    setSearchParams(
-      (current) => {
-        const next = new URLSearchParams(current)
-        for (const param of Object.values(LINK_PARAMS)) next.delete(param)
-        return next
-      },
-      { replace: true },
-    )
+  const clearLink = useCallback(
+    () =>
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current)
+          for (const param of Object.values(LINK_PARAMS)) next.delete(param)
+          return next
+        },
+        { replace: true },
+      ),
+    [setSearchParams],
+  )
 
   const calendarById = useMemo(() => new Map(calendars.map((calendar) => [calendar.id, calendar])), [calendars])
   const isTeamCalendar = useCallback(
@@ -228,14 +234,18 @@ export function CalendarPage() {
     [calendarById],
   )
   const calendarNames = useMemo(() => new Map(calendars.map((calendar) => [calendar.id, calendar.name])), [calendars])
+  const ownChoices = useMemo(
+    () =>
+      calendars
+        .filter((calendar) => hasPermission(calendar, 'create_entry'))
+        .toSorted((a, b) => Number(b.id === activeCalendar.id) - Number(a.id === activeCalendar.id))
+        .map((calendar) => {
+          const team = getDistinctTeamName(calendar)
+          return { id: calendar.id, name: team ? `${calendar.name} (${team})` : calendar.name }
+        }),
+    [calendars, activeCalendar],
+  )
   const calendarChoices = useMemo(() => {
-    const own = calendars
-      .filter((calendar) => hasPermission(calendar, 'create_entry'))
-      .toSorted((a, b) => Number(b.id === activeCalendar.id) - Number(a.id === activeCalendar.id))
-      .map((calendar) => {
-        const team = getDistinctTeamName(calendar)
-        return { id: calendar.id, name: team ? `${calendar.name} (${team})` : calendar.name }
-      })
     const remote = caldav.calendars
       .filter((calendar) => calendar.shown && !calendar.readOnly)
       .map((calendar) => ({ id: caldavCalendarId(calendar.id), name: `${calendar.name} (${calendar.accountName})` }))
@@ -243,14 +253,63 @@ export function CalendarPage() {
       id: peerCalendarId(calendar.id),
       name: m.peers.requestChoice(calendar.ownerName),
     }))
-    return [...own, ...remote, ...requests]
-  }, [calendars, activeCalendar, caldav.calendars, shownPeers, m])
+    return [...ownChoices, ...remote, ...requests]
+  }, [ownChoices, caldav.calendars, shownPeers, m])
   const canSetVisibility = useCallback(
     (calendarId: string) => {
       const calendar = calendarById.get(calendarId)
       return Boolean(calendar && isPersonalCalendar(calendar))
     },
     [calendarById],
+  )
+
+  const taskAccess = useMemo<TaskAccess>(() => {
+    const check = (calendarId: string, allowed: (calendar: CalendarSummary) => boolean) => {
+      const calendar = calendarById.get(calendarId)
+      return calendar !== undefined && allowed(calendar)
+    }
+    const canEdit: TaskAccess['canEdit'] = (task) =>
+      check(task.calendarId, (calendar) => canEditEntry(calendar, task.createdBy, userId))
+    return {
+      canCreateIn: (calendarId) => check(calendarId, (calendar) => hasPermission(calendar, 'create_entry')),
+      canEdit,
+      canComplete: (task) =>
+        canEdit(task) || (userId !== null && task.assignee?.id === userId && calendarById.has(task.calendarId)),
+      canDelete: (task) => check(task.calendarId, (calendar) => canDeleteEntry(calendar, task.createdBy, userId)),
+    }
+  }, [calendarById, userId])
+  const loadAssignees = useMemo(() => {
+    if (!user || !host.features.teams) return undefined
+    return async (calendarId: string) => {
+      const calendar = calendarById.get(calendarId)
+      if (!calendar || isPersonalCalendar(calendar)) return []
+      const members = await repository.listMembers(calendar.teamId)
+      return members.map(({ userId: id, name }) => ({ id, name }))
+    }
+  }, [user, host.features.teams, calendarById, repository])
+  const isLinkedCalendarShown = !linkedCalendarId || visibleCalendarIds.includes(linkedCalendarId)
+  const tasks = useMemo<TaskSetup>(
+    () => ({
+      calendarIds: visibleCalendarIds,
+      targetCalendarId: activeCalendar.id,
+      choices: ownChoices,
+      calendarNames,
+      access: taskAccess,
+      loadAssignees,
+      openTaskId: isLinkedCalendarShown ? linkedTaskId : null,
+      onOpenTaskDone: clearLink,
+    }),
+    [
+      visibleCalendarIds,
+      activeCalendar.id,
+      ownChoices,
+      calendarNames,
+      taskAccess,
+      loadAssignees,
+      isLinkedCalendarShown,
+      linkedTaskId,
+      clearLink,
+    ],
   )
 
   return (
@@ -278,6 +337,7 @@ export function CalendarPage() {
         openEvent={openEvent}
         onOpenEventDone={clearLink}
         menuItems={menuItems}
+        tasks={tasks}
         headerAccessory={
           <>
             <NotificationBell />

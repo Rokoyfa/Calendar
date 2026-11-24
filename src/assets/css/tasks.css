@@ -1,0 +1,226 @@
+.taskChip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  min-height: 24px;
+  padding: 0 var(--space-1) 0 0;
+  border: 1px dashed color-mix(in srgb, var(--color-accent) 55%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: 18px;
+  cursor: default;
+}
+
+.allDayLane .taskChip {
+  grid-column: 1;
+  margin: 0 1px;
+}
+
+.taskChip.isOverdue {
+  border-color: color-mix(in srgb, var(--color-red) 60%, transparent);
+}
+
+.taskChip.isDone .taskChipTitle,
+.taskRow.isDone .taskRowTitle {
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
+
+.taskChipTitle {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.taskChipTitle:hover {
+  text-decoration: underline;
+}
+
+.taskCheck {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-on-brand);
+  cursor: pointer;
+}
+
+.taskCheck::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px solid var(--color-accent);
+  border-radius: 50%;
+}
+
+.taskCheck svg {
+  position: relative;
+}
+
+.taskCheck.isChecked::before {
+  background: var(--color-accent);
+}
+
+.taskCheck:disabled {
+  cursor: default;
+}
+
+.taskCheck:disabled::before {
+  border-color: var(--color-grid);
+}
+
+.taskCheck.isChecked:disabled::before {
+  background: var(--color-grid);
+}
+
+.taskCheck:focus-visible,
+.taskChipTitle:focus-visible,
+.taskRowOpen:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.agendaTasks {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.taskListView {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.taskQuickAdd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.taskQuickAdd .input {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.taskQuickAdd .errorText,
+.taskQuickAdd [role='alert'] {
+  flex-basis: 100%;
+}
+
+.taskGroup {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.taskGroupTitle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.taskGroup--overdue .taskGroupTitle {
+  color: var(--color-red);
+}
+
+.taskGroupEffort {
+  margin-left: auto;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+}
+
+.taskEstimate .numberInput {
+  width: 5em;
+}
+
+.taskGroupCount {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+}
+
+.taskList {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.taskRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-grid);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.taskRow.isOverdue {
+  border-left: 3px solid var(--color-red);
+}
+
+.taskRow .taskCheck::before {
+  inset: 2px;
+}
+
+.taskRowOpen {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.taskRowTitle {
+  overflow-wrap: anywhere;
+}
+
+.taskRowDetails {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.taskRow.isOverdue .taskRowDetails {
+  color: var(--color-red);
+}
+
+.taskDoneToggle {
+  align-self: flex-start;
+}
+
+.taskForm .segmentedControl,
+.eventForm > .segmentedControl {
+  align-self: flex-start;
+}

@@ -123,6 +123,7 @@ info:
     | `bookingNotFound` | 404 | The link of a booking email is unknown |
     | `sharedCalendarNotFound` | 404 | The personal calendar is not (or no longer) shared with the caller |
     | `requestNotFound` | 404 | The event request is unknown or not the caller's own |
+    | `taskNotFound` | 404 | The task is unknown or in a calendar the caller cannot see |
     | `emailTaken` | 409 | An account with this email exists |
     | `alreadyMember` | 409 | The invited person is already a member |
     | `alreadyInvited` | 409 | The address is already invited |
@@ -151,11 +152,14 @@ info:
     | `alreadyShared` | 409 | The invited address can already see the calendar |
     | `tooManyViewers` | 409 | More than 50 people for the own calendar |
     | `requestAnswered` | 409 | The request was already accepted and can only be withdrawn |
+    | `tooManyTasks` | 409 | The calendar already has 5000 tasks |
+    | `invalidAssignee` | 400 | `assigneeId` is not a member of the task's calendar |
     | `twoFactorExpired` | 410 | The sign-in step for the code expired; sign in again |
     | `invalidLink` | 410 | The link from an email is invalid or expired |
     | `invitationExpired` | 410 | The invitation is no longer valid |
     | `bookingExpired` | 410 | A booking was not confirmed within 15 minutes |
     | `eventChanged` | 412 | `If-Match` names an older `version` of the event |
+    | `taskChanged` | 412 | `If-Match` names an older `version` of the task |
     | `payloadTooLarge` | 413 | The body is too large |
     | `attachmentTooLarge` | 413 | The file is larger than 10 MB |
     | `tooManyLoginAttempts` | 429 | Too many failed sign-ins, with `Retry-After` |
@@ -181,6 +185,8 @@ tags:
     description: |
       One chat per event in team calendars, for recurring events one per occurrence (`date` = original date of the occurrence).
       Live updates come over a WebSocket at `{base}/chat/socket`, see the Developer Guide section “Event chat”.
+      The same WebSocket carries `{ type: 'task.changed', calendarId, taskId, version, changedBy }` after every task
+      change (`version` is `null` when the task was deleted or moved away).
       The same WebSocket carries `{ type: 'event.changed', calendarId, eventId, version, changedBy }` after every change
       to an event (`version` is `null` when it was deleted), see the Developer Guide section “Live updates”.
   - name: Tenant
@@ -214,6 +220,12 @@ tags:
       events of team calendars and connected CalDAV calendars always as busy time. Events the viewer is invited to or
       requested show title, time and place. Viewers can request events; the owner accepts or declines them.
       `/personal-sharing` is the owner's side, `/peer-calendars` the viewer's side.
+  - name: Tasks
+    description: |
+      To-dos with an optional due date (and time) that belong to a calendar like events. In team calendars a task can
+      be assigned to a member, who may complete it even without the right to edit. Permissions follow events:
+      `create_entry` to create, `update_own_entry`/`update_any_entry` to edit, `delete_own_entry`/`delete_any_entry` to
+      move or delete. Tasks are never part of public links, personal sharing, booking availability or CalDAV.
   - name: Notifications
     description: |
       In-app notifications (bell). New notifications also arrive over the WebSocket as
@@ -2680,6 +2692,177 @@ paths:
         '204': { description: Declined }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
+  /tasks:
+    get:
+      tags: [Tasks]
+      x-feature: tasks
+      summary: List tasks
+      description: |
+        Tasks of the given calendars. With `from` and `to` (at most 400 days apart) only tasks due in that range, open
+        and done. Without a range all open tasks, including those without a due date, and the 200 most recently
+        completed ones. `status` narrows the result to open or done tasks. Open tasks come first.
+      parameters:
+        - name: calendarId
+          in: query
+          required: true
+          description: Repeatable. `personal` stands for the own personal calendar.
+          schema: { type: array, items: { type: string } }
+          style: form
+          explode: true
+        - { name: from, in: query, schema: { $ref: '#/components/schemas/ISODate' } }
+        - { name: to, in: query, schema: { $ref: '#/components/schemas/ISODate' } }
+        - { name: status, in: query, schema: { type: string, enum: [open, done] } }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: Tasks
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Task' } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Tasks]
+      x-feature: tasks
+      summary: Create a task
+      description: Needs `create_entry`. Notifies the assignee with `taskAssigned` unless they created it themselves.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/TaskInput'
+                - type: object
+                  required: [calendarId]
+                  properties:
+                    calendarId: { type: string }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /tasks/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Tasks]
+      x-feature: tasks
+      summary: Change a task
+      description: |
+        Replaces title, notes, due date, due time and assignee. Needs `update_own_entry` (own tasks) or
+        `update_any_entry`. A new assignee gets `taskAssigned`.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TaskInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Tasks]
+      x-feature: tasks
+      summary: Delete a task
+      description: Deletes for good, there is no trash for tasks. Needs `delete_own_entry` or `delete_any_entry`.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
+  /tasks/{id}/complete:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Tasks]
+      x-feature: tasks
+      summary: Mark a task as done
+      description: |
+        Allowed for the assignee and for everyone who may edit the task. Sets `completedAt` and `completedBy`; a task
+        that is already done stays unchanged.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: The task
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
+  /tasks/{id}/reopen:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Tasks]
+      x-feature: tasks
+      summary: Mark a task as open again
+      description: Same rules as completing.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: The task
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
+  /tasks/{id}/move:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Tasks]
+      x-feature: tasks
+      summary: Move a task to another calendar
+      description: |
+        Needs `delete_own_entry`/`delete_any_entry` in the source and `create_entry` in the target calendar. The
+        assignee is kept only when they are a member of the target calendar.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [calendarId]
+              properties:
+                calendarId: { type: string }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: The moved task
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
 components:
   securitySchemes:
     sessionCookie:
@@ -2914,7 +3097,7 @@ components:
       required: [id, kind, actor, event, team, invitationId, createdAt, readAt]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [teamInvitation, eventInvitation, eventChanged, eventCanceled, attendeeResponse, chatMessage, reminder, bookingCreated, bookingCanceled, calendarShareInvitation, eventRequested, eventRequestAccepted, eventRequestDeclined, eventRequestWithdrawn] }
+        kind: { type: string, enum: [teamInvitation, eventInvitation, eventChanged, eventCanceled, attendeeResponse, chatMessage, reminder, bookingCreated, bookingCanceled, calendarShareInvitation, eventRequested, eventRequestAccepted, eventRequestDeclined, eventRequestWithdrawn, taskAssigned] }
         actor:
           oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
         event:
@@ -2927,6 +3110,17 @@ components:
                 title: { type: string }
                 startDate: { $ref: '#/components/schemas/ISODate' }
                 occurrenceDate: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
+            - { type: 'null' }
+        task:
+          description: Set for `taskAssigned`. Missing in older backends, which the client treats as `null`.
+          oneOf:
+            - type: object
+              required: [id, calendarId, title, dueDate]
+              properties:
+                id: { type: string }
+                calendarId: { type: string }
+                title: { type: string }
+                dueDate: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
             - { type: 'null' }
         team:
           oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
@@ -3140,6 +3334,10 @@ components:
         calendars: { type: array, items: { type: object } }
         categories: { type: array, items: { type: object } }
         events: { type: array, items: { $ref: '#/components/schemas/CalendarEvent' } }
+        tasks:
+          type: array
+          description: Tasks of the personal calendar and tasks the user created or is assigned to, with `calendarName`
+          items: { $ref: '#/components/schemas/Task' }
         trash: { type: array, items: { type: object } }
         reminders: { type: array, items: { type: object } }
         responses: { type: array, items: { type: object } }
@@ -3154,6 +3352,48 @@ components:
             viewers: { type: array, items: { type: object } }
             sharedWithMe: { type: array, items: { type: object } }
       additionalProperties: true
+    TaskInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200, description: Trimmed on the server }
+        notes: { type: string, maxLength: 2000, default: '' }
+        dueDate:
+          oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }]
+          default: null
+          description: Day the task is due. Without it the task only shows in the task list.
+        dueTime:
+          oneOf: [{ $ref: '#/components/schemas/Time' }, { type: 'null' }]
+          default: null
+          description: Optional time on `dueDate`, as a local wall-clock time without time zone. Needs `dueDate`.
+        estimateMinutes:
+          oneOf: [{ type: integer, minimum: 1, maximum: 5999 }, { type: 'null' }]
+          default: null
+          description: Optional estimated effort in minutes (at most 99 hours 59 minutes).
+        assigneeId:
+          oneOf: [{ type: string }, { type: 'null' }]
+          default: null
+          description: User id of a member of the calendar (`400 invalidAssignee` otherwise).
+    Task:
+      type: object
+      required: [id, calendarId, title, notes, dueDate, dueTime, estimateMinutes, assignee, completedAt, completedBy, createdBy, createdAt, updatedAt, version]
+      properties:
+        id: { type: string }
+        calendarId: { type: string }
+        title: { type: string }
+        notes: { type: string }
+        dueDate: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
+        dueTime: { oneOf: [{ $ref: '#/components/schemas/Time' }, { type: 'null' }] }
+        estimateMinutes: { oneOf: [{ type: integer, minimum: 1, maximum: 5999 }, { type: 'null' }] }
+        assignee:
+          oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
+        completedAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }
+        completedBy:
+          oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
+        createdBy: { oneOf: [{ type: string }, { type: 'null' }] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, minimum: 1, description: 'Goes up with every change, for If-Match' }
     SharingViewer:
       type: object
       required: [id, email, name, status, invitedAt, expiresAt, acceptedAt]
@@ -3417,7 +3657,8 @@ components:
       enum: [system, light, dark]
     CalendarView:
       type: string
-      enum: [day, week, month, year, agenda]
+      description: '`tasks` is accepted when the backend offers tasks.'
+      enum: [day, week, month, year, agenda, tasks]
     Locale:
       type: string
       description: '`auto` or a BCP 47 language tag such as `en-US`, `en-GB`, `de-DE`'

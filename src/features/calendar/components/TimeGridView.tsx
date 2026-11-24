@@ -11,9 +11,11 @@ import { DayColumn } from './DayColumn.tsx'
 import { useHolidayMap } from '../context/HolidaysContext.ts'
 import { TimeColumn } from './TimeColumn.tsx'
 import { useSlotNavigation } from '../hooks/useSlotNavigation.ts'
+import { useTaskRows } from '../../tasks/index.ts'
 
 const NO_SEGMENTS: readonly EventSegment[] = []
 const NO_ALL_DAY: readonly AllDaySegment[] = []
+const MAX_TASK_ROWS_IN_WEEK = 3
 
 export function TimeGridView({
   dates,
@@ -44,8 +46,10 @@ export function TimeGridView({
     onCreate,
   )
   const holidayRows = dates.some((date) => holidays.has(date)) ? 1 : 0
+  const taskRows = useTaskRows(dates, isSingleDay ? Number.POSITIVE_INFINITY : MAX_TASK_ROWS_IN_WEEK)
+  const fixedRows = holidayRows + taskRows
   const hasAllDayEvents = [...lanes.allDay.values()].some((segments) => segments.length > 0)
-  const allDayRows = holidayRows + (hasAllDayEvents || holidayRows === 0 ? lanes.rows : 0)
+  const allDayRows = fixedRows + (hasAllDayEvents || fixedRows === 0 ? lanes.rows : 0)
 
   return (
     <div
@@ -64,7 +68,8 @@ export function TimeGridView({
             nowMinutes={showsToday ? currentMinutes : null}
             segments={lanes.timed.get(date) ?? NO_SEGMENTS}
             allDaySegments={lanes.allDay.get(date) ?? NO_ALL_DAY}
-            allDayRowOffset={holidayRows}
+            allDayRowOffset={fixedRows}
+            taskRows={{ offset: holidayRows, limit: taskRows }}
             selection={hours && { ...hours, label: date === range.first.date ? rangeLabel : null }}
             onSlotSelect={onCreate}
             onAllDaySelect={(allDayDate) => {

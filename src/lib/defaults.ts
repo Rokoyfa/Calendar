@@ -44,6 +44,7 @@ export const DEFAULT_FEATURES = {
   print: true,
   bookingPages: true,
   personalSharing: true,
+  tasks: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES
@@ -64,9 +65,13 @@ export const resolveFeatures = (features: Partial<CalendarFeatures> = {}): Calen
   return resolved
 }
 
-export const resolveViews = (views: readonly CalendarView[] | undefined): readonly CalendarView[] => {
-  const enabled = CALENDAR_VIEWS.filter((view) => views?.includes(view))
-  return enabled.length > 0 ? enabled : CALENDAR_VIEWS
+export const resolveViews = (
+  views: readonly CalendarView[] | undefined,
+  features: Pick<CalendarFeatures, 'tasks'> = DEFAULT_FEATURES,
+): readonly CalendarView[] => {
+  const available = features.tasks ? CALENDAR_VIEWS : CALENDAR_VIEWS.filter((view) => view !== 'tasks')
+  const enabled = available.filter((view) => views?.includes(view))
+  return enabled.length > 0 ? enabled : available
 }
 
 export type CalendarConfig = {

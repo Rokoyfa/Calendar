@@ -13,6 +13,7 @@ import { NowIndicator } from './NowIndicator.tsx'
 import { useHolidayNames } from '../context/HolidaysContext.ts'
 import { getDayLabel } from '../utils/eventLabels.ts'
 import { SLOT_NAVIGATION_KEYS } from '../hooks/useSlotNavigation.ts'
+import { DayTasks } from '../../tasks/index.ts'
 
 type DayColumnProps = {
   date: string
@@ -21,6 +22,7 @@ type DayColumnProps = {
   segments: readonly EventSegment[]
   allDaySegments: readonly AllDaySegment[]
   allDayRowOffset?: number
+  taskRows?: { offset: number; limit: number }
   selection?: { fromHour: number; toHour: number; label: string | null } | null
   onSlotSelect: (date: string, hour: number) => void
   onAllDaySelect: (date: string) => void
@@ -36,6 +38,7 @@ export function DayColumn({
   segments,
   allDaySegments,
   allDayRowOffset = 0,
+  taskRows,
   selection = null,
   onSlotSelect,
   onAllDaySelect,
@@ -87,6 +90,14 @@ export function DayColumn({
           <span className="holidayLabel" title={m.calendar.holiday(holidayText)}>
             {holidayText}
           </span>
+        )}
+        {taskRows && taskRows.limit > 0 && (
+          <DayTasks
+            date={date}
+            limit={taskRows.limit}
+            rowOffset={taskRows.offset}
+            onMore={onHeaderSelect && (() => onHeaderSelect(date))}
+          />
         )}
         {allDaySegments.map(({ segment, row, isFirst }) => (
           <EventChip

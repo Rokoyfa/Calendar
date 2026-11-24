@@ -2,6 +2,23 @@
 
 All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning](https://semver.org/). From 1.0 on, breaking changes to props, attributes, DOM events, exported types, the data adapter and the REST contract only come with a new major version.
 
+## Unreleased
+
+### Upgrading from 2.1
+
+- `tasks` is on by default and needs the new `/tasks` endpoints. Without them (`404`, `405` or `501` on `GET /tasks`) the widget hides tasks on its own; to hide them from the start use `features: { tasks: false }` or `feature-tasks="false"`.
+- `CalendarView` and the `views` option gain `tasks`, and the start view in the user settings may now be `tasks`. A backend that validates `defaultView` and `mobileDefaultView` has to accept it (see `CalendarView` in `api/openapi.yaml`).
+- `DataRepositories` has a new optional `tasks` repository. Own adapters compile unchanged; without it tasks stay hidden.
+
+### Added
+
+- Tasks with an optional due date and time and an optional estimated effort (feature `tasks`): checkable on their day in the day, week, month and agenda views, a new Tasks view with overdue, today, upcoming, no due date and done and the effort per group, a quick add field, and a switch between event and task when creating. In team calendars a task can be assigned to a member, who gets the notification `taskAssigned` and may check it off. Kept in the browser in local mode. New endpoints `/tasks*`, live message `task.changed`, error codes `taskNotFound`, `taskChanged`, `tooManyTasks`, `invalidAssignee`, and `tasks` in the data export
+- Keyboard shortcut **K** for the task view
+
+### Changed
+
+- Smaller first load: the CDN bundle loads 167 KB gzip instead of 197 KB. English texts are now loaded on demand like the other languages, and routing uses React Router's declarative routers instead of the data router
+
 ## 2.1.0 – 2026-11-24
 
 New features; the REST contract only grows, nothing changes for existing endpoints. The new event fields `visibility` and `request` are optional in `CalendarEvent` and `EventInput`, so existing data adapters and host code compile unchanged.

@@ -9,11 +9,15 @@ import { EventChip } from './EventChip.tsx'
 import { MonthGrid } from './MonthGrid.tsx'
 import { useHolidayMap } from '../context/HolidaysContext.ts'
 import { getDayLabel } from '../utils/eventLabels.ts'
+import { DayTasks, useTasksContext } from '../../tasks/index.ts'
+
+const MAX_TASKS_BESIDE_EVENTS = 1
 
 export function MonthView({ anchor, today, segmentsByDate, onCreate, onEventSelect, onShowDay }: CalendarViewProps) {
   const i18n = useI18n()
   const { m, format } = i18n
   const holidays = useHolidayMap()
+  const tasks = useTasksContext()
   return (
     <MonthGrid
       month={anchor}
@@ -21,7 +25,10 @@ export function MonthView({ anchor, today, segmentsByDate, onCreate, onEventSele
       renderDay={(date, isInMonth) => {
         const segments = sortSegments(segmentsByDate.get(date) ?? [])
         const holidayText = holidays.get(date)?.join(' · ')
-        const capacity = MAX_EVENTS_PER_MONTH_CELL - (holidayText ? 1 : 0)
+        const cellCapacity = MAX_EVENTS_PER_MONTH_CELL - (holidayText ? 1 : 0)
+        const taskCount = tasks?.byDate.get(date)?.length ?? 0
+        const taskSlots = Math.min(taskCount, segments.length > 0 ? MAX_TASKS_BESIDE_EVENTS : cellCapacity)
+        const capacity = cellCapacity - taskSlots
         const visibleCount = segments.length > capacity ? capacity - 1 : segments.length
         const moreCount = segments.length - visibleCount
         const showDay = withoutPropagation(() => onShowDay(date))
@@ -53,6 +60,7 @@ export function MonthView({ anchor, today, segmentsByDate, onCreate, onEventSele
               </span>
             )}
             <div className="monthCellEvents">
+              <DayTasks date={date} limit={taskSlots} onMore={() => onShowDay(date)} />
               {segments.slice(0, visibleCount).map((segment) => (
                 <EventChip key={segment.event.occurrenceKey} segment={segment} onSelect={onEventSelect} />
               ))}
@@ -62,9 +70,9 @@ export function MonthView({ anchor, today, segmentsByDate, onCreate, onEventSele
                 </button>
               )}
             </div>
-            {segments.length > 0 && (
+            {segments.length + taskCount > 0 && (
               <span className="eventDots" aria-hidden="true">
-                {segments.length}
+                {segments.length + taskCount}
               </span>
             )}
           </div>

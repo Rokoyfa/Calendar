@@ -34,6 +34,8 @@ export const TeamIcon = (props: IconProps) => (
 
 export const PlusIcon = (props: IconProps) => <IconBase {...props} path="M12 5v14M5 12h14" />
 
+export const CheckIcon = (props: IconProps) => <IconBase {...props} strokeWidth={3} path="M5 12.5l4.5 4.5L19 7.5" />
+
 export const RepeatIcon = (props: IconProps) => (
   <IconBase
     {...props}

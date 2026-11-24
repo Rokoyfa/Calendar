@@ -28,6 +28,11 @@ const targetOf = (notification: AppNotification, calendarIds: ReadonlySet<string
   if (notification.kind === 'teamInvitation' || notification.kind === 'calendarShareInvitation')
     return SETTINGS_INVITATIONS_PATH
   if (NO_TARGET_KINDS.has(notification.kind)) return null
+  if (notification.kind === 'taskAssigned') {
+    const { task } = notification
+    if (!task || !calendarIds.has(task.calendarId)) return null
+    return `${ROUTES.calendar}?${new URLSearchParams({ calendar: task.calendarId, task: task.id })}`
+  }
   const { event } = notification
   if (!event || !calendarIds.has(event.calendarId)) return null
   const params = new URLSearchParams({ calendar: event.calendarId, event: event.id, date: event.startDate })
@@ -54,7 +59,7 @@ function ActiveBell({ repository }: { repository: NonNullable<ReturnType<typeof 
 
   const describe = (notification: AppNotification) => {
     const actor = notification.actor?.name || text.someone
-    const title = notification.event?.title ?? ''
+    const title = notification.event?.title ?? notification.task?.title ?? ''
     switch (notification.kind) {
       case 'teamInvitation':
         return text.kinds.teamInvitation(actor, notification.team?.name ?? '')

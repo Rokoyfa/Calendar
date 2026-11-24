@@ -74,6 +74,11 @@ const ERROR_CODES = [
   'sharedCalendarNotFound',
   'requestNotFound',
   'requestAnswered',
+  'saveTasksFailed',
+  'taskNotFound',
+  'taskChanged',
+  'tooManyTasks',
+  'invalidAssignee',
 ] as const
 
 export const isErrorCode = (value: unknown): value is ErrorCode =>

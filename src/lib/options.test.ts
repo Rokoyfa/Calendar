@@ -87,8 +87,13 @@ describe('features and views', () => {
 
   it('keeps the views in their fixed order', () => {
     expect(resolveViews(['month', 'day'])).toEqual(['day', 'month'])
-    expect(resolveViews([])).toEqual(['day', 'week', 'month', 'year', 'agenda'])
-    expect(resolveViews(undefined)).toHaveLength(5)
+    expect(resolveViews([])).toEqual(['day', 'week', 'month', 'year', 'agenda', 'tasks'])
+    expect(resolveViews(undefined)).toHaveLength(6)
+  })
+
+  it('drops the task list when tasks are off', () => {
+    expect(resolveViews(['week', 'tasks'], { tasks: false })).toEqual(['week'])
+    expect(resolveViews(['tasks'], { tasks: false })).toEqual(['day', 'week', 'month', 'year', 'agenda'])
   })
 
   it('finds the closest enabled view', () => {

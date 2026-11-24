@@ -1,4 +1,14 @@
-import { lazy, Suspense, useCallback, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from 'react'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useHost } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
@@ -39,6 +49,7 @@ import { isExternalEvent } from '../../../utils/externalCalendar.ts'
 import { isCaldavCalendarId, isCaldavEvent } from '../../../utils/caldav.ts'
 import { isPeerCalendarId, isPeerEvent, shareIdOf } from '../../../utils/peerCalendar.ts'
 import { usePeerCalendars } from '../../peers/index.ts'
+import { TaskListView, TasksProvider, useTaskEditor, type TaskAccess, type TaskSetup } from '../../tasks/index.ts'
 import { CurrentUserEmailContext } from '../context/CurrentUserContext.ts'
 import { DraggingEventContext } from '../context/DragContext.ts'
 import { useAttendeeCandidates, type AttendeeCandidateLoader } from '../hooks/useAttendeeCandidates.ts'
@@ -79,6 +90,7 @@ const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = 
   month: MonthView,
   year: YearView,
   agenda: AgendaView,
+  tasks: TaskListView,
 }
 
 const EventModal = lazy(async () => ({ default: (await import('../../events/components/EventModal.tsx')).EventModal }))
@@ -107,6 +119,7 @@ type CalendarProps = {
   canSetVisibility?: (calendarId: string) => boolean
   openEvent?: OpenEventRequest
   onOpenEventDone?: () => void
+  tasks?: TaskSetup
 }
 
 type PendingDrop = {
@@ -121,6 +134,7 @@ const ALWAYS = () => true
 const NEVER = () => false
 const NO_EXTERNAL_EVENTS: readonly CalendarEvent[] = []
 const NO_CHOICES: readonly CalendarChoice[] = []
+const READ_ONLY_TASKS: TaskAccess = { canCreateIn: NEVER, canEdit: NEVER, canComplete: NEVER, canDelete: NEVER }
 
 export function Calendar({
   calendarIds,
@@ -146,18 +160,57 @@ export function Calendar({
   canSetVisibility = NEVER,
   openEvent: linkedEvent,
   onOpenEventDone,
+  tasks,
 }: CalendarProps) {
   const i18n = useI18n()
-  const { features, views, readOnly: hostReadOnly = false } = useHost()
-  const { invalidate, events: eventRepository, personalSharing } = useStorage()
+  const { features, views: hostViews, readOnly: hostReadOnly = false } = useHost()
+  const { invalidate, events: eventRepository, personalSharing, tasks: taskRepository } = useStorage()
   const peers = usePeerCalendars()
   const attachmentRepository = useAttachmentRepository()
   const readOnly = forcedReadOnly || hostReadOnly
   const canCreate = mayCreate && !readOnly
   const now = useNow()
   const today = toISODate(now)
-  const { view, setView, anchor, range, dates, title, subtitle, previous, next, goToToday, goToDate, show } =
-    useCalendarView(initialView, linkedEvent?.date)
+  const {
+    view,
+    setView,
+    anchor,
+    range,
+    dates,
+    definition,
+    title,
+    subtitle,
+    previous,
+    next,
+    goToToday,
+    goToDate,
+    show,
+  } = useCalendarView(initialView, linkedEvent?.date)
+  const [tasksUnsupported, setTasksUnsupported] = useState(false)
+  const markTasksUnsupported = useCallback(() => setTasksUnsupported(true), [])
+  const taskSetup = useMemo(
+    () =>
+      !tasks || !features.tasks || tasksUnsupported
+        ? undefined
+        : readOnly
+          ? { ...tasks, access: READ_ONLY_TASKS }
+          : tasks,
+    [tasks, features.tasks, tasksUnsupported, readOnly],
+  )
+  const hasTasks = taskSetup !== undefined && taskRepository !== undefined
+  const canCreateTasks =
+    hasTasks &&
+    (taskSetup.access.canCreateIn(taskSetup.targetCalendarId) ||
+      taskSetup.choices.some((choice) => taskSetup.access.canCreateIn(choice.id)))
+  const views = useMemo(
+    () => (hasTasks ? hostViews : hostViews.filter((name) => name !== 'tasks')),
+    [hasTasks, hostViews],
+  )
+  useEffect(() => {
+    if (views.length > 0 && !views.includes(view)) setView(nearestView(view, views))
+  }, [views, view, setView])
+  const taskEditor = useTaskEditor()
+  const isTaskView = view === 'tasks'
   const { events, error, createEvent, updateEvent, deleteEvent, moveEvent, respond, setReminders } = useEvents({
     ...range,
     calendarIds,
@@ -238,7 +291,26 @@ export function Calendar({
     : null
   const attendeeCandidates = useAttendeeCandidates(loadAttendeeCandidates, editorCalendarId)
 
-  const createNow = () => editor.openCreate(view === 'day' ? anchor : today, now.getHours())
+  const createNow = () =>
+    isTaskView ? taskEditor.openCreate() : editor.openCreate(view === 'day' ? anchor : today, now.getHours())
+  const canCreateHere = isTaskView ? canCreateTasks : canCreate
+
+  const switchToTask = ({ title, date }: { title: string; date: string | null }) => {
+    editor.close()
+    taskEditor.openCreate({
+      title,
+      dueDate: date,
+      calendarId: editorCalendarId && taskSetup?.access.canCreateIn(editorCalendarId) ? editorCalendarId : undefined,
+    })
+  }
+
+  const switchToEvent = ({ title, date }: { title: string; date: string | null }) => {
+    taskEditor.close()
+    editor.openDraft({
+      ...createEventInput(date ?? (view === 'day' ? anchor : today), now.getHours(), viewerTimeZone),
+      title,
+    })
+  }
 
   const closeEditor = editor.close
 
@@ -367,17 +439,18 @@ export function Calendar({
   useKeyboardShortcuts(
     features.shortcuts
       ? {
-          ArrowLeft: previous,
-          ArrowRight: next,
-          t: goToToday,
+          ArrowLeft: definition.isFixed ? undefined : previous,
+          ArrowRight: definition.isFixed ? undefined : next,
+          t: definition.isFixed ? undefined : goToToday,
           '/': features.search ? () => setIsSearchOpen(true) : undefined,
-          n: canCreate ? createNow : undefined,
+          n: canCreateHere ? createNow : undefined,
           [VIEW_SHORTCUTS.day]: selectView('day'),
           [VIEW_SHORTCUTS.week]: selectView('week'),
           [VIEW_SHORTCUTS.month]: selectView('month'),
           [VIEW_SHORTCUTS.year]: selectView('year'),
           j: selectView('year'),
           [VIEW_SHORTCUTS.agenda]: selectView('agenda'),
+          [VIEW_SHORTCUTS.tasks]: selectView('tasks'),
           'mod+z': undo.offer ? () => void undo.run() : undefined,
         }
       : NO_SHORTCUTS,
@@ -508,17 +581,17 @@ export function Calendar({
             <DraggingEventContext value={dragPreview?.occurrenceKey ?? null}>
               <CalendarHeader
                 view={view}
+                views={views}
                 title={title}
                 subtitle={subtitle}
                 onViewChange={setView}
-                onPrevious={previous}
-                onNext={next}
-                onToday={goToToday}
+                navigation={definition.isFixed ? undefined : { onPrevious: previous, onNext: next, onToday: goToToday }}
                 onSearch={features.search ? () => setIsSearchOpen(true) : undefined}
-                onPrint={features.print ? print : undefined}
-                onFilter={categories.length > 0 ? () => setIsFilterOpen(true) : undefined}
+                onPrint={features.print && !isTaskView ? print : undefined}
+                onFilter={categories.length > 0 && !isTaskView ? () => setIsFilterOpen(true) : undefined}
                 isFiltered={activeFilter !== null}
-                onCreateEvent={canCreate ? createNow : undefined}
+                onCreate={canCreateHere ? createNow : undefined}
+                createLabel={isTaskView ? i18n.m.tasks.newTask : undefined}
                 context={headerContext}
                 accessory={headerAccessory}
                 menuItems={menuItems}
@@ -527,22 +600,33 @@ export function Calendar({
               <ErrorMessage message={error} className="textCenter" />
               <ErrorMessage message={actionError} className="textCenter" />
 
-              <main ref={mainRef} className="main scrollArea" data-view={view}>
-                <ViewComponent
-                  anchor={anchor}
-                  dates={dates}
-                  today={today}
-                  currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
-                  segmentsByDate={segmentsByDate}
-                  canCreate={canCreate}
-                  onCreate={editor.openCreate}
-                  onCreateRange={editor.openCreateRange}
-                  onCreateAllDay={editor.openCreateAllDay}
-                  onEventSelect={editor.openEdit}
-                  onShowDay={(date) => showView('day', date)}
-                  onShowMonth={(date) => showView('month', date)}
-                />
-              </main>
+              <TasksProvider
+                setup={taskSetup}
+                range={range}
+                today={today}
+                includeList={isTaskView}
+                editor={taskEditor}
+                onSwitchToEvent={canCreate ? switchToEvent : undefined}
+                onUnsupported={markTasksUnsupported}
+                onError={setActionError}
+              >
+                <main ref={mainRef} className="main scrollArea" data-view={view}>
+                  <ViewComponent
+                    anchor={anchor}
+                    dates={dates}
+                    today={today}
+                    currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
+                    segmentsByDate={segmentsByDate}
+                    canCreate={canCreate}
+                    onCreate={editor.openCreate}
+                    onCreateRange={editor.openCreateRange}
+                    onCreateAllDay={editor.openCreateAllDay}
+                    onEventSelect={editor.openEdit}
+                    onShowDay={(date) => showView('day', date)}
+                    onShowMonth={(date) => showView('month', date)}
+                  />
+                </main>
+              </TasksProvider>
 
               {shownEditor && (
                 <Suspense fallback={null}>
@@ -593,6 +677,14 @@ export function Calendar({
                       canSetVisibility(editorCalendarId)
                     }
                     decision={decision}
+                    onSwitchToTask={
+                      canCreateTasks &&
+                      !shownEditor.occurrence &&
+                      !editorIsPeer &&
+                      !isCaldavCalendarId(editorCalendarId ?? '')
+                        ? switchToTask
+                        : undefined
+                    }
                     notice={
                       shownEditor.notice ??
                       peerNotice ??

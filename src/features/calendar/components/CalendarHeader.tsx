@@ -21,11 +21,11 @@ type CalendarHeaderProps = {
   view: CalendarView
   title: string
   subtitle?: string
+  views: readonly CalendarView[]
   onViewChange: (view: CalendarView) => void
-  onPrevious: () => void
-  onNext: () => void
-  onToday: () => void
-  onCreateEvent?: () => void
+  navigation?: { onPrevious: () => void; onNext: () => void; onToday: () => void }
+  onCreate?: () => void
+  createLabel?: string
   onSearch?: () => void
   onFilter?: () => void
   onPrint?: () => void
@@ -37,13 +37,13 @@ type CalendarHeaderProps = {
 
 export function CalendarHeader({
   view,
+  views,
   title,
   subtitle,
   onViewChange,
-  onPrevious,
-  onNext,
-  onToday,
-  onCreateEvent,
+  navigation,
+  onCreate,
+  createLabel,
   onSearch,
   onFilter,
   onPrint,
@@ -53,9 +53,11 @@ export function CalendarHeader({
   accessory,
 }: CalendarHeaderProps) {
   const { m } = useI18n()
-  const { views, features } = useHost()
+  const { features } = useHost()
   const withShortcut = (label: string, key: string) => (features.shortcuts ? addShortcut(label, key) : label)
-  const { previous: previousLabel, next: nextLabel } = m.views[view]
+  const labels = m.views[view]
+  const steps = navigation && 'previous' in labels ? { ...navigation, ...labels } : null
+  const newLabel = createLabel ?? m.calendar.newEvent
   const items = compact<CalendarMenuItem>([
     onSearch && {
       key: 'search',
@@ -78,15 +80,29 @@ export function CalendarHeader({
     <header className="header">
       <div className="headerNav">
         <CalendarMenu items={items} isMarked={isFiltered} />
-        <IconButton label={previousLabel} title={withShortcut(previousLabel, '←')} plain onClick={onPrevious}>
-          <ChevronLeftIcon />
-        </IconButton>
-        <IconButton label={nextLabel} title={withShortcut(nextLabel, '→')} plain onClick={onNext}>
-          <ChevronRightIcon />
-        </IconButton>
-        <Button variant="outline" className="todayButton" title={withShortcut(m.calendar.today, 't')} onClick={onToday}>
-          {m.calendar.today}
-        </Button>
+        {steps && (
+          <>
+            <IconButton
+              label={steps.previous}
+              title={withShortcut(steps.previous, '←')}
+              plain
+              onClick={steps.onPrevious}
+            >
+              <ChevronLeftIcon />
+            </IconButton>
+            <IconButton label={steps.next} title={withShortcut(steps.next, '→')} plain onClick={steps.onNext}>
+              <ChevronRightIcon />
+            </IconButton>
+            <Button
+              variant="outline"
+              className="todayButton"
+              title={withShortcut(m.calendar.today, 't')}
+              onClick={steps.onToday}
+            >
+              {m.calendar.today}
+            </Button>
+          </>
+        )}
       </div>
 
       <div className="headerCenter">
@@ -107,12 +123,8 @@ export function CalendarHeader({
           />
         )}
         <span className="headerCreate">
-          {onCreateEvent && (
-            <IconButton
-              label={m.calendar.newEvent}
-              title={withShortcut(m.calendar.newEvent, 'n')}
-              onClick={onCreateEvent}
-            >
+          {onCreate && (
+            <IconButton label={newLabel} title={withShortcut(newLabel, 'n')} onClick={onCreate}>
               <PlusIcon size={16} />
             </IconButton>
           )}

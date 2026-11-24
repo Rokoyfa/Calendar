@@ -63,8 +63,8 @@ function ConfiguredCalendar({
   const features = useMemo(() => resolveFeatures(JSON.parse(featureKey) as CalendarOptions['features']), [featureKey])
   const viewKey = options.views?.join() ?? ''
   const views = useMemo(
-    () => resolveViews(viewKey ? (viewKey.split(',') as CalendarOptions['views']) : undefined),
-    [viewKey],
+    () => resolveViews(viewKey ? (viewKey.split(',') as CalendarOptions['views']) : undefined, features),
+    [viewKey, features],
   )
   const { auth, chat, liveUpdates, notifications } = features
   const holidayBackend = features.holidays ? holidaySource : 'library'

@@ -212,6 +212,11 @@
           "type": "boolean",
           "default": true,
           "description": "Sharing the personal calendar with chosen people by email: they see private events as busy time and public ones with title, time and place, and can request events. Needs the /personal-sharing and /peer-calendars endpoints; not available in local mode."
+        },
+        "tasks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Tasks with an optional due date in every calendar: checkable entries on their day and a separate task list view. In team calendars a task can be assigned to a member. Needs the /tasks endpoints in remote mode."
         }
       }
     },
@@ -224,12 +229,13 @@
           "week",
           "month",
           "year",
-          "agenda"
+          "agenda",
+          "tasks"
         ]
       },
       "minItems": 1,
       "uniqueItems": true,
-      "description": "The views a user can switch between. All four by default."
+      "description": "The views a user can switch between. All of them by default; tasks only appears while the tasks feature is on."
     },
     "routing": {
       "enum": [
@@ -288,7 +294,8 @@
         "week",
         "month",
         "year",
-        "agenda"
+        "agenda",
+        "tasks"
       ],
       "description": "View shown first. Overrides the user's start view."
     },

@@ -17,6 +17,7 @@ export const NOTIFICATION_KINDS = [
   'eventRequestAccepted',
   'eventRequestDeclined',
   'eventRequestWithdrawn',
+  'taskAssigned',
 ] as const
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
@@ -27,6 +28,7 @@ export type AppNotification = {
   actor: { id: string; name: string } | null
   event: { id: string; calendarId: string; title: string; startDate: string; occurrenceDate: string | null } | null
   team: { id: string; name: string } | null
+  task: { id: string; calendarId: string; title: string; dueDate: string | null } | null
   invitationId: string | null
   createdAt: string
   readAt: string | null
@@ -48,6 +50,7 @@ export const parseNotification = (value: unknown): AppNotification | null => {
   )
     return null
   const event = asRecord(record.event)
+  const task = asRecord(record.task)
   return {
     id: record.id,
     kind: record.kind,
@@ -63,6 +66,15 @@ export const parseNotification = (value: unknown): AppNotification | null => {
           }
         : null,
     team: named(record.team),
+    task:
+      typeof task.id === 'string' && typeof task.calendarId === 'string'
+        ? {
+            id: task.id,
+            calendarId: task.calendarId,
+            title: textOrEmpty(task.title),
+            dueDate: isISODate(task.dueDate) ? task.dueDate : null,
+          }
+        : null,
     invitationId: typeof record.invitationId === 'string' ? record.invitationId : null,
     createdAt: record.createdAt,
     readAt: typeof record.readAt === 'string' ? record.readAt : null,

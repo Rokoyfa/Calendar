@@ -15,6 +15,8 @@ const PROBES: Probe[] = [
   { feature: 'search', place: 'menu', name: 'Suchen', role: 'menuitem' },
   { feature: 'print', place: 'menu', name: 'Drucken oder als PDF speichern', role: 'menuitem' },
   { feature: 'notifications', place: 'header', name: 'Benachrichtigungen', role: 'button' },
+  { feature: 'tasks', place: 'header', name: 'Aufgaben', role: 'button' },
+  { feature: 'tasks', place: 'newEvent', name: 'Aufgabe', role: 'button' },
   { feature: 'recurrence', place: 'newEvent', name: 'Wiederholung', role: 'tab' },
   { feature: 'reminders', place: 'newEvent', name: 'Erinnerung', role: 'label' },
   { feature: 'timeZones', place: 'newEvent', name: 'Zeitzone', role: 'label' },

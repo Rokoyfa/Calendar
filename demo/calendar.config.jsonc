@@ -151,7 +151,11 @@
     // Public booking pages where others book a free slot after confirming their email address.
     // Needs the /booking-pages and /booking endpoints.
     "bookingPages": true,
-    "personalSharing": true
+    "personalSharing": true,
+
+    // Tasks with an optional due date: checkable on their day and in a separate task list.
+    // Needs the /tasks endpoints in remote mode.
+    "tasks": true
   },
 
   // Shows events without letting anyone create, change, move, delete or import them.
@@ -159,9 +163,9 @@
 
   // ── Appearance ────────────────────────────────────────────────────────────────
 
-  // Views the user can switch between, any of: day, week, month, year, agenda.
+  // Views the user can switch between, any of: day, week, month, year, agenda, tasks.
   // With a single view the switch disappears.
-  "views": ["day", "week", "month", "year", "agenda"],
+  "views": ["day", "week", "month", "year", "agenda", "tasks"],
 
   // View shown first. Default: the user's own start view (week on desktop, day on phones).
   // "initialView": "month",

@@ -14,6 +14,7 @@ export const views: Messages['views'] = {
     allDay: 'Todo el día',
     empty: 'No hay eventos en estos 30 días.',
   },
+  tasks: { label: 'Tareas' },
   weekNumber: (week) => `Sem. ${week}`,
   weekNumberLong: (week) => `Semana ${week}`,
 }

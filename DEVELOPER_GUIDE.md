@@ -32,6 +32,7 @@ Everything you need to put `@rokoyfa/calendar` on your page: embedding, all opti
 26. [CalDAV](#26-caldav)
 27. [Booking pages](#27-booking-pages)
 28. [Sharing the personal calendar](#28-sharing-the-personal-calendar)
+29. [Tasks](#29-tasks)
 
 ## 1. Embedding
 
@@ -108,7 +109,7 @@ Every option can be given in three ways: as a React prop, as an attribute of the
 | Prop | Attribute | Default | |
 | --- | --- | --- | --- |
 | `features` | `feature-*` | see [Features](#3-features) | Switches for every optional feature |
-| `views` | `views` | all five | Views the user can switch between: `day`, `week`, `month`, `year`, `agenda` (a list of the next 30 days). Attribute: separated by spaces or commas, `views="week month"`. With one view the switch disappears |
+| `views` | `views` | all six | Views the user can switch between: `day`, `week`, `month`, `year`, `agenda` (a list of the next 30 days), `tasks` (the task list, only while the `tasks` feature is on). Attribute: separated by spaces or commas, `views="week month"`. With one view the switch disappears |
 | `initialView` | `initial-view` | user's start view | View shown first. Wins over the user's setting |
 | `readOnly` | `read-only` | `false` | Shows events without letting anyone create, change, move, delete or import them, see [Read-only mode](#14-read-only-mode-and-public-links) |
 
@@ -206,6 +207,7 @@ Your backend only needs the endpoints of the features that are on, plus a small 
 | `print` | `feature-print` | on | An entry in the calendar menu that prints the visible range or saves it as PDF | – |
 | `bookingPages` | `feature-booking-pages` | on | Public pages where others book a free time, see [Booking pages](#27-booking-pages). Not in local mode | `/calendars/:id/booking-pages`, `/booking-pages/*`, `/booking/*`, `/bookings/*` |
 | `personalSharing` | `feature-personal-sharing` | on | Showing the personal calendar to invited people, who see private events only as busy time and can request events, see [Sharing the personal calendar](#28-sharing-the-personal-calendar). Not in local mode | `/personal-sharing*`, `/peer-calendars*`, `/events/:id/request/*` |
+| `tasks` | `feature-tasks` | on | Tasks with an optional due date on their day and in the task list, assignable in team calendars, see [Tasks](#29-tasks) | `/tasks*`, `task.changed` over the WebSocket |
 
 Good to know:
 
@@ -214,6 +216,7 @@ Good to know:
 - With `recurrence`, `links` or `reminders` off, existing data is kept when an event is saved. It is only no longer shown or editable.
 - With `timeZones` off, the calendar always uses the automatic zone (your `timeZone`, otherwise the browser's).
 - With a single entry in `views`, the view switch disappears.
+- With `tasks` off, the `tasks` view is dropped from `views` as well.
 
 ## 4. Configuration file
 
@@ -528,7 +531,7 @@ Everything below is exported from `@rokoyfa/calendar`.
 | `CalendarFeatures`, `CalendarFeature` | types | All feature switches, and the name of one |
 | `DEFAULT_FEATURES`, `FEATURE_NAMES` | values | Defaults and names of the features |
 | `parseCalendarOptions`, `ParsedOptions` | function, type | Checks a configuration and returns `{ options, issues }` |
-| `CalendarView` | type | `'day' | 'week' | 'month' | 'year' | 'agenda'` |
+| `CalendarView` | type | `'day' | 'week' | 'month' | 'year' | 'agenda' | 'tasks'` |
 | `CalendarRouting`, `StorageMode`, `HolidaySource`, `HostTheme` | types | The values of `routing`, `storageMode`, `holidaySource`, `theme` |
 | `EventCallbacks`, `DeletedEvent` | types | The three callbacks, and `{ id }` |
 | `CalendarHandle`, `CalendarState`, `NewEventDraft` | types | The methods of `ref` and of the element, the state they report, and the argument of `createEvent()` |
@@ -551,6 +554,7 @@ The fields of `CalendarOptions` are the options in [Options](#2-options); `Calen
 | `TrashedEvent`, `EventChange` | An entry in the trash, and a message of `events.subscribe` (live updates) |
 | `SharedCalendar` | `{ id, name, color, categories }`, what a public link shows of a calendar |
 | `ChatMessage`, `ChatKey`, `ChatPage`, `ChatUnread`, `ChatEvent` | Chat, see [Event chat](#11-event-chat) |
+| `Task`, `TaskInput`, `TaskPerson`, `TaskQuery`, `TaskRepository` | Tasks, see [Tasks](#29-tasks) |
 
 ### Data adapters
 
@@ -588,8 +592,39 @@ type DataRepositories = {
   categories?: CategoryRepository
   shared?: SharedCalendarRepository
   attachments?: AttachmentRepository
+  tasks?: TaskRepository
   // externalCalendars, history, notifications, appPasswords, caldav, bookings and personalSharing are filled by restDataSource;
   // leave them out in your own adapter and the matching features stay hidden
+}
+
+interface TaskRepository {
+  list(query: { calendarIds: readonly string[]; from?: string; to?: string; status?: 'open' | 'done' }): Promise<Task[]>
+  create(calendarId: string, input: TaskInput): Promise<Task>
+  update(id: string, input: TaskInput, version?: number): Promise<Task>
+  setCompleted(id: string, completed: boolean, version?: number): Promise<Task>
+  move(id: string, calendarId: string, version?: number): Promise<Task>
+  remove(id: string, version?: number): Promise<void>
+}
+
+type TaskInput = {
+  title: string
+  notes: string
+  dueDate: string | null
+  dueTime: string | null
+  estimateMinutes: number | null
+  assigneeId: string | null
+}
+
+type Task = Omit<TaskInput, 'assigneeId'> & {
+  id: string
+  calendarId: string
+  assignee: { id: string; name: string } | null
+  completedAt: string | null
+  completedBy: { id: string; name: string } | null
+  createdBy: string | null
+  createdAt: string
+  updatedAt: string
+  version: number
 }
 
 interface AttachmentRepository {
@@ -952,7 +987,7 @@ function Page() {
 | --- | --- |
 | `getState()` | `{ view, date, from, to }`: the view, the date it is centred on and the first and last day shown. `null` while the calendar itself is not on screen |
 | `goToDate(date)` | Shows the date. Takes `'YYYY-MM-DD'` or a `Date` |
-| `setView(view)` | Switches to `day`, `week`, `month`, `year` or `agenda` |
+| `setView(view)` | Switches to `day`, `week`, `month`, `year`, `agenda` or `tasks` |
 | `next()`, `previous()`, `today()` | The same as the buttons in the header |
 | `openEvent(eventId, date)` | Goes to the date and opens the event. For a recurring event the date picks the occurrence |
 | `createEvent(draft?)` | Opens the dialog for a new event, optionally filled in: `{ title, startDate, start, end, endDate, allDay, location, description }`. Nothing is stored until the user saves |
@@ -1161,3 +1196,27 @@ What your backend has to enforce, because the widget only shows what it receives
 
 Turn the feature off with `features: { personalSharing: false }`. If `GET /peer-calendars` answers `404`, `405` or `501`, the widget treats sharing as not offered by the backend and hides it.
 
+## 29. Tasks
+
+Tasks are things to get done, with or without a deadline. They belong to a calendar like events do, so everyone who sees a team calendar sees its tasks.
+
+- **Where they appear.** A task with a due date shows up as a checkable entry on its day: above the all-day events in the day and week views (up to three per day in the week, then "+n more tasks"), in the month cell and in the agenda. The **Tasks** view lists all tasks of the shown calendars, grouped into overdue, today, upcoming and without due date, each group with the sum of its estimated effort; done tasks can be shown below. A text field at the top adds a task without a due date to the current calendar.
+- **Creating.** With the + button in the task view, with **N** there, or by switching **Event / Task** at the top of the dialog for a new event. The title and the date carry over in both directions.
+- **Fields.** Title (up to 200 characters), notes (up to 2000), due date, due time (only with a due date; it has no time zone and means the same clock time everywhere), estimated effort in hours and minutes (optional, stored as `estimateMinutes`, 1 to 5999), calendar and, in team calendars, the person responsible. Only team members can be chosen.
+- **Who may do what.** Creating needs `create_entry` in the calendar. Changing follows the event rules (`update_own_entry` / `update_any_entry`), moving to another calendar and deleting need `delete_own_entry` / `delete_any_entry`. The person responsible may also check a task off and open it again, even without edit rights. Deleting is final; tasks do not go to the trash.
+- **Notifications.** Assigning someone sends them the notification `taskAssigned` (with `task: { id, calendarId, title, dueDate }`). Opening it shows the task.
+- **Not included.** Tasks are not part of public links, booking pages, the sharing of the personal calendar, iCalendar feeds and CalDAV.
+- **Codes:** `taskNotFound`, `taskChanged`, `tooManyTasks`, `invalidAssignee`.
+- **Your backend** implements the endpoints tagged "Tasks" in `api/openapi.yaml`. In local mode tasks are kept in the browser, without assignees.
+
+What your backend has to enforce, because the widget only shows what it receives:
+
+- **Access.** Only members of the calendar's team (or the owner of a personal calendar) can list or open its tasks. Unknown tasks and tasks of calendars the user cannot see answer `taskNotFound`, so nobody can probe ids.
+- **Permissions.** Check the rights above on every request, also for `POST /tasks/:id/complete` and `/reopen`: besides the edit rights only the current assignee may use them. Never trust `createdBy`, `completedBy` or `assignee` names from the request; set them from the signed-in user and your member list.
+- **Assignees.** `assigneeId` must belong to a current member of the calendar's team, otherwise answer `invalidAssignee`. Personal calendars have no assignee. When someone leaves the team, remove them as assignee of its tasks; when a task moves to a calendar where the assignee is not a member, drop the assignee.
+- **Versions.** Every change increases `version`. With `If-Match` and an older version answer `taskChanged` (`412`).
+- **Limits.** At most 5000 tasks per calendar (`tooManyTasks`), at most 400 days per query. Without `from` and `to`, `GET /tasks` returns all open tasks and the 200 most recently done.
+- **Clean-up.** Deleting a calendar deletes its tasks; deleting an account removes it as assignee, creator and completer. Tasks are part of the data export.
+- **Live updates.** Send `{ "type": "task.changed", "calendarId", "taskId", "version", "changedBy" }` to everyone who sees the calendar; the widget then reloads.
+
+Turn the feature off with `features: { tasks: false }`. If `GET /tasks` answers `404`, `405` or `501`, the widget treats tasks as not offered by the backend and hides them.

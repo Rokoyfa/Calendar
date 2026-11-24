@@ -197,7 +197,7 @@ Wochenbeginn und Zählweise liefert `Intl.Locale#getWeekInfo`, wo es fehlt, eine
 **Aufbau (`src/i18n/`):**
 
 - `messages/en/*.ts` sind die Quelle der Texte, je Bereich eine Datei (`core`, `calendar`, `events`, `calendars`, `auth`, `settings`, `storage`, `security`, `inbox`, `external`, `caldav`). Der Typ `Messages` wird aus Englisch abgeleitet. Jede andere Sprache hat dieselben Dateien (`messages/de/*.ts`, `messages/fr/*.ts` usw., Grammatik-Hilfen wie die polnische Mehrzahl in `grammar.ts`) und muss genau dieselben Schlüssel haben, sonst schlägt die Typprüfung fehl. Ein Test vergleicht zusätzlich den Aufbau aller Sprachen mit Englisch.
-- Englisch ist fest im Paket, alle anderen Sprachen werden erst bei Bedarf nachgeladen (`loadMessages` in `messages/index.ts`, je Sprache eine eigene Datei von etwa 7 KB gzip, auch im CDN-Build). Bis die Sprache da ist, zeigt das Widget nichts, beim Wechsel in den Einstellungen bleibt bis dahin die alte Sprache stehen.
+- Alle Sprachen, auch Englisch, werden erst bei Bedarf nachgeladen (`loadMessages` in `messages/index.ts`, je Sprache eine eigene Datei von etwa 7–12 KB gzip, auch im CDN-Build). Englisch dient weiter als Grundlage für eigene Sprachen über `messages`. Bis die Sprache da ist, zeigt das Widget nichts, beim Wechsel in den Einstellungen bleibt bis dahin die alte Sprache stehen.
 - **Neue Sprache einbauen:** Ordner `messages/<code>/` mit `index.ts` anlegen (am einfachsten eine bestehende Sprache kopieren), in `BUILT_IN_LANGUAGES` und `BUILT_IN_LOCALES` (`locale.ts`) sowie in den Ladern in `messages/index.ts` eintragen. Grammatik wie Mehrzahl oder Geschlecht steckt in den Funktionen der jeweiligen Sprache (Beispiel Polnisch: `plural`).
 - **`messages` des Gastgebers** (Prop bzw. Property am Web Component): `{ [Sprachcode]: Teil-Texte }`. Für eine mitgelieferte Sprache werden einzelne Texte überschrieben, eine neue Sprache (z. B. `sv`) baut auf Englisch auf und ist danach wählbar. Zusammengeführt wird tief (`mergeMessages`), fehlende Texte kommen aus der Basis.
 - Texte mit Werten sind Funktionen, z. B. `views.weekNumber(45)` → `Wk 45` bzw. `KW 45`. Abkürzungen und Mehrzahl stehen so je Sprache an einer Stelle.
@@ -493,7 +493,7 @@ Weil `/login`, `/settings` usw. echte Pfade sind, muss der Webserver für unbeka
 
 ### Ansichten
 
-Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **Heute** springen immer um die Einheit der aktuellen Ansicht.
+Umschaltbar über **Tag / Woche / Monat / Jahr / Agenda / Aufgaben** in der Kopfzeile. Pfeile und **Heute** springen immer um die Einheit der aktuellen Ansicht; in der Aufgabenansicht gibt es sie nicht (`isFixed` in `VIEW_DEFINITIONS`).
 
 - **Tag:** ein Tag im Zeitraster von 00:00 bis 23:00 Uhr, Titel z. B. „Samstag, 31. Oktober 2026“
 - **Woche:** Montag bis Sonntag im Zeitraster, Titel mit Monat(en) und Kalenderwoche. Ein Klick auf einen Tageskopf öffnet diesen Tag.
@@ -501,6 +501,7 @@ Umschaltbar über **Tag / Woche / Monat / Jahr** in der Kopfzeile. Pfeile und **
 - **Jahr:** alle zwölf Monate als kleine Raster, Tage mit Terminen haben einen Punkt. Ein Klick auf einen Tag öffnet die Tagesansicht, ein Klick auf den Monatsnamen die Monatsansicht.
 - Heutiger Tag ist hervorgehoben. Eine **Linie zeigt die aktuelle Uhrzeit** über alle Tage der Tages- und Wochenansicht, in der Spalte von heute kräftig rot mit Punkt. Sie erscheint nur, wenn heute im sichtbaren Zeitraum liegt, und rückt jede Minute weiter.
 - Mehrtägige und wiederkehrende Termine erscheinen in allen Ansichten
+- **Aufgaben:** Liste aller Aufgaben der angezeigten Kalender, gruppiert in überfällig, heute, demnächst, ohne Fälligkeit und (aufklappbar) erledigt, mit Schnelleingabe oben
 
 ### Handy
 
@@ -681,8 +682,8 @@ Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, r
 | Zurück (Tag, Woche, Monat, Jahr) | `←` oder linker Pfeil im Header    |
 | Vor (Tag, Woche, Monat, Jahr)    | `→` oder rechter Pfeil im Header   |
 | Zu heute                         | `T` oder **Heute** im Header       |
-| Ansicht wechseln                 | `D` / `W` / `M` / `Y` (auch `J`) oder Tag / Woche / Monat / Jahr |
-| Neuer Termin                     | `N` oder **+** im Header           |
+| Ansicht wechseln                 | `D` / `W` / `M` / `Y` (auch `J`) / `A` / `K` oder Tag / Woche / Monat / Jahr / Agenda / Aufgaben |
+| Neuer Termin (in der Aufgabenansicht: neue Aufgabe) | `N` oder **+** im Header |
 | Suche                            | `/` oder **Suchen** im Kalendermenü |
 | Letzte Aktion rückgängig         | `Strg+Z` / `⌘Z`, solange der Hinweis sichtbar ist |
 | Fenster schließen                | `Esc` oder Klick neben das Fenster |
@@ -747,6 +748,17 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 - **Kalender-Links im Menü:** `CalendarPage` hängt an das Burger-Menü eine Gruppe „Kalender: <Name>“ mit Links in die Einstellungen des aktiven Kalenders. Welche Tabs es gibt, entscheidet `useCalendarSettingsTabs` (`features/calendars/hooks`); dieselbe Funktion nutzt auch `CalendarSettingsPage`, damit Menü und Tabs nie auseinanderlaufen. `CalendarMenuItem.group` fasst aufeinanderfolgende Einträge unter einer Überschrift zusammen.
 - **Persönlichen Kalender freigeben** (Schalter `personalSharing`, nur mit Backend und Anmeldung): Besitzerseite im Tab „Freigabe“ des persönlichen Kalenders (`features/peers/components/SharingSection.tsx`, Einschalten nur nach Bestätigung, Einladen per E-Mail, Liste mit Entfernen). Empfängerseite: `PeerCalendarsProvider` lädt `/peer-calendars` und gibt die angenommenen Kalender an `PeerEventRepository` (`features/storage/repositories`); `withPeerEvents` legt sich in `CalendarApp` um das Termin-Repository und leitet `calendarId` `peer:<freigabe>` und Termin-IDs `peer:<freigabe>:<termin>` an die Freigabe-Endpunkte (Anfragen anlegen, ändern, zurückziehen). Verschieben, Wiederherstellen, Antworten und Erinnerungen sind dort gesperrt, die Suche lässt Peer-Kalender weg. `CalendarPage` hängt die angezeigten Peer-Kalender nur in der Ansicht des persönlichen Kalenders an `calendarIds` an und bietet im Kalenderfeld „Anfrage an …“; ist das gewählt, zeigt `EventModal` die Anfrage-Variante (`requestTo`: nur Titel, Zeit, Ort, Notiz). Bearbeitbar sind nur eigene offene Anfragen, zurückziehen geht immer. Belegt-Blöcke kommen ohne Inhalt vom Backend und bekommen im Frontend den Titel `m.peers.busy`. Der Schalter „Sichtbar für Personen, mit denen du deinen Kalender teilst“ (`visibility`) erscheint nur bei Terminen des persönlichen Kalenders. Offene Anfragen an den Besitzer zeigt das Termin-Fenster mit `RequestDecision` (Annehmen/Ablehnen über `personalSharing.acceptRequest/declineRequest`). Kalender anderer Personen stehen unter Einstellungen › Verbindungen (`PeerCalendarSettings`), Einladungen unter Einstellungen › Einladungen (`PeerInvitationList`, der Tab erscheint dafür auch ohne `teams`).
 
+### Aufgaben
+
+Eigenes Feature unter `features/tasks/` (Schalter `tasks`, auch lokal): `types` (Task, TaskInput, TaskRepository, TaskAccess, TaskSetup), `utils/task.ts` (Parsen, Sortieren, Gruppen), `repositories` (`LocalTaskRepository` mit `calendar.tasks.v1`, ohne Zuständige; `RemoteTaskRepository` für `/tasks*` mit `If-Match`), `hooks` (`useTaskList` lädt je Zeitraum oder alle offenen plus die letzten erledigten, `useTaskActions` mit Neuladen über `invalidate`, `useTaskEditor`), `context/TasksContext.ts` (Aufgaben je Tag für die Ansichten, `useTaskRows`) und `components` (`TasksProvider` mit dem lazy geladenen `TaskModal`, `DayTasks`/`TaskChip`, `TaskCheckbox`, `TaskListView`).
+
+- `CalendarPage` baut das `TaskSetup`: sichtbare Kalender, Zielkalender, Kalender mit `create_entry`, Rechte (`canEditEntry`/`canDeleteEntry` wie bei Terminen, abhaken zusätzlich für die zuständige Person) und `loadAssignees` aus den Team-Mitgliedern. Der Link `?calendar=…&task=…` (Glocke, `taskAssigned`) öffnet die Aufgabe.
+- `Calendar` legt `TasksProvider` um die Ansichten. Tag und Woche zeigen Aufgaben als Zeilen der Ganztägig-Spur nach dem Feiertag (Woche höchstens drei, dann „+N weitere Aufgaben“, ein Klick öffnet den Tag), Monat zeigt neben Terminen eine Zeile, Agenda alle. Abhaken ist sofort sichtbar und wird bei Fehler zurückgenommen.
+- Aufwand: optional in Stunden und Minuten (`estimateMinutes`, höchstens 99 Std. 59 Min.), in der Liste an jeder Aufgabe und als Summe je Gruppe (`format.effort`, `sumTaskEstimates`).
+- Beim Anlegen schaltet **Termin / Aufgabe** oben im Dialog um, Titel und Datum wandern mit.
+- Antwortet `GET /tasks` mit `404`, `405` oder `501`, verschwinden Ansicht, Umschalter und Einträge (`isUnsupportedEndpoint`). Im Nur-Lesen-Modus sind Aufgaben nur sichtbar.
+- Live: `task.changed` vom WebSocket wird in `utils/eventChange.ts` wie eine Terminänderung ohne Termin-ID behandelt und lädt neu.
+
 ### Steuerung durch den Gastgeber
 
 - `HostBridge` (`context/HostBridge.ts`) verbindet die Hülle (`CalendarWidget`) mit der gerade sichtbaren `Calendar`-Komponente. `useHostController` meldet dort den Controller an und berichtet Ansichtswechsel.
@@ -783,6 +795,7 @@ Standardmäßig wird **nur der localStorage** des Browsers verwendet. Die Daten 
 | -------------------- | ------------------------------ |
 | `calendar.events.v1` | Alle Termine als JSON-Array    |
 | `calendar.colors.v1` | Eigene Farben als Hex-Werte    |
+| `calendar.tasks.v1`  | Aufgaben als JSON-Array        |
 
 ### Datenmodell eines Termins
 
@@ -999,6 +1012,7 @@ src/
    ├─ reminders/               Erinnerungen planen und anzeigen, solange das Widget offen ist (useReminders, ReminderNotices)
    ├─ categories/              Kategorien: CategoryField (Termin-Dialog), CategoryFilterModal, CategoriesSection (Einstellungen), useCategories
    ├─ chat/                    Chat zu Terminen: ChatPanel, ChatProvider (Ungelesen-Zähler), UnreadBadge, useChatMessages
+   ├─ tasks/                   Aufgaben: Typen, Repositories (lokal und REST), TasksProvider, TaskModal, TaskListView, DayTasks
    ├─ holidays/                Feiertage: useHolidays (Region auflösen, Quelle wählen), HolidaySettings, Bibliothek date-holidays (lazy)
    ├─ storage/                 Datenspeicherung
    │  ├─ components/           LocalImportPrompt: lokale Termine ins Konto übernehmen

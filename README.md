@@ -6,7 +6,8 @@ An embeddable calendar for React apps and any other website. It runs without a b
 - Recurring and all-day events, time zones, reminders, locations, links and attachments
 - Team calendars with roles, invitations, attendees, a chat per event, change history and notifications
 - Two-way sync with other calendar apps over CalDAV, iCalendar import and export, subscription links and subscribed calendars
-- Booking pages where others book a free time, confirmed by email, plus overlap warnings and printing
+- Tasks with due dates, checkable right in the calendar and in their own list, assignable in team calendars
+- Booking pages where others book a free time, confirmed by email, sharing the personal calendar as busy time, plus overlap warnings and printing
 - Public holidays for over 200 countries, search, undo, a trash, categories, read-only mode and public links
 - English, German, French, Spanish, Italian, Dutch, Polish and Portuguese built in, more through your own texts
 - Styles isolated in a Shadow DOM, built for WCAG 2.2 AA

@@ -31,6 +31,9 @@ export function createFormatter(locale: string, firstDay: number) {
   const time = format(uses12Hours ? { hour: 'numeric', minute: '2-digit' } : { hour: '2-digit', minute: '2-digit' })
   const hourOnly = format(uses12Hours ? { hour: 'numeric' } : { hour: '2-digit', minute: '2-digit' })
   const list = new Intl.ListFormat(locale, { type: 'conjunction' })
+  const unitList = new Intl.ListFormat(locale, { type: 'unit', style: 'narrow' })
+  const effortHours = new Intl.NumberFormat(locale, { style: 'unit', unit: 'hour', unitDisplay: 'short' })
+  const effortMinutes = new Intl.NumberFormat(locale, { style: 'unit', unit: 'minute', unitDisplay: 'short' })
   const durations = new Map(
     DURATION_UNITS.map(([unit]) => [unit, new Intl.NumberFormat(locale, { style: 'unit', unit, unitDisplay: 'long' })]),
   )
@@ -65,6 +68,14 @@ export function createFormatter(locale: string, firstDay: number) {
     hour: (hour: number) => hourOnly.format(atMinutes(hour * MINUTES_PER_HOUR)),
     compactHour: (hour: number) => (uses12Hours ? `${hour % 12 || 12}${hour < 12 ? 'a' : 'p'}` : String(hour)),
     list: (items: readonly string[]) => list.format(items),
+    effort: (minutes: number) => {
+      const hours = Math.floor(minutes / MINUTES_PER_HOUR)
+      const rest = minutes % MINUTES_PER_HOUR
+      return unitList.format([
+        ...(hours > 0 ? [effortHours.format(hours)] : []),
+        ...(rest > 0 || hours === 0 ? [effortMinutes.format(rest)] : []),
+      ])
+    },
     duration: (minutes: number) => {
       const [unit, size] = DURATION_UNITS.find(([, size]) => minutes % size === 0) ?? DURATION_UNITS[3]
       return durations.get(unit)?.format(minutes / size) ?? String(minutes)

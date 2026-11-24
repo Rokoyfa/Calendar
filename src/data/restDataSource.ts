@@ -22,6 +22,7 @@ import {
   RemoteNotificationRepository,
   LiveSocket,
 } from '../features/storage/index.ts'
+import { RemoteTaskRepository } from '../features/tasks/index.ts'
 import type { HolidaySource } from '../lib/defaults.ts'
 import { createApiClient } from '../utils/api.ts'
 import { toSocketUrl } from '../utils/chat.ts'
@@ -95,6 +96,7 @@ export function restDataSource({
       notifications: notifications ? new RemoteNotificationRepository(api, socket) : undefined,
       appPasswords: new RemoteAppPasswordRepository(api),
       caldav: new RemoteCaldavRepository(api),
+      tasks: new RemoteTaskRepository(api),
     }
   }
 

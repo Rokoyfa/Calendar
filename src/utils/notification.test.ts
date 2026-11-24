@@ -44,4 +44,16 @@ describe('notifications', () => {
       }),
     ).toMatchObject({ event: null, team: { id: 't1', name: 'Projekt' }, invitationId: 'i1' })
   })
+
+  it('keeps the task of a task assignment', () => {
+    const notification = parseNotification({
+      id: 'n4',
+      kind: 'taskAssigned',
+      actor: { id: 'u1', name: 'Anna' },
+      task: { id: 't1', calendarId: 'c1', title: 'Bericht', dueDate: '2026-12-03' },
+      createdAt: '2026-11-19T10:00:00.000Z',
+    })
+    expect(notification?.task).toEqual({ id: 't1', calendarId: 'c1', title: 'Bericht', dueDate: '2026-12-03' })
+    expect(notification?.event).toBeNull()
+  })
 })

@@ -10,6 +10,7 @@ import {
   openEvent,
   showView,
   test,
+  today,
 } from './helpers.ts'
 
 test.describe.configure({ timeout: 120_000 })
@@ -48,10 +49,23 @@ test('the calendar views and the event dialog are accessible', async ({ browser 
   await api(user, 'POST', '/events', eventInput('personal', { title: 'Ganztägig', allDay: true }))
   for (const title of ['Eins', 'Zwei', 'Drei', 'Vier'])
     await api(user, 'POST', '/events', eventInput('personal', { title }))
+  const calendarId = (await api<{ id: string }[]>(user, 'GET', '/calendars')).data[0].id
+  const task = (title: string, dueDate: string | null) =>
+    api<{ id: string }>(user, 'POST', '/tasks', {
+      calendarId,
+      title,
+      notes: '',
+      dueDate,
+      dueTime: null,
+      assigneeId: null,
+    })
+  await task('Offen', today())
+  await task('Irgendwann', null)
+  await api(user, 'POST', `/tasks/${(await task('Erledigt', today())).data.id}/complete`)
   const page = await openAs(browser, user)
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
-    for (const view of ['Tag', 'Woche', 'Monat', 'Jahr', 'Agenda'] as const) {
+    for (const view of ['Tag', 'Woche', 'Monat', 'Jahr', 'Agenda', 'Aufgaben'] as const) {
       await showView(page, view)
       await audit(page, `${scheme} view ${view}`)
     }
@@ -69,6 +83,14 @@ test('the calendar views and the event dialog are accessible', async ({ browser 
   await expect(page.locator('dialog[open]')).toBeVisible()
   await audit(page, 'new event dialog')
   await page.keyboard.press('Escape')
+  await showView(page, 'Aufgaben')
+  await page.getByRole('button', { name: 'Erledigte anzeigen (1)' }).click()
+  await audit(page, 'task list with done tasks')
+  await page.locator('.taskRowOpen', { hasText: 'Offen' }).click()
+  await expect(page.locator('dialog[open]')).toBeVisible()
+  await audit(page, 'task dialog')
+  await page.keyboard.press('Escape')
+  await showView(page, 'Woche')
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
     await page.getByRole('button', { name: 'Menü öffnen' }).click()

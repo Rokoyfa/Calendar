@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
-import { createBrowserRouter, createMemoryRouter, Navigate, type RouteObject } from 'react-router'
+import { BrowserRouter, MemoryRouter, Navigate, useRoutes, type RouteObject } from 'react-router'
 import type { CalendarRouting } from './lib/config.ts'
 import { TeamsGate } from './components/TeamsGate.tsx'
 import { ROUTES } from './config/routes.ts'
@@ -79,7 +79,20 @@ type RouterOptions = {
   initialPath?: string
 }
 
-export function createCalendarRouter(routing: CalendarRouting, { basename, initialPath }: RouterOptions = {}) {
-  if (routing === 'browser') return createBrowserRouter(routes, { basename })
-  return createMemoryRouter(routes, { initialEntries: [initialPath ?? ROUTES.calendar] })
+function CalendarRoutes() {
+  return useRoutes(routes)
+}
+
+export function CalendarRouter({ routing, basename, initialPath }: RouterOptions & { routing: CalendarRouting }) {
+  if (routing === 'browser')
+    return (
+      <BrowserRouter basename={basename}>
+        <CalendarRoutes />
+      </BrowserRouter>
+    )
+  return (
+    <MemoryRouter initialEntries={[initialPath ?? ROUTES.calendar]}>
+      <CalendarRoutes />
+    </MemoryRouter>
+  )
 }

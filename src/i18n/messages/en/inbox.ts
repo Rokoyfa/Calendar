@@ -22,5 +22,6 @@ export const inbox = {
     eventRequestAccepted: (actor: string, title: string) => `${actor} accepted your request “${title}”`,
     eventRequestDeclined: (actor: string, title: string) => `${actor} declined your request “${title}”`,
     eventRequestWithdrawn: (actor: string, title: string) => `${actor} withdrew the request “${title}”`,
+    taskAssigned: (actor: string, title: string) => `${actor} assigned you the task “${title}”`,
   },
 }

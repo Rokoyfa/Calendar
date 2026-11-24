@@ -10,6 +10,7 @@ import { external } from './external.ts'
 import { caldav } from './caldav.ts'
 import { bookings } from './bookings.ts'
 import { peers } from './peers.ts'
+import { tasks } from './tasks.ts'
 import { calendar, views } from './calendar.ts'
 import { colors, common, errors, recurrence, themes, validation } from './core.ts'
 
@@ -33,4 +34,5 @@ export const pt: Messages = {
   caldav,
   bookings,
   peers,
+  tasks,
 }
