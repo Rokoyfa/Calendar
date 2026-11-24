@@ -99,6 +99,24 @@
   list-style: none;
 }
 
+.drawerMenuNav {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.drawerMenuGroup + .drawerMenuGroup {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-grid);
+}
+
+.drawerMenuGroupTitle {
+  margin: 0 0 var(--space-2);
+  padding: 0 var(--space-3);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
 .drawerMenuItem {
   display: flex;
   align-items: center;

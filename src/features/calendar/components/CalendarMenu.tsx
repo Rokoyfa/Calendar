@@ -12,6 +12,7 @@ export type CalendarMenuItem = {
   icon: ReactNode
   shortcut?: string
   badge?: string
+  group?: string
 } & ({ onSelect: () => void; to?: never } | { to: string; onSelect?: never })
 
 type CalendarMenuProps = {
@@ -29,6 +30,16 @@ function ItemContent({ item }: { item: CalendarMenuItem }) {
     </>
   )
 }
+
+type MenuGroup = { label: string | undefined; entries: CalendarMenuItem[] }
+
+const groupItems = (items: readonly CalendarMenuItem[]) =>
+  items.reduce<MenuGroup[]>((groups, item) => {
+    const last = groups.at(-1)
+    if (last && last.label === item.group) last.entries.push(item)
+    else groups.push({ label: item.group, entries: [item] })
+    return groups
+  }, [])
 
 export function CalendarMenu({ items, isMarked = false }: CalendarMenuProps) {
   const { m } = useI18n()
@@ -51,29 +62,34 @@ export function CalendarMenu({ items, isMarked = false }: CalendarMenuProps) {
       </span>
       {isOpen && (
         <Modal title={m.calendar.menu.title} placement="start" onClose={close}>
-          <nav aria-label={m.calendar.menu.title}>
-            <ul className="drawerMenu">
-              {items.map((item) => (
-                <li key={item.key}>
-                  {item.to !== undefined ? (
-                    <Link to={item.to} className="drawerMenuItem" onClick={close}>
-                      <ItemContent item={item} />
-                    </Link>
-                  ) : (
-                    <button
-                      type="button"
-                      className="drawerMenuItem"
-                      onClick={() => {
-                        close()
-                        item.onSelect()
-                      }}
-                    >
-                      <ItemContent item={item} />
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
+          <nav aria-label={m.calendar.menu.title} className="drawerMenuNav">
+            {groupItems(items).map(({ label, entries }) => (
+              <section key={label ?? ''} className="drawerMenuGroup">
+                {label && <h3 className="drawerMenuGroupTitle">{label}</h3>}
+                <ul className="drawerMenu">
+                  {entries.map((item) => (
+                    <li key={item.key}>
+                      {item.to !== undefined ? (
+                        <Link to={item.to} className="drawerMenuItem" onClick={close}>
+                          <ItemContent item={item} />
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className="drawerMenuItem"
+                          onClick={() => {
+                            close()
+                            item.onSelect()
+                          }}
+                        >
+                          <ItemContent item={item} />
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
           </nav>
         </Modal>
       )}

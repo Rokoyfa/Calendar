@@ -11,7 +11,8 @@ import { useCalendars } from '../../hooks/useCalendars.ts'
 import { useTeam } from '../../hooks/useTeam.ts'
 import type { CalendarSummary } from '../../types/calendar.ts'
 import { ShowInPersonalSwitch } from '../ShowInPersonalSwitch.tsx'
-import { canManageCategories, canUseTrash, hasPermission, isPersonalCalendar } from '../../utils/permissions.ts'
+import { canManageCategories, hasPermission, isPersonalCalendar } from '../../utils/permissions.ts'
+import { useCalendarSettingsTabs } from '../../hooks/useCalendarSettingsTabs.ts'
 import { TrashSection } from './TrashSection.tsx'
 import { DangerSection } from './DangerSection.tsx'
 import { ExchangeSection } from './ExchangeSection.tsx'
@@ -38,21 +39,21 @@ function DisplaySection({ calendar }: { calendar: CalendarSummary }) {
 type TeamTab = 'general' | 'members' | 'invitations' | 'booking' | 'exchange' | 'trash' | 'danger'
 type PersonalTab = 'general' | 'sharing' | 'booking' | 'exchange' | 'trash'
 
-function useCommonTabs(calendar: CalendarSummary, canOpenTrash: boolean) {
+function useCommonTabs(calendar: CalendarSummary) {
   const { m } = useI18n()
   const { settings } = m.calendars
-  const { subscriptions, importExport, trash, bookingPages } = useFeatures()
-  const { bookings, mode } = useStorage()
+  const { subscriptions, importExport } = useFeatures()
+  const { bookings } = useStorage()
+  const available = useCalendarSettingsTabs(calendar)
   return {
-    booking: bookingPages &&
-      bookings &&
-      mode === 'remote' &&
-      hasPermission(calendar, 'manage_calendars') && {
+    available,
+    booking: available.booking &&
+      bookings && {
         value: 'booking' as const,
         label: settings.tabs.booking,
         content: <BookingPagesSection calendarId={calendar.id} repository={bookings} />,
       },
-    exchange: (subscriptions || importExport) && {
+    exchange: available.exchange && {
       value: 'exchange' as const,
       label: settings.tabs.exchange,
       content: (
@@ -62,12 +63,11 @@ function useCommonTabs(calendar: CalendarSummary, canOpenTrash: boolean) {
         </>
       ),
     },
-    trash: trash &&
-      canOpenTrash && {
-        value: 'trash' as const,
-        label: settings.tabs.trash,
-        content: <TrashSection calendar={calendar} />,
-      },
+    trash: available.trash && {
+      value: 'trash' as const,
+      label: settings.tabs.trash,
+      content: <TrashSection calendar={calendar} />,
+    },
   }
 }
 
@@ -78,7 +78,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
   const { user } = useAuth()
   const team = useTeam(calendar)
   const { publicLinks } = useFeatures()
-  const common = useCommonTabs(calendar, canUseTrash(calendar))
+  const common = useCommonTabs(calendar)
   const canManage = hasPermission(calendar, 'manage_calendars')
   const tabs = compact<TabDefinition<TeamTab>>([
     {
@@ -107,7 +107,7 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
         />
       ),
     },
-    hasPermission(calendar, 'invite_members') && {
+    common.available.invitations && {
       value: 'invitations',
       label: withCount(settings.tabs.invitations, team.invitations.length),
       content: (
@@ -146,10 +146,9 @@ function TeamSettings({ calendar }: { calendar: CalendarSummary }) {
 function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
   const { m } = useI18n()
   const { settings } = m.calendars
-  const { publicLinks, personalSharing: sharingFeature } = useFeatures()
-  const { personalSharing, mode } = useStorage()
-  const { user } = useAuth()
-  const common = useCommonTabs(calendar, true)
+  const { publicLinks } = useFeatures()
+  const { personalSharing } = useStorage()
+  const common = useCommonTabs(calendar)
   const canManage = hasPermission(calendar, 'manage_calendars')
   const tabs = compact<TabDefinition<PersonalTab>>([
     {
@@ -166,10 +165,8 @@ function PersonalSettings({ calendar }: { calendar: CalendarSummary }) {
         </>
       ),
     },
-    sharingFeature &&
-      personalSharing &&
-      mode === 'remote' &&
-      user && {
+    common.available.sharing &&
+      personalSharing && {
         value: 'sharing',
         label: m.peers.sharing.tab,
         content: <SharingSection repository={personalSharing} />,

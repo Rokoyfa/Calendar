@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { SettingsIcon } from '../components/Icons.tsx'
-import { ROUTES } from '../config/routes.ts'
+import { BookingIcon, SettingsIcon, ShareIcon, SwapIcon, TeamIcon, TrashIcon } from '../components/Icons.tsx'
+import { calendarSettingsPath, ROUTES } from '../config/routes.ts'
 import { AccountMenu, EmailVerificationBanner, useAuth } from '../features/authorization/index.ts'
-import { Calendar, type OpenEventRequest } from '../features/calendar/index.ts'
+import { Calendar, type CalendarMenuItem, type OpenEventRequest } from '../features/calendar/index.ts'
+import { compact } from '../utils/list.ts'
 import type { ChatAccess } from '../features/chat/index.ts'
 import { isISODate } from '../utils/date.ts'
 import {
@@ -18,6 +19,7 @@ import {
   hasPermission,
   isPersonalCalendar,
   useCalendars,
+  useCalendarSettingsTabs,
 } from '../features/calendars/index.ts'
 import type { CalendarEvent } from '../utils/event.ts'
 import { usePreferences } from '../features/preferences/index.ts'
@@ -50,6 +52,59 @@ export function CalendarPage() {
   const { preferences } = usePreferences()
   const { m } = useI18n()
   const { calendars, activeCalendar, visibleCalendarIds, repository, selectCalendar } = useCalendars()
+  const settingsTabs = useCalendarSettingsTabs(activeCalendar)
+  const canOpenSettings = !(enabled && method === 'password' && !user)
+  const menuItems = (() => {
+    if (!canOpenSettings) return []
+    const path = calendarSettingsPath(activeCalendar.id)
+    const tab = (name: string) => `${path}?tab=${name}`
+    const { tabs } = m.calendars.settings
+    const group = m.calendar.menu.calendarGroup(activeCalendar.name)
+    return compact<CalendarMenuItem>([
+      !hasAccountMenu && {
+        key: 'settings',
+        label: m.common.settings,
+        icon: <SettingsIcon size={18} />,
+        to: ROUTES.settings,
+      },
+      {
+        key: 'calendarSettings',
+        group,
+        label: m.calendar.menu.calendarSettings,
+        icon: <SettingsIcon size={18} />,
+        to: path,
+      },
+      settingsTabs.members && {
+        key: 'members',
+        group,
+        label: tabs.members,
+        icon: <TeamIcon size={18} />,
+        to: tab('members'),
+      },
+      settingsTabs.sharing && {
+        key: 'sharing',
+        group,
+        label: tabs.sharing,
+        icon: <ShareIcon size={18} />,
+        to: tab('sharing'),
+      },
+      settingsTabs.booking && {
+        key: 'booking',
+        group,
+        label: tabs.booking,
+        icon: <BookingIcon size={18} />,
+        to: tab('booking'),
+      },
+      settingsTabs.exchange && {
+        key: 'exchange',
+        group,
+        label: tabs.exchange,
+        icon: <SwapIcon size={18} />,
+        to: tab('exchange'),
+      },
+      settingsTabs.trash && { key: 'trash', group, label: tabs.trash, icon: <TrashIcon size={18} />, to: tab('trash') },
+    ])
+  })()
   const [searchParams, setSearchParams] = useSearchParams()
   const linkedCalendarId = searchParams.get(LINK_PARAMS.calendar)
   const linkedEventId = searchParams.get(LINK_PARAMS.event)
@@ -222,11 +277,7 @@ export function CalendarPage() {
         canSetVisibility={canSetVisibility}
         openEvent={openEvent}
         onOpenEventDone={clearLink}
-        menuItems={
-          hasAccountMenu
-            ? undefined
-            : [{ key: 'settings', label: m.common.settings, icon: <SettingsIcon size={18} />, to: ROUTES.settings }]
-        }
+        menuItems={menuItems}
         headerAccessory={
           <>
             <NotificationBell />

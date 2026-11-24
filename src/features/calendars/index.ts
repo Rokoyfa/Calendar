@@ -1,5 +1,6 @@
 export { CalendarsProvider } from './context/CalendarsProvider.tsx'
 export { useCalendars } from './hooks/useCalendars.ts'
+export { useCalendarSettingsTabs } from './hooks/useCalendarSettingsTabs.ts'
 export { CalendarSettings } from './components/CalendarSettings.tsx'
 export { InvitationList } from './components/InvitationList.tsx'
 export { CalendarSwitcher } from './components/CalendarSwitcher.tsx'

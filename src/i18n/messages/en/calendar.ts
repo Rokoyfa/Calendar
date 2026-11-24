@@ -41,6 +41,8 @@ export const calendar = {
     openMarked: 'Open menu (filter active)',
     title: 'Menu',
     active: 'active',
+    calendarSettings: 'Calendar settings',
+    calendarGroup: (name: string) => `Calendar: ${name}`,
   },
   filter: {
     open: 'Filter by category',

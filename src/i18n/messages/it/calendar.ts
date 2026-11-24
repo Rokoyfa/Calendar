@@ -43,6 +43,8 @@ export const calendar: Messages['calendar'] = {
     openMarked: 'Apri menu (filtro attivo)',
     title: 'Menu',
     active: 'attivo',
+    calendarSettings: 'Impostazioni del calendario',
+    calendarGroup: (name) => `Calendario: ${name}`,
   },
   filter: {
     open: 'Filtra per categoria',

@@ -111,3 +111,31 @@ export const BellIcon = (props: IconProps) => (
 )
 
 export const CloseIcon = (props: IconProps) => <IconBase {...props} strokeWidth={2.5} path="M18 6L6 18M6 6l12 12" />
+
+export const TrashIcon = (props: IconProps) => (
+  <IconBase
+    {...props}
+    strokeWidth={2}
+    path="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6"
+  />
+)
+
+export const ShareIcon = (props: IconProps) => (
+  <IconBase
+    {...props}
+    strokeWidth={2}
+    path="M18 8a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100-6 3 3 0 000 6zM18 22a3 3 0 100-6 3 3 0 000 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4"
+  />
+)
+
+export const BookingIcon = (props: IconProps) => (
+  <IconBase
+    {...props}
+    strokeWidth={2}
+    path="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2zM9 16l2 2 4-4"
+  />
+)
+
+export const SwapIcon = (props: IconProps) => (
+  <IconBase {...props} strokeWidth={2} path="M7 4v16M3 8l4-4 4 4M17 20V4M21 16l-4 4-4-4" />
+)
