@@ -9,18 +9,29 @@ import {
   CATEGORY_NAME_MAX_LENGTH,
   MAX_CATEGORIES,
   MAX_EVENT_CATEGORIES,
+  BUILTIN_CATEGORIES,
   normalizeCategoryName,
+  type BuiltinCategory,
   type Category,
 } from '../../../utils/category.ts'
 
 type CategoryFieldProps = {
   categories: readonly Category[]
   value: readonly string[]
+  builtin: readonly BuiltinCategory[]
   onChange: (categoryIds: string[]) => void
+  onBuiltinChange: (builtinCategories: BuiltinCategory[]) => void
   onCreate?: (name: string) => Promise<Category>
 }
 
-export function CategoryField({ categories, value, onChange, onCreate }: CategoryFieldProps) {
+export function CategoryField({
+  categories,
+  value,
+  builtin,
+  onChange,
+  onBuiltinChange,
+  onCreate,
+}: CategoryFieldProps) {
   const { m } = useI18n()
   const text = m.events.categories
   const [draft, setDraft] = useState<string | null>(null)
@@ -36,7 +47,10 @@ export function CategoryField({ categories, value, onChange, onCreate }: Categor
     if (!isFull) onChange([...chosen, category.id])
   })
 
-  if (categories.length === 0 && !canCreate) return null
+  const toggleBuiltin = (category: BuiltinCategory) =>
+    onBuiltinChange(
+      BUILTIN_CATEGORIES.filter((entry) => (entry === category ? !builtin.includes(entry) : builtin.includes(entry))),
+    )
 
   const toggle = (id: string) =>
     onChange(chosen.includes(id) ? chosen.filter((entry) => entry !== id) : isFull ? chosen : [...chosen, id])
@@ -55,6 +69,19 @@ export function CategoryField({ categories, value, onChange, onCreate }: Categor
   return (
     <FormField as="fieldset" label={text.label}>
       <div className="choiceList">
+        {BUILTIN_CATEGORIES.map((category) => (
+          <ChoiceChip
+            key={category}
+            type="checkbox"
+            name="builtinCategory"
+            label={text.builtin[category]}
+            checked={builtin.includes(category)}
+            onChange={() => toggleBuiltin(category)}
+            className="categoryChip categoryChip--builtin"
+          >
+            {text.builtin[category]}
+          </ChoiceChip>
+        ))}
         {categories.map((category) => (
           <ChoiceChip
             key={category.id}
@@ -74,7 +101,6 @@ export function CategoryField({ categories, value, onChange, onCreate }: Categor
           </button>
         )}
       </div>
-      {categories.length === 0 && draft === null && <p className="formHint">{text.empty}</p>}
       {draft !== null && (
         <div className="inlineForm">
           <input

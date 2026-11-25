@@ -1,3 +1,6 @@
+import type { CalendarEvent } from '../../../utils/event.ts'
+import type { BuiltinCategory } from '../../../utils/category.ts'
+
 export type TaskPerson = {
   id: string
   name: string
@@ -24,6 +27,7 @@ export type TaskInput = {
   status: TaskStatus
   priority: TaskPriority
   categoryIds: string[]
+  builtinCategories: BuiltinCategory[]
   checklist: TaskChecklistInput[]
   assigneeId: string | null
 }
@@ -69,6 +73,12 @@ export type TaskCalendarChoice = { id: string; name: string }
 
 export type TaskDraft = Partial<TaskInput> & { calendarId?: string }
 
+export type TaskPlanningSetup = {
+  calendarId: string
+  busyCalendarIds: readonly string[]
+  externalEvents: readonly CalendarEvent[]
+}
+
 export type TaskSetup = {
   calendarIds: readonly string[]
   targetCalendarId: string
@@ -78,4 +88,5 @@ export type TaskSetup = {
   loadAssignees?: (calendarId: string) => Promise<TaskPerson[]>
   openTaskId?: string | null
   onOpenTaskDone?: () => void
+  planning?: TaskPlanningSetup
 }

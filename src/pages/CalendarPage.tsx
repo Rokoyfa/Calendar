@@ -36,7 +36,7 @@ import { useCaldav } from '../features/caldav/index.ts'
 import { caldavCalendarId, isCaldavEvent } from '../utils/caldav.ts'
 import { usePeerCalendars } from '../features/peers/index.ts'
 import { isOwnPendingRequest, isPeerEvent, peerCalendarId } from '../utils/peerCalendar.ts'
-import type { TaskAccess, TaskSetup } from '../features/tasks/index.ts'
+import type { TaskAccess, TaskPlanningSetup, TaskSetup } from '../features/tasks/index.ts'
 
 const LINK_PARAMS = {
   calendar: 'calendar',
@@ -287,6 +287,22 @@ export function CalendarPage() {
       return members.map(({ userId: id, name }) => ({ id, name }))
     }
   }, [user, host.features.teams, calendarById, repository])
+  const personalCalendarId = calendars.find(isPersonalCalendar)?.id ?? null
+  const planning = useMemo<TaskPlanningSetup | undefined>(
+    () =>
+      personalCalendarId === null
+        ? undefined
+        : {
+            calendarId: personalCalendarId,
+            busyCalendarIds: [
+              ...calendars.map(({ id }) => id),
+              ...caldav.calendars.map(({ id }) => caldavCalendarId(id)),
+              ...peers.calendars.map(({ id }) => peerCalendarId(id)),
+            ],
+            externalEvents: external.events,
+          },
+    [personalCalendarId, calendars, caldav.calendars, peers.calendars, external.events],
+  )
   const isLinkedCalendarShown = !linkedCalendarId || visibleCalendarIds.includes(linkedCalendarId)
   const tasks = useMemo<TaskSetup>(
     () => ({
@@ -298,6 +314,7 @@ export function CalendarPage() {
       loadAssignees,
       openTaskId: isLinkedCalendarShown ? linkedTaskId : null,
       onOpenTaskDone: clearLink,
+      planning,
     }),
     [
       visibleCalendarIds,
@@ -309,6 +326,7 @@ export function CalendarPage() {
       isLinkedCalendarShown,
       linkedTaskId,
       clearLink,
+      planning,
     ],
   )
 

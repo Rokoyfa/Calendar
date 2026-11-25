@@ -7,6 +7,25 @@ export type Category = { id: string; calendarId: string; name: string }
 
 export const UNCATEGORIZED = ''
 
+export const BUILTIN_CATEGORIES = ['work', 'leisure', 'household', 'family', 'health', 'sport', 'learning'] as const
+
+export type BuiltinCategory = (typeof BUILTIN_CATEGORIES)[number]
+
+export const WORK_CATEGORY: BuiltinCategory = 'work'
+
+const BUILTIN_FILTER_PREFIX = 'builtin:'
+
+export const builtinFilterId = (category: BuiltinCategory) => `${BUILTIN_FILTER_PREFIX}${category}`
+
+export const isBuiltinCategory = (value: unknown): value is BuiltinCategory =>
+  (BUILTIN_CATEGORIES as readonly unknown[]).includes(value)
+
+export const parseBuiltinCategories = (value: unknown): BuiltinCategory[] =>
+  Array.isArray(value) ? BUILTIN_CATEGORIES.filter((category) => value.includes(category)) : []
+
+export const isWorkCategorized = (builtinCategories: readonly BuiltinCategory[] | undefined) =>
+  builtinCategories?.includes(WORK_CATEGORY) ?? false
+
 export type CategoryFilter = ReadonlySet<string> | null
 
 export const parseCategory = (value: unknown): Category | null => {
@@ -50,9 +69,10 @@ export const matchesCategoryFilter = (
   categoryIds: readonly string[],
   known: ReadonlySet<string>,
   filter: CategoryFilter,
+  builtinCategories: readonly BuiltinCategory[] = [],
 ) => {
   if (filter === null) return true
-  const own = categoryIds.filter((id) => known.has(id))
+  const own = [...categoryIds.filter((id) => known.has(id)), ...builtinCategories.map(builtinFilterId)]
   return own.length === 0 ? filter.has(UNCATEGORIZED) : own.some((id) => filter.has(id))
 }
 

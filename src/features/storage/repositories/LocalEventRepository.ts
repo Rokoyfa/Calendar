@@ -13,8 +13,15 @@ import { ANY_EVENT_CHANGE, type EventChange } from '../../../utils/eventChange.t
 import type { EventQuery, EventRepository, EventSearchQuery } from '../types/storage.ts'
 import { LocalStorageList } from '../utils/localStorageList.ts'
 import { removeById, replaceById } from '../../../utils/list.ts'
+import { getBrowserTimeZone, toInstant } from '../../../utils/timeZone.ts'
 
 const DEFAULT_STORAGE_KEY = 'calendar.events.v1'
+
+const eventStartsAt = (event: CalendarEvent) =>
+  toInstant(
+    { date: event.startDate, time: event.allDay ? '00:00' : event.start },
+    event.timeZone ?? getBrowserTimeZone(),
+  )
 const LEGACY_CALENDAR_ID = 'local'
 
 const parseLocalEvent = (value: unknown) => {
@@ -130,6 +137,16 @@ export class LocalEventRepository implements EventRepository {
       ...this.#current(entries).filter((entry) => entry.event.id !== id),
     ])
     this.#events.update((events) => removeById(events, id))
+  }
+
+  async releaseTaskBlocks(taskId: string, unlink: boolean) {
+    const current = Date.now()
+    const future = this.#events.read().filter((event) => event.taskId === taskId && eventStartsAt(event) > current)
+    for (const event of future) await this.remove(event.id)
+    if (unlink)
+      this.#events.update((events) =>
+        events.map((event) => (event.taskId === taskId ? { ...event, taskId: null } : event)),
+      )
   }
 
   async listTrash(calendarId: string) {

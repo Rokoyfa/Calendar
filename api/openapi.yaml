@@ -1948,6 +1948,10 @@ paths:
                 emailChanges: { type: boolean }
                 emailReminders: { type: boolean }
                 emailChat: { type: boolean }
+                planningDistribution: { $ref: '#/components/schemas/PlanningDistribution' }
+                planningCountry: { $ref: '#/components/schemas/PlanningCountry' }
+                planningDayStart: { $ref: '#/components/schemas/PlanningTime' }
+                planningDayEnd: { $ref: '#/components/schemas/PlanningTime' }
       responses:
         '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Preferences' }
@@ -3274,6 +3278,25 @@ components:
             Only matters for the personal calendar when it is shared (see "Personal sharing"): private events appear to
             viewers as busy time without content, public ones with title, time and place. In iCalendar `CLASS:PRIVATE`
             or `CLASS:PUBLIC`; a missing `CLASS` counts as private.
+        builtinCategories:
+          type: array
+          uniqueItems: true
+          default: []
+          items: { $ref: '#/components/schemas/BuiltinCategory' }
+          description: |
+            Built-in categories, the same in every calendar. Several are allowed. The task planner counts an event as
+            work as soon as `work` is among them. Keep them when a CalDAV program changes the event.
+        taskId:
+          oneOf: [{ type: string }, { type: 'null' }]
+          default: null
+          description: |
+            Task this event was planned for (a time block created by the task planner). Only for single events, the
+            task must be visible to the user (`400 taskNotFound` otherwise). Cleared when the task is deleted and left
+            out of public links.
+    BuiltinCategory:
+      type: string
+      enum: [work, leisure, household, family, health, sport, learning]
+      description: Built-in category. The widget shows translated names; only `work` counts as work for the task planner.
     Category:
       type: object
       required: [id, calendarId, name]
@@ -3405,6 +3428,12 @@ components:
           default: []
           items: { type: string }
           description: Categories of the task's calendar
+        builtinCategories:
+          type: array
+          uniqueItems: true
+          default: []
+          items: { $ref: '#/components/schemas/BuiltinCategory' }
+          description: Built-in categories. Time blocks planned for the task take them over; without any they count as work.
         checklist:
           type: array
           maxItems: 50
@@ -3431,7 +3460,7 @@ components:
       default: normal
     Task:
       type: object
-      required: [id, calendarId, title, notes, dueDate, dueTime, estimateMinutes, status, priority, categoryIds, checklist, assignee, completedAt, completedBy, createdBy, createdAt, updatedAt, version]
+      required: [id, calendarId, title, notes, dueDate, dueTime, estimateMinutes, status, priority, categoryIds, builtinCategories, checklist, assignee, completedAt, completedBy, createdBy, createdAt, updatedAt, version]
       properties:
         id: { type: string }
         calendarId: { type: string }
@@ -3443,6 +3472,7 @@ components:
         status: { $ref: '#/components/schemas/TaskStatus' }
         priority: { $ref: '#/components/schemas/TaskPriority' }
         categoryIds: { type: array, items: { type: string } }
+        builtinCategories: { type: array, items: { $ref: '#/components/schemas/BuiltinCategory' } }
         checklist:
           type: array
           items:
@@ -3736,6 +3766,20 @@ components:
       default: auto
       description: '`auto` (region given by the host, otherwise from the language), `off`, or a region such as `DE-NW`.'
       pattern: '^(auto|off|[A-Z]{2}(-[A-Z0-9]{1,6})?)$'
+    PlanningDistribution:
+      type: string
+      enum: [even, early]
+      default: even
+      description: '`even` spreads task blocks evenly until the due date, `early` plans them as soon as possible.'
+    PlanningCountry:
+      type: string
+      default: auto
+      description: '`auto` (country of the holiday region) or an ISO 3166-1 country code whose working time rules apply when planning tasks.'
+      pattern: '^(auto|[A-Z]{2})$'
+    PlanningTime:
+      type: string
+      description: Time of day as `HH:MM`
+      pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
     ChatMessage:
       type: object
       required: [id, calendarId, eventId, occurrenceDate, author, text, createdAt, editedAt]
@@ -3815,7 +3859,7 @@ components:
         messages: { type: object, description: Text overrides per language }
     Preferences:
       type: object
-      required: [theme, defaultView, mobileDefaultView, locale, timeZone, holidays, emailInvites, emailChanges, emailReminders, emailChat]
+      required: [theme, defaultView, mobileDefaultView, locale, timeZone, holidays, emailInvites, emailChanges, emailReminders, emailChat, planningDistribution, planningCountry, planningDayStart, planningDayEnd]
       properties:
         theme: { $ref: '#/components/schemas/Theme' }
         defaultView: { $ref: '#/components/schemas/CalendarView' }
@@ -3827,3 +3871,7 @@ components:
         emailChanges: { type: boolean, default: true, description: Email when an event the user is invited to changes or is cancelled }
         emailReminders: { type: boolean, default: false, description: Emails at the user's own reminder times }
         emailChat: { type: boolean, default: true, description: Email about new chat messages of events the user is invited to }
+        planningDistribution: { $ref: '#/components/schemas/PlanningDistribution' }
+        planningCountry: { $ref: '#/components/schemas/PlanningCountry' }
+        planningDayStart: { allOf: [{ $ref: '#/components/schemas/PlanningTime' }], default: '08:00', description: Earliest time of day for planned task blocks }
+        planningDayEnd: { allOf: [{ $ref: '#/components/schemas/PlanningTime' }], default: '20:00', description: 'Latest time of day for planned task blocks, at least one hour after the start' }

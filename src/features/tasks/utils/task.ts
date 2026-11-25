@@ -1,3 +1,4 @@
+import { parseBuiltinCategories } from '../../../utils/category.ts'
 import { isISODate, isTime } from '../../../utils/date.ts'
 import { filledTextOrNull, isRecord, parseList, textOrEmpty } from '../../../utils/parse.ts'
 import {
@@ -27,6 +28,7 @@ export const EMPTY_TASK_INPUT: TaskInput = {
   status: 'open',
   priority: 'normal',
   categoryIds: [],
+  builtinCategories: [],
   checklist: [],
   assigneeId: null,
 }
@@ -78,6 +80,7 @@ export const parseTask = (value: unknown): Task | null => {
     status,
     priority: isTaskPriority(value.priority) ? value.priority : 'normal',
     categoryIds: parseIds(value.categoryIds),
+    builtinCategories: parseBuiltinCategories(value.builtinCategories),
     checklist: parseList(value.checklist, parseChecklistItem),
     assignee: parsePerson(value.assignee),
     completedAt: status === 'done' ? (completedAt ?? textOrEmpty(value.updatedAt)) : null,
@@ -100,6 +103,7 @@ export const toTaskInput = (task: Task): TaskInput => ({
   status: task.status,
   priority: task.priority,
   categoryIds: [...task.categoryIds],
+  builtinCategories: [...task.builtinCategories],
   checklist: task.checklist.map((item) => ({ ...item })),
   assigneeId: task.assignee?.id ?? null,
 })
@@ -113,6 +117,7 @@ export const normalizeTaskInput = (input: TaskInput): TaskInput => ({
   status: input.status,
   priority: input.priority,
   categoryIds: [...new Set(input.categoryIds)],
+  builtinCategories: parseBuiltinCategories(input.builtinCategories),
   checklist: input.checklist.map((item) => ({ ...item, title: item.title.trim() })).filter((item) => item.title !== ''),
   assigneeId: input.assigneeId,
 })

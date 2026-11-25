@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { isAppError } from '../../../utils/appError.ts'
 import type { TaskInput } from '../types/task.ts'
 import { EMPTY_TASK_INPUT } from '../utils/task.ts'
+import { LocalEventRepository } from '../../storage/index.ts'
+import { createEventInput } from '../../../utils/event.ts'
 import { LocalTaskRepository } from './LocalTaskRepository.ts'
 
 const createStorage = () => {
@@ -93,5 +95,21 @@ describe('LocalTaskRepository', () => {
     expect(moved.calendarId).toBe('second')
     await repository.remove(created.id, moved.version)
     expect(await repository.list({ calendarIds: ['personal', 'second'] })).toHaveLength(0)
+  })
+
+  it('removes future blocks when a task is done and unlinks the rest when it is deleted', async () => {
+    const events = new LocalEventRepository('test.events')
+    const repository = new LocalTaskRepository('test.tasks', events)
+    const task = await repository.create('personal', input({ estimateMinutes: 120 }))
+    const block = (date: string) => ({ ...createEventInput(date, 9, 'UTC'), taskId: task.id })
+    const past = await events.create('personal', block('2020-01-06'))
+    await events.create('personal', block('2099-01-06'))
+    const done = await repository.setStatus(task.id, 'done', task.version)
+    expect((await events.listAll()).map(({ id, taskId }) => ({ id, taskId }))).toEqual([
+      { id: past.id, taskId: task.id },
+    ])
+    expect(await events.listTrash('personal')).toHaveLength(1)
+    await repository.remove(task.id, done.version)
+    expect((await events.listAll()).map(({ taskId }) => taskId)).toEqual([null])
   })
 })

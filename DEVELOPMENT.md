@@ -501,7 +501,7 @@ Umschaltbar über **Tag / Woche / Monat / Jahr / Agenda / Aufgaben** in der Kopf
 - **Jahr:** alle zwölf Monate als kleine Raster, Tage mit Terminen haben einen Punkt. Ein Klick auf einen Tag öffnet die Tagesansicht, ein Klick auf den Monatsnamen die Monatsansicht.
 - Heutiger Tag ist hervorgehoben. Eine **Linie zeigt die aktuelle Uhrzeit** über alle Tage der Tages- und Wochenansicht, in der Spalte von heute kräftig rot mit Punkt. Sie erscheint nur, wenn heute im sichtbaren Zeitraum liegt, und rückt jede Minute weiter.
 - Mehrtägige und wiederkehrende Termine erscheinen in allen Ansichten
-- **Aufgaben:** Liste aller Aufgaben der angezeigten Kalender, gruppiert in überfällig, heute, demnächst, ohne Fälligkeit und (aufklappbar) erledigt, mit Schnelleingabe oben
+- **Aufgaben:** alle Aufgaben der angezeigten Kalender nach Status, als Liste untereinander oder als Board nebeneinander, mit **Erstellen** oben rechts
 
 ### Handy
 
@@ -722,6 +722,7 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 ### Kategorien
 
 - Kategorien gehören zu einem Kalender (`utils/category.ts`, höchstens 30 pro Kalender, Namen ohne Groß-/Kleinschreibung eindeutig). Termine tragen bis zu 5 davon in `categoryIds`.
+- Feste Kategorien (`BUILTIN_CATEGORIES`: `work`, `leisure`, `household`, `family`, `health`, `sport`, `learning`) hat jeder Kalender, beliebig viele pro Termin und Aufgabe in `builtinCategories`, getrennt von `categoryIds` und ohne Grenze von 5. `CategoryField` zeigt sie zuerst (Texte unter `events.categories.builtin`), `CategoryFilterModal` ebenso (Filter-Id `builtin:<name>`, `builtinFilterId`, `matchesCategoryFilter`). Beim Verschieben bleiben sie. Der Planer zählt einen Termin als Arbeit, sobald `work` dabei ist (`isWorkCategorized`).
 - Verwaltung in den Kalender-Einstellungen (`CategoriesSection`), Zuordnung im Termin-Dialog (`CategoryField`, dort auch „+ Neue Kategorie“). Verwalten darf, wer `manage_calendars` hat, und im persönlichen Kalender immer der Besitzer (`canManageCategories` in `permissions.ts`, weil der lokale persönliche Kalender kein `manage_calendars` hat), Filter über das Kalendermenü (`CategoryFilterModal`). Der Filter lebt nur im Zustand von `Calendar` und kennt zusätzlich „Ohne Kategorie“. Unbekannte Ids (gelöschte Kategorien) zählen als „ohne“.
 - Export und Import: `toICalendar` schreibt die Namen als `CATEGORIES`, `parseICalendar` liefert sie als `categoryNames`. Beim Import ordnet `createCategoryResolver` (`features/events/utils/icalExchange.ts`) sie über den Namen zu und legt fehlende an, wenn man den Kalender verwalten darf. Hat die Datei keine Kategorien, behält ein bekannter Termin seine.
 - Speicherung über `CategoryRepository` (lokal `LocalCategoryRepository`, sonst `RemoteCategoryRepository`). Fehlt das Repository im Daten-Adapter, gibt es die Funktion nicht.
@@ -760,6 +761,10 @@ Eigenes Feature unter `features/tasks/` (Schalter `tasks`, auch lokal): `types` 
 - Beim Anlegen schaltet **Termin / Aufgabe** oben im Dialog um, Titel und Datum wandern mit.
 - Antwortet `GET /tasks` mit `404`, `405` oder `501`, verschwinden Ansicht, Umschalter und Einträge (`isUnsupportedEndpoint`). Im Nur-Lesen-Modus sind Aufgaben nur sichtbar.
 - Live: `task.changed` vom WebSocket wird in `utils/eventChange.ts` wie eine Terminänderung ohne Termin-ID behandelt und lädt neu.
+- **Einplanen** (`TaskPlanModal`, lazy aus `TaskModal`): nur für gespeicherte, offene Aufgaben mit Aufwand, wenn `TaskSetup.planning` gesetzt ist (`CalendarPage`: persönlicher Kalender als Ziel, alle eigenen, Team-, CalDAV- und geteilten Kalender plus Abos als belegt). Ungespeicherte Änderungen an Fälligkeit oder Aufwand sperren den Knopf. Hat die Aufgabe künftige Blöcke (`useHasFutureBlocks`, lädt nach jedem `invalidate` neu) oder wurde gerade angelegt, heißt er „Neu planen“. `useTaskPlanner` lädt Termine von gestern bis ein Jahr voraus, Feiertage (`listHolidays`) und die bisherigen Blöcke der Aufgabe (`taskId`), rechnet alles in Minuten der Anzeige-Zeitzone um und ruft `planTask` (`utils/taskPlanner.ts`, rein, mit Tests). Begonnene Blöcke zählen als erledigt, künftige werden beim Anlegen erst gelöscht, dann neu angelegt (privat, `taskId`, feste Kategorien der Aufgabe oder `work`).
+- `planTask` plant in 15-Minuten-Schritten Blöcke von mindestens 30 Minuten im Planungsfenster vor der Fälligkeit, ohne Überschneidung mit belegter Zeit. Für Arbeit (`work` oder `taskId` in eigenen Kalendern, plus die neuen Blöcke) prüft es Ruhezeit zu anderen Tagen, Tages- und Wochenhöchstzeit, längste Strecke ohne Pause und die nötigen Pausen (Lücken ab 15 Minuten). Ruhetage des Landes, Feiertage und ganztägige Termine mit fester Kategorie bleiben frei. `even` verteilt den Rest gleichmäßig auf die übrigen Tage und füllt danach von vorn auf, `early` füllt von vorn. Passt nicht alles, liefert es `missingMinutes`; `findEarliestCompletion` sucht den Tag, an dem alles passt (für „Fälligkeit verschieben“).
+- Regeln je Land in `utils/workingTimeLaw.ts` (`WORKING_TIME_LAWS`, sonst `DEFAULT_WORKING_TIME_LAW` mit den deutschen Werten). Das Land kommt aus `planningCountry` oder der Feiertagsregion bzw. Sprache (`usePlanningCountry`). Einstellungen im Tab **Planung** (`TaskPlanningSettings`): Verteilung, Land mit Übersicht der Regeln, Planungsfenster (mindestens eine Stunde, `isPlanningWindow`).
+- Erledigt oder gelöscht: das Backend verschiebt künftige Blöcke in den Papierkorb und löst beim Löschen die übrigen. Lokal macht das `LocalTaskRepository` über `releaseTaskBlocks` des `LocalEventRepository`.
 
 ### Steuerung durch den Gastgeber
 
@@ -917,7 +922,7 @@ src/
 │  ├─ RespondPage.tsx          Antwort aus dem Link einer Einladungs-E-Mail speichern und ändern (ohne Anmeldung)
 │  ├─ BookingPage.tsx          Öffentliche Buchungsseite /book/:token: freie Zeiten, Name, E-Mail, Notiz (ohne Anmeldung)
 │  ├─ BookingLinkPage.tsx      Buchung aus den E-Mail-Links bestätigen und absagen (ohne Anmeldung)
-│  └─ SettingsPage.tsx         Einstellungen in Tabs: Kalender, Einladungen, Darstellung, Benachrichtigungen, Konto
+│  └─ SettingsPage.tsx         Einstellungen in Tabs: Kalender, Verbindungen, Einladungen, Darstellung, Planung, Benachrichtigungen, Konto, Sicherheit, Daten
 ├─ main.tsx                    Einstieg der Website: <Calendar routing="browser" /> mit Werten aus der .env
 ├─ env.d.ts                    Typen der Umgebungsvariablen
 ├─ config/
@@ -1015,7 +1020,7 @@ src/
    ├─ reminders/               Erinnerungen planen und anzeigen, solange das Widget offen ist (useReminders, ReminderNotices)
    ├─ categories/              Kategorien: CategoryField (Termin-Dialog), CategoryFilterModal, CategoriesSection (Einstellungen), useCategories
    ├─ chat/                    Chat zu Terminen: ChatPanel, ChatProvider (Ungelesen-Zähler), UnreadBadge, useChatMessages
-   ├─ tasks/                   Aufgaben: Typen, Repositories (lokal und REST), TasksProvider, TaskModal, TaskListView, DayTasks
+   ├─ tasks/                   Aufgaben: Typen, Repositories (lokal und REST), TasksProvider, TaskModal, TasksView, DayTasks, Planer (taskPlanner, workingTimeLaw, TaskPlanModal, TaskPlanningSettings)
    ├─ holidays/                Feiertage: useHolidays (Region auflösen, Quelle wählen), HolidaySettings, Bibliothek date-holidays (lazy)
    ├─ storage/                 Datenspeicherung
    │  ├─ components/           LocalImportPrompt: lokale Termine ins Konto übernehmen

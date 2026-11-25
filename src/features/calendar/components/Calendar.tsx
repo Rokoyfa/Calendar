@@ -225,7 +225,7 @@ export function Calendar({
   const { isAvailable: hasCategories, categories, create: createCategory } = useCategories(categoryCalendarIds)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const activeFilter = categories.length > 0 ? categoryFilter : null
+  const activeFilter = hasCategories ? categoryFilter : null
   const occurrences = useMemo(() => {
     const all = externalEvents.length > 0 ? [...events, ...externalEvents] : events
     const expanded = expandEvents(all, range.from, range.to, viewerTimeZone)
@@ -236,7 +236,7 @@ export function Calendar({
         isExternalEvent(occurrence) ||
         isCaldavEvent(occurrence) ||
         isPeerEvent(occurrence) ||
-        matchesCategoryFilter(occurrence.categoryIds, known, activeFilter),
+        matchesCategoryFilter(occurrence.categoryIds, known, activeFilter, occurrence.builtinCategories),
     )
   }, [events, externalEvents, range, viewerTimeZone, categories, activeFilter])
   const draggableByKey = useMemo(
@@ -588,7 +588,7 @@ export function Calendar({
                 navigation={definition.isFixed ? undefined : { onPrevious: previous, onNext: next, onToday: goToToday }}
                 onSearch={features.search ? () => setIsSearchOpen(true) : undefined}
                 onPrint={features.print && !isTaskView ? print : undefined}
-                onFilter={categories.length > 0 && !isTaskView ? () => setIsFilterOpen(true) : undefined}
+                onFilter={hasCategories && !isTaskView ? () => setIsFilterOpen(true) : undefined}
                 isFiltered={activeFilter !== null}
                 onCreate={canCreate && !isTaskView ? createNow : undefined}
                 context={headerContext}

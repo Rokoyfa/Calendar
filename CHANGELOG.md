@@ -9,15 +9,18 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - `tasks` is on by default and needs the new `/tasks` endpoints. Without them (`404`, `405` or `501` on `GET /tasks`) the widget hides tasks on its own; to hide them from the start use `features: { tasks: false }` or `feature-tasks="false"`.
 - `CalendarView` and the `views` option gain `tasks`, and the start view in the user settings may now be `tasks`. A backend that validates `defaultView` and `mobileDefaultView` has to accept it (see `CalendarView` in `api/openapi.yaml`).
 - `DataRepositories` has a new optional `tasks` repository. Own adapters compile unchanged; without it tasks stay hidden.
+- Events and tasks gain `builtinCategories`, events gain `taskId`, and the preferences gain `planningDistribution`, `planningCountry`, `planningDayStart` and `planningDayEnd`. The new event fields are optional in `CalendarEvent` and `EventInput`. A backend has to store and return them and, when a task is done or deleted, remove its future planned blocks (see section 29 of the developer guide).
 
 ### Added
 
 - Tasks (feature `tasks`) with status (open, in progress, waiting, done), priority, optional due date and time, estimated effort, checklist and categories, all set in one dialog: checkable on their day in the day, week, month and agenda views, and a new Tasks view as a list by status or as a board with one column per status, where tasks are moved by drag and drop; each status shows its count and effort. A **Create** button at the top right of the task view and a switch between event and task when creating. In team calendars a task can be assigned to a member, who gets the notification `taskAssigned` and may change its status and tick its checklist. Kept in the browser in local mode. New endpoints `/tasks*`, live message `task.changed`, error codes `taskNotFound`, `taskChanged`, `tooManyTasks`, `invalidAssignee`, and `tasks` in the data export
 - Keyboard shortcut **K** for the task view
+- Fixed categories work, leisure, household, family, health, sport and learning for every event and task, next to the calendar's own categories and in the category filter
+- **Plan** for tasks with an effort: spreads the effort as private blocks over free time in the personal calendar before the due date, evenly or as early as possible. It keeps the legal rest periods, daily and weekly working time, breaks, rest days and public holidays of the chosen country, counts only events with the fixed category work as work, shows a preview and, when the effort does not fit, offers to create only the blocks that fit or to move the due date. Planning again replaces future blocks; finishing or deleting the task removes them. New settings tab **Planning** for the distribution, the country and the planning hours
 
 ### Changed
 
-- Smaller first load: the CDN bundle loads 167 KB gzip instead of 197 KB. English texts are now loaded on demand like the other languages, and routing uses React Router's declarative routers instead of the data router
+- Smaller first load: the CDN bundle loads 176 KB gzip instead of 197 KB. English texts are now loaded on demand like the other languages, and routing uses React Router's declarative routers instead of the data router
 
 ## 2.1.0 – 2026-11-24
 

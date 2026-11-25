@@ -14,8 +14,18 @@ const completion = (current: Task | null, status: TaskStatus) =>
   status !== 'done' ? null : current && isTaskDone(current) ? current.completedAt : new Date().toISOString()
 
 const taskFields = (input: TaskInput, current: Task | null) => {
-  const { title, notes, dueDate, dueTime, estimateMinutes, status, priority, categoryIds, checklist } =
-    normalizeTaskInput(input)
+  const {
+    title,
+    notes,
+    dueDate,
+    dueTime,
+    estimateMinutes,
+    status,
+    priority,
+    categoryIds,
+    builtinCategories,
+    checklist,
+  } = normalizeTaskInput(input)
   const known = new Set(current?.checklist.map((item) => item.id) ?? [])
   const used = new Set<string>()
   const items: TaskChecklistItem[] = checklist.map(({ id, title: itemTitle, done }) => {
@@ -32,16 +42,21 @@ const taskFields = (input: TaskInput, current: Task | null) => {
     status,
     priority,
     categoryIds,
+    builtinCategories,
     checklist: items,
     completedAt: completion(current, status),
   }
 }
 
+export type TaskBlockStore = { releaseTaskBlocks(taskId: string, unlink: boolean): Promise<void> }
+
 export class LocalTaskRepository implements TaskRepository {
   readonly #tasks: LocalStorageList<Task>
+  readonly #blocks: TaskBlockStore | undefined
 
-  constructor(storageKey = DEFAULT_STORAGE_KEY) {
+  constructor(storageKey = DEFAULT_STORAGE_KEY, blocks?: TaskBlockStore) {
     this.#tasks = new LocalStorageList(storageKey, parseTask, 'saveTasksFailed')
+    this.#blocks = blocks
   }
 
   async list({ calendarIds, from, to, completed }: TaskQuery) {
@@ -76,10 +91,12 @@ export class LocalTaskRepository implements TaskRepository {
   }
 
   async update(id: string, input: TaskInput, version?: number) {
+    await this.#releaseOnDone(id, version, normalizeTaskInput(input).status)
     return this.#change(id, version, (task) => ({ ...task, ...taskFields(input, task) }))
   }
 
   async setStatus(id: string, status: TaskStatus, version?: number) {
+    await this.#releaseOnDone(id, version, status)
     return this.#change(id, version, (task) =>
       task.status === status ? task : { ...task, status, completedAt: completion(task, status) },
     )
@@ -102,7 +119,13 @@ export class LocalTaskRepository implements TaskRepository {
 
   async remove(id: string, version?: number) {
     this.#find(id, version)
+    await this.#blocks?.releaseTaskBlocks(id, true)
     this.#tasks.update((tasks) => tasks.filter((task) => task.id !== id))
+  }
+
+  async #releaseOnDone(id: string, version: number | undefined, status: TaskStatus) {
+    const current = this.#find(id, version)
+    if (status === 'done' && !isTaskDone(current)) await this.#blocks?.releaseTaskBlocks(id, false)
   }
 
   #find(id: string, version?: number) {

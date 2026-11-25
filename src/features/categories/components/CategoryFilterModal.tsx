@@ -1,7 +1,14 @@
 import { Button } from '../../../components/Button.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { useI18n } from '../../../i18n/index.ts'
-import { toggleCategoryFilter, UNCATEGORIZED, type Category, type CategoryFilter } from '../../../utils/category.ts'
+import {
+  BUILTIN_CATEGORIES,
+  builtinFilterId,
+  toggleCategoryFilter,
+  UNCATEGORIZED,
+  type Category,
+  type CategoryFilter,
+} from '../../../utils/category.ts'
 
 type CategoryFilterModalProps = {
   categories: readonly Category[]
@@ -16,6 +23,10 @@ export function CategoryFilterModal({ categories, calendarNames, value, onChange
   const { filter } = m.calendar
   const showCalendar = new Set(categories.map((category) => category.calendarId)).size > 1
   const options = [
+    ...BUILTIN_CATEGORIES.map((category) => ({
+      id: builtinFilterId(category),
+      label: m.events.categories.builtin[category],
+    })),
     ...categories.map((category) => {
       const calendar = showCalendar ? calendarNames.get(category.calendarId) : undefined
       return { id: category.id, label: calendar ? `${category.name} · ${calendar}` : category.name }

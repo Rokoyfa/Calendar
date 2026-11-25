@@ -417,3 +417,71 @@
     grid-template-columns: repeat(4, minmax(80%, 1fr));
   }
 }
+
+.taskPlan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.taskPlan > p {
+  margin: 0;
+}
+
+.taskPlanTask {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.taskPlanBlocks .formSubtitle {
+  margin-top: 0;
+}
+
+.taskPlanDays {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 40vh;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.taskPlanDay {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-hover);
+}
+
+.taskPlanDate {
+  font-weight: 600;
+}
+
+.taskPlanTimes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.taskPlanMissing p {
+  margin: 0;
+}
+
+.taskPlanMissing p + p {
+  margin-top: var(--space-1);
+}
+
+.planningRules {
+  margin: 0;
+  padding-left: var(--space-5);
+  color: var(--color-text);
+  line-height: 1.6;
+}

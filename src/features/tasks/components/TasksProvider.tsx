@@ -7,7 +7,7 @@ import { TasksContext, type TasksContextValue } from '../context/TasksContext.ts
 import { useTaskActions, useTaskList } from '../hooks/useTasks.ts'
 import type { TaskEditor } from '../hooks/useTaskEditor.ts'
 import type { Task, TaskRepository, TaskSetup, TaskStatus } from '../types/task.ts'
-import { groupTasksByDate, isTaskDone } from '../utils/task.ts'
+import { groupTasksByDate, isTaskDone, toTaskInput } from '../utils/task.ts'
 
 const TaskModal = lazy(async () => ({ default: (await import('./TaskModal.tsx')).TaskModal }))
 
@@ -196,6 +196,10 @@ function ActiveTasksProvider({
               editor.close()
             }}
             onSwitchToEvent={onSwitchToEvent}
+            planning={setup.planning}
+            onReschedule={(task, dueDate) =>
+              actions.save(task, { ...toTaskInput(task), dueDate, dueTime: null }, task.calendarId)
+            }
             onClose={editor.close}
           />
         </Suspense>
