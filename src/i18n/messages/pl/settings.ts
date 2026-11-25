@@ -57,7 +57,7 @@ export const settings: Messages['settings'] = {
     title: 'Automatyczne planowanie',
     description: '„Zaplanuj” rozkłada nakład pracy zadania na wolny czas w twoim kalendarzu osobistym.',
     distribution: 'Rozkład',
-    distributions: { even: 'Równomiernie do terminu', early: 'Jak najwcześniej' },
+    distributions: { even: 'Równomiernie', early: 'Jak najwcześniej', late: 'Jak najpóźniej' },
     country: 'Zasady czasu pracy',
     countryAuto: (name) => `Automatycznie: ${name}`,
     generalRules: 'Zasady ogólne',

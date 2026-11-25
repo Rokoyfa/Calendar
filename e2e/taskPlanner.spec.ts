@@ -57,10 +57,7 @@ test('plans a task into free time and replaces future blocks when planning again
   const planDialog = page.locator('dialog[open]', { hasText: 'Aufgabe einplanen' })
   await expect(planDialog.getByText('Geplante Blöcke')).toBeVisible()
   await expect(planDialog.getByText('Arbeitszeitregeln: Deutschland')).toBeVisible()
-  await expect(planDialog.getByRole('button', { name: 'Gleichmäßig bis zur Fälligkeit' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  )
+  await expect(planDialog.getByRole('button', { name: 'Gleichmäßig' })).toHaveAttribute('aria-pressed', 'true')
   await planDialog.getByRole('button', { name: 'Anlegen' }).click()
   await expect(planDialog).toHaveCount(0)
 
@@ -83,11 +80,16 @@ test('plans a task into free time and replaces future blocks when planning again
   await page.locator('.taskRow', { hasText: 'Präsentation' }).locator('.taskTitle').click()
   await taskDialog.getByRole('button', { name: 'Neu planen' }).click()
   await expect(planDialog.getByText(/Ersetzt \d+ künftigen? Blöcke?\./)).toBeVisible()
-  await planDialog.getByRole('button', { name: 'So früh wie möglich' }).click()
+  await planDialog.getByRole('button', { name: 'So spät wie möglich' }).click()
   await planDialog.getByRole('button', { name: 'Anlegen' }).click()
   await expect(planDialog).toHaveCount(0)
   const replanned = await blocksOf(user, calendarId, task.id)
   expect(totalMinutes(replanned)).toBe(240)
+  const dueDate = addDays(today(), 14)
+  for (const block of replanned) {
+    expect(block.startDate >= addDays(dueDate, -4) && block.startDate <= dueDate).toBe(true)
+    if (block.startDate === dueDate) expect(minutesOf(block.end)).toBeLessThanOrEqual(12 * 60)
+  }
   expect(replanned.some((block) => blocks.some((old) => old.id === block.id))).toBe(false)
 
   await api(user, 'POST', `/tasks/${task.id}/status`, { status: 'done' })

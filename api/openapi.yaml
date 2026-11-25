@@ -3773,9 +3773,9 @@ components:
       pattern: '^(auto|off|[A-Z]{2}(-[A-Z0-9]{1,6})?)$'
     PlanningDistribution:
       type: string
-      enum: [even, early]
+      enum: [even, early, late]
       default: even
-      description: '`even` spreads task blocks evenly until the due date, `early` plans them as soon as possible.'
+      description: '`even` spreads task blocks evenly until the due date, `early` plans them as soon as possible, `late` as late as possible before the due date. Without a due date `even` and `late` plan as early as possible.'
     PlanningCountry:
       type: string
       default: auto

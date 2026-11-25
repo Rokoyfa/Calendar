@@ -2,6 +2,16 @@
 
 All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning](https://semver.org/). From 1.0 on, breaking changes to props, attributes, DOM events, exported types, the data adapter and the REST contract only come with a new major version.
 
+## Unreleased
+
+### Upgrading from 2.2
+
+- `planningDistribution` has the new value `late`. A backend that checks the value has to accept it.
+
+### Added
+
+- Planning distribution **As late as possible**: fills the last free time before the due date, keeping all working time rules
+
 ## 2.2.0 – 2026-11-25
 
 ### Upgrading from 2.1

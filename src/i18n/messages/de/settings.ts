@@ -56,7 +56,11 @@ export const settings: Messages['settings'] = {
     title: 'Automatisches Einplanen',
     description: '„Einplanen“ verteilt den Aufwand einer Aufgabe auf freie Zeiten in deinem persönlichen Kalender.',
     distribution: 'Verteilung',
-    distributions: { even: 'Gleichmäßig bis zur Fälligkeit', early: 'So früh wie möglich' },
+    distributions: {
+      even: 'Gleichmäßig',
+      early: 'So früh wie möglich',
+      late: 'So spät wie möglich',
+    },
     country: 'Arbeitszeitregeln',
     countryAuto: (name) => `Automatisch: ${name}`,
     generalRules: 'Allgemeine Regeln',

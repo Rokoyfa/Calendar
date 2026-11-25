@@ -148,27 +148,44 @@ const isFeasible = ({ request, busy, work }: Planner, day: number, block: PlanIn
 const acceptsRemainder = (remaining: number, minutes: number) =>
   remaining - minutes === 0 || remaining - minutes >= MIN_BLOCK_MINUTES
 
+const candidateLengths = (longest: number) => {
+  const lengths = new Set<number>([longest])
+  for (
+    let minutes = Math.floor(longest / PLAN_STEP_MINUTES) * PLAN_STEP_MINUTES;
+    minutes > 0;
+    minutes -= PLAN_STEP_MINUTES
+  )
+    lengths.add(minutes)
+  return lengths
+}
+
 const findBlock = (planner: Planner, day: number, need: number): PlanInterval | null => {
   const { request, remaining } = planner
   const dayStart = day * MINUTES_PER_DAY
-  const earliest = Math.max(dayStart + request.windowStart, ceilToStep(request.from))
+  const earliest = ceilToStep(Math.max(dayStart + request.windowStart, ceilToStep(request.from)))
   const latest = Math.min(dayStart + request.windowEnd, request.deadline ?? Number.POSITIVE_INFINITY)
   const shortest = Math.min(MIN_BLOCK_MINUTES, remaining)
-  for (let start = ceilToStep(earliest); start + shortest <= latest; start += PLAN_STEP_MINUTES) {
-    const longest = Math.min(need, latest - start)
-    const lengths = new Set<number>([longest])
-    for (
-      let minutes = Math.floor(longest / PLAN_STEP_MINUTES) * PLAN_STEP_MINUTES;
-      minutes > 0;
-      minutes -= PLAN_STEP_MINUTES
-    )
-      lengths.add(minutes)
-    for (const minutes of lengths) {
-      if (minutes < shortest || !acceptsRemainder(remaining, minutes)) continue
-      const block = { start, end: start + minutes }
-      if (isFeasible(planner, day, block)) return block
-    }
+  const fits = (block: PlanInterval) => {
+    const minutes = length(block)
+    return minutes >= shortest && acceptsRemainder(remaining, minutes) && isFeasible(planner, day, block)
   }
+  if (request.distribution === 'late' && request.deadline !== null) {
+    for (
+      let end = Math.floor(latest / PLAN_STEP_MINUTES) * PLAN_STEP_MINUTES;
+      end - shortest >= earliest;
+      end -= PLAN_STEP_MINUTES
+    )
+      for (const minutes of candidateLengths(Math.min(need, end - earliest))) {
+        const block = { start: end - minutes, end }
+        if (fits(block)) return block
+      }
+    return null
+  }
+  for (let start = earliest; start + shortest <= latest; start += PLAN_STEP_MINUTES)
+    for (const minutes of candidateLengths(Math.min(need, latest - start))) {
+      const block = { start, end: start + minutes }
+      if (fits(block)) return block
+    }
   return null
 }
 
@@ -225,7 +242,8 @@ export const planTask = (request: PlanRequest): PlanResult => {
     remaining: Math.max(0, Math.round(request.effortMinutes)),
   }
   const effort = planner.remaining
-  const days = listPlanningDays(request)
+  const planned = listPlanningDays(request)
+  const days = request.distribution === 'late' && request.deadline !== null ? planned.reverse() : planned
   if (request.distribution === 'even' && request.deadline !== null)
     days.forEach((day, index) => {
       if (planner.remaining > 0) placeOn(planner, day, evenTarget(planner.remaining, days.length - index))

@@ -12,7 +12,7 @@ export type Theme = (typeof THEMES)[number]
 
 export const AUTO_TIME_ZONE = 'auto'
 
-export const PLANNING_DISTRIBUTIONS = ['even', 'early'] as const
+export const PLANNING_DISTRIBUTIONS = ['even', 'early', 'late'] as const
 
 export type PlanningDistribution = (typeof PLANNING_DISTRIBUTIONS)[number]
 

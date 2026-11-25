@@ -57,7 +57,11 @@ export const settings: Messages['settings'] = {
     description:
       '«\u202fPlanifier\u202f» répartit l’effort d’une tâche sur les créneaux libres de votre calendrier personnel.',
     distribution: 'Répartition',
-    distributions: { even: 'Régulièrement jusqu’à l’échéance', early: 'Le plus tôt possible' },
+    distributions: {
+      even: 'Régulièrement',
+      early: 'Le plus tôt possible',
+      late: 'Le plus tard possible',
+    },
     country: 'Règles de temps de travail',
     countryAuto: (name) => `Automatique\u00a0: ${name}`,
     generalRules: 'Règles générales',

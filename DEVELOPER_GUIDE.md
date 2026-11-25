@@ -795,7 +795,7 @@ type Preferences = {
 }
 type PublicHoliday = { date: string; name: string } // GET /holidays, only with holiday-source="backend"
 // Preferences also carry emailInvites, emailChanges, emailReminders, emailChat: booleans for the emails below
-// and the task planning: planningDistribution ('even' | 'early'), planningCountry ('auto' or a country such as 'DE'),
+// and the task planning: planningDistribution ('even' | 'early' | 'late'), planningCountry ('auto' or a country such as 'DE'),
 // planningDayStart and planningDayEnd ('HH:MM', at least one hour apart)
 type Problem = { code: string; message: string }   // every error response
 ```
@@ -1227,7 +1227,7 @@ Tasks are things to get done, with or without a deadline. They belong to a calen
   - Every timed event in the user's calendars, team calendars, subscribed, CalDAV and shared calendars is busy. All-day events are busy for the whole day only if they have a fixed category.
   - Work is every event of the user's own calendars with the fixed category `work`, even if it has other ones as well, and every planned block. Events without a fixed category and events from subscriptions, CalDAV or shared calendars only make the time busy.
   - Between work on two days there is the legal rest period of the chosen country (11 hours in Germany), no day has more than the legal daily and weekly working time, no stretch of work is longer than allowed without a break, and the required breaks are kept. Rest days of the country (Sunday by default, Friday in Gulf states, Saturday in Israel) and public holidays of the holiday region stay free. The country comes from the holiday region unless the user picks another one; countries without their own rules use the general rules (those of Germany).
-  - **Evenly** (default) spreads the effort over the days until the due date, **as early as possible** fills the first free days. The user sets the default in the settings under **Planning** and can change it for each task in the preview.
+  - **Evenly** (default) spreads the effort over the days until the due date, **as early as possible** fills the first free days, **as late as possible** fills the last free time before the due date (without a due date both evenly and as late as possible plan as early as possible). The user sets the default in the settings under **Planning** and can change it for each task in the preview.
   - If the effort does not fit, nothing is created on its own. The preview says how much is missing and offers to create only the blocks that fit or to move the due date to the first day on which everything fits.
   - When the task is done or deleted, its blocks that have not started yet go to the trash; when it is deleted, the remaining blocks lose the link.
 - **Notifications.** Assigning someone sends them the notification `taskAssigned` (with `task: { id, calendarId, title, dueDate }`). Opening it shows the task.
@@ -1245,7 +1245,7 @@ What your backend has to enforce, because the widget only shows what it receives
 - **Limits.** At most 5000 tasks per calendar (`tooManyTasks`), at most 400 days per query. Without `from` and `to`, `GET /tasks` returns all tasks that are not done and the 200 most recently done; `completed=true|false` narrows that.
 - **Clean-up.** Deleting a calendar deletes its tasks; deleting an account removes it as assignee, creator and completer. Tasks are part of the data export.
 - **Planned blocks.** Accept `taskId` on an event only for a task the user can see (otherwise `400` with `taskNotFound`) and never on a recurring or detached event. When a task becomes `done` (through `PUT /tasks/:id` or `POST /tasks/:id/status`) or is deleted, also when its calendar or team is deleted, move all events linked to it that have not started yet to the trash, in whichever personal calendar they are, and announce the deletion. On delete, set `taskId` of the remaining events to `null`. Public links and shared personal calendars never show `taskId`.
-- **Planning settings.** `planningDistribution` is `even` or `early`, `planningCountry` is `auto` or two capital letters, `planningDayStart` and `planningDayEnd` are `HH:MM` and at least one hour apart, also when only one of them is sent (compare with the stored value). Reject everything else with `400`.
+- **Planning settings.** `planningDistribution` is `even`, `early` or `late`, `planningCountry` is `auto` or two capital letters, `planningDayStart` and `planningDayEnd` are `HH:MM` and at least one hour apart, also when only one of them is sent (compare with the stored value). Reject everything else with `400`.
 - **Live updates.** Send `{ "type": "task.changed", "calendarId", "taskId", "version", "changedBy" }` to everyone who sees the calendar; the widget then reloads.
 
 Turn the feature off with `features: { tasks: false }`. If `GET /tasks` answers `404`, `405` or `501`, the widget treats tasks as not offered by the backend and hides them.

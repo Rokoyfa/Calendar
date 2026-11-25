@@ -32,6 +32,37 @@ describe('planTask', () => {
     expect(result.missingMinutes).toBe(0)
   })
 
+  it('plans everything as late as possible before the due date', () => {
+    const result = planTask(request({ effortMinutes: 120, distribution: 'late' }))
+    expect(result.blocks).toEqual([{ date: '2026-12-04', start: '18:00', end: '20:00', minutes: 120 }])
+  })
+
+  it('fills earlier days from the back when the last day is full', () => {
+    const result = planTask(request({ effortMinutes: 600, distribution: 'late', deadline: at('2026-12-04', '12:00') }))
+    expect(result.blocks).toEqual([
+      { date: '2026-12-03', start: '14:00', end: '20:00', minutes: 360 },
+      { date: '2026-12-04', start: '08:00', end: '12:00', minutes: 240 },
+    ])
+    expect(result.missingMinutes).toBe(0)
+  })
+
+  it('keeps the rest period before later work when planning late', () => {
+    const result = planTask(
+      request({
+        effortMinutes: 60,
+        distribution: 'late',
+        deadline: at('2026-12-01', '20:00'),
+        work: [span('2026-12-02', '06:00', '10:00')],
+      }),
+    )
+    expect(result.blocks).toEqual([{ date: '2026-12-01', start: '18:00', end: '19:00', minutes: 60 }])
+  })
+
+  it('plans as early as possible when planning late without a due date', () => {
+    const result = planTask(request({ effortMinutes: 60, deadline: null, distribution: 'late' }))
+    expect(result.blocks[0]).toMatchObject({ date: '2026-11-30', start: '08:00' })
+  })
+
   it('spreads the effort evenly until the due date', () => {
     const result = planTask(request({ effortMinutes: 300 }))
     expect(result.blocks.map((block) => block.date)).toEqual([

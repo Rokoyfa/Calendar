@@ -751,7 +751,7 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 
 ### Aufgaben
 
-Eigenes Feature unter `features/tasks/` (Schalter `tasks`, auch lokal): `types` (Task, TaskInput, TaskRepository, TaskAccess, TaskSetup), `utils/task.ts` (Parsen, Sortieren, Gruppen), `repositories` (`LocalTaskRepository` mit `calendar.tasks.v1`, ohne Zuständige; `RemoteTaskRepository` für `/tasks*` mit `If-Match`), `hooks` (`useTaskList` lädt je Zeitraum oder alle offenen plus die letzten erledigten, `useTaskActions` mit Neuladen über `invalidate`, `useTaskEditor`, `useTaskLayout` für Liste oder Board in `calendar.taskLayout.v1`), `context/TasksContext.ts` (Aufgaben je Tag für die Ansichten, `useTaskRows`, Statuswechsel) und `components` (`TasksProvider` mit dem lazy geladenen `TaskModal`, `ChecklistField`, `DayTasks`/`TaskChip`, `TaskCheckbox`, `TaskDetails` für die Kennzeichen, `TasksView` mit Liste und Board).
+Eigenes Feature unter `features/tasks/` (Schalter `tasks`, auch lokal): `types` (Task, TaskInput, TaskRepository, TaskAccess, TaskSetup), `utils/task.ts` (Parsen, Sortieren, Gruppen), `repositories` (`LocalTaskRepository` mit `calendar.tasks.v1`, ohne Zuständige; `RemoteTaskRepository` für `/tasks*` mit `If-Match`), `hooks` (`useTaskList` lädt je Zeitraum oder alle offenen plus die letzten erledigten, `useTaskActions` mit Neuladen über `invalidate`, `useTaskEditor`,, `useTaskLayout` für Liste oder Board in `calendar.taskLayout.v1`), `context/TasksContext.ts` (Aufgaben je Tag für die Ansichten, `useTaskRows`, Statuswechsel) und `components` (`TasksProvider` mit dem lazy geladenen `TaskModal`, `ChecklistField`, `DayTasks`/`TaskChip`, `TaskCheckbox`, `TaskDetails` für die Kennzeichen, `TasksView` mit Liste und Board).
 
 - `CalendarPage` baut das `TaskSetup`: sichtbare Kalender, Zielkalender, Kalender mit `create_entry`, Rechte (`canEditEntry`/`canDeleteEntry` wie bei Terminen, Status und Checkliste zusätzlich für die zuständige Person: `canProgress`) und `loadAssignees` aus den Team-Mitgliedern. Der Link `?calendar=…&task=…` (Glocke, `taskAssigned`) öffnet die Aufgabe.
 - `Calendar` legt `TasksProvider` um die Ansichten. Tag und Woche zeigen Aufgaben als Zeilen der Ganztägig-Spur nach dem Feiertag (Woche höchstens drei, dann „+N weitere Aufgaben“, ein Klick öffnet den Tag), Monat zeigt neben Terminen eine Zeile, Agenda alle. Abhaken ist sofort sichtbar und wird bei Fehler zurückgenommen.
@@ -763,7 +763,7 @@ Eigenes Feature unter `features/tasks/` (Schalter `tasks`, auch lokal): `types` 
 - Live: `task.changed` vom WebSocket wird in `utils/eventChange.ts` wie eine Terminänderung ohne Termin-ID behandelt und lädt neu.
 - **Einplanen** (`TaskPlanModal`, lazy aus `TaskModal`): für gespeicherte, offene Aufgaben, wenn `TaskSetup.planning` gesetzt ist; Knopf als `outline`, damit er sich von „Abbrechen“ abhebt, ohne Aufwand gesperrt mit Hinweis als `title` (auch am umgebenden `.buttonHint`, weil gesperrte Knöpfe sonst keinen Tooltip zeigen) (`CalendarPage`: persönlicher Kalender als Ziel, alle eigenen, Team-, CalDAV- und geteilten Kalender plus Abos als belegt). Ungespeicherte Änderungen an Fälligkeit oder Aufwand sperren den Knopf. Hat die Aufgabe künftige Blöcke (`useHasFutureBlocks`, lädt nach jedem `invalidate` neu) oder wurde gerade angelegt, heißt er „Neu planen“. `useTaskPlanner` lädt Termine von gestern bis ein Jahr voraus, Feiertage (`listHolidays`) und die bisherigen Blöcke der Aufgabe (`taskId`), rechnet alles in Minuten der Anzeige-Zeitzone um und ruft `planTask` (`utils/taskPlanner.ts`, rein, mit Tests). Begonnene Blöcke zählen als erledigt, künftige werden beim Anlegen erst gelöscht, dann neu angelegt (privat, `taskId`, feste Kategorien der Aufgabe oder `work`).
 - **Vorschau im Kalender:** „Im Kalender ansehen“ gibt ein `TaskPlanPreview` (Blöcke, ersetzte IDs, `save`) über `TasksProvider.onPlanPreview` an `Calendar`. Der schließt die Dialoge, merkt sich Ansicht und Datum, springt in die Woche des ersten Blocks, blendet ersetzte Blöcke aus und mischt `toPlanPreviewEvents` (IDs `planPreview:<n>`, `isPlanPreviewEvent`) in die Termine. Die bekommen die Klasse `eventPlanned`, sind nicht klick- oder ziehbar, und solange die Vorschau läuft, wird nichts neu angelegt. Kopfzeile: `TaskPlanPreviewActions` (Abbrechen, Sichern) statt des Host-Zubehörs, darunter `TaskPlanPreviewBar` mit „Zurück zur Planung“ (öffnet Aufgabe und Planung wieder mit derselben Verteilung, `useTaskEditor.openEdit(task, resumePlan)`). Der Planungsdialog hat feste Höhe wie die Erstellen-Dialoge, die Blockliste scrollt.
-- `planTask` plant in 15-Minuten-Schritten Blöcke von mindestens 30 Minuten im Planungsfenster vor der Fälligkeit, ohne Überschneidung mit belegter Zeit. Für Arbeit (`work` oder `taskId` in eigenen Kalendern, plus die neuen Blöcke) prüft es Ruhezeit zu anderen Tagen, Tages- und Wochenhöchstzeit, längste Strecke ohne Pause und die nötigen Pausen (Lücken ab 15 Minuten). Ruhetage des Landes, Feiertage und ganztägige Termine mit fester Kategorie bleiben frei. `even` verteilt den Rest gleichmäßig auf die übrigen Tage und füllt danach von vorn auf, `early` füllt von vorn. Passt nicht alles, liefert es `missingMinutes`; `findEarliestCompletion` sucht den Tag, an dem alles passt (für „Fälligkeit verschieben“).
+- `planTask` plant in 15-Minuten-Schritten Blöcke von mindestens 30 Minuten im Planungsfenster vor der Fälligkeit, ohne Überschneidung mit belegter Zeit. Für Arbeit (`work` oder `taskId` in eigenen Kalendern, plus die neuen Blöcke) prüft es Ruhezeit zu anderen Tagen, Tages- und Wochenhöchstzeit, längste Strecke ohne Pause und die nötigen Pausen (Lücken ab 15 Minuten). Ruhetage des Landes, Feiertage und ganztägige Termine mit fester Kategorie bleiben frei. `even` verteilt den Rest gleichmäßig auf die übrigen Tage und füllt danach von vorn auf, `early` füllt von vorn, `late` füllt von der Fälligkeit rückwärts (Tage rückwärts, im Tag der späteste mögliche Block); ohne Fälligkeit plant `late` wie `early`. Passt nicht alles, liefert es `missingMinutes`; `findEarliestCompletion` sucht den Tag, an dem alles passt (für „Fälligkeit verschieben“).
 - Regeln je Land in `utils/workingTimeLaw.ts` (`WORKING_TIME_LAWS`, sonst `DEFAULT_WORKING_TIME_LAW` mit den deutschen Werten). Das Land kommt aus `planningCountry` oder der Feiertagsregion bzw. Sprache (`usePlanningCountry`). Einstellungen im Tab **Planung** (`TaskPlanningSettings`): Verteilung, Land mit Übersicht der Regeln, Planungsfenster (mindestens eine Stunde, `isPlanningWindow`).
 - Erledigt oder gelöscht: das Backend verschiebt künftige Blöcke in den Papierkorb und löst beim Löschen die übrigen. Lokal macht das `LocalTaskRepository` über `releaseTaskBlocks` des `LocalEventRepository`.
 
@@ -1018,7 +1018,7 @@ src/
    │  ├─ hooks/                useEvents, useCustomColors
    │  ├─ types/
    │  └─ utils/                Serien-Aktionen gegen das Repository, Auswahl der Bereiche, iCalendar-Import (icalExchange)
-   ├─ reminders/               Erinnerungen planen und anzeigen, solange das Widget offen ist (hooks: useReminders, components: ReminderNotices)
+   ├─ reminders/               Erinnerungen planen und anzeigen, solange das Widget offen ist (useReminders, ReminderNotices)
    ├─ categories/              Kategorien: CategoryField (Termin-Dialog), CategoryFilterModal, CategoriesSection (Einstellungen), useCategories
    ├─ chat/                    Chat zu Terminen: ChatPanel, ChatProvider (Ungelesen-Zähler), UnreadBadge, useChatMessages
    ├─ tasks/                   Aufgaben: Typen, Repositories (lokal und REST), TasksProvider, TaskModal, TasksView, DayTasks, Planer (taskPlanner, workingTimeLaw, TaskPlanModal, TaskPlanningSettings)
@@ -1075,7 +1075,29 @@ src/
 
 ## Bekannte Einschränkungen
 
+- Nur localStorage, keine Synchronisierung zwischen Geräten oder Browsern
 - Serien-Aktionen bestehen aus mehreren einzelnen Speichervorgängen. Bricht einer davon ab, kann eine Serie teilweise geändert sein.
+- Eigene Farben lassen sich noch nicht wieder entfernen
 - Datums- und Zeitfelder (`<input type="date">`, `type="time"`) zeigen das Format der Browser- bzw. Systemsprache, nicht die gewählte Sprache
 - Meldungen zu ungültigen Eingaben (`invalidInput`), die erst der Server erkennt, kommen auf Englisch
 - Beim ersten Anmelden werden Einstellungen und Farben aus dem Browser nicht ins Konto übernommen, das Konto startet mit den Standardwerten
+
+## Nächste Schritte
+
+- [x] Anmeldung, Registrierung und Abmeldung im Frontend (`features/authorization`)
+- [x] Passwort vergessen / zurücksetzen, E-Mail-Bestätigung (Frontend)
+- [x] Einstellungsseite mit Konto: Name, Passwort ändern, Konto löschen (Frontend)
+- [x] `.env`-Konfiguration für API-Anbindung, Dev-Proxy und Feature-Schalter
+- [ ] Backend mit der oben beschriebenen REST-API inkl. `/auth`
+- [ ] Server-Speicherung über `RemoteEventRepository` aktivieren
+- [x] `RemoteColorRepository`, damit eigene Farben im Remote-Modus mitwandern
+- [x] Team-Modus mit Einladung per E-Mail (`features/calendars`)
+- [x] Eigene Farben entfernen
+- [x] Schalter für Hell- und Dunkelmodus in der Oberfläche
+- [x] Handy startet in der Tagesansicht, Startansicht einstellbar
+- [x] Phase 1: einbettbare Bibliothek (`<Calendar>`, `<calendar-widget>`, Shadow DOM, Library-Build)
+- [x] Phase 2: Daten-Adapter `CalendarDataSource` und OpenAPI-Vertrag
+- [x] Phase 3 und 4 im Frontend: `tenant`, `tenantDataSource`, Anmeldung über den Gastgeber (`getUserToken`), Vertrag in `api/openapi.yaml`
+- [ ] Backend für Tenants (Tenant-Trennung, erlaubte Domains, Rate-Limits, Token-Prüfung)
+- [x] Einstellungen und eigene Farben im Remote-Modus übers Backend speichern
+- [x] Fehlercodes vom Backend, E-Mails in der Sprache des Empfängers

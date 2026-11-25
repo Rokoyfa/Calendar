@@ -30,7 +30,7 @@ describe('preferences', () => {
     })
     expect(
       parsePreferences({
-        planningDistribution: 'late',
+        planningDistribution: 'random',
         planningCountry: 'de',
         planningDayStart: '18:00',
         planningDayEnd: '18:30',

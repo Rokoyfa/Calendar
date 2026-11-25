@@ -56,7 +56,11 @@ export const settings: Messages['settings'] = {
     title: 'Pianificazione automatica',
     description: '«Pianifica» distribuisce l’impegno di un’attività nel tempo libero del tuo calendario personale.',
     distribution: 'Distribuzione',
-    distributions: { even: 'In modo uniforme fino alla scadenza', early: 'Il prima possibile' },
+    distributions: {
+      even: 'Uniforme',
+      early: 'Il prima possibile',
+      late: 'Il più tardi possibile',
+    },
     country: 'Regole sull’orario di lavoro',
     countryAuto: (name) => `Automatico: ${name}`,
     generalRules: 'Regole generali',

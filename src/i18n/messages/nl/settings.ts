@@ -55,7 +55,7 @@ export const settings: Messages['settings'] = {
     title: 'Automatisch inplannen',
     description: '‘Inplannen’ verdeelt de inspanning van een taak over vrije tijd in je persoonlijke agenda.',
     distribution: 'Verdeling',
-    distributions: { even: 'Gelijkmatig tot de vervaldatum', early: 'Zo vroeg mogelijk' },
+    distributions: { even: 'Gelijkmatig', early: 'Zo vroeg mogelijk', late: 'Zo laat mogelijk' },
     country: 'Arbeidstijdregels',
     countryAuto: (name) => `Automatisch: ${name}`,
     generalRules: 'Algemene regels',

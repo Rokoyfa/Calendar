@@ -56,7 +56,11 @@ export const settings: Messages['settings'] = {
     title: 'Planificación automática',
     description: '«Planificar» reparte el esfuerzo de una tarea en tu tiempo libre de tu calendario personal.',
     distribution: 'Reparto',
-    distributions: { even: 'De forma uniforme hasta el vencimiento', early: 'Lo antes posible' },
+    distributions: {
+      even: 'Uniforme',
+      early: 'Lo antes posible',
+      late: 'Lo más tarde posible',
+    },
     country: 'Normas de jornada laboral',
     countryAuto: (name) => `Automático: ${name}`,
     generalRules: 'Normas generales',

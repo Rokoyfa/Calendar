@@ -52,7 +52,7 @@ export const settings = {
     title: 'Automatic planning',
     description: '“Plan” spreads the effort of a task over free time in your personal calendar.',
     distribution: 'Distribution',
-    distributions: { even: 'Evenly until the due date', early: 'As early as possible' },
+    distributions: { even: 'Evenly', early: 'As early as possible', late: 'As late as possible' },
     country: 'Working time rules',
     countryAuto: (name: string) => `Automatic: ${name}`,
     generalRules: 'General rules',
