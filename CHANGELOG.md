@@ -12,7 +12,7 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ### Added
 
-- Tasks with an optional due date and time and an optional estimated effort (feature `tasks`): checkable on their day in the day, week, month and agenda views, a new Tasks view with overdue, today, upcoming, no due date and done and the effort per group, a quick add field, and a switch between event and task when creating. In team calendars a task can be assigned to a member, who gets the notification `taskAssigned` and may check it off. Kept in the browser in local mode. New endpoints `/tasks*`, live message `task.changed`, error codes `taskNotFound`, `taskChanged`, `tooManyTasks`, `invalidAssignee`, and `tasks` in the data export
+- Tasks (feature `tasks`) with status (open, in progress, waiting, done), priority, optional due date and time, estimated effort, checklist and categories, all set in one dialog: checkable on their day in the day, week, month and agenda views, and a new Tasks view as a list by status or as a board with one column per status, where tasks are moved by drag and drop; each status shows its count and effort. A **Create** button at the top right of the task view and a switch between event and task when creating. In team calendars a task can be assigned to a member, who gets the notification `taskAssigned` and may change its status and tick its checklist. Kept in the browser in local mode. New endpoints `/tasks*`, live message `task.changed`, error codes `taskNotFound`, `taskChanged`, `tooManyTasks`, `invalidAssignee`, and `tasks` in the data export
 - Keyboard shortcut **K** for the task view
 
 ### Changed

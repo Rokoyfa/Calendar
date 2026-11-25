@@ -67,4 +67,14 @@ export type { Preferences } from '../utils/preferences.ts'
 export type { PublicHoliday } from '../utils/holidays.ts'
 export type { Recurrence } from '../utils/recurrence.ts'
 export type { HexColor } from '../utils/color.ts'
-export type { Task, TaskInput, TaskPerson, TaskQuery, TaskRepository } from '../features/tasks/index.ts'
+export type {
+  Task,
+  TaskChecklistInput,
+  TaskChecklistItem,
+  TaskInput,
+  TaskPerson,
+  TaskPriority,
+  TaskQuery,
+  TaskRepository,
+  TaskStatus,
+} from '../features/tasks/index.ts'

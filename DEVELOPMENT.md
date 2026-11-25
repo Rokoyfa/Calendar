@@ -750,10 +750,12 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 
 ### Aufgaben
 
-Eigenes Feature unter `features/tasks/` (Schalter `tasks`, auch lokal): `types` (Task, TaskInput, TaskRepository, TaskAccess, TaskSetup), `utils/task.ts` (Parsen, Sortieren, Gruppen), `repositories` (`LocalTaskRepository` mit `calendar.tasks.v1`, ohne Zuständige; `RemoteTaskRepository` für `/tasks*` mit `If-Match`), `hooks` (`useTaskList` lädt je Zeitraum oder alle offenen plus die letzten erledigten, `useTaskActions` mit Neuladen über `invalidate`, `useTaskEditor`), `context/TasksContext.ts` (Aufgaben je Tag für die Ansichten, `useTaskRows`) und `components` (`TasksProvider` mit dem lazy geladenen `TaskModal`, `DayTasks`/`TaskChip`, `TaskCheckbox`, `TaskListView`).
+Eigenes Feature unter `features/tasks/` (Schalter `tasks`, auch lokal): `types` (Task, TaskInput, TaskRepository, TaskAccess, TaskSetup), `utils/task.ts` (Parsen, Sortieren, Gruppen), `repositories` (`LocalTaskRepository` mit `calendar.tasks.v1`, ohne Zuständige; `RemoteTaskRepository` für `/tasks*` mit `If-Match`), `hooks` (`useTaskList` lädt je Zeitraum oder alle offenen plus die letzten erledigten, `useTaskActions` mit Neuladen über `invalidate`, `useTaskEditor`,, `useTaskLayout` für Liste oder Board in `calendar.taskLayout.v1`), `context/TasksContext.ts` (Aufgaben je Tag für die Ansichten, `useTaskRows`, Statuswechsel) und `components` (`TasksProvider` mit dem lazy geladenen `TaskModal`, `ChecklistField`, `DayTasks`/`TaskChip`, `TaskCheckbox`, `TaskDetails` für die Kennzeichen, `TasksView` mit Liste und Board).
 
-- `CalendarPage` baut das `TaskSetup`: sichtbare Kalender, Zielkalender, Kalender mit `create_entry`, Rechte (`canEditEntry`/`canDeleteEntry` wie bei Terminen, abhaken zusätzlich für die zuständige Person) und `loadAssignees` aus den Team-Mitgliedern. Der Link `?calendar=…&task=…` (Glocke, `taskAssigned`) öffnet die Aufgabe.
+- `CalendarPage` baut das `TaskSetup`: sichtbare Kalender, Zielkalender, Kalender mit `create_entry`, Rechte (`canEditEntry`/`canDeleteEntry` wie bei Terminen, Status und Checkliste zusätzlich für die zuständige Person: `canProgress`) und `loadAssignees` aus den Team-Mitgliedern. Der Link `?calendar=…&task=…` (Glocke, `taskAssigned`) öffnet die Aufgabe.
 - `Calendar` legt `TasksProvider` um die Ansichten. Tag und Woche zeigen Aufgaben als Zeilen der Ganztägig-Spur nach dem Feiertag (Woche höchstens drei, dann „+N weitere Aufgaben“, ein Klick öffnet den Tag), Monat zeigt neben Terminen eine Zeile, Agenda alle. Abhaken ist sofort sichtbar und wird bei Fehler zurückgenommen.
+- Status `open`, `inProgress`, `waiting`, `done` und Priorität `low` bis `urgent`. Offene Aufgaben sortiert nach Priorität, dann Fälligkeit (`compareTasks`), am Tag nach Fälligkeit. Ansicht „Aufgaben“: Werkzeugleiste mit **Liste / Board** und **Erstellen** rechts; die Liste zeigt je Status einen Abschnitt untereinander (Erledigt eingeklappt), das Board je Status eine Spalte nebeneinander, Karten lassen sich per Drag-and-drop (HTML5, `application/x-calendar-task`) in eine andere Spalte ziehen. Ohne Maus geht der Statuswechsel im Dialog.
+- Dialog (`TaskModal`, normale Breite, Reiter wie beim Termin): **Allgemein** mit Titel, Status, Priorität, Fälligkeit, Aufwand; **Checkliste** (Anzahl im Reiter); **Details** mit Beschreibung, Kalender, Zuständig, Kategorien (`CategoryField` aus `features/categories`). Bei Fehlern springt der Dialog auf den ersten Reiter mit Fehler. Wer nur zuständig ist, sieht alles gesperrt bis auf Status und Checkliste, die sofort gespeichert werden.
 - Aufwand: optional in Stunden und Minuten (`estimateMinutes`, höchstens 99 Std. 59 Min.), in der Liste an jeder Aufgabe und als Summe je Gruppe (`format.effort`, `sumTaskEstimates`).
 - Beim Anlegen schaltet **Termin / Aufgabe** oben im Dialog um, Titel und Datum wandern mit.
 - Antwortet `GET /tasks` mit `404`, `405` oder `501`, verschwinden Ansicht, Umschalter und Einträge (`isUnsupportedEndpoint`). Im Nur-Lesen-Modus sind Aufgaben nur sichtbar.
@@ -796,6 +798,7 @@ Standardmäßig wird **nur der localStorage** des Browsers verwendet. Die Daten 
 | `calendar.events.v1` | Alle Termine als JSON-Array    |
 | `calendar.colors.v1` | Eigene Farben als Hex-Werte    |
 | `calendar.tasks.v1`  | Aufgaben als JSON-Array        |
+| `calendar.taskLayout.v1` | Aufgaben als Liste oder Board |
 
 ### Datenmodell eines Termins
 

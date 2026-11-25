@@ -273,7 +273,7 @@ export function CalendarPage() {
     return {
       canCreateIn: (calendarId) => check(calendarId, (calendar) => hasPermission(calendar, 'create_entry')),
       canEdit,
-      canComplete: (task) =>
+      canProgress: (task) =>
         canEdit(task) || (userId !== null && task.assignee?.id === userId && calendarById.has(task.calendarId)),
       canDelete: (task) => check(task.calendarId, (calendar) => canDeleteEntry(calendar, task.createdBy, userId)),
     }

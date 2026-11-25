@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { isUnsupportedEndpoint } from '../../../utils/apiError.ts'
 import { useStorage } from '../../storage/index.ts'
-import type { Task, TaskInput, TaskRepository } from '../types/task.ts'
+import type { Task, TaskInput, TaskRepository, TaskStatus } from '../types/task.ts'
 
 const NO_TASKS: Task[] = []
 
@@ -50,8 +50,10 @@ export function useTaskActions(repository: TaskRepository) {
           const updated = await repository.update(task.id, input, task.version)
           return calendarId === task.calendarId ? updated : repository.move(task.id, calendarId, updated.version)
         }),
-      setCompleted: (task: Task, completed: boolean) =>
-        withReload(() => repository.setCompleted(task.id, completed, task.version)),
+      setStatus: (task: Task, status: TaskStatus) =>
+        withReload(() => repository.setStatus(task.id, status, task.version)),
+      setChecklistItem: (task: Task, itemId: string, done: boolean) =>
+        withReload(() => repository.setChecklistItem(task.id, itemId, done, task.version)),
       remove: (task: Task) => withReload(() => repository.remove(task.id, task.version)),
     }
   }, [repository, invalidate])

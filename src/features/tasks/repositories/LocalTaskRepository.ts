@@ -1,19 +1,41 @@
 import { AppError } from '../../../utils/appError.ts'
 import { LocalStorageList } from '../../storage/utils/localStorageList.ts'
-import type { Task, TaskInput, TaskQuery, TaskRepository } from '../types/task.ts'
+import type { Task, TaskChecklistItem, TaskInput, TaskQuery, TaskRepository, TaskStatus } from '../types/task.ts'
 import { isTaskDone, MAX_DONE_TASKS, normalizeTaskInput, parseTask, sortTasks } from '../utils/task.ts'
 
 const DEFAULT_STORAGE_KEY = 'calendar.tasks.v1'
-
-const taskFields = (input: TaskInput) => {
-  const { title, notes, dueDate, dueTime, estimateMinutes } = normalizeTaskInput(input)
-  return { title, notes, dueDate, dueTime, estimateMinutes }
-}
 
 const createId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+
+const completion = (current: Task | null, status: TaskStatus) =>
+  status !== 'done' ? null : current && isTaskDone(current) ? current.completedAt : new Date().toISOString()
+
+const taskFields = (input: TaskInput, current: Task | null) => {
+  const { title, notes, dueDate, dueTime, estimateMinutes, status, priority, categoryIds, checklist } =
+    normalizeTaskInput(input)
+  const known = new Set(current?.checklist.map((item) => item.id) ?? [])
+  const used = new Set<string>()
+  const items: TaskChecklistItem[] = checklist.map(({ id, title: itemTitle, done }) => {
+    const kept = id && known.has(id) && !used.has(id) ? id : createId()
+    used.add(kept)
+    return { id: kept, title: itemTitle, done }
+  })
+  return {
+    title,
+    notes,
+    dueDate,
+    dueTime,
+    estimateMinutes,
+    status,
+    priority,
+    categoryIds,
+    checklist: items,
+    completedAt: completion(current, status),
+  }
+}
 
 export class LocalTaskRepository implements TaskRepository {
   readonly #tasks: LocalStorageList<Task>
@@ -22,7 +44,7 @@ export class LocalTaskRepository implements TaskRepository {
     this.#tasks = new LocalStorageList(storageKey, parseTask, 'saveTasksFailed')
   }
 
-  async list({ calendarIds, from, to, status }: TaskQuery) {
+  async list({ calendarIds, from, to, completed }: TaskQuery) {
     const hasRange = from !== undefined && to !== undefined
     const matches = this.#tasks
       .read()
@@ -31,19 +53,18 @@ export class LocalTaskRepository implements TaskRepository {
           calendarIds.includes(task.calendarId) &&
           (!hasRange || (task.dueDate !== null && task.dueDate >= from && task.dueDate <= to)),
       )
-    const open = status === 'done' ? [] : matches.filter((task) => !isTaskDone(task))
-    const done = status === 'open' ? [] : sortTasks(matches.filter(isTaskDone))
+    const open = completed === true ? [] : matches.filter((task) => !isTaskDone(task))
+    const done = completed === false ? [] : sortTasks(matches.filter(isTaskDone))
     return [...open, ...(hasRange ? done : done.slice(0, MAX_DONE_TASKS))]
   }
 
   async create(calendarId: string, input: TaskInput) {
     const timestamp = new Date().toISOString()
     const task: Task = {
-      ...taskFields(input),
+      ...taskFields(input, null),
       id: createId(),
       calendarId,
       assignee: null,
-      completedAt: null,
       completedBy: null,
       createdBy: null,
       createdAt: timestamp,
@@ -55,17 +76,28 @@ export class LocalTaskRepository implements TaskRepository {
   }
 
   async update(id: string, input: TaskInput, version?: number) {
-    return this.#change(id, version, (task) => ({ ...task, ...taskFields(input) }))
+    return this.#change(id, version, (task) => ({ ...task, ...taskFields(input, task) }))
   }
 
-  async setCompleted(id: string, completed: boolean, version?: number) {
+  async setStatus(id: string, status: TaskStatus, version?: number) {
     return this.#change(id, version, (task) =>
-      isTaskDone(task) === completed ? task : { ...task, completedAt: completed ? new Date().toISOString() : null },
+      task.status === status ? task : { ...task, status, completedAt: completion(task, status) },
     )
   }
 
+  async setChecklistItem(id: string, itemId: string, done: boolean, version?: number) {
+    return this.#change(id, version, (task) => {
+      const item = task.checklist.find((entry) => entry.id === itemId)
+      if (!item) throw new AppError('taskNotFound')
+      if (item.done === done) return task
+      return { ...task, checklist: task.checklist.map((entry) => (entry.id === itemId ? { ...entry, done } : entry)) }
+    })
+  }
+
   async move(id: string, calendarId: string, version?: number) {
-    return this.#change(id, version, (task) => ({ ...task, calendarId }))
+    return this.#change(id, version, (task) =>
+      task.calendarId === calendarId ? task : { ...task, calendarId, categoryIds: [] },
+    )
   }
 
   async remove(id: string, version?: number) {

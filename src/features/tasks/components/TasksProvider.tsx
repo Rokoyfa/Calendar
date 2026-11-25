@@ -1,16 +1,19 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
+import type { Category } from '../../../utils/category.ts'
 import type { DateRange } from '../../../utils/date.ts'
 import { useStorage } from '../../storage/index.ts'
 import { TasksContext, type TasksContextValue } from '../context/TasksContext.ts'
 import { useTaskActions, useTaskList } from '../hooks/useTasks.ts'
 import type { TaskEditor } from '../hooks/useTaskEditor.ts'
-import type { Task, TaskRepository, TaskSetup } from '../types/task.ts'
-import { EMPTY_TASK_INPUT, groupTasksByDate, isTaskDone } from '../utils/task.ts'
+import type { Task, TaskRepository, TaskSetup, TaskStatus } from '../types/task.ts'
+import { groupTasksByDate, isTaskDone } from '../utils/task.ts'
 
 const TaskModal = lazy(async () => ({ default: (await import('./TaskModal.tsx')).TaskModal }))
 
-type PendingToggle = { completedAt: string | null; version: number }
+type PendingStatus = { status: TaskStatus; version: number }
+
+const NO_CATEGORIES: readonly Category[] = []
 
 type TasksProviderProps = {
   setup: TaskSetup | undefined
@@ -18,6 +21,8 @@ type TasksProviderProps = {
   today: string
   includeList: boolean
   editor: TaskEditor
+  categories?: readonly Category[]
+  onCreateCategory?: (calendarId: string, name: string) => Promise<Category>
   onSwitchToEvent?: (draft: { title: string; date: string | null }) => void
   onUnsupported: () => void
   onError: (message: string | null) => void
@@ -39,6 +44,12 @@ type ActiveTasksProviderProps = Omit<TasksProviderProps, 'setup'> & {
   repository: TaskRepository
 }
 
+const withStatus = (task: Task, status: TaskStatus): Task => ({
+  ...task,
+  status,
+  completedAt: status === 'done' ? (task.completedAt ?? new Date().toISOString()) : null,
+})
+
 function ActiveTasksProvider({
   setup,
   repository,
@@ -46,6 +57,8 @@ function ActiveTasksProvider({
   today,
   includeList,
   editor,
+  categories = NO_CATEGORIES,
+  onCreateCategory,
   onSwitchToEvent,
   onUnsupported,
   onError,
@@ -57,7 +70,7 @@ function ActiveTasksProvider({
   const ranged = useTaskList(repository, { calendarIds, from: range.from, to: range.to })
   const full = useTaskList(repository, { calendarIds, enabled: includeList || Boolean(openTaskId) })
   const actions = useTaskActions(repository)
-  const [pending, setPending] = useState<ReadonlyMap<string, PendingToggle>>(new Map())
+  const [pending, setPending] = useState<ReadonlyMap<string, PendingStatus>>(new Map())
   const isUnsupported = ranged.isUnsupported || full.isUnsupported
 
   useEffect(() => {
@@ -69,42 +82,39 @@ function ActiveTasksProvider({
       pending.size === 0
         ? tasks
         : tasks.map((task) => {
-            const toggle = pending.get(task.id)
-            return toggle && toggle.version === task.version ? { ...task, completedAt: toggle.completedAt } : task
+            const change = pending.get(task.id)
+            return change && change.version === task.version ? withStatus(task, change.status) : task
           }),
     [pending],
   )
   const rangedTasks = useMemo(() => withPending(ranged.tasks), [withPending, ranged.tasks])
   const listTasks = useMemo(() => withPending(full.tasks), [withPending, full.tasks])
   const byDate = useMemo(() => groupTasksByDate(rangedTasks), [rangedTasks])
+  const categoryById = useMemo(() => new Map(categories.map((category) => [category.id, category])), [categories])
 
   const creatableIn = choices.filter((choice) => access.canCreateIn(choice.id))
   const defaultCalendarId = access.canCreateIn(targetCalendarId) ? targetCalendarId : (creatableIn[0]?.id ?? null)
 
-  const toggle = useCallback(
-    (task: Task) => {
-      if (!access.canComplete(task)) return
-      const completed = !isTaskDone(task)
+  const changeStatus = useCallback(
+    (task: Task, status: TaskStatus) => {
+      if (!access.canProgress(task) || task.status === status) return
       const forget = () =>
         setPending((current) => {
           const next = new Map(current)
           next.delete(task.id)
           return next
         })
-      setPending((current) =>
-        new Map(current).set(task.id, {
-          completedAt: completed ? new Date().toISOString() : null,
-          version: task.version,
-        }),
-      )
+      setPending((current) => new Map(current).set(task.id, { status, version: task.version }))
       onError(null)
-      actions.setCompleted(task, completed).catch((error: unknown) => {
+      actions.setStatus(task, status).catch((error: unknown) => {
         forget()
         onError(getErrorMessage(error, m))
       })
     },
     [access, actions, onError, m],
   )
+
+  const toggle = useCallback((task: Task) => changeStatus(task, isTaskDone(task) ? 'open' : 'done'), [changeStatus])
 
   const { openCreate, openEdit } = editor
   const value = useMemo<TasksContextValue>(
@@ -115,15 +125,14 @@ function ActiveTasksProvider({
       isListLoading: full.isLoading,
       today,
       calendarNames: calendarIds.length > 1 ? calendarNames : null,
+      categories: categoryById,
       canCreate: defaultCalendarId !== null,
-      canComplete: access.canComplete,
+      canProgress: access.canProgress,
       toggle,
+      changeStatus,
       open: openEdit,
       create: (draft = {}) => {
         if (defaultCalendarId !== null) openCreate(draft)
-      },
-      quickAdd: async (title: string) => {
-        if (defaultCalendarId !== null) await actions.create(defaultCalendarId, { ...EMPTY_TASK_INPUT, title })
       },
     }),
     [
@@ -135,12 +144,13 @@ function ActiveTasksProvider({
       today,
       calendarIds.length,
       calendarNames,
+      categoryById,
       defaultCalendarId,
-      access.canComplete,
+      access.canProgress,
       toggle,
+      changeStatus,
       openEdit,
       openCreate,
-      actions,
     ],
   )
 
@@ -170,17 +180,17 @@ function ActiveTasksProvider({
             }
             choices={creatableIn}
             calendarNames={calendarNames}
+            categories={categories}
             access={access}
             loadAssignees={loadAssignees}
+            onCreateCategory={onCreateCategory}
             onSave={async (input, calendarId) => {
               if (shownTask) await actions.save(shownTask, input, calendarId)
               else await actions.create(calendarId, input)
               editor.close()
             }}
-            onToggle={async (task) => {
-              await actions.setCompleted(task, !isTaskDone(task))
-              editor.close()
-            }}
+            onStatus={actions.setStatus}
+            onChecklistItem={actions.setChecklistItem}
             onDelete={async (task) => {
               await actions.remove(task)
               editor.close()

@@ -19,7 +19,7 @@ export function TaskCheckbox({ task }: { task: Task }) {
       aria-checked={isDone}
       aria-label={m.tasks.toggle(task.title)}
       title={isDone ? m.tasks.markOpen : m.tasks.markDone}
-      disabled={!context.canComplete(task)}
+      disabled={!context.canProgress(task)}
       onClick={withoutPropagation(() => context.toggle(task))}
     >
       {isDone && <CheckIcon size={12} />}

@@ -1,5 +1,6 @@
 import { createContext, use } from 'react'
-import type { Task, TaskDraft } from '../types/task.ts'
+import type { Category } from '../../../utils/category.ts'
+import type { Task, TaskDraft, TaskStatus } from '../types/task.ts'
 
 export type TasksContextValue = {
   byDate: ReadonlyMap<string, readonly Task[]>
@@ -8,12 +9,13 @@ export type TasksContextValue = {
   isListLoading: boolean
   today: string
   calendarNames: ReadonlyMap<string, string> | null
+  categories: ReadonlyMap<string, Category>
   canCreate: boolean
-  canComplete: (task: Task) => boolean
+  canProgress: (task: Task) => boolean
   toggle: (task: Task) => void
+  changeStatus: (task: Task, status: TaskStatus) => void
   open: (task: Task) => void
   create: (draft?: TaskDraft) => void
-  quickAdd: (title: string) => Promise<void>
 }
 
 const NO_TASKS: readonly Task[] = []

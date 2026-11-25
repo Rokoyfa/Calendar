@@ -2700,7 +2700,8 @@ paths:
       description: |
         Tasks of the given calendars. With `from` and `to` (at most 400 days apart) only tasks due in that range, open
         and done. Without a range all open tasks, including those without a due date, and the 200 most recently
-        completed ones. `status` narrows the result to open or done tasks. Open tasks come first.
+        completed ones. `completed` narrows the result to tasks that are done (`true`) or not done (`false`). Tasks
+        that are not done come first.
       parameters:
         - name: calendarId
           in: query
@@ -2711,7 +2712,7 @@ paths:
           explode: true
         - { name: from, in: query, schema: { $ref: '#/components/schemas/ISODate' } }
         - { name: to, in: query, schema: { $ref: '#/components/schemas/ISODate' } }
-        - { name: status, in: query, schema: { type: string, enum: [open, done] } }
+        - { name: completed, in: query, schema: { type: boolean } }
       responses:
         '401': { $ref: '#/components/responses/Problem' }
         '200':
@@ -2725,7 +2726,9 @@ paths:
       tags: [Tasks]
       x-feature: tasks
       summary: Create a task
-      description: Needs `create_entry`. Notifies the assignee with `taskAssigned` unless they created it themselves.
+      description: |
+        Needs `create_entry`. Notifies the assignee with `taskAssigned` unless they created it themselves. The
+        categories must belong to the calendar (`400` otherwise).
       requestBody:
         required: true
         content:
@@ -2756,8 +2759,9 @@ paths:
       x-feature: tasks
       summary: Change a task
       description: |
-        Replaces title, notes, due date, due time and assignee. Needs `update_own_entry` (own tasks) or
-        `update_any_entry`. A new assignee gets `taskAssigned`.
+        Replaces all fields of `TaskInput`. Needs `update_own_entry` (own tasks) or `update_any_entry`. A new assignee
+        gets `taskAssigned`. Checklist items keep their `id` when it is sent back; items without a known `id` get a new
+        one. Setting `status` to `done` sets `completedAt` and `completedBy`, any other status clears them.
       parameters:
         - $ref: '#/components/parameters/IfMatch'
       requestBody:
@@ -2789,18 +2793,27 @@ paths:
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
         '412': { $ref: '#/components/responses/Problem' }
-  /tasks/{id}/complete:
+  /tasks/{id}/status:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
     post:
       tags: [Tasks]
       x-feature: tasks
-      summary: Mark a task as done
+      summary: Change the status of a task
       description: |
-        Allowed for the assignee and for everyone who may edit the task. Sets `completedAt` and `completedBy`; a task
-        that is already done stays unchanged.
+        Allowed for the assignee and for everyone who may edit the task. `done` sets `completedAt` and `completedBy`,
+        any other status clears them. The same status again leaves the task unchanged.
       parameters:
         - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: '#/components/schemas/TaskStatus' }
       responses:
         '401': { $ref: '#/components/responses/Problem' }
         '200':
@@ -2808,19 +2821,30 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Task' }
+        '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
         '412': { $ref: '#/components/responses/Problem' }
-  /tasks/{id}/reopen:
+  /tasks/{id}/checklist/{itemId}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: itemId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Tasks]
       x-feature: tasks
-      summary: Mark a task as open again
-      description: Same rules as completing.
+      summary: Tick or untick a checklist item
+      description: Same rules as changing the status. Unknown items answer `404 taskNotFound`.
       parameters:
         - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [done]
+              properties:
+                done: { type: boolean }
       responses:
         '401': { $ref: '#/components/responses/Problem' }
         '200':
@@ -2828,6 +2852,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Task' }
+        '400': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
         '412': { $ref: '#/components/responses/Problem' }
@@ -2840,7 +2865,8 @@ paths:
       summary: Move a task to another calendar
       description: |
         Needs `delete_own_entry`/`delete_any_entry` in the source and `create_entry` in the target calendar. The
-        assignee is kept only when they are a member of the target calendar.
+        assignee is kept only when they are a member of the target calendar. Categories belong to a calendar and are
+        removed.
       parameters:
         - $ref: '#/components/parameters/IfMatch'
       requestBody:
@@ -3370,13 +3396,42 @@ components:
           oneOf: [{ type: integer, minimum: 1, maximum: 5999 }, { type: 'null' }]
           default: null
           description: Optional estimated effort in minutes (at most 99 hours 59 minutes).
+        status: { $ref: '#/components/schemas/TaskStatus' }
+        priority: { $ref: '#/components/schemas/TaskPriority' }
+        categoryIds:
+          type: array
+          maxItems: 5
+          uniqueItems: true
+          default: []
+          items: { type: string }
+          description: Categories of the task's calendar
+        checklist:
+          type: array
+          maxItems: 50
+          default: []
+          items:
+            type: object
+            required: [title]
+            properties:
+              id: { type: string, description: Keep it to keep the item; leave it out for new items }
+              title: { type: string, minLength: 1, maxLength: 200 }
+              done: { type: boolean, default: false }
         assigneeId:
           oneOf: [{ type: string }, { type: 'null' }]
           default: null
           description: User id of a member of the calendar (`400 invalidAssignee` otherwise).
+    TaskStatus:
+      type: string
+      enum: [open, inProgress, waiting, done]
+      default: open
+      description: '`waiting` means blocked by someone or something else.'
+    TaskPriority:
+      type: string
+      enum: [low, normal, high, urgent]
+      default: normal
     Task:
       type: object
-      required: [id, calendarId, title, notes, dueDate, dueTime, estimateMinutes, assignee, completedAt, completedBy, createdBy, createdAt, updatedAt, version]
+      required: [id, calendarId, title, notes, dueDate, dueTime, estimateMinutes, status, priority, categoryIds, checklist, assignee, completedAt, completedBy, createdBy, createdAt, updatedAt, version]
       properties:
         id: { type: string }
         calendarId: { type: string }
@@ -3385,6 +3440,18 @@ components:
         dueDate: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
         dueTime: { oneOf: [{ $ref: '#/components/schemas/Time' }, { type: 'null' }] }
         estimateMinutes: { oneOf: [{ type: integer, minimum: 1, maximum: 5999 }, { type: 'null' }] }
+        status: { $ref: '#/components/schemas/TaskStatus' }
+        priority: { $ref: '#/components/schemas/TaskPriority' }
+        categoryIds: { type: array, items: { type: string } }
+        checklist:
+          type: array
+          items:
+            type: object
+            required: [id, title, done]
+            properties:
+              id: { type: string }
+              title: { type: string }
+              done: { type: boolean }
         assignee:
           oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
         completedAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }

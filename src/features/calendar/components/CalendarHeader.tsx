@@ -25,7 +25,6 @@ type CalendarHeaderProps = {
   onViewChange: (view: CalendarView) => void
   navigation?: { onPrevious: () => void; onNext: () => void; onToday: () => void }
   onCreate?: () => void
-  createLabel?: string
   onSearch?: () => void
   onFilter?: () => void
   onPrint?: () => void
@@ -43,7 +42,6 @@ export function CalendarHeader({
   onViewChange,
   navigation,
   onCreate,
-  createLabel,
   onSearch,
   onFilter,
   onPrint,
@@ -57,7 +55,7 @@ export function CalendarHeader({
   const withShortcut = (label: string, key: string) => (features.shortcuts ? addShortcut(label, key) : label)
   const labels = m.views[view]
   const steps = navigation && 'previous' in labels ? { ...navigation, ...labels } : null
-  const newLabel = createLabel ?? m.calendar.newEvent
+  const newLabel = m.calendar.newEvent
   const items = compact<CalendarMenuItem>([
     onSearch && {
       key: 'search',

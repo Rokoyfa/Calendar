@@ -22,6 +22,8 @@ export function TaskChip({ task, style }: TaskChipProps) {
       className={classNames(
         'taskChip',
         isTaskDone(task) && 'isDone',
+        `taskChip--${task.status}`,
+        `taskChip--${task.priority}`,
         isTaskOverdue(task, context.today) && 'isOverdue',
       )}
       style={style}

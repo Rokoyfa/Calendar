@@ -43,12 +43,12 @@ describe('LocalTaskRepository', () => {
   it('completes, reopens and counts versions', async () => {
     const repository = new LocalTaskRepository('test.tasks')
     const created = await repository.create('personal', input())
-    const done = await repository.setCompleted(created.id, true, 1)
+    const done = await repository.setStatus(created.id, 'done', 1)
     expect(done.version).toBe(2)
     expect(done.completedAt).not.toBeNull()
-    expect(await repository.list({ calendarIds: ['personal'], status: 'open' })).toHaveLength(0)
-    const reopened = await repository.setCompleted(created.id, false, 2)
-    expect(reopened).toMatchObject({ version: 3, completedAt: null })
+    expect(await repository.list({ calendarIds: ['personal'], completed: false })).toHaveLength(0)
+    const reopened = await repository.setStatus(created.id, 'inProgress', 2)
+    expect(reopened).toMatchObject({ version: 3, status: 'inProgress', completedAt: null })
   })
 
   it('rejects stale versions and unknown tasks', async () => {
@@ -57,6 +57,33 @@ describe('LocalTaskRepository', () => {
     await repository.update(created.id, input({ title: 'Neu' }), 1)
     expect(await codeOf(repository.update(created.id, input({ title: 'Alt' }), 1))).toBe('taskChanged')
     expect(await codeOf(repository.remove('missing'))).toBe('taskNotFound')
+  })
+
+  it('keeps checklist ids, ticks items and drops categories when moving', async () => {
+    const repository = new LocalTaskRepository('test.tasks')
+    const created = await repository.create(
+      'personal',
+      input({ categoryIds: ['k1'], checklist: [{ title: 'Eins', done: false }] }),
+    )
+    const [item] = created.checklist
+    const ticked = await repository.setChecklistItem(created.id, item.id, true, 1)
+    expect(ticked.checklist).toEqual([{ id: item.id, title: 'Eins', done: true }])
+    const edited = await repository.update(
+      created.id,
+      input({
+        categoryIds: ['k1'],
+        checklist: [
+          { id: item.id, title: 'Eins!', done: true },
+          { title: 'Zwei', done: false },
+        ],
+      }),
+      2,
+    )
+    expect(edited.checklist[0].id).toBe(item.id)
+    expect(edited.checklist).toHaveLength(2)
+    expect(await codeOf(repository.setChecklistItem(created.id, 'missing', true))).toBe('taskNotFound')
+    const moved = await repository.move(created.id, 'second', edited.version)
+    expect(moved.categoryIds).toEqual([])
   })
 
   it('moves and deletes', async () => {

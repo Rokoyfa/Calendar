@@ -49,7 +49,7 @@ import { isExternalEvent } from '../../../utils/externalCalendar.ts'
 import { isCaldavCalendarId, isCaldavEvent } from '../../../utils/caldav.ts'
 import { isPeerCalendarId, isPeerEvent, shareIdOf } from '../../../utils/peerCalendar.ts'
 import { usePeerCalendars } from '../../peers/index.ts'
-import { TaskListView, TasksProvider, useTaskEditor, type TaskAccess, type TaskSetup } from '../../tasks/index.ts'
+import { TasksProvider, TasksView, useTaskEditor, type TaskAccess, type TaskSetup } from '../../tasks/index.ts'
 import { CurrentUserEmailContext } from '../context/CurrentUserContext.ts'
 import { DraggingEventContext } from '../context/DragContext.ts'
 import { useAttendeeCandidates, type AttendeeCandidateLoader } from '../hooks/useAttendeeCandidates.ts'
@@ -90,7 +90,7 @@ const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = 
   month: MonthView,
   year: YearView,
   agenda: AgendaView,
-  tasks: TaskListView,
+  tasks: TasksView,
 }
 
 const EventModal = lazy(async () => ({ default: (await import('../../events/components/EventModal.tsx')).EventModal }))
@@ -134,7 +134,7 @@ const ALWAYS = () => true
 const NEVER = () => false
 const NO_EXTERNAL_EVENTS: readonly CalendarEvent[] = []
 const NO_CHOICES: readonly CalendarChoice[] = []
-const READ_ONLY_TASKS: TaskAccess = { canCreateIn: NEVER, canEdit: NEVER, canComplete: NEVER, canDelete: NEVER }
+const READ_ONLY_TASKS: TaskAccess = { canCreateIn: NEVER, canEdit: NEVER, canProgress: NEVER, canDelete: NEVER }
 
 export function Calendar({
   calendarIds,
@@ -590,8 +590,7 @@ export function Calendar({
                 onPrint={features.print && !isTaskView ? print : undefined}
                 onFilter={categories.length > 0 && !isTaskView ? () => setIsFilterOpen(true) : undefined}
                 isFiltered={activeFilter !== null}
-                onCreate={canCreateHere ? createNow : undefined}
-                createLabel={isTaskView ? i18n.m.tasks.newTask : undefined}
+                onCreate={canCreate && !isTaskView ? createNow : undefined}
                 context={headerContext}
                 accessory={headerAccessory}
                 menuItems={menuItems}
@@ -604,6 +603,8 @@ export function Calendar({
                 setup={taskSetup}
                 range={range}
                 today={today}
+                categories={hasCategories ? categories : undefined}
+                onCreateCategory={hasCategories && !readOnly ? createCategory : undefined}
                 includeList={isTaskView}
                 editor={taskEditor}
                 onSwitchToEvent={canCreate ? switchToEvent : undefined}

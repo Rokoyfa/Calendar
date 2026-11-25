@@ -598,10 +598,11 @@ type DataRepositories = {
 }
 
 interface TaskRepository {
-  list(query: { calendarIds: readonly string[]; from?: string; to?: string; status?: 'open' | 'done' }): Promise<Task[]>
+  list(query: { calendarIds: readonly string[]; from?: string; to?: string; completed?: boolean }): Promise<Task[]>
   create(calendarId: string, input: TaskInput): Promise<Task>
   update(id: string, input: TaskInput, version?: number): Promise<Task>
-  setCompleted(id: string, completed: boolean, version?: number): Promise<Task>
+  setStatus(id: string, status: TaskStatus, version?: number): Promise<Task>
+  setChecklistItem(id: string, itemId: string, done: boolean, version?: number): Promise<Task>
   move(id: string, calendarId: string, version?: number): Promise<Task>
   remove(id: string, version?: number): Promise<void>
 }
@@ -612,12 +613,19 @@ type TaskInput = {
   dueDate: string | null
   dueTime: string | null
   estimateMinutes: number | null
+  status: TaskStatus
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  categoryIds: string[]
+  checklist: { id?: string; title: string; done: boolean }[]
   assigneeId: string | null
 }
 
-type Task = Omit<TaskInput, 'assigneeId'> & {
+type TaskStatus = 'open' | 'inProgress' | 'waiting' | 'done'
+
+type Task = Omit<TaskInput, 'assigneeId' | 'checklist'> & {
   id: string
   calendarId: string
+  checklist: { id: string; title: string; done: boolean }[]
   assignee: { id: string; name: string } | null
   completedAt: string | null
   completedBy: { id: string; name: string } | null
@@ -1200,10 +1208,11 @@ Turn the feature off with `features: { personalSharing: false }`. If `GET /peer-
 
 Tasks are things to get done, with or without a deadline. They belong to a calendar like events do, so everyone who sees a team calendar sees its tasks.
 
-- **Where they appear.** A task with a due date shows up as a checkable entry on its day: above the all-day events in the day and week views (up to three per day in the week, then "+n more tasks"), in the month cell and in the agenda. The **Tasks** view lists all tasks of the shown calendars, grouped into overdue, today, upcoming and without due date, each group with the sum of its estimated effort; done tasks can be shown below. A text field at the top adds a task without a due date to the current calendar.
-- **Creating.** With the + button in the task view, with **N** there, or by switching **Event / Task** at the top of the dialog for a new event. The title and the date carry over in both directions.
-- **Fields.** Title (up to 200 characters), notes (up to 2000), due date, due time (only with a due date; it has no time zone and means the same clock time everywhere), estimated effort in hours and minutes (optional, stored as `estimateMinutes`, 1 to 5999), calendar and, in team calendars, the person responsible. Only team members can be chosen.
-- **Who may do what.** Creating needs `create_entry` in the calendar. Changing follows the event rules (`update_own_entry` / `update_any_entry`), moving to another calendar and deleting need `delete_own_entry` / `delete_any_entry`. The person responsible may also check a task off and open it again, even without edit rights. Deleting is final; tasks do not go to the trash.
+- **Where they appear.** A task with a due date shows up as a checkable entry on its day: above the all-day events in the day and week views (up to three per day in the week, then "+n more tasks"), in the month cell and in the agenda. The **Tasks** view shows all tasks of the shown calendars split by status (open, in progress, waiting, done), either as a **list** with one section per status below each other, or as a **board** with one column per status side by side. Every section and column shows how many tasks it holds and the sum of their estimated effort. On the board a task is moved to another status by dragging it into the column. Done tasks are folded away in the list. The chosen layout is kept in the browser (`calendar.taskLayout.v1`).
+- **Creating.** With the **Create** button at the top right of the task view, with **N** there, or by switching **Event / Task** at the top of the dialog for a new event. The title and the date carry over in both directions. All fields are filled in in that dialog.
+- **Fields.** Title (up to 200 characters), description (`notes`, up to 2000), status (`open`, `inProgress`, `waiting`, `done`), priority (`low`, `normal`, `high`, `urgent`), due date, due time (only with a due date; it has no time zone and means the same clock time everywhere), estimated effort in hours and minutes (optional, stored as `estimateMinutes`, 1 to 5999), checklist (up to 50 items with title and done), categories of the calendar (up to 5, the same as for events), calendar and, in team calendars, the person responsible. Only team members can be chosen. Open tasks are sorted by priority, then by due date.
+- **Done.** The status `done` sets `completedAt` and `completedBy`; any other status clears them. Ticking the box of a task on its day sets `done`, unticking sets `open`.
+- **Who may do what.** Creating needs `create_entry` in the calendar. Changing follows the event rules (`update_own_entry` / `update_any_entry`), moving to another calendar and deleting need `delete_own_entry` / `delete_any_entry`. The person responsible may also change the status and tick checklist items, even without edit rights; everything else stays read-only for them. Moving to another calendar removes the categories, as they belong to the old calendar. Deleting is final; tasks do not go to the trash.
 - **Notifications.** Assigning someone sends them the notification `taskAssigned` (with `task: { id, calendarId, title, dueDate }`). Opening it shows the task.
 - **Not included.** Tasks are not part of public links, booking pages, the sharing of the personal calendar, iCalendar feeds and CalDAV.
 - **Codes:** `taskNotFound`, `taskChanged`, `tooManyTasks`, `invalidAssignee`.
@@ -1212,10 +1221,11 @@ Tasks are things to get done, with or without a deadline. They belong to a calen
 What your backend has to enforce, because the widget only shows what it receives:
 
 - **Access.** Only members of the calendar's team (or the owner of a personal calendar) can list or open its tasks. Unknown tasks and tasks of calendars the user cannot see answer `taskNotFound`, so nobody can probe ids.
-- **Permissions.** Check the rights above on every request, also for `POST /tasks/:id/complete` and `/reopen`: besides the edit rights only the current assignee may use them. Never trust `createdBy`, `completedBy` or `assignee` names from the request; set them from the signed-in user and your member list.
+- **Permissions.** Check the rights above on every request, also for `POST /tasks/:id/status` and `POST /tasks/:id/checklist/:itemId`: besides the edit rights only the current assignee may use them. Never trust `createdBy`, `completedBy` or `assignee` names from the request; set them from the signed-in user and your member list.
 - **Assignees.** `assigneeId` must belong to a current member of the calendar's team, otherwise answer `invalidAssignee`. Personal calendars have no assignee. When someone leaves the team, remove them as assignee of its tasks; when a task moves to a calendar where the assignee is not a member, drop the assignee.
+- **Fields.** Reject unknown `status` and `priority` values, more than 50 checklist items, empty item titles and categories of other calendars (`400`). Keep the `id` of checklist items that come back with a known `id`, give new items a new one. Remove a deleted category from all tasks.
 - **Versions.** Every change increases `version`. With `If-Match` and an older version answer `taskChanged` (`412`).
-- **Limits.** At most 5000 tasks per calendar (`tooManyTasks`), at most 400 days per query. Without `from` and `to`, `GET /tasks` returns all open tasks and the 200 most recently done.
+- **Limits.** At most 5000 tasks per calendar (`tooManyTasks`), at most 400 days per query. Without `from` and `to`, `GET /tasks` returns all tasks that are not done and the 200 most recently done; `completed=true|false` narrows that.
 - **Clean-up.** Deleting a calendar deletes its tasks; deleting an account removes it as assignee, creator and completer. Tasks are part of the data export.
 - **Live updates.** Send `{ "type": "task.changed", "calendarId", "taskId", "version", "changedBy" }` to everyone who sees the calendar; the widget then reloads.
 

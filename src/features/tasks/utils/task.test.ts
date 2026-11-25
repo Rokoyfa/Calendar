@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { Task } from '../types/task.ts'
 import {
-  groupTasks,
+  checklistProgress,
   groupTasksByDate,
+  groupTasksByStatus,
+  isTaskOverdue,
   normalizeTaskInput,
   parseTask,
   sortTasks,
   sumTaskEstimates,
-  taskGroupOf,
 } from './task.ts'
 
 const task = (fields: Partial<Task>): Task => ({
@@ -18,6 +19,10 @@ const task = (fields: Partial<Task>): Task => ({
   dueDate: null,
   dueTime: null,
   estimateMinutes: null,
+  status: 'open',
+  priority: 'normal',
+  categoryIds: [],
+  checklist: [],
   assignee: null,
   completedAt: null,
   completedBy: null,
@@ -59,42 +64,99 @@ describe('task utils', () => {
         dueDate: null,
         dueTime: '10:00',
         estimateMinutes: 45,
+        status: 'waiting',
+        priority: 'high',
+        categoryIds: ['k1', 'k1'],
+        checklist: [
+          { title: ' Erst ', done: false },
+          { title: '  ', done: true },
+        ],
         assigneeId: null,
       }),
-    ).toEqual({ title: 'A', notes: 'n', dueDate: null, dueTime: null, estimateMinutes: 45, assigneeId: null })
+    ).toEqual({
+      title: 'A',
+      notes: 'n',
+      dueDate: null,
+      dueTime: null,
+      estimateMinutes: 45,
+      status: 'waiting',
+      priority: 'high',
+      categoryIds: ['k1'],
+      checklist: [{ title: 'Erst', done: false }],
+      assigneeId: null,
+    })
   })
 
-  it('sorts open tasks by due date and time, then done ones by completion', () => {
+  it('reads status, priority and checklist and falls back for older data', () => {
+    expect(
+      parseTask({
+        id: 't',
+        calendarId: 'c1',
+        title: 'A',
+        status: 'inProgress',
+        priority: 'urgent',
+        categoryIds: ['k1', 3],
+        checklist: [{ id: 'i1', title: 'Eins', done: true }, { title: 'ohne id' }],
+      }),
+    ).toMatchObject({
+      status: 'inProgress',
+      priority: 'urgent',
+      categoryIds: ['k1'],
+      checklist: [{ id: 'i1', title: 'Eins', done: true }],
+    })
+    expect(parseTask({ id: 't', calendarId: 'c1', title: 'A', completedAt: '2026-11-01T00:00:00Z' })).toMatchObject({
+      status: 'done',
+      priority: 'normal',
+    })
+    expect(parseTask({ id: 't', calendarId: 'c1', title: 'A', status: 'erledigt' })?.status).toBe('open')
+  })
+
+  it('sorts open tasks by priority, due date and time, then done ones by completion', () => {
     const sorted = sortTasks([
-      task({ id: 'done-old', completedAt: '2026-11-01T00:00:00.000Z' }),
+      task({ id: 'urgent', priority: 'urgent' }),
+      task({ id: 'done-old', status: 'done', completedAt: '2026-11-01T00:00:00.000Z' }),
       task({ id: 'someday' }),
       task({ id: 'late', dueDate: '2026-11-25', dueTime: '18:00' }),
       task({ id: 'early', dueDate: '2026-11-25', dueTime: '08:00' }),
       task({ id: 'date-only', dueDate: '2026-11-25' }),
-      task({ id: 'done-new', completedAt: '2026-11-20T00:00:00.000Z' }),
+      task({ id: 'done-new', status: 'done', completedAt: '2026-11-20T00:00:00.000Z' }),
     ])
-    expect(sorted.map(({ id }) => id)).toEqual(['early', 'late', 'date-only', 'someday', 'done-new', 'done-old'])
+    expect(sorted.map(({ id }) => id)).toEqual([
+      'urgent',
+      'early',
+      'late',
+      'date-only',
+      'someday',
+      'done-new',
+      'done-old',
+    ])
   })
 
-  it('groups tasks for the list', () => {
-    const groups = groupTasks(
-      [
-        task({ id: 'a', dueDate: '2026-11-20' }),
-        task({ id: 'b', dueDate: TODAY }),
-        task({ id: 'c', dueDate: '2026-12-01' }),
-        task({ id: 'd' }),
-        task({ id: 'e', dueDate: '2026-11-20', completedAt: '2026-11-21T00:00:00.000Z' }),
-      ],
-      TODAY,
-    )
-    expect([...groups].map(([group, tasks]) => [group, tasks.map(({ id }) => id)])).toEqual([
-      ['overdue', ['a']],
-      ['today', ['b']],
-      ['upcoming', ['c']],
-      ['someday', ['d']],
-      ['done', ['e']],
+  it('groups tasks by status and finds overdue ones', () => {
+    const groups = groupTasksByStatus([
+      task({ id: 'a', dueDate: '2026-11-20' }),
+      task({ id: 'b', status: 'inProgress' }),
+      task({ id: 'c', status: 'waiting' }),
+      task({ id: 'd', status: 'done', dueDate: '2026-11-20', completedAt: '2026-11-21T00:00:00.000Z' }),
     ])
-    expect(taskGroupOf(task({ dueDate: '2026-11-23', completedAt: 'x' }), TODAY)).toBe('done')
+    expect([...groups].map(([status, tasks]) => [status, tasks.map(({ id }) => id)])).toEqual([
+      ['open', ['a']],
+      ['inProgress', ['b']],
+      ['waiting', ['c']],
+      ['done', ['d']],
+    ])
+    expect(isTaskOverdue(task({ dueDate: '2026-11-20' }), TODAY)).toBe(true)
+    expect(isTaskOverdue(task({ dueDate: '2026-11-20', status: 'done' }), TODAY)).toBe(false)
+    expect(
+      checklistProgress(
+        task({
+          checklist: [
+            { id: '1', title: 'A', done: true },
+            { id: '2', title: 'B', done: false },
+          ],
+        }),
+      ),
+    ).toEqual({ done: 1, total: 2 })
   })
 
   it('groups tasks by due date and skips those without one', () => {

@@ -5,6 +5,11 @@ type ListedTask = {
   title: string
   dueDate: string | null
   estimateMinutes: number | null
+  status: string
+  priority: string
+  notes: string
+  categoryIds: string[]
+  checklist: { id: string; title: string; done: boolean }[]
   version: number
   completedAt: string | null
   assignee: { id: string; name: string } | null
@@ -15,38 +20,74 @@ const tasksOf = async (user: TestUser, calendarId: string) =>
 
 const personalCalendarId = async (user: TestUser) => (await api<{ id: string }[]>(user, 'GET', '/calendars')).data[0].id
 
-test('adds a task in the list, gives it a due date and checks it off in the week', async ({ browser }) => {
+test('creates a task with all fields in the dialog and moves it on the board', async ({ browser }) => {
   const user = await createUser('Tina')
   const calendarId = await personalCalendarId(user)
+  await api(user, 'POST', `/calendars/${calendarId}/categories`, { name: 'Finanzen' })
   const page = await openAs(browser, user)
   await showView(page, 'Aufgaben')
   await expect(page.locator('.headerTitle')).toHaveText('Aufgaben')
   await expect(page.getByRole('button', { name: 'Heute', exact: true })).toHaveCount(0)
-  await expect(page.getByText('Keine offenen Aufgaben.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Neuer Termin', exact: true })).toHaveCount(0)
+  await expect(page.getByText('Noch keine Aufgaben. Erstell die erste.')).toBeVisible()
 
-  await page.getByLabel('Aufgabe hinzufügen').fill('Steuererklärung')
-  await page.getByRole('button', { name: 'Hinzufügen' }).click()
-  const row = page.locator('.taskRow', { hasText: 'Steuererklärung' })
-  await expect(row).toBeVisible()
-  await expect(page.locator('.taskGroup--someday')).toContainText('Steuererklärung')
-
-  await row.locator('.taskRowOpen').click()
+  await page.getByRole('button', { name: 'Erstellen' }).click()
   const dialog = page.locator('dialog[open]')
-  await expect(dialog.locator('.modalTitle')).toHaveText('Aufgabe bearbeiten')
+  await expect(dialog.locator('.modalTitle')).toHaveText('Neue Aufgabe')
+  await dialog.locator('input[name=title]').fill('Steuererklärung')
+  await dialog.getByLabel('Status').selectOption({ label: 'In Bearbeitung' })
+  await dialog.getByLabel('Priorität').selectOption({ label: 'Hoch' })
   await dialog.locator('input[name=dueDate]').fill(today())
   await dialog.locator('input[name=dueTime]').fill('16:30')
-  await dialog.getByLabel('Minuten').fill('75')
+  await dialog.getByLabel('Minuten', { exact: true }).fill('75')
+  await dialog.getByRole('tab', { name: 'Checkliste' }).click()
+  await dialog.getByLabel('Punkt hinzufügen').fill('Belege sammeln')
+  await dialog.getByLabel('Punkt hinzufügen').press('Enter')
+  await dialog.getByLabel('Punkt hinzufügen').fill('Formular ausfüllen')
+  await dialog.getByRole('button', { name: 'Punkt hinzufügen' }).click()
+  await dialog.getByRole('checkbox', { name: 'Erledigt: Belege sammeln' }).check()
+  await expect(dialog.getByRole('tab', { name: 'Checkliste (2)' })).toBeVisible()
+  await dialog.getByRole('tab', { name: 'Details' }).click()
+  await dialog.locator('textarea[name=notes]').fill('Alles für das Finanzamt')
+  await dialog.getByText('Finanzen').click()
   await dialog.getByRole('button', { name: 'Speichern' }).click()
+  await expect(dialog.getByRole('tab', { name: 'Allgemein' })).toHaveAttribute('aria-selected', 'true')
   await expect(dialog.getByText('Bitte ganze Stunden von 0 bis 99 und Minuten von 0 bis 59 eingeben.')).toBeVisible()
-  await dialog.getByLabel('Stunden').fill('1')
-  await dialog.getByLabel('Minuten').fill('30')
+  await dialog.getByLabel('Stunden', { exact: true }).fill('1')
+  await dialog.getByLabel('Minuten', { exact: true }).fill('30')
   await dialog.getByRole('button', { name: 'Speichern' }).click()
   await expect(dialog).toHaveCount(0)
-  const todayGroup = page.locator('.taskGroup--today')
-  await expect(todayGroup).toContainText('Steuererklärung')
-  await expect(todayGroup.locator('.taskRow')).toContainText('Aufwand 1 Std., 30 Min.')
-  await expect(todayGroup.locator('.taskGroupEffort')).toContainText('1 Std., 30 Min.')
-  expect((await tasksOf(user, calendarId))[0].estimateMinutes).toBe(90)
+
+  const group = page.locator('.taskGroup--inProgress')
+  await expect(group.locator('.taskGroupTitle')).toContainText('In Bearbeitung')
+  await expect(group.locator('.taskGroupEffort')).toContainText('1 Std., 30 Min.')
+  const row = group.locator('.taskRow', { hasText: 'Steuererklärung' })
+  for (const badge of ['Hoch', 'Aufwand 1 Std., 30 Min.', '1 von 2 erledigt', 'Finanzen'])
+    await expect(row.locator('.taskBadge', { hasText: badge })).toBeVisible()
+  const [created] = await tasksOf(user, calendarId)
+  expect(created).toMatchObject({
+    status: 'inProgress',
+    priority: 'high',
+    estimateMinutes: 90,
+    notes: 'Alles für das Finanzamt',
+    checklist: [
+      { title: 'Belege sammeln', done: true },
+      { title: 'Formular ausfüllen', done: false },
+    ],
+  })
+  expect(created.categoryIds).toHaveLength(1)
+
+  await page.getByRole('button', { name: 'Board', exact: true }).click()
+  const card = page.locator('.taskColumn--inProgress .taskCard', { hasText: 'Steuererklärung' })
+  await expect(card).toBeVisible()
+  await expect(page.locator('.taskColumn--open')).toContainText('Keine Aufgaben')
+  await card.dragTo(page.locator('.taskColumn--waiting'))
+  await expect(page.locator('.taskColumn--waiting .taskCard', { hasText: 'Steuererklärung' })).toBeVisible()
+  await expect.poll(async () => (await tasksOf(user, calendarId))[0]?.status).toBe('waiting')
+
+  await page.reload()
+  await showView(page, 'Aufgaben')
+  await expect(page.locator('.taskColumn--waiting .taskCard', { hasText: 'Steuererklärung' })).toBeVisible()
 
   await showView(page, 'Woche')
   const chip = page.locator(`.day[data-date="${today()}"] .taskChip`, { hasText: 'Steuererklärung' })
@@ -56,7 +97,8 @@ test('adds a task in the list, gives it a due date and checks it off in the week
   await expect.poll(async () => (await tasksOf(user, calendarId))[0]?.completedAt).not.toBeNull()
 
   await showView(page, 'Aufgaben')
-  await expect(page.getByText('Keine offenen Aufgaben.')).toBeVisible()
+  await expect(page.locator('.taskColumn--done .taskCard', { hasText: 'Steuererklärung' })).toBeVisible()
+  await page.getByRole('button', { name: 'Liste', exact: true }).click()
   await page.getByRole('button', { name: 'Erledigte anzeigen (1)' }).click()
   await expect(page.locator('.taskGroup--done')).toContainText('Steuererklärung')
 })
@@ -86,7 +128,7 @@ test('switches a new event into a task and deletes it again', async ({ browser }
   expect(await tasksOf(user, calendarId)).toEqual([])
 })
 
-test('assigns a team task to a viewer who is notified and may only check it off', async ({ browser }) => {
+test('assigns a team task to a viewer who is notified and may only move it forward', async ({ browser }) => {
   const owner = await createUser('Olivia')
   const member = await createUser('Moritz')
   const { data: team } = await api<{ id: string }>(owner, 'POST', '/calendars', {
@@ -99,10 +141,15 @@ test('assigns a team task to a viewer who is notified and may only check it off'
   const page = await openAs(browser, owner)
   await showCalendar(page, 'Haushalt')
   await showView(page, 'Aufgaben')
-  await page.getByRole('button', { name: 'Neue Aufgabe' }).click()
+  await page.getByRole('button', { name: 'Erstellen' }).click()
   const dialog = page.locator('dialog[open]')
   await dialog.locator('input[name=title]').fill('Müll rausbringen')
+  await dialog.getByRole('tab', { name: 'Checkliste' }).click()
+  await dialog.getByLabel('Punkt hinzufügen').fill('Gelber Sack')
+  await dialog.getByLabel('Punkt hinzufügen').press('Enter')
+  await dialog.getByRole('tab', { name: 'Allgemein' }).click()
   await dialog.locator('input[name=dueDate]').fill(today())
+  await dialog.getByRole('tab', { name: 'Details' }).click()
   await dialog.getByLabel('Zuständig').selectOption({ label: 'Moritz' })
   await dialog.getByRole('button', { name: 'Speichern' }).click()
   await expect(page.locator('.taskRow', { hasText: 'Müll rausbringen' })).toContainText('Zuständig: Moritz')
@@ -118,10 +165,20 @@ test('assigns a team task to a viewer who is notified and may only check it off'
   const view = assigned.locator('dialog[open]')
   await expect(view.locator('.modalTitle')).toHaveText('Aufgabe')
   await expect(view.locator('input[name=title]')).toBeDisabled()
+  await expect(view.getByLabel('Priorität')).toBeDisabled()
   await expect(view.getByRole('button', { name: 'Löschen' })).toHaveCount(0)
-  await view.getByRole('button', { name: 'Als erledigt markieren' }).click()
+  await expect(view.getByRole('button', { name: 'Speichern' })).toHaveCount(0)
+  await view.getByRole('tab', { name: 'Checkliste (1)' }).click()
+  await view.getByRole('checkbox', { name: 'Erledigt: Gelber Sack' }).check()
+  await expect(view.getByText('1 von 1 erledigt')).toBeVisible()
+  await view.getByRole('tab', { name: 'Allgemein' }).click()
+  await view.getByLabel('Status').selectOption({ label: 'Erledigt' })
+  await expect(view.getByText('Erledigt von Moritz am')).toBeVisible()
+  await view.locator('.modalActions').getByRole('button', { name: 'Schließen' }).click()
   await expect(view).toHaveCount(0)
-  await expect.poll(async () => (await tasksOf(owner, team.id))[0]?.completedAt).not.toBeNull()
+  const [done] = await tasksOf(owner, team.id)
+  expect(done).toMatchObject({ status: 'done', checklist: [{ title: 'Gelber Sack', done: true }] })
+  expect(done.completedAt).not.toBeNull()
 
   const { status } = await api(member, 'PUT', `/tasks/${created.id}`, {
     title: 'Übernommen',

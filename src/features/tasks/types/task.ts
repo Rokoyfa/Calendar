@@ -3,18 +3,35 @@ export type TaskPerson = {
   name: string
 }
 
+export const TASK_STATUSES = ['open', 'inProgress', 'waiting', 'done'] as const
+
+export type TaskStatus = (typeof TASK_STATUSES)[number]
+
+export const TASK_PRIORITIES = ['low', 'normal', 'high', 'urgent'] as const
+
+export type TaskPriority = (typeof TASK_PRIORITIES)[number]
+
+export type TaskChecklistItem = { id: string; title: string; done: boolean }
+
+export type TaskChecklistInput = { id?: string; title: string; done: boolean }
+
 export type TaskInput = {
   title: string
   notes: string
   dueDate: string | null
   dueTime: string | null
   estimateMinutes: number | null
+  status: TaskStatus
+  priority: TaskPriority
+  categoryIds: string[]
+  checklist: TaskChecklistInput[]
   assigneeId: string | null
 }
 
-export type Task = Omit<TaskInput, 'assigneeId'> & {
+export type Task = Omit<TaskInput, 'assigneeId' | 'checklist'> & {
   id: string
   calendarId: string
+  checklist: TaskChecklistItem[]
   assignee: TaskPerson | null
   completedAt: string | null
   completedBy: TaskPerson | null
@@ -24,22 +41,19 @@ export type Task = Omit<TaskInput, 'assigneeId'> & {
   version: number
 }
 
-export const TASK_STATUSES = ['open', 'done'] as const
-
-export type TaskStatus = (typeof TASK_STATUSES)[number]
-
 export type TaskQuery = {
   calendarIds: readonly string[]
   from?: string
   to?: string
-  status?: TaskStatus
+  completed?: boolean
 }
 
 export interface TaskRepository {
   list(query: TaskQuery): Promise<Task[]>
   create(calendarId: string, input: TaskInput): Promise<Task>
   update(id: string, input: TaskInput, version?: number): Promise<Task>
-  setCompleted(id: string, completed: boolean, version?: number): Promise<Task>
+  setStatus(id: string, status: TaskStatus, version?: number): Promise<Task>
+  setChecklistItem(id: string, itemId: string, done: boolean, version?: number): Promise<Task>
   move(id: string, calendarId: string, version?: number): Promise<Task>
   remove(id: string, version?: number): Promise<void>
 }
@@ -47,7 +61,7 @@ export interface TaskRepository {
 export type TaskAccess = {
   canCreateIn: (calendarId: string) => boolean
   canEdit: (task: Task) => boolean
-  canComplete: (task: Task) => boolean
+  canProgress: (task: Task) => boolean
   canDelete: (task: Task) => boolean
 }
 
