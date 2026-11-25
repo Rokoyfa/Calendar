@@ -53,11 +53,22 @@ export function CalendarPage() {
   const hasAccountMenu = enabled && (user !== null || method === 'password')
   const { preferences } = usePreferences()
   const { m } = useI18n()
-  const { calendars, activeCalendar, visibleCalendarIds, repository, selectCalendar } = useCalendars()
+  const { calendars, activeCalendar, activeId, visibleCalendarIds, repository, selectCalendar } = useCalendars()
+  const peers = usePeerCalendars()
+  const activePeer = peers.calendars.find(({ id }) => peerCalendarId(id) === activeId) ?? null
   const settingsTabs = useCalendarSettingsTabs(activeCalendar)
   const canOpenSettings = !(enabled && method === 'password' && !user)
   const menuItems = (() => {
     if (!canOpenSettings) return []
+    if (activePeer)
+      return compact<CalendarMenuItem>([
+        !hasAccountMenu && {
+          key: 'settings',
+          label: m.common.settings,
+          icon: <SettingsIcon size={18} />,
+          to: ROUTES.settings,
+        },
+      ])
     const path = calendarSettingsPath(activeCalendar.id)
     const tab = (name: string) => `${path}?tab=${name}`
     const { tabs } = m.calendars.settings
@@ -178,7 +189,6 @@ export function CalendarPage() {
     () => new Map(caldav.calendars.map((calendar) => [caldavCalendarId(calendar.id), calendar])),
     [caldav.calendars],
   )
-  const peers = usePeerCalendars()
   const showsPeers = isPersonalCalendar(activeCalendar)
   const shownPeers = useMemo(
     () => (showsPeers ? peers.calendars.filter((calendar) => calendar.shown) : []),
@@ -189,8 +199,9 @@ export function CalendarPage() {
       ...caldav.calendars.filter((calendar) => calendar.shown).map(({ id }) => caldavCalendarId(id)),
       ...shownPeers.map(({ id }) => peerCalendarId(id)),
     ]
+    if (activePeer) return [peerCalendarId(activePeer.id)]
     return shown.length > 0 ? [...visibleCalendarIds, ...shown] : visibleCalendarIds
-  }, [visibleCalendarIds, caldav.calendars, shownPeers])
+  }, [visibleCalendarIds, caldav.calendars, shownPeers, activePeer])
   const eventSources = useMemo(
     () =>
       new Map([
@@ -253,8 +264,9 @@ export function CalendarPage() {
       id: peerCalendarId(calendar.id),
       name: m.peers.requestChoice(calendar.ownerName),
     }))
+    if (activePeer) return [{ id: peerCalendarId(activePeer.id), name: m.peers.requestChoice(activePeer.ownerName) }]
     return [...ownChoices, ...remote, ...requests]
-  }, [ownChoices, caldav.calendars, shownPeers, m])
+  }, [ownChoices, caldav.calendars, shownPeers, activePeer, m])
   const canSetVisibility = useCallback(
     (calendarId: string) => {
       const calendar = calendarById.get(calendarId)
@@ -335,8 +347,8 @@ export function CalendarPage() {
       <EmailVerificationBanner />
       <Calendar
         calendarIds={calendarIds}
-        targetCalendarId={activeCalendar.id}
-        canCreate={hasPermission(activeCalendar, 'create_entry')}
+        targetCalendarId={activePeer ? peerCalendarId(activePeer.id) : activeCalendar.id}
+        canCreate={activePeer !== null || hasPermission(activeCalendar, 'create_entry')}
         calendarChoices={calendarChoices}
         canMoveEvent={mayMoveEvent}
         eventSources={eventSources}
@@ -345,7 +357,13 @@ export function CalendarPage() {
         canEditEvent={mayEditEvent}
         currentUserId={userId}
         initialView={initialView}
-        headerContext={<ActiveCalendarIndicator />}
+        headerContext={
+          <ActiveCalendarIndicator
+            shared={
+              activePeer ? { name: m.peers.calendarName(activePeer.ownerName), color: activePeer.color } : undefined
+            }
+          />
+        }
         currentUserEmail={user?.email ?? null}
         loadAttendeeCandidates={loadAttendeeCandidates}
         chat={chatAccess}
@@ -355,11 +373,13 @@ export function CalendarPage() {
         openEvent={openEvent}
         onOpenEventDone={clearLink}
         menuItems={menuItems}
-        tasks={tasks}
+        tasks={activePeer ? undefined : tasks}
         headerAccessory={
           <>
             <NotificationBell />
-            <AccountMenu menuItems={host.features.teams ? <CalendarSwitcher /> : undefined} />
+            <AccountMenu
+              menuItems={host.features.teams || peers.calendars.length > 0 ? <CalendarSwitcher /> : undefined}
+            />
           </>
         }
       />

@@ -30,6 +30,7 @@ export const calendars: Messages['calendars'] = {
   },
   indicator: {
     onlyYou: 'Tylko dla Ciebie',
+    shared: 'Udostępniony dla ciebie',
     team: (role) => `Zespół · ${role}`,
     current: (name) => `Bieżący kalendarz: ${name}`,
   },
@@ -38,6 +39,7 @@ export const calendars: Messages['calendars'] = {
     title: 'Zmień kalendarz',
     personal: 'Osobisty',
     teams: 'Zespoły',
+    shared: 'Udostępnione dla ciebie',
     active: 'Aktywny',
     openInvitations: (count) =>
       count === 1

@@ -29,6 +29,7 @@ export const calendars: Messages['calendars'] = {
   },
   indicator: {
     onlyYou: 'Alleen voor jou',
+    shared: 'Gedeeld met jou',
     team: (role) => `Team · ${role}`,
     current: (name) => `Huidige agenda: ${name}`,
   },
@@ -37,6 +38,7 @@ export const calendars: Messages['calendars'] = {
     title: 'Agenda wisselen',
     personal: 'Persoonlijk',
     teams: 'Teams',
+    shared: 'Gedeeld met jou',
     active: 'Actief',
     openInvitations: (count) =>
       count === 1 ? 'Je hebt één openstaande uitnodiging.' : `Je hebt ${count} openstaande uitnodigingen.`,

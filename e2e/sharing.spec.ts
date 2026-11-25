@@ -5,6 +5,7 @@ import {
   expect,
   openAs,
   openEvent,
+  showCalendar,
   showView,
   test,
   today,
@@ -100,6 +101,38 @@ test('shows private events only as busy time and public events with their title'
   await showView(viewer, 'Woche')
   await expect(viewer.locator('.eventOpen[aria-label^="Arzt,"]')).toHaveCount(1)
   await expect(viewer.locator('.eventOpen[aria-label^="Belegt,"]')).toHaveCount(0)
+})
+
+test('switches to a shared calendar like to an own one', async ({ browser }) => {
+  const anna = await createUser('Anna')
+  const ben = await createUser('Ben')
+  const peerId = await share(anna, ben)
+  await api(ben, 'PATCH', `/peer-calendars/${peerId}`, { shown: false })
+  await api(anna, 'POST', '/events', eventInput('personal', { title: 'Arzt', start: '08:00', end: '09:00' }))
+  await api(ben, 'POST', '/events', eventInput('personal', { title: 'Sport', start: '10:00', end: '11:00' }))
+
+  const viewer = await openAs(browser, ben)
+  await showView(viewer, 'Woche')
+  await expect(viewer.locator('.eventOpen[aria-label^="Sport,"]')).toHaveCount(1)
+  await expect(viewer.locator('.eventOpen[aria-label^="Belegt,"]')).toHaveCount(0)
+
+  await showCalendar(viewer, 'Kalender von Anna')
+  await expect(viewer.locator('.activeCalendarName')).toHaveText('Kalender von Anna')
+  await expect(viewer.locator('.activeCalendar')).toContainText('Geteilt mit dir')
+  await expect(viewer.locator('.eventOpen[aria-label^="Belegt,"]')).toHaveCount(1)
+  await expect(viewer.locator('.eventOpen[aria-label^="Sport,"]')).toHaveCount(0)
+  await expect(viewer.locator('.segment', { hasText: 'Aufgaben' })).toHaveCount(0)
+
+  await viewer.reload()
+  await expect(viewer.locator('.activeCalendarName')).toHaveText('Kalender von Anna')
+  await viewer.locator('.accountButton').click()
+  await viewer.getByRole('button', { name: 'Kalender wechseln' }).click()
+  const switcher = viewer.locator('dialog[open]')
+  await expect(switcher.locator('.calendarCard.active')).toContainText('Kalender von Anna')
+  await switcher.getByText('Persönlich', { exact: true }).last().click()
+  await expect(viewer.locator('.activeCalendarName')).toHaveText('Persönlich')
+  await showView(viewer, 'Woche')
+  await expect(viewer.locator('.eventOpen[aria-label^="Sport,"]')).toHaveCount(1)
 })
 
 test('requests an event, the owner accepts it and the requester withdraws it', async ({ browser }) => {

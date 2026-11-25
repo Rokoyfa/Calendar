@@ -10,6 +10,7 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 
 ### Added
 
+- Calendars shared with you appear under **Shared with you** in **Switch calendar** and can be opened on their own like a team calendar; new entries there are requests to the owner
 - Planning distribution **As late as possible**: fills the last free time before the due date, keeping all working time rules
 
 ## 2.2.0 – 2026-11-25

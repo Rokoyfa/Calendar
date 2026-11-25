@@ -29,6 +29,7 @@ export const calendars: Messages['calendars'] = {
   },
   indicator: {
     onlyYou: 'Rien que pour vous',
+    shared: 'Partagé avec vous',
     team: (role) => `Équipe · ${role}`,
     current: (name) => `Calendrier actuel\u00a0: ${name}`,
   },
@@ -37,6 +38,7 @@ export const calendars: Messages['calendars'] = {
     title: 'Changer de calendrier',
     personal: 'Personnel',
     teams: 'Équipes',
+    shared: 'Partagés avec vous',
     active: 'Actif',
     openInvitations: (count) =>
       count === 1 ? 'Vous avez une invitation en attente.' : `Vous avez ${count} invitations en attente.`,

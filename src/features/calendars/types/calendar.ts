@@ -106,6 +106,7 @@ export type CalendarsContextValue = {
   invitations: readonly PendingInvitation[]
   error: string | null
   activeCalendar: CalendarSummary
+  activeId: string | null
   visibleCalendarIds: readonly string[]
   selectCalendar: (id: string) => void
   createCalendar: (draft: CalendarDraft) => Promise<CalendarSummary>

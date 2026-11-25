@@ -7,18 +7,24 @@ import { Button } from '../../../components/Button.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { classNames } from '../../../utils/classNames.ts'
 import { useI18n } from '../../../i18n/index.ts'
+import { useHost } from '../../../context/HostContext.ts'
 import { useAuth } from '../../authorization/index.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
+import type { EventColor } from '../../../utils/event.ts'
+import { peerCalendarId } from '../../../utils/peerCalendar.ts'
+import { usePeerCalendars } from '../../peers/index.ts'
 import { CalendarPreview } from './CalendarPreview.tsx'
 
 type CalendarCardProps = {
-  calendar: CalendarSummary
+  name: string
+  meta: string
+  color: EventColor
   isActive: boolean
   onSelect: () => void
 }
 
-function CalendarCard({ calendar, isActive, onSelect }: CalendarCardProps) {
+function CalendarCard({ name, meta, color, isActive, onSelect }: CalendarCardProps) {
   const { m } = useI18n()
   return (
     <li>
@@ -28,12 +34,10 @@ function CalendarCard({ calendar, isActive, onSelect }: CalendarCardProps) {
         aria-current={isActive}
         onClick={onSelect}
       >
-        <CalendarPreview color={calendar.color} />
+        <CalendarPreview color={color} />
         <span className="calendarCardInfo">
-          <span className="calendarCardName">{calendar.name}</span>
-          <span className="calendarCardMeta">
-            {[getDistinctTeamName(calendar), m.calendars.roles[calendar.role]].filter(Boolean).join(' · ')}
-          </span>
+          <span className="calendarCardName">{name}</span>
+          <span className="calendarCardMeta">{meta}</span>
         </span>
         {isActive && (
           <span className="calendarCardBadge" aria-label={m.calendars.switcher.active}>
@@ -48,8 +52,15 @@ function CalendarCard({ calendar, isActive, onSelect }: CalendarCardProps) {
 function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
   const { m } = useI18n()
   const { switcher } = m.calendars
-  const { calendars, invitations, activeCalendar, selectCalendar } = useCalendars()
+  const { calendars, invitations, activeId, activeCalendar, selectCalendar } = useCalendars()
+  const peers = usePeerCalendars()
+  const { features } = useHost()
   const { user } = useAuth()
+  const activePeerId = peers.calendars.some(({ id }) => peerCalendarId(id) === activeId) ? activeId : null
+  const select = (id: string) => {
+    selectCalendar(id)
+    onClose()
+  }
   const personal = calendars.filter(isPersonalCalendar)
   const teams = calendars.filter((calendar) => !isPersonalCalendar(calendar))
 
@@ -58,12 +69,11 @@ function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
       {list.map((calendar) => (
         <CalendarCard
           key={calendar.id}
-          calendar={calendar}
-          isActive={calendar.id === activeCalendar.id}
-          onSelect={() => {
-            selectCalendar(calendar.id)
-            onClose()
-          }}
+          name={calendar.name}
+          meta={[getDistinctTeamName(calendar), m.calendars.roles[calendar.role]].filter(Boolean).join(' · ')}
+          color={calendar.color}
+          isActive={activePeerId === null && calendar.id === activeCalendar.id}
+          onSelect={() => select(calendar.id)}
         />
       ))}
       {extra}
@@ -85,21 +95,38 @@ function CalendarSwitcherModal({ onClose }: { onClose: () => void }) {
             </Link>
           </p>
         )}
-        <section className="calendarGroup">
-          <h3 className="calendarGroupTitle">{switcher.teams}</h3>
-          {teams.length === 0 && (
-            <p className="emptyHint">{switcher.noTeams}</p>
-          )}
-          {renderCards(
-            teams,
-            <li>
-              <Link to={ROUTES.createCalendar} className="calendarCard calendarCardNew">
-                <PlusIcon size={28} />
-                <span className="calendarCardName">{switcher.newCalendar}</span>
-              </Link>
-            </li>,
-          )}
-        </section>
+        {features.teams && (
+          <section className="calendarGroup">
+            <h3 className="calendarGroupTitle">{switcher.teams}</h3>
+            {teams.length === 0 && <p className="emptyHint">{switcher.noTeams}</p>}
+            {renderCards(
+              teams,
+              <li>
+                <Link to={ROUTES.createCalendar} className="calendarCard calendarCardNew">
+                  <PlusIcon size={28} />
+                  <span className="calendarCardName">{switcher.newCalendar}</span>
+                </Link>
+              </li>,
+            )}
+          </section>
+        )}
+        {peers.calendars.length > 0 && (
+          <section className="calendarGroup">
+            <h3 className="calendarGroupTitle">{switcher.shared}</h3>
+            <ul className="calendarCards">
+              {peers.calendars.map((calendar) => (
+                <CalendarCard
+                  key={calendar.id}
+                  name={m.peers.calendarName(calendar.ownerName)}
+                  meta={m.calendars.indicator.shared}
+                  color={calendar.color}
+                  isActive={activePeerId === peerCalendarId(calendar.id)}
+                  onSelect={() => select(peerCalendarId(calendar.id))}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     </Modal>
   )
