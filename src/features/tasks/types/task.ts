@@ -1,3 +1,5 @@
+import type { PlanningDistribution } from '../../../utils/preferences.ts'
+import type { PlannedBlock } from '../utils/taskPlanner.ts'
 import type { CalendarEvent } from '../../../utils/event.ts'
 import type { BuiltinCategory } from '../../../utils/category.ts'
 
@@ -77,6 +79,17 @@ export type TaskPlanningSetup = {
   calendarId: string
   busyCalendarIds: readonly string[]
   externalEvents: readonly CalendarEvent[]
+}
+
+export type TaskPlanPreview = {
+  task: Task
+  calendarId: string
+  timeZone: string
+  blocks: readonly PlannedBlock[]
+  replacedIds: readonly string[]
+  missingMinutes: number
+  distribution: PlanningDistribution
+  save: () => Promise<void>
 }
 
 export type TaskSetup = {

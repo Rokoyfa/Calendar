@@ -18,7 +18,10 @@ export type {
   TaskInput,
   TaskPerson,
   TaskPlanningSetup,
+  TaskPlanPreview,
   TaskQuery,
   TaskRepository,
   TaskSetup,
 } from './types/task.ts'
+export { isPlanPreviewEvent, toPlanPreviewEvents } from './utils/planBlocks.ts'
+export { TaskPlanPreviewActions, TaskPlanPreviewBar } from './components/TaskPlanPreviewBar.tsx'

@@ -79,5 +79,13 @@ export const tasks: Messages['tasks'] = {
     adjust: 'Puoi anche ridurre l’impegno o liberare eventi.',
     create: 'Crea',
     creating: 'Creazione…',
+    showInCalendar: 'Mostra nel calendario',
+    previewTitle: (title) => `Anteprima: «${title}»`,
+    previewSummary: (count, total) => (count === 1 ? `1 nuovo blocco · ${total}` : `${count} nuovi blocchi · ${total}`),
+    previewHint: 'I nuovi blocchi sono evidenziati con un bordo tratteggiato.',
+    previewReplaced: 'I blocchi futuri che verrebbero sostituiti sono nascosti.',
+    back: 'Torna alla pianificazione',
+    save: 'Salva',
+    saving: 'Salvataggio…',
   },
 }

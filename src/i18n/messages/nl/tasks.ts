@@ -79,5 +79,13 @@ export const tasks: Messages['tasks'] = {
     adjust: 'Je kunt ook de inspanning verlagen of afspraken vrijmaken.',
     create: 'Aanmaken',
     creating: 'Bezig met aanmaken …',
+    showInCalendar: 'In de agenda bekijken',
+    previewTitle: (title) => `Voorbeeld: ‘${title}’`,
+    previewSummary: (count, total) => (count === 1 ? `1 nieuw blok · ${total}` : `${count} nieuwe blokken · ${total}`),
+    previewHint: 'Nieuwe blokken zijn gemarkeerd met een stippellijn.',
+    previewReplaced: 'Toekomstige blokken die vervangen zouden worden, zijn verborgen.',
+    back: 'Terug naar de planning',
+    save: 'Opslaan',
+    saving: 'Bezig met opslaan …',
   },
 }

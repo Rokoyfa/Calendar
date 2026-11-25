@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
-import { isWorkCategorized, WORK_CATEGORY } from '../../../utils/category.ts'
+import { isWorkCategorized } from '../../../utils/category.ts'
 import { addDaysToISODate, listISODates, minISODate, timeToMinutes } from '../../../utils/date.ts'
-import { createEventInputForSlots, expandEvents, type EventInput, type EventOccurrence } from '../../../utils/event.ts'
+import { expandEvents, type EventOccurrence } from '../../../utils/event.ts'
 import { isCaldavEvent } from '../../../utils/caldav.ts'
 import { isExternalEvent } from '../../../utils/externalCalendar.ts'
 import { isPeerEvent } from '../../../utils/peerCalendar.ts'
@@ -21,6 +21,7 @@ import {
   type PlannedBlock,
   type PlanRequest,
 } from '../utils/taskPlanner.ts'
+import { toBlockInput } from '../utils/planBlocks.ts'
 import { getWorkingTimeLaw } from '../utils/workingTimeLaw.ts'
 import { usePlanningCountry } from './usePlanningCountryName.ts'
 
@@ -40,17 +41,6 @@ const countsAsWork = (event: EventOccurrence) =>
 const toInterval = (event: EventOccurrence): PlanInterval => ({
   start: toPlanMinute(event.startDate, event.start),
   end: toPlanMinute(event.endDate, event.end),
-})
-
-const blockInput = (task: Task, block: PlannedBlock, timeZone: string): EventInput => ({
-  ...createEventInputForSlots({ date: block.date, hour: 0 }, { date: block.date, hour: 0 }, timeZone),
-  title: task.title,
-  start: block.start,
-  endDate: block.date,
-  end: block.end,
-  visibility: 'private',
-  builtinCategories: task.builtinCategories.length > 0 ? task.builtinCategories : [WORK_CATEGORY],
-  taskId: task.id,
 })
 
 export function useTaskPlanner(setup: TaskPlanningSetup) {
@@ -149,7 +139,7 @@ export function useTaskPlanner(setup: TaskPlanningSetup) {
     async (task: Task, context: TaskPlanContext, blocks: readonly PlannedBlock[]) => {
       try {
         for (const block of context.replacedBlocks) await repository.remove(block.id, block.version)
-        for (const block of blocks) await repository.create(calendarId, blockInput(task, block, timeZone))
+        for (const block of blocks) await repository.create(calendarId, toBlockInput(task, block, timeZone))
       } finally {
         invalidate()
       }

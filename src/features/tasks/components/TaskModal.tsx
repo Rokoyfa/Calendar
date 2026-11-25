@@ -1,3 +1,4 @@
+import type { PlanningDistribution } from '../../../utils/preferences.ts'
 import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode, type SubmitEventHandler } from 'react'
 import { Button } from '../../../components/Button.tsx'
 import { ConfirmModal } from '../../../components/ConfirmModal.tsx'
@@ -25,6 +26,7 @@ import {
   type TaskInput,
   type TaskPerson,
   type TaskPlanningSetup,
+  type TaskPlanPreview,
   type TaskStatus,
 } from '../types/task.ts'
 import {
@@ -67,6 +69,8 @@ export type TaskModalProps = {
   onSwitchToEvent?: (draft: { title: string; date: string | null }) => void
   planning?: TaskPlanningSetup
   onReschedule?: (task: Task, dueDate: string) => Promise<Task>
+  resumePlan?: PlanningDistribution
+  onPlanPreview?: (preview: TaskPlanPreview) => void
   onClose: () => void
 }
 
@@ -124,6 +128,8 @@ export function TaskModal({
   onSwitchToEvent,
   planning,
   onReschedule,
+  resumePlan,
+  onPlanPreview,
   onClose,
 }: TaskModalProps) {
   const { m, format } = useI18n()
@@ -139,7 +145,7 @@ export function TaskModal({
   const [errors, setErrors] = useState<TaskErrors>({})
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TaskTab>('general')
-  const [isPlanOpen, setIsPlanOpen] = useState(false)
+  const [isPlanOpen, setIsPlanOpen] = useState(resumePlan !== undefined)
   const [hasPlanned, setHasPlanned] = useState(false)
   const hasFutureBlocks = useHasFutureBlocks(planning ? initialTask : null, planning)
 
@@ -485,6 +491,8 @@ export function TaskModal({
             onReschedule={isEditable ? onReschedule : undefined}
             onTaskChange={takeRescheduled}
             onPlanned={() => setHasPlanned(true)}
+            initialDistribution={resumePlan}
+            onPreview={onPlanPreview}
             onClose={() => setIsPlanOpen(false)}
           />
         </Suspense>

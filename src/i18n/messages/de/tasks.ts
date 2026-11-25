@@ -79,5 +79,13 @@ export const tasks: Messages['tasks'] = {
     adjust: 'Du kannst auch den Aufwand verringern oder Termine freiräumen.',
     create: 'Anlegen',
     creating: 'Wird angelegt …',
+    showInCalendar: 'Im Kalender ansehen',
+    previewTitle: (title) => `Vorschau: „${title}“`,
+    previewSummary: (count, total) => (count === 1 ? `1 neuer Block · ${total}` : `${count} neue Blöcke · ${total}`),
+    previewHint: 'Neue Blöcke sind gestrichelt hervorgehoben.',
+    previewReplaced: 'Künftige Blöcke, die ersetzt würden, sind ausgeblendet.',
+    back: 'Zurück zur Planung',
+    save: 'Sichern',
+    saving: 'Wird gesichert …',
   },
 }

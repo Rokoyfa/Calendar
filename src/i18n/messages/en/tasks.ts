@@ -77,5 +77,14 @@ export const tasks = {
     adjust: 'You can also reduce the effort or free up events.',
     create: 'Create',
     creating: 'Creating …',
+    showInCalendar: 'Show in calendar',
+    previewTitle: (title: string) => `Preview: “${title}”`,
+    previewSummary: (count: number, total: string) =>
+      count === 1 ? `1 new block · ${total}` : `${count} new blocks · ${total}`,
+    previewHint: 'New blocks are highlighted with a dashed border.',
+    previewReplaced: 'Future blocks that would be replaced are hidden.',
+    back: 'Back to planning',
+    save: 'Save',
+    saving: 'Saving …',
   },
 }

@@ -5,11 +5,12 @@ import { SegmentedField } from '../../../components/SegmentedField.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
+import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { timeToMinutes } from '../../../utils/date.ts'
 import { PLANNING_DISTRIBUTIONS, type PlanningDistribution } from '../../../utils/preferences.ts'
 import { useTaskPlanner, type TaskPlanContext } from '../hooks/useTaskPlanner.ts'
-import type { Task, TaskPlanningSetup } from '../types/task.ts'
+import type { Task, TaskPlanningSetup, TaskPlanPreview } from '../types/task.ts'
 import { findEarliestCompletion, type PlannedBlock } from '../utils/taskPlanner.ts'
 import { usePlanningCountryName } from '../hooks/usePlanningCountryName.ts'
 
@@ -19,6 +20,8 @@ type TaskPlanModalProps = {
   onReschedule?: (task: Task, dueDate: string) => Promise<Task>
   onTaskChange: (task: Task) => void
   onPlanned: () => void
+  initialDistribution?: PlanningDistribution
+  onPreview?: (preview: TaskPlanPreview) => void
   onClose: () => void
 }
 
@@ -34,13 +37,15 @@ export function TaskPlanModal({
   onReschedule,
   onTaskChange,
   onPlanned,
+  initialDistribution,
+  onPreview,
   onClose,
 }: TaskPlanModalProps) {
   const { m, format } = useI18n()
   const text = m.tasks.plan
   const planner = useTaskPlanner(setup)
   const [task, setTask] = useState(initialTask)
-  const [distribution, setDistribution] = useState<PlanningDistribution>(planner.distribution)
+  const [distribution, setDistribution] = useState<PlanningDistribution>(initialDistribution ?? planner.distribution)
   const countryName = usePlanningCountryName(planner.country)
 
   const { load } = planner
@@ -69,6 +74,7 @@ export function TaskPlanModal({
     onTaskChange(updated)
   })
   const isBusy = create.isPending || reschedule.isPending
+  const timeZone = useViewerTimeZone()
 
   const left = context?.request.effortMinutes ?? 0
   const blocks = result?.blocks ?? []
@@ -140,6 +146,28 @@ export function TaskPlanModal({
           {missing === 0 && blocks.length > 0 && (
             <Button isPending={create.isPending} pendingLabel={text.creating} onClick={() => void create.run(blocks)}>
               {text.create}
+            </Button>
+          )}
+          {onPreview && context && blocks.length > 0 && (
+            <Button
+              variant="secondary"
+              disabled={isBusy}
+              onClick={() =>
+                onPreview({
+                  task,
+                  calendarId: setup.calendarId,
+                  timeZone,
+                  blocks,
+                  replacedIds: context.replacedBlocks.map((block) => block.id),
+                  missingMinutes: missing,
+                  distribution,
+                  save: async () => {
+                    await planner.apply(task, context, blocks)
+                  },
+                })
+              }
+            >
+              {text.showInCalendar}
             </Button>
           )}
           {context && left === 0 && replaced > 0 && (

@@ -148,3 +148,37 @@ test('saves the planning settings per profile', async ({ browser }) => {
       planningDayEnd: '17:00',
     })
 })
+
+test('shows the plan in the calendar, goes back and saves it from there', async ({ browser }) => {
+  const user = await createUser('Vera')
+  const calendarId = await personalCalendarId(user)
+  const task = await createTask(user, calendarId, {
+    title: 'Konzept',
+    estimateMinutes: 180,
+    dueDate: addDays(today(), 10),
+  })
+  const page = await openAs(browser, user)
+  await showView(page, 'Aufgaben')
+  await page.locator('.taskRow', { hasText: 'Konzept' }).locator('.taskTitle').click()
+  await page.locator('dialog[open]').getByRole('button', { name: 'Einplanen' }).click()
+  const planDialog = page.locator('dialog[open]', { hasText: 'Aufgabe einplanen' })
+  await planDialog.getByRole('button', { name: 'So früh wie möglich' }).click()
+  await planDialog.getByRole('button', { name: 'Im Kalender ansehen' }).click()
+
+  const bar = page.locator('.planPreviewBar')
+  await expect(page.locator('dialog[open]')).toHaveCount(0)
+  await expect(bar).toContainText('Vorschau: „Konzept“')
+  await expect(page.locator('.event.eventPlanned').first()).toBeVisible()
+  expect(await blocksOf(user, calendarId, task.id)).toHaveLength(0)
+
+  await bar.getByRole('button', { name: 'Zurück zur Planung' }).click()
+  await expect(bar).toHaveCount(0)
+  await expect(planDialog.getByRole('button', { name: 'So früh wie möglich' })).toHaveAttribute('aria-pressed', 'true')
+  await planDialog.getByRole('button', { name: 'Im Kalender ansehen' }).click()
+
+  await page.locator('.planPreviewActions').getByRole('button', { name: 'Sichern' }).click()
+  await expect(bar).toHaveCount(0)
+  await expect(page.locator('.event.eventPlanned')).toHaveCount(0)
+  await expect(page.locator('.tasksView')).toBeVisible()
+  expect(totalMinutes(await blocksOf(user, calendarId, task.id))).toBe(180)
+})
