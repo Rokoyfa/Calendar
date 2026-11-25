@@ -750,7 +750,7 @@ Verschickt werden sie vom Backend, der Kalender speichert nur die Wahl des Nutze
 
 ### Aufgaben
 
-Eigenes Feature unter `features/tasks/` (Schalter `tasks`, auch lokal): `types` (Task, TaskInput, TaskRepository, TaskAccess, TaskSetup), `utils/task.ts` (Parsen, Sortieren, Gruppen), `repositories` (`LocalTaskRepository` mit `calendar.tasks.v1`, ohne Zuständige; `RemoteTaskRepository` für `/tasks*` mit `If-Match`), `hooks` (`useTaskList` lädt je Zeitraum oder alle offenen plus die letzten erledigten, `useTaskActions` mit Neuladen über `invalidate`, `useTaskEditor`,, `useTaskLayout` für Liste oder Board in `calendar.taskLayout.v1`), `context/TasksContext.ts` (Aufgaben je Tag für die Ansichten, `useTaskRows`, Statuswechsel) und `components` (`TasksProvider` mit dem lazy geladenen `TaskModal`, `ChecklistField`, `DayTasks`/`TaskChip`, `TaskCheckbox`, `TaskDetails` für die Kennzeichen, `TasksView` mit Liste und Board).
+Eigenes Feature unter `features/tasks/` (Schalter `tasks`, auch lokal): `types` (Task, TaskInput, TaskRepository, TaskAccess, TaskSetup), `utils/task.ts` (Parsen, Sortieren, Gruppen), `repositories` (`LocalTaskRepository` mit `calendar.tasks.v1`, ohne Zuständige; `RemoteTaskRepository` für `/tasks*` mit `If-Match`), `hooks` (`useTaskList` lädt je Zeitraum oder alle offenen plus die letzten erledigten, `useTaskActions` mit Neuladen über `invalidate`, `useTaskEditor`, `useTaskLayout` für Liste oder Board in `calendar.taskLayout.v1`), `context/TasksContext.ts` (Aufgaben je Tag für die Ansichten, `useTaskRows`, Statuswechsel) und `components` (`TasksProvider` mit dem lazy geladenen `TaskModal`, `ChecklistField`, `DayTasks`/`TaskChip`, `TaskCheckbox`, `TaskDetails` für die Kennzeichen, `TasksView` mit Liste und Board).
 
 - `CalendarPage` baut das `TaskSetup`: sichtbare Kalender, Zielkalender, Kalender mit `create_entry`, Rechte (`canEditEntry`/`canDeleteEntry` wie bei Terminen, Status und Checkliste zusätzlich für die zuständige Person: `canProgress`) und `loadAssignees` aus den Team-Mitgliedern. Der Link `?calendar=…&task=…` (Glocke, `taskAssigned`) öffnet die Aufgabe.
 - `Calendar` legt `TasksProvider` um die Ansichten. Tag und Woche zeigen Aufgaben als Zeilen der Ganztägig-Spur nach dem Feiertag (Woche höchstens drei, dann „+N weitere Aufgaben“, ein Klick öffnet den Tag), Monat zeigt neben Terminen eine Zeile, Agenda alle. Abhaken ist sofort sichtbar und wird bei Fehler zurückgenommen.
@@ -1012,7 +1012,7 @@ src/
    │  ├─ hooks/                useEvents, useCustomColors
    │  ├─ types/
    │  └─ utils/                Serien-Aktionen gegen das Repository, Auswahl der Bereiche, iCalendar-Import (icalExchange)
-   ├─ reminders/               Erinnerungen planen und anzeigen, solange das Widget offen ist (useReminders, ReminderNotices)
+   ├─ reminders/               Erinnerungen planen und anzeigen, solange das Widget offen ist (hooks: useReminders, components: ReminderNotices)
    ├─ categories/              Kategorien: CategoryField (Termin-Dialog), CategoryFilterModal, CategoriesSection (Einstellungen), useCategories
    ├─ chat/                    Chat zu Terminen: ChatPanel, ChatProvider (Ungelesen-Zähler), UnreadBadge, useChatMessages
    ├─ tasks/                   Aufgaben: Typen, Repositories (lokal und REST), TasksProvider, TaskModal, TaskListView, DayTasks
@@ -1069,29 +1069,7 @@ src/
 
 ## Bekannte Einschränkungen
 
-- Nur localStorage, keine Synchronisierung zwischen Geräten oder Browsern
 - Serien-Aktionen bestehen aus mehreren einzelnen Speichervorgängen. Bricht einer davon ab, kann eine Serie teilweise geändert sein.
-- Eigene Farben lassen sich noch nicht wieder entfernen
 - Datums- und Zeitfelder (`<input type="date">`, `type="time"`) zeigen das Format der Browser- bzw. Systemsprache, nicht die gewählte Sprache
 - Meldungen zu ungültigen Eingaben (`invalidInput`), die erst der Server erkennt, kommen auf Englisch
 - Beim ersten Anmelden werden Einstellungen und Farben aus dem Browser nicht ins Konto übernommen, das Konto startet mit den Standardwerten
-
-## Nächste Schritte
-
-- [x] Anmeldung, Registrierung und Abmeldung im Frontend (`features/authorization`)
-- [x] Passwort vergessen / zurücksetzen, E-Mail-Bestätigung (Frontend)
-- [x] Einstellungsseite mit Konto: Name, Passwort ändern, Konto löschen (Frontend)
-- [x] `.env`-Konfiguration für API-Anbindung, Dev-Proxy und Feature-Schalter
-- [ ] Backend mit der oben beschriebenen REST-API inkl. `/auth`
-- [ ] Server-Speicherung über `RemoteEventRepository` aktivieren
-- [x] `RemoteColorRepository`, damit eigene Farben im Remote-Modus mitwandern
-- [x] Team-Modus mit Einladung per E-Mail (`features/calendars`)
-- [x] Eigene Farben entfernen
-- [x] Schalter für Hell- und Dunkelmodus in der Oberfläche
-- [x] Handy startet in der Tagesansicht, Startansicht einstellbar
-- [x] Phase 1: einbettbare Bibliothek (`<Calendar>`, `<calendar-widget>`, Shadow DOM, Library-Build)
-- [x] Phase 2: Daten-Adapter `CalendarDataSource` und OpenAPI-Vertrag
-- [x] Phase 3 und 4 im Frontend: `tenant`, `tenantDataSource`, Anmeldung über den Gastgeber (`getUserToken`), Vertrag in `api/openapi.yaml`
-- [ ] Backend für Tenants (Tenant-Trennung, erlaubte Domains, Rate-Limits, Token-Prüfung)
-- [x] Einstellungen und eigene Farben im Remote-Modus übers Backend speichern
-- [x] Fehlercodes vom Backend, E-Mails in der Sprache des Empfängers

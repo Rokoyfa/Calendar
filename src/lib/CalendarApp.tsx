@@ -4,7 +4,7 @@ import { useFeatures } from '../context/HostContext.ts'
 import { AuthProvider, useAuth } from '../features/authorization/index.ts'
 import { CalendarsProvider } from '../features/calendars/index.ts'
 import { PreferencesProvider } from '../features/preferences/index.ts'
-import { ReminderNotices } from '../features/reminders/ReminderNotices.tsx'
+import { ReminderNotices } from '../features/reminders/index.ts'
 import {
   CaldavEventRepository,
   PeerEventRepository,
