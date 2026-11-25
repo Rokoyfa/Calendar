@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState, type ReactNode, type SubmitEventHandler } from 'react'
+import type { PlanningDistribution } from '../../../utils/preferences.ts'
+import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode, type SubmitEventHandler } from 'react'
 import { Button } from '../../../components/Button.tsx'
 import { ConfirmModal } from '../../../components/ConfirmModal.tsx'
 import { Form } from '../../../components/Form.tsx'
@@ -24,6 +25,8 @@ import {
   type TaskDraft,
   type TaskInput,
   type TaskPerson,
+  type TaskPlanningSetup,
+  type TaskPlanPreview,
   type TaskStatus,
 } from '../types/task.ts'
 import {
@@ -34,7 +37,10 @@ import {
   TASK_TITLE_MAX_LENGTH,
   toTaskInput,
 } from '../utils/task.ts'
+import { useHasFutureBlocks } from '../hooks/useHasFutureBlocks.ts'
 import { ChecklistField } from './ChecklistField.tsx'
+
+const TaskPlanModal = lazy(async () => ({ default: (await import('./TaskPlanModal.tsx')).TaskPlanModal }))
 
 type TaskErrors = Partial<Record<'title' | 'notes' | 'dueDate' | 'dueTime' | 'estimate', string>>
 
@@ -61,6 +67,10 @@ export type TaskModalProps = {
   onChecklistItem: (task: Task, itemId: string, done: boolean) => Promise<Task>
   onDelete: (task: Task) => Promise<void>
   onSwitchToEvent?: (draft: { title: string; date: string | null }) => void
+  planning?: TaskPlanningSetup
+  onReschedule?: (task: Task, dueDate: string) => Promise<Task>
+  resumePlan?: PlanningDistribution
+  onPlanPreview?: (preview: TaskPlanPreview) => void
   onClose: () => void
 }
 
@@ -116,6 +126,10 @@ export function TaskModal({
   onChecklistItem,
   onDelete,
   onSwitchToEvent,
+  planning,
+  onReschedule,
+  resumePlan,
+  onPlanPreview,
   onClose,
 }: TaskModalProps) {
   const { m, format } = useI18n()
@@ -131,6 +145,9 @@ export function TaskModal({
   const [errors, setErrors] = useState<TaskErrors>({})
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TaskTab>('general')
+  const [isPlanOpen, setIsPlanOpen] = useState(resumePlan !== undefined)
+  const [hasPlanned, setHasPlanned] = useState(false)
+  const hasFutureBlocks = useHasFutureBlocks(planning ? initialTask : null, planning)
 
   const loadPeople = useCallback(
     async () => (loadAssignees ? loadAssignees(calendarId) : NO_PEOPLE),
@@ -230,6 +247,25 @@ export function TaskModal({
       return
     }
     void save(input)
+  }
+
+  const canPlan = planning !== undefined && task !== null && !isTaskDone(task) && canProgress
+  const hasUnsavedPlanChanges =
+    task !== null &&
+    (values.dueDate !== task.dueDate ||
+      values.dueTime !== task.dueTime ||
+      toEstimateMinutes(estimate) !== task.estimateMinutes)
+
+  const planHint =
+    toEstimateMinutes(estimate) === null
+      ? text.plan.needsEstimate
+      : hasUnsavedPlanChanges
+        ? text.plan.saveFirst
+        : undefined
+
+  const takeRescheduled = (updated: Task) => {
+    setTask(updated)
+    setValues((current) => ({ ...current, dueDate: updated.dueDate, dueTime: updated.dueTime }))
   }
 
   const title = !isEditable ? text.viewTitle : task ? text.editTitle : text.createTitle
@@ -396,7 +432,9 @@ export function TaskModal({
           <CategoryField
             categories={calendarCategories}
             value={values.categoryIds}
+            builtin={values.builtinCategories}
             onChange={(categoryIds) => update({ categoryIds })}
+            onBuiltinChange={(builtinCategories) => update({ builtinCategories })}
             onCreate={isEditable && onCreateCategory ? (name) => onCreateCategory(calendarId, name) : undefined}
           />
         </Locked>
@@ -423,12 +461,25 @@ export function TaskModal({
           )}
           <Tabs label={text.tabsLabel} tabs={tabs} value={activeTab} stable onChange={setActiveTab} />
           {completedText && <p className="formHint">{completedText}</p>}
+          {canPlan && planHint === text.plan.saveFirst && <p className="formHint">{planHint}</p>}
           <ErrorMessage message={saveError ?? progress.error} />
           <div className="modalActions">
             {isEditable && (
               <Button type="submit" isPending={isPending} pendingLabel={m.common.saving}>
                 {m.common.save}
               </Button>
+            )}
+            {canPlan && (
+              <span className="buttonHint" title={planHint}>
+                <Button
+                  variant="outline"
+                  title={planHint}
+                  disabled={isPending || planHint !== undefined}
+                  onClick={() => setIsPlanOpen(true)}
+                >
+                  {hasPlanned || hasFutureBlocks ? text.plan.again : text.plan.open}
+                </Button>
+              </span>
             )}
             {task && access.canDelete(task) && (
               <Button variant="danger" disabled={isPending} onClick={() => setIsDeleteOpen(true)}>
@@ -441,6 +492,20 @@ export function TaskModal({
           </div>
         </Form>
       </Modal>
+      {task && planning && isPlanOpen && (
+        <Suspense fallback={null}>
+          <TaskPlanModal
+            task={task}
+            setup={planning}
+            onReschedule={isEditable ? onReschedule : undefined}
+            onTaskChange={takeRescheduled}
+            onPlanned={() => setHasPlanned(true)}
+            initialDistribution={resumePlan}
+            onPreview={onPlanPreview}
+            onClose={() => setIsPlanOpen(false)}
+          />
+        </Suspense>
+      )}
       {task && isDeleteOpen && (
         <ConfirmModal
           title={text.deleteTitle}

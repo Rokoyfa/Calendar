@@ -4,7 +4,13 @@ import { useRootElement } from '../../../context/RootElementContext.ts'
 import { TimeZoneContext } from '../../../context/TimeZoneContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
-import { AUTO_TIME_ZONE, DEFAULT_PREFERENCES, type Preferences, type Theme } from '../../../utils/preferences.ts'
+import {
+  AUTO_TIME_ZONE,
+  DEFAULT_PREFERENCES,
+  parsePreferences,
+  type Preferences,
+  type Theme,
+} from '../../../utils/preferences.ts'
 import { usePreferencesRepository } from '../../storage/index.ts'
 import { PreferencesContext, type PreferencesContextValue } from './PreferencesContext.ts'
 
@@ -18,7 +24,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const { theme: hostTheme, features } = useHost()
   const { setUserLocale } = useI18n()
   const repository = usePreferencesRepository()
-  const load = useCallback(() => repository.get(), [repository])
+  const load = useCallback(async () => parsePreferences(await repository.get()), [repository])
   const { data: preferences, isLoading, apply } = useAsyncResource(load, DEFAULT_PREFERENCES)
 
   const theme = preferences.theme === 'system' ? hostTheme : preferences.theme
@@ -31,7 +37,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   const updatePreferences = useCallback(
     async (changes: Partial<Preferences>) => {
-      await apply(repository.update(changes))
+      await apply(repository.update(changes).then(parsePreferences))
     },
     [repository, apply],
   )
@@ -44,7 +50,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   if (isLoading) return null
   return (
     <PreferencesContext value={value}>
-      <TimeZoneContext value={!features.timeZones || preferences.timeZone === AUTO_TIME_ZONE ? null : preferences.timeZone}>
+      <TimeZoneContext
+        value={!features.timeZones || preferences.timeZone === AUTO_TIME_ZONE ? null : preferences.timeZone}
+      >
         {children}
       </TimeZoneContext>
     </PreferencesContext>

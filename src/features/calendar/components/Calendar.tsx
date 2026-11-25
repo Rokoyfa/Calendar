@@ -49,7 +49,18 @@ import { isExternalEvent } from '../../../utils/externalCalendar.ts'
 import { isCaldavCalendarId, isCaldavEvent } from '../../../utils/caldav.ts'
 import { isPeerCalendarId, isPeerEvent, shareIdOf } from '../../../utils/peerCalendar.ts'
 import { usePeerCalendars } from '../../peers/index.ts'
-import { TasksProvider, TasksView, useTaskEditor, type TaskAccess, type TaskSetup } from '../../tasks/index.ts'
+import {
+  isPlanPreviewEvent,
+  TaskPlanPreviewActions,
+  TaskPlanPreviewBar,
+  TasksProvider,
+  TasksView,
+  toPlanPreviewEvents,
+  useTaskEditor,
+  type TaskAccess,
+  type TaskPlanPreview,
+  type TaskSetup,
+} from '../../tasks/index.ts'
 import { CurrentUserEmailContext } from '../context/CurrentUserContext.ts'
 import { DraggingEventContext } from '../context/DragContext.ts'
 import { useAttendeeCandidates, type AttendeeCandidateLoader } from '../hooks/useAttendeeCandidates.ts'
@@ -225,8 +236,14 @@ export function Calendar({
   const { isAvailable: hasCategories, categories, create: createCategory } = useCategories(categoryCalendarIds)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const activeFilter = categories.length > 0 ? categoryFilter : null
-  const occurrences = useMemo(() => {
+  const activeFilter = hasCategories ? categoryFilter : null
+  const [planPreview, setPlanPreview] = useState<{
+    preview: TaskPlanPreview
+    view: CalendarView
+    date: string
+  } | null>(null)
+  const [isSavingPlan, setIsSavingPlan] = useState(false)
+  const filteredOccurrences = useMemo(() => {
     const all = externalEvents.length > 0 ? [...events, ...externalEvents] : events
     const expanded = expandEvents(all, range.from, range.to, viewerTimeZone)
     if (activeFilter === null) return expanded
@@ -236,9 +253,15 @@ export function Calendar({
         isExternalEvent(occurrence) ||
         isCaldavEvent(occurrence) ||
         isPeerEvent(occurrence) ||
-        matchesCategoryFilter(occurrence.categoryIds, known, activeFilter),
+        matchesCategoryFilter(occurrence.categoryIds, known, activeFilter, occurrence.builtinCategories),
     )
   }, [events, externalEvents, range, viewerTimeZone, categories, activeFilter])
+  const occurrences = useMemo(() => {
+    if (!planPreview) return filteredOccurrences
+    const hidden = new Set(planPreview.preview.replacedIds)
+    const planned = expandEvents(toPlanPreviewEvents(planPreview.preview), range.from, range.to, viewerTimeZone)
+    return [...filteredOccurrences.filter((occurrence) => !hidden.has(occurrence.id)), ...planned]
+  }, [filteredOccurrences, planPreview, range, viewerTimeZone])
   const draggableByKey = useMemo(
     () =>
       new Map(
@@ -246,6 +269,7 @@ export function Calendar({
           .filter(
             (occurrence) =>
               !isExternalEvent(occurrence) &&
+              !isPlanPreviewEvent(occurrence) &&
               ((!isCaldavEvent(occurrence) && !isPeerEvent(occurrence)) || canEditEvent(occurrence)),
           )
           .map((occurrence) => [occurrence.occurrenceKey, occurrence]),
@@ -423,7 +447,7 @@ export function Calendar({
 
   useEventDrag({
     containerRef: mainRef,
-    enabled: canCreate,
+    enabled: canCreate && !planPreview,
     occurrences: draggableByKey,
     onPreview: setDragPreview,
     onDrop: handleDrop,
@@ -501,6 +525,33 @@ export function Calendar({
   }
   useHostController(controller, state)
   useEventNavigation(mainRef)
+
+  const startPlanPreview = (preview: TaskPlanPreview) => {
+    setActionError(null)
+    setPlanPreview({ preview, view, date: anchor })
+    showView('week', preview.blocks[0]?.date ?? anchor)
+  }
+  const endPlanPreview = () => {
+    if (!planPreview) return
+    setPlanPreview(null)
+    show(planPreview.view, planPreview.date)
+  }
+  const backToPlan = () => {
+    if (!planPreview) return
+    endPlanPreview()
+    taskEditor.openEdit(planPreview.preview.task, planPreview.preview.distribution)
+  }
+  const savePlanPreview = async () => {
+    if (!planPreview) return
+    setIsSavingPlan(true)
+    const saved = await attempt(planPreview.preview.save)
+    setIsSavingPlan(false)
+    if (saved) endPlanPreview()
+  }
+  const selectEvent = (occurrence: EventOccurrence) => {
+    if (!isPlanPreviewEvent(occurrence)) editor.openEdit(occurrence)
+  }
+  const canCreateInView = canCreate && !planPreview
 
   const ViewComponent = VIEW_COMPONENTS[view]
   const editorSource = shownEditor?.occurrence ? eventSources.get(shownEditor.occurrence.calendarId) : undefined
@@ -588,14 +639,27 @@ export function Calendar({
                 navigation={definition.isFixed ? undefined : { onPrevious: previous, onNext: next, onToday: goToToday }}
                 onSearch={features.search ? () => setIsSearchOpen(true) : undefined}
                 onPrint={features.print && !isTaskView ? print : undefined}
-                onFilter={categories.length > 0 && !isTaskView ? () => setIsFilterOpen(true) : undefined}
+                onFilter={hasCategories && !isTaskView ? () => setIsFilterOpen(true) : undefined}
                 isFiltered={activeFilter !== null}
-                onCreate={canCreate && !isTaskView ? createNow : undefined}
+                onCreate={canCreateInView && !isTaskView ? createNow : undefined}
                 context={headerContext}
-                accessory={headerAccessory}
+                accessory={
+                  planPreview ? (
+                    <TaskPlanPreviewActions
+                      isSaving={isSavingPlan}
+                      onSave={() => void savePlanPreview()}
+                      onCancel={endPlanPreview}
+                    />
+                  ) : (
+                    headerAccessory
+                  )
+                }
                 menuItems={menuItems}
               />
 
+              {planPreview && (
+                <TaskPlanPreviewBar preview={planPreview.preview} isSaving={isSavingPlan} onBack={backToPlan} />
+              )}
               <ErrorMessage message={error} className="textCenter" />
               <ErrorMessage message={actionError} className="textCenter" />
 
@@ -608,6 +672,7 @@ export function Calendar({
                 includeList={isTaskView}
                 editor={taskEditor}
                 onSwitchToEvent={canCreate ? switchToEvent : undefined}
+                onPlanPreview={views.includes('week') || views.includes('day') ? startPlanPreview : undefined}
                 onUnsupported={markTasksUnsupported}
                 onError={setActionError}
               >
@@ -618,11 +683,11 @@ export function Calendar({
                     today={today}
                     currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
                     segmentsByDate={segmentsByDate}
-                    canCreate={canCreate}
+                    canCreate={canCreateInView}
                     onCreate={editor.openCreate}
                     onCreateRange={editor.openCreateRange}
                     onCreateAllDay={editor.openCreateAllDay}
-                    onEventSelect={editor.openEdit}
+                    onEventSelect={selectEvent}
                     onShowDay={(date) => showView('day', date)}
                     onShowMonth={(date) => showView('month', date)}
                   />

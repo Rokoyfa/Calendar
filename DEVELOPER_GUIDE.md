@@ -109,7 +109,7 @@ Every option can be given in three ways: as a React prop, as an attribute of the
 | Prop | Attribute | Default | |
 | --- | --- | --- | --- |
 | `features` | `feature-*` | see [Features](#3-features) | Switches for every optional feature |
-| `views` | `views` | all six | Views the user can switch between: `day`, `week`, `month`, `year`, `agenda` (a list of the next 30 days), `tasks` (the task list, only while the `tasks` feature is on). Attribute: separated by spaces or commas, `views="week month"`. With one view the switch disappears |
+| `views` | `views` | all six | Views the user can switch between: `day`, `week`, `month`, `year`, `agenda` (a list of the next 30 days), `tasks` (all tasks as a list or board by status, only while the `tasks` feature is on). Attribute: separated by spaces or commas, `views="week month"`. With one view the switch disappears |
 | `initialView` | `initial-view` | user's start view | View shown first. Wins over the user's setting |
 | `readOnly` | `read-only` | `false` | Shows events without letting anyone create, change, move, delete or import them, see [Read-only mode](#14-read-only-mode-and-public-links) |
 
@@ -207,7 +207,7 @@ Your backend only needs the endpoints of the features that are on, plus a small 
 | `print` | `feature-print` | on | An entry in the calendar menu that prints the visible range or saves it as PDF | – |
 | `bookingPages` | `feature-booking-pages` | on | Public pages where others book a free time, see [Booking pages](#27-booking-pages). Not in local mode | `/calendars/:id/booking-pages`, `/booking-pages/*`, `/booking/*`, `/bookings/*` |
 | `personalSharing` | `feature-personal-sharing` | on | Showing the personal calendar to invited people, who see private events only as busy time and can request events, see [Sharing the personal calendar](#28-sharing-the-personal-calendar). Not in local mode | `/personal-sharing*`, `/peer-calendars*`, `/events/:id/request/*` |
-| `tasks` | `feature-tasks` | on | Tasks with an optional due date on their day and in the task list, assignable in team calendars, see [Tasks](#29-tasks) | `/tasks*`, `task.changed` over the WebSocket |
+| `tasks` | `feature-tasks` | on | Tasks with status, priority, due date, effort and checklist, on their day and in the task view, assignable in team calendars, plannable into free time with the settings tab **Planning**, see [Tasks](#29-tasks) | `/tasks*`, `task.changed` over the WebSocket |
 
 Good to know:
 
@@ -616,6 +616,7 @@ type TaskInput = {
   status: TaskStatus
   priority: 'low' | 'normal' | 'high' | 'urgent'
   categoryIds: string[]
+  builtinCategories: BuiltinCategory[]
   checklist: { id?: string; title: string; done: boolean }[]
   assigneeId: string | null
 }
@@ -758,7 +759,11 @@ type EventInput = {
   reminders: number[]           // minutes before the start, per user (see below)
   attendees: Attendee[]
   visibility?: 'private' | 'public' // for people the personal calendar is shared with, missing means 'private'
+  builtinCategories?: BuiltinCategory[] // fixed categories, independent of the calendar, missing means none
+  taskId?: string | null        // set on a block planned for a task, only on single events
 }
+
+type BuiltinCategory = 'work' | 'leisure' | 'household' | 'family' | 'health' | 'sport' | 'learning'
 
 type Attendee = { email: string; name: string; status: 'needsAction' | 'accepted' | 'tentative' | 'declined' }
 
@@ -790,6 +795,8 @@ type Preferences = {
 }
 type PublicHoliday = { date: string; name: string } // GET /holidays, only with holiday-source="backend"
 // Preferences also carry emailInvites, emailChanges, emailReminders, emailChat: booleans for the emails below
+// and the task planning: planningDistribution ('even' | 'early'), planningCountry ('auto' or a country such as 'DE'),
+// planningDayStart and planningDayEnd ('HH:MM', at least one hour apart)
 type Problem = { code: string; message: string }   // every error response
 ```
 
@@ -919,6 +926,8 @@ Without the feed endpoints, turn the feature off: `features: { subscriptions: fa
 ## 13. Categories
 
 Every calendar can have its own categories, for example "Training" and "Match". Events get up to five of them, and a filter in the calendar menu shows only the chosen ones.
+
+Besides them there are seven **fixed categories** that every calendar has and nobody can change: work, leisure, household, family, health, sport and learning (`builtinCategories`: `work`, `leisure`, `household`, `family`, `health`, `sport`, `learning`). Events and tasks can have any number of them, and they come first in the dialog and in the filter. The task planner uses them to tell work from other appointments (see [Tasks](#29-tasks)). They are not part of `categoryIds`, do not count towards the limit of five and are kept when an event or task moves to another calendar. Your backend stores them per event and task and rejects unknown values (`400`).
 
 - **Managing.** Categories are created, renamed and deleted in the calendar's settings, by members with `manage_calendars` and by the owner of a personal calendar. A calendar holds up to 30.
 - **Assigning.** The event dialog shows the categories of the event's calendar as chips. Anyone who may edit the event may assign them. Whoever may manage the categories can also create a new one right there with "+ New category"; it is selected at once.
@@ -1210,9 +1219,17 @@ Tasks are things to get done, with or without a deadline. They belong to a calen
 
 - **Where they appear.** A task with a due date shows up as a checkable entry on its day: above the all-day events in the day and week views (up to three per day in the week, then "+n more tasks"), in the month cell and in the agenda. The **Tasks** view shows all tasks of the shown calendars split by status (open, in progress, waiting, done), either as a **list** with one section per status below each other, or as a **board** with one column per status side by side. Every section and column shows how many tasks it holds and the sum of their estimated effort. On the board a task is moved to another status by dragging it into the column. Done tasks are folded away in the list. The chosen layout is kept in the browser (`calendar.taskLayout.v1`).
 - **Creating.** With the **Create** button at the top right of the task view, with **N** there, or by switching **Event / Task** at the top of the dialog for a new event. The title and the date carry over in both directions. All fields are filled in in that dialog.
-- **Fields.** Title (up to 200 characters), description (`notes`, up to 2000), status (`open`, `inProgress`, `waiting`, `done`), priority (`low`, `normal`, `high`, `urgent`), due date, due time (only with a due date; it has no time zone and means the same clock time everywhere), estimated effort in hours and minutes (optional, stored as `estimateMinutes`, 1 to 5999), checklist (up to 50 items with title and done), categories of the calendar (up to 5, the same as for events), calendar and, in team calendars, the person responsible. Only team members can be chosen. Open tasks are sorted by priority, then by due date.
+- **Fields.** Title (up to 200 characters), description (`notes`, up to 2000), status (`open`, `inProgress`, `waiting`, `done`), priority (`low`, `normal`, `high`, `urgent`), due date, due time (only with a due date; it has no time zone and means the same clock time everywhere), estimated effort in hours and minutes (optional, stored as `estimateMinutes`, 1 to 5999), checklist (up to 50 items with title and done), categories of the calendar (up to 5, the same as for events), fixed categories (`builtinCategories`, see [Categories](#13-categories)), calendar and, in team calendars, the person responsible. Only team members can be chosen. Open tasks are sorted by priority, then by due date.
 - **Done.** The status `done` sets `completedAt` and `completedBy`; any other status clears them. Ticking the box of a task on its day sets `done`, unticking sets `open`.
-- **Who may do what.** Creating needs `create_entry` in the calendar. Changing follows the event rules (`update_own_entry` / `update_any_entry`), moving to another calendar and deleting need `delete_own_entry` / `delete_any_entry`. The person responsible may also change the status and tick checklist items, even without edit rights; everything else stays read-only for them. Moving to another calendar removes the categories, as they belong to the old calendar. Deleting is final; tasks do not go to the trash.
+- **Who may do what.** Creating needs `create_entry` in the calendar. Changing follows the event rules (`update_own_entry` / `update_any_entry`), moving to another calendar and deleting need `delete_own_entry` / `delete_any_entry`. The person responsible may also change the status and tick checklist items, even without edit rights; everything else stays read-only for them. Moving to another calendar removes the calendar's own categories, as they belong to the old calendar; fixed categories stay. Deleting is final; tasks do not go to the trash.
+- **Planning.** **Plan** in the dialog of a saved task spreads the effort over free time in the user's personal calendar, as private events linked to the task (`taskId`). They take over the task's fixed categories, or `work` if it has none. Without an effort the button is disabled and says why on hover. A preview shows the blocks per day before anything is created; **Show in calendar** puts them into the week view of the real calendar, highlighted with a dashed border, with **Save** and **Cancel** at the top right and a way back to the preview. Once the task has future blocks, the button reads **Plan again**; planning again replaces only blocks that have not started yet; blocks that have started count as done effort. The rules:
+  - Blocks only go into free time between the planning hours of the user's settings (08:00 to 20:00 by default), are at least 30 minutes long (shorter only if the whole effort is shorter) and end before the due date. Without a due date they are planned as early as possible, at most a year ahead.
+  - Every timed event in the user's calendars, team calendars, subscribed, CalDAV and shared calendars is busy. All-day events are busy for the whole day only if they have a fixed category.
+  - Work is every event of the user's own calendars with the fixed category `work`, even if it has other ones as well, and every planned block. Events without a fixed category and events from subscriptions, CalDAV or shared calendars only make the time busy.
+  - Between work on two days there is the legal rest period of the chosen country (11 hours in Germany), no day has more than the legal daily and weekly working time, no stretch of work is longer than allowed without a break, and the required breaks are kept. Rest days of the country (Sunday by default, Friday in Gulf states, Saturday in Israel) and public holidays of the holiday region stay free. The country comes from the holiday region unless the user picks another one; countries without their own rules use the general rules (those of Germany).
+  - **Evenly** (default) spreads the effort over the days until the due date, **as early as possible** fills the first free days. The user sets the default in the settings under **Planning** and can change it for each task in the preview.
+  - If the effort does not fit, nothing is created on its own. The preview says how much is missing and offers to create only the blocks that fit or to move the due date to the first day on which everything fits.
+  - When the task is done or deleted, its blocks that have not started yet go to the trash; when it is deleted, the remaining blocks lose the link.
 - **Notifications.** Assigning someone sends them the notification `taskAssigned` (with `task: { id, calendarId, title, dueDate }`). Opening it shows the task.
 - **Not included.** Tasks are not part of public links, booking pages, the sharing of the personal calendar, iCalendar feeds and CalDAV.
 - **Codes:** `taskNotFound`, `taskChanged`, `tooManyTasks`, `invalidAssignee`.
@@ -1223,10 +1240,12 @@ What your backend has to enforce, because the widget only shows what it receives
 - **Access.** Only members of the calendar's team (or the owner of a personal calendar) can list or open its tasks. Unknown tasks and tasks of calendars the user cannot see answer `taskNotFound`, so nobody can probe ids.
 - **Permissions.** Check the rights above on every request, also for `POST /tasks/:id/status` and `POST /tasks/:id/checklist/:itemId`: besides the edit rights only the current assignee may use them. Never trust `createdBy`, `completedBy` or `assignee` names from the request; set them from the signed-in user and your member list.
 - **Assignees.** `assigneeId` must belong to a current member of the calendar's team, otherwise answer `invalidAssignee`. Personal calendars have no assignee. When someone leaves the team, remove them as assignee of its tasks; when a task moves to a calendar where the assignee is not a member, drop the assignee.
-- **Fields.** Reject unknown `status` and `priority` values, more than 50 checklist items, empty item titles and categories of other calendars (`400`). Keep the `id` of checklist items that come back with a known `id`, give new items a new one. Remove a deleted category from all tasks.
+- **Fields.** Reject unknown `status` and `priority` values, more than 50 checklist items, empty item titles, categories of other calendars and unknown fixed categories (`400`). Keep the `id` of checklist items that come back with a known `id`, give new items a new one. Remove a deleted category from all tasks.
 - **Versions.** Every change increases `version`. With `If-Match` and an older version answer `taskChanged` (`412`).
 - **Limits.** At most 5000 tasks per calendar (`tooManyTasks`), at most 400 days per query. Without `from` and `to`, `GET /tasks` returns all tasks that are not done and the 200 most recently done; `completed=true|false` narrows that.
 - **Clean-up.** Deleting a calendar deletes its tasks; deleting an account removes it as assignee, creator and completer. Tasks are part of the data export.
+- **Planned blocks.** Accept `taskId` on an event only for a task the user can see (otherwise `400` with `taskNotFound`) and never on a recurring or detached event. When a task becomes `done` (through `PUT /tasks/:id` or `POST /tasks/:id/status`) or is deleted, also when its calendar or team is deleted, move all events linked to it that have not started yet to the trash, in whichever personal calendar they are, and announce the deletion. On delete, set `taskId` of the remaining events to `null`. Public links and shared personal calendars never show `taskId`.
+- **Planning settings.** `planningDistribution` is `even` or `early`, `planningCountry` is `auto` or two capital letters, `planningDayStart` and `planningDayEnd` are `HH:MM` and at least one hour apart, also when only one of them is sent (compare with the stored value). Reject everything else with `400`.
 - **Live updates.** Send `{ "type": "task.changed", "calendarId", "taskId", "version", "changedBy" }` to everyone who sees the calendar; the widget then reloads.
 
 Turn the feature off with `features: { tasks: false }`. If `GET /tasks` answers `404`, `405` or `501`, the widget treats tasks as not offered by the backend and hides them.

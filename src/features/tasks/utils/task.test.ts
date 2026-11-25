@@ -22,6 +22,7 @@ const task = (fields: Partial<Task>): Task => ({
   status: 'open',
   priority: 'normal',
   categoryIds: [],
+  builtinCategories: [],
   checklist: [],
   assignee: null,
   completedAt: null,
@@ -67,6 +68,7 @@ describe('task utils', () => {
         status: 'waiting',
         priority: 'high',
         categoryIds: ['k1', 'k1'],
+        builtinCategories: ['learning', 'work'],
         checklist: [
           { title: ' Erst ', done: false },
           { title: '  ', done: true },
@@ -82,6 +84,7 @@ describe('task utils', () => {
       status: 'waiting',
       priority: 'high',
       categoryIds: ['k1'],
+      builtinCategories: ['work', 'learning'],
       checklist: [{ title: 'Erst', done: false }],
       assigneeId: null,
     })

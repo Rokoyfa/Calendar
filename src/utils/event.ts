@@ -1,4 +1,4 @@
-import { parseCategoryIds } from './category.ts'
+import { parseBuiltinCategories, parseCategoryIds, type BuiltinCategory } from './category.ts'
 import type { CSSProperties } from 'react'
 import {
   addDaysToISODate,
@@ -88,6 +88,8 @@ export type CalendarEvent = {
   reminders: number[]
   attendees: Attendee[]
   visibility?: EventVisibility
+  builtinCategories?: BuiltinCategory[]
+  taskId?: string | null
   request?: EventRequest | null
   attachmentCount: number
   version: number
@@ -117,6 +119,8 @@ const EVENT_INPUT_KEYS = [
   'reminders',
   'attendees',
   'visibility',
+  'builtinCategories',
+  'taskId',
 ] as const satisfies readonly (keyof CalendarEvent)[]
 
 export type EventInput = Pick<CalendarEvent, (typeof EVENT_INPUT_KEYS)[number]>
@@ -310,6 +314,8 @@ export const parseCalendarEvent = (value: unknown): CalendarEvent | null => {
     reminders: parseReminders(rest.reminders),
     attendees: parseAttendees(rest.attendees),
     visibility: isOneOf(EVENT_VISIBILITIES, rest.visibility) ? rest.visibility : 'private',
+    builtinCategories: parseBuiltinCategories(rest.builtinCategories),
+    taskId: typeof rest.taskId === 'string' && rest.taskId !== '' && !recurrence ? rest.taskId : null,
     request: parseRequest(rest.request),
     version: Number.isInteger(rest.version) && (rest.version as number) > 0 ? (rest.version as number) : 0,
     createdBy: typeof rest.createdBy === 'string' && rest.createdBy !== '' ? rest.createdBy : null,
@@ -347,6 +353,8 @@ export const createEventInputForSlots = (first: HourSlot, last: HourSlot, timeZo
     reminders: [],
     attendees: [],
     visibility: 'private',
+    builtinCategories: [],
+    taskId: null,
   }
 }
 
@@ -386,6 +394,8 @@ export const normalizeEventInput = (input: EventInput): EventInput => ({
     .filter(({ url, label }) => url !== '' || label !== ''),
   description: input.description.trim(),
   categoryIds: parseCategoryIds(input.categoryIds),
+  builtinCategories: parseBuiltinCategories(input.builtinCategories),
+  taskId: input.recurrence || input.seriesId ? null : (input.taskId ?? null),
   reminders: parseReminders(input.reminders),
   ...(input.allDay ? { start: ALL_DAY_TIME, end: ALL_DAY_TIME, timeZone: null } : {}),
   ...(input.recurrence ? NO_SERIES_LINK : { excludedDates: [] }),
@@ -395,6 +405,7 @@ export const toDuplicateInput = (input: EventInput): EventInput => ({
   ...input,
   uid: createEventUid(),
   excludedDates: [],
+  taskId: null,
   ...NO_SERIES_LINK,
   attendees: input.attendees.map((attendee) => ({ ...attendee, status: 'needsAction' })),
 })

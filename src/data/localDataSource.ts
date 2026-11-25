@@ -8,15 +8,18 @@ import {
 import { LocalTaskRepository } from '../features/tasks/index.ts'
 import type { CalendarDataSource, DataRepositories } from './types.ts'
 
-export const createLocalRepositories = (): DataRepositories => ({
-  mode: 'local',
-  events: new LocalEventRepository(),
-  calendars: new LocalCalendarRepository(),
-  colors: new LocalColorRepository(),
-  preferences: new LocalPreferencesRepository(),
-  categories: new LocalCategoryRepository(),
-  tasks: new LocalTaskRepository(),
-})
+export const createLocalRepositories = (): DataRepositories => {
+  const events = new LocalEventRepository()
+  return {
+    mode: 'local',
+    events,
+    calendars: new LocalCalendarRepository(),
+    colors: new LocalColorRepository(),
+    preferences: new LocalPreferencesRepository(),
+    categories: new LocalCategoryRepository(),
+    tasks: new LocalTaskRepository(undefined, events),
+  }
+}
 
 export const localDataSource = (): CalendarDataSource => ({
   connect: createLocalRepositories,

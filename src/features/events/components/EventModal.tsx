@@ -360,7 +360,9 @@ export function EventModal({
           <CategoryField
             categories={categories}
             value={values.categoryIds}
+            builtin={values.builtinCategories ?? []}
             onChange={(categoryIds) => setField('categoryIds', categoryIds)}
+            onBuiltinChange={(builtinCategories) => setField('builtinCategories', builtinCategories)}
             onCreate={readOnly ? undefined : onCreateCategory}
           />
         </>

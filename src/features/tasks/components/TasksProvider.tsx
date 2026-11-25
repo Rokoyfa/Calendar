@@ -6,8 +6,8 @@ import { useStorage } from '../../storage/index.ts'
 import { TasksContext, type TasksContextValue } from '../context/TasksContext.ts'
 import { useTaskActions, useTaskList } from '../hooks/useTasks.ts'
 import type { TaskEditor } from '../hooks/useTaskEditor.ts'
-import type { Task, TaskRepository, TaskSetup, TaskStatus } from '../types/task.ts'
-import { groupTasksByDate, isTaskDone } from '../utils/task.ts'
+import type { Task, TaskPlanPreview, TaskRepository, TaskSetup, TaskStatus } from '../types/task.ts'
+import { groupTasksByDate, isTaskDone, toTaskInput } from '../utils/task.ts'
 
 const TaskModal = lazy(async () => ({ default: (await import('./TaskModal.tsx')).TaskModal }))
 
@@ -24,6 +24,7 @@ type TasksProviderProps = {
   categories?: readonly Category[]
   onCreateCategory?: (calendarId: string, name: string) => Promise<Category>
   onSwitchToEvent?: (draft: { title: string; date: string | null }) => void
+  onPlanPreview?: (preview: TaskPlanPreview) => void
   onUnsupported: () => void
   onError: (message: string | null) => void
   children: ReactNode
@@ -60,6 +61,7 @@ function ActiveTasksProvider({
   categories = NO_CATEGORIES,
   onCreateCategory,
   onSwitchToEvent,
+  onPlanPreview,
   onUnsupported,
   onError,
   children,
@@ -196,6 +198,19 @@ function ActiveTasksProvider({
               editor.close()
             }}
             onSwitchToEvent={onSwitchToEvent}
+            planning={setup.planning}
+            onReschedule={(task, dueDate) =>
+              actions.save(task, { ...toTaskInput(task), dueDate, dueTime: null }, task.calendarId)
+            }
+            resumePlan={shown.resumePlan}
+            onPlanPreview={
+              onPlanPreview
+                ? (preview) => {
+                    editor.close()
+                    onPlanPreview(preview)
+                  }
+                : undefined
+            }
             onClose={editor.close}
           />
         </Suspense>

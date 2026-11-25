@@ -101,7 +101,7 @@
         "shortcuts": {
           "type": "boolean",
           "default": true,
-          "description": "Keyboard shortcuts."
+          "description": "Keyboard shortcuts: T today, N new entry, / search, D W M Y A K views, arrow keys."
         },
         "subscriptions": {
           "type": "boolean",
@@ -216,7 +216,7 @@
         "tasks": {
           "type": "boolean",
           "default": true,
-          "description": "Tasks with an optional due date in every calendar: checkable entries on their day and a separate task list view. In team calendars a task can be assigned to a member. Needs the /tasks endpoints in remote mode."
+          "description": "Tasks with status, priority, optional due date, effort and checklist in every calendar: checkable entries on their day and a task view as a list or board. In team calendars a task can be assigned to a member. Tasks with an effort can be planned into free time (settings tab Planning). Needs the /tasks endpoints in remote mode."
         }
       }
     },

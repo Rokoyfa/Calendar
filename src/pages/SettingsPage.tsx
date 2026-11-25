@@ -7,6 +7,7 @@ import { useFeatures } from '../context/HostContext.ts'
 import { CustomColorSettings } from '../features/events/index.ts'
 import { NotificationSettings, PreferencesSettings } from '../features/preferences/index.ts'
 import { HolidaySettings } from '../features/holidays/index.ts'
+import { TaskPlanningSettings } from '../features/tasks/index.ts'
 import { ExternalCalendarSettings, useExternalCalendars } from '../features/external/index.ts'
 import {
   CaldavAccountSettings,
@@ -19,12 +20,20 @@ import { useI18n } from '../i18n/index.ts'
 import { compact } from '../utils/list.ts'
 
 type SettingsTab =
-  'calendars' | 'connections' | 'invitations' | 'appearance' | 'notifications' | 'account' | 'security' | 'data'
+  | 'calendars'
+  | 'connections'
+  | 'invitations'
+  | 'appearance'
+  | 'planning'
+  | 'notifications'
+  | 'account'
+  | 'security'
+  | 'data'
 
 export function SettingsPage() {
   const { m } = useI18n()
   const { enabled, method, user } = useAuth()
-  const { teams, holidays, customColors, emailNotifications, dataExport } = useFeatures()
+  const { teams, holidays, customColors, emailNotifications, dataExport, tasks } = useFeatures()
   const { exportData, security } = useAuth()
   const { invitations } = useCalendars()
   const external = useExternalCalendars()
@@ -73,6 +82,11 @@ export function SettingsPage() {
           {customColors && <CustomColorSettings />}
         </>
       ),
+    },
+    tasks && {
+      value: 'planning',
+      label: m.settings.tabs.planning,
+      content: <TaskPlanningSettings />,
     },
     emailNotifications &&
       enabled &&

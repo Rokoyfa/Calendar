@@ -11,6 +11,7 @@ export const settings: Messages['settings'] = {
     data: 'Données',
     security: 'Sécurité',
     connections: 'Connexions',
+    planning: 'Planification',
   },
   dataExport: {
     title: 'Vos données',
@@ -51,4 +52,28 @@ export const settings: Messages['settings'] = {
   startViewDescription: 'Le calendrier s’ouvre dans cette vue.',
   desktop: 'Ordinateur et tablette',
   mobile: 'Téléphone',
+  planning: {
+    title: 'Planification automatique',
+    description:
+      '«\u202fPlanifier\u202f» répartit l’effort d’une tâche sur les créneaux libres de votre calendrier personnel.',
+    distribution: 'Répartition',
+    distributions: { even: 'Régulièrement jusqu’à l’échéance', early: 'Le plus tôt possible' },
+    country: 'Règles de temps de travail',
+    countryAuto: (name) => `Automatique\u00a0: ${name}`,
+    generalRules: 'Règles générales',
+    withGeneralRules: (name) => `${name} (règles générales)`,
+    rest: (time) => `Repos entre deux journées de travail\u00a0: ${time}`,
+    daily: (time) => `Au plus ${time} de travail par jour`,
+    weekly: (time) => `Au plus ${time} par semaine`,
+    stretch: (time) => `Au plus ${time} sans pause`,
+    breakRule: (after, length) => `Pause de ${length} après ${after}`,
+    restDays: (days) => `Jours de repos\u00a0: ${days}`,
+    rulesNote:
+      'Valeurs indicatives d’après les limites légales. Les jours fériés viennent de votre région de jours fériés. Seuls les événements de la catégorie fixe «\u202fTravail\u202f» et les blocs de tâches planifiés comptent comme travail.',
+    window: 'Heures de planification',
+    windowDescription: 'Les blocs de tâches sont planifiés uniquement entre ces heures.',
+    windowStart: 'De',
+    windowEnd: 'À',
+    windowInvalid: 'Les heures de planification doivent couvrir au moins une heure.',
+  },
 }

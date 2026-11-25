@@ -69,7 +69,7 @@ features:
   # "Duplicate" in the event dialog.
   duplicate: true
 
-  # Keyboard shortcuts (T today, N new event, / search, D W M Y A views, arrow keys).
+  # Keyboard shortcuts (T today, N new event, / search, D W M Y A K views, arrow keys).
   shortcuts: true
 
   # Subscription links for other calendar apps. Needs the feed endpoints.
@@ -147,10 +147,13 @@ features:
   # Public booking pages where others book a free slot after confirming their email address.
   # Needs the /booking-pages and /booking endpoints.
   bookingPages: true
+
+  # Sharing the personal calendar with chosen people by email: private events appear as busy time.
+  # Needs the /personal-sharing and /peer-calendars endpoints.
   personalSharing: true
 
-  # Tasks with an optional due date: checkable on their day and in a separate task list.
-  # Needs the /tasks endpoints in remote mode.
+  # Tasks with status, priority, due date, effort and checklist: checkable on their day and in the
+  # task view as a list or board, plannable into free time. Needs the /tasks endpoints in remote mode.
   tasks: true
 
 # Shows events without letting anyone create, change, move, delete or import them.

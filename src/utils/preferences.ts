@@ -1,5 +1,6 @@
 import { AUTO_LOCALE, canonicalizeLocale } from '../i18n/locale.ts'
 import { isCalendarView, type CalendarView } from './calendarView.ts'
+import { timeToMinutes } from './date.ts'
 import { isOneOf } from './object.ts'
 import { HOLIDAYS_AUTO, isHolidaySetting } from './holidays.ts'
 import { isTimeZone } from './timeZone.ts'
@@ -10,6 +11,27 @@ export const THEMES = ['system', 'light', 'dark'] as const
 export type Theme = (typeof THEMES)[number]
 
 export const AUTO_TIME_ZONE = 'auto'
+
+export const PLANNING_DISTRIBUTIONS = ['even', 'early'] as const
+
+export type PlanningDistribution = (typeof PLANNING_DISTRIBUTIONS)[number]
+
+export const PLANNING_COUNTRY_AUTO = 'auto'
+
+const PLANNING_COUNTRY_PATTERN = /^[A-Z]{2}$/
+const PLANNING_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
+export const PLANNING_MIN_WINDOW_MINUTES = 60
+
+export const isPlanningCountry = (value: unknown): value is string =>
+  value === PLANNING_COUNTRY_AUTO || (typeof value === 'string' && PLANNING_COUNTRY_PATTERN.test(value))
+
+export const isPlanningTime = (value: unknown): value is string =>
+  typeof value === 'string' && PLANNING_TIME_PATTERN.test(value)
+
+export const isPlanningWindow = (start: string, end: string) =>
+  isPlanningTime(start) &&
+  isPlanningTime(end) &&
+  timeToMinutes(end) - timeToMinutes(start) >= PLANNING_MIN_WINDOW_MINUTES
 
 export type Preferences = {
   theme: Theme
@@ -22,7 +44,16 @@ export type Preferences = {
   emailChanges: boolean
   emailReminders: boolean
   emailChat: boolean
+  planningDistribution: PlanningDistribution
+  planningCountry: string
+  planningDayStart: string
+  planningDayEnd: string
 }
+
+export type PlanningPreferenceKey = 'planningDistribution' | 'planningCountry' | 'planningDayStart' | 'planningDayEnd'
+
+export type StoredPreferences = Omit<Preferences, PlanningPreferenceKey> &
+  Partial<Pick<Preferences, PlanningPreferenceKey>>
 
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: 'system',
@@ -35,6 +66,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   emailChanges: true,
   emailReminders: false,
   emailChat: true,
+  planningDistribution: 'even',
+  planningCountry: PLANNING_COUNTRY_AUTO,
+  planningDayStart: '08:00',
+  planningDayEnd: '20:00',
 }
 
 const COMPACT_MAX_WIDTH = 700
@@ -53,7 +88,15 @@ export const parsePreferences = (value: unknown): Preferences => {
     emailChanges,
     emailReminders,
     emailChat,
+    planningDistribution,
+    planningCountry,
+    planningDayStart,
+    planningDayEnd,
   } = asRecord(value)
+  const hasWindow =
+    typeof planningDayStart === 'string' &&
+    typeof planningDayEnd === 'string' &&
+    isPlanningWindow(planningDayStart, planningDayEnd)
   return {
     theme: isOneOf(THEMES, theme) ? theme : DEFAULT_PREFERENCES.theme,
     defaultView: isCalendarView(defaultView) ? defaultView : DEFAULT_PREFERENCES.defaultView,
@@ -65,6 +108,12 @@ export const parsePreferences = (value: unknown): Preferences => {
     emailChanges: typeof emailChanges === 'boolean' ? emailChanges : DEFAULT_PREFERENCES.emailChanges,
     emailReminders: typeof emailReminders === 'boolean' ? emailReminders : DEFAULT_PREFERENCES.emailReminders,
     emailChat: typeof emailChat === 'boolean' ? emailChat : DEFAULT_PREFERENCES.emailChat,
+    planningDistribution: isOneOf(PLANNING_DISTRIBUTIONS, planningDistribution)
+      ? planningDistribution
+      : DEFAULT_PREFERENCES.planningDistribution,
+    planningCountry: isPlanningCountry(planningCountry) ? planningCountry : PLANNING_COUNTRY_AUTO,
+    planningDayStart: hasWindow ? planningDayStart : DEFAULT_PREFERENCES.planningDayStart,
+    planningDayEnd: hasWindow ? planningDayEnd : DEFAULT_PREFERENCES.planningDayEnd,
   }
 }
 
