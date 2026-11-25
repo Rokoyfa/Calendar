@@ -7,7 +7,7 @@ import type { ChatEvent, ChatKey, ChatMessage, ChatPage, ChatUnread } from '../.
 import type { EventChange } from '../../../utils/eventChange.ts'
 import type { TrashedEvent } from '../../../utils/trash.ts'
 import type { PublicHoliday } from '../../../utils/holidays.ts'
-import type { Preferences } from '../../../utils/preferences.ts'
+import type { Preferences, StoredPreferences } from '../../../utils/preferences.ts'
 import type { SharedCalendar } from '../../../utils/sharedCalendar.ts'
 import type {
   ExternalCalendar,
@@ -172,8 +172,8 @@ export interface BookingRepository {
 }
 
 export interface PreferencesRepository {
-  get(): Promise<Preferences>
-  update(changes: Partial<Preferences>): Promise<Preferences>
+  get(): Promise<StoredPreferences>
+  update(changes: Partial<Preferences>): Promise<StoredPreferences>
 }
 
 export type HolidayQuery = DateRange & { region: string; language: string }

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Calendar API
-  version: 2.1.0
+  version: 2.2.0
   description: |
     REST contract between the calendar component (`restDataSource`) and a backend.
     The test backend (`TestBE`) is the reference implementation.
@@ -123,7 +123,7 @@ info:
     | `bookingNotFound` | 404 | The link of a booking email is unknown |
     | `sharedCalendarNotFound` | 404 | The personal calendar is not (or no longer) shared with the caller |
     | `requestNotFound` | 404 | The event request is unknown or not the caller's own |
-    | `taskNotFound` | 404 | The task is unknown or in a calendar the caller cannot see |
+    | `taskNotFound` | 404 | The task is unknown or in a calendar the caller cannot see (`400` when an event links to such a task) |
     | `emailTaken` | 409 | An account with this email exists |
     | `alreadyMember` | 409 | The invited person is already a member |
     | `alreadyInvited` | 409 | The address is already invited |
@@ -2765,7 +2765,8 @@ paths:
       description: |
         Replaces all fields of `TaskInput`. Needs `update_own_entry` (own tasks) or `update_any_entry`. A new assignee
         gets `taskAssigned`. Checklist items keep their `id` when it is sent back; items without a known `id` get a new
-        one. Setting `status` to `done` sets `completedAt` and `completedBy`, any other status clears them.
+        one. Setting `status` to `done` sets `completedAt` and `completedBy`, any other status clears them. When the task
+        becomes `done`, its planned blocks (events with this `taskId`) that have not started yet go to the trash.
       parameters:
         - $ref: '#/components/parameters/IfMatch'
       requestBody:
@@ -2788,7 +2789,9 @@ paths:
       tags: [Tasks]
       x-feature: tasks
       summary: Delete a task
-      description: Deletes for good, there is no trash for tasks. Needs `delete_own_entry` or `delete_any_entry`.
+      description: |
+        Deletes for good, there is no trash for tasks. Needs `delete_own_entry` or `delete_any_entry`. Planned blocks of
+        the task that have not started yet go to the trash; the others keep existing with `taskId: null`.
       parameters:
         - $ref: '#/components/parameters/IfMatch'
       responses:
@@ -2806,7 +2809,8 @@ paths:
       summary: Change the status of a task
       description: |
         Allowed for the assignee and for everyone who may edit the task. `done` sets `completedAt` and `completedBy`,
-        any other status clears them. The same status again leaves the task unchanged.
+        any other status clears them. The same status again leaves the task unchanged. Changing to `done` moves the planned
+        blocks of the task that have not started yet to the trash.
       parameters:
         - $ref: '#/components/parameters/IfMatch'
       requestBody:
@@ -3291,8 +3295,9 @@ components:
           default: null
           description: |
             Task this event was planned for (a time block created by the task planner). Only for single events, the
-            task must be visible to the user (`400 taskNotFound` otherwise). Cleared when the task is deleted and left
-            out of public links.
+            task must be visible to the user (`400 taskNotFound` otherwise). When the task becomes done or is deleted,
+            blocks that have not started yet go to the trash; on delete the others are cleared to `null`. Left out of
+            public links and shared personal calendars.
     BuiltinCategory:
       type: string
       enum: [work, leisure, household, family, health, sport, learning]

@@ -2,14 +2,14 @@
 
 All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning](https://semver.org/). From 1.0 on, breaking changes to props, attributes, DOM events, exported types, the data adapter and the REST contract only come with a new major version.
 
-## Unreleased
+## 2.2.0 – 2026-11-25
 
 ### Upgrading from 2.1
 
 - `tasks` is on by default and needs the new `/tasks` endpoints. Without them (`404`, `405` or `501` on `GET /tasks`) the widget hides tasks on its own; to hide them from the start use `features: { tasks: false }` or `feature-tasks="false"`.
 - `CalendarView` and the `views` option gain `tasks`, and the start view in the user settings may now be `tasks`. A backend that validates `defaultView` and `mobileDefaultView` has to accept it (see `CalendarView` in `api/openapi.yaml`).
 - `DataRepositories` has a new optional `tasks` repository. Own adapters compile unchanged; without it tasks stay hidden.
-- Events and tasks gain `builtinCategories`, events gain `taskId`, and the preferences gain `planningDistribution`, `planningCountry`, `planningDayStart` and `planningDayEnd`. The new event fields are optional in `CalendarEvent` and `EventInput`. A backend has to store and return them and, when a task is done or deleted, remove its future planned blocks (see section 29 of the developer guide).
+- Events and tasks gain `builtinCategories`, events gain `taskId`, and the preferences gain `planningDistribution`, `planningCountry`, `planningDayStart` and `planningDayEnd`. The new event fields are optional in `CalendarEvent` and `EventInput`. A backend has to store and return them and, when a task is done or deleted, remove its future planned blocks (see section 29 of the developer guide). Own `PreferencesRepository` adapters may leave the planning fields out (`StoredPreferences`); the widget then uses the defaults.
 
 ### Added
 

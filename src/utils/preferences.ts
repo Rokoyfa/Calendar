@@ -50,6 +50,11 @@ export type Preferences = {
   planningDayEnd: string
 }
 
+export type PlanningPreferenceKey = 'planningDistribution' | 'planningCountry' | 'planningDayStart' | 'planningDayEnd'
+
+export type StoredPreferences = Omit<Preferences, PlanningPreferenceKey> &
+  Partial<Pick<Preferences, PlanningPreferenceKey>>
+
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: 'system',
   defaultView: 'week',
