@@ -56,6 +56,7 @@ export const tasks: Messages['tasks'] = {
     open: 'Inplannen',
     again: 'Opnieuw inplannen',
     saveFirst: 'Sla je wijzigingen aan vervaldatum en inspanning op voordat je inplant.',
+    needsEstimate: 'Stel eerst een inspanning in om de taak in te plannen.',
     title: 'Taak inplannen',
     loading: 'Vrije tijd zoeken …',
     effort: (total) => `Inspanning ${total}`,

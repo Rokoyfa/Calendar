@@ -26,6 +26,14 @@
   color: var(--color-on-accent);
 }
 
+.buttonHint {
+  display: inline-flex;
+}
+
+.buttonHint:has(:disabled) {
+  cursor: not-allowed;
+}
+
 .button--outline {
   border: 1px solid var(--color-grid);
   background-color: transparent;

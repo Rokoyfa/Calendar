@@ -150,7 +150,7 @@ export function TaskPlanModal({
           )}
           {onPreview && context && blocks.length > 0 && (
             <Button
-              variant="secondary"
+              variant="outline"
               disabled={isBusy}
               onClick={() =>
                 onPreview({
@@ -186,7 +186,7 @@ export function TaskPlanModal({
           )}
           {missing > 0 && blocks.length > 0 && (
             <Button
-              variant="secondary"
+              variant="outline"
               isPending={create.isPending}
               pendingLabel={text.creating}
               disabled={reschedule.isPending}

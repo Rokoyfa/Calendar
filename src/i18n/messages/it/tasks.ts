@@ -56,6 +56,7 @@ export const tasks: Messages['tasks'] = {
     open: 'Pianifica',
     again: 'Ripianifica',
     saveFirst: 'Salva le modifiche a scadenza e impegno prima di pianificare.',
+    needsEstimate: 'Imposta prima un impegno per pianificare l’attività.',
     title: 'Pianifica attività',
     loading: 'Ricerca di tempo libero…',
     effort: (total) => `Impegno ${total}`,

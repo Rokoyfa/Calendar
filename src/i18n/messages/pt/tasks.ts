@@ -56,6 +56,7 @@ export const tasks: Messages['tasks'] = {
     open: 'Planejar',
     again: 'Planejar de novo',
     saveFirst: 'Salve as alterações do prazo e do esforço antes de planejar.',
+    needsEstimate: 'Defina primeiro um esforço para planejar a tarefa.',
     title: 'Planejar tarefa',
     loading: 'Procurando tempo livre…',
     effort: (total) => `Esforço ${total}`,

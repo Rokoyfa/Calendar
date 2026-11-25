@@ -249,13 +249,19 @@ export function TaskModal({
     void save(input)
   }
 
-  const canPlan =
-    planning !== undefined && task !== null && !isTaskDone(task) && task.estimateMinutes !== null && canProgress
+  const canPlan = planning !== undefined && task !== null && !isTaskDone(task) && canProgress
   const hasUnsavedPlanChanges =
     task !== null &&
     (values.dueDate !== task.dueDate ||
       values.dueTime !== task.dueTime ||
       toEstimateMinutes(estimate) !== task.estimateMinutes)
+
+  const planHint =
+    toEstimateMinutes(estimate) === null
+      ? text.plan.needsEstimate
+      : hasUnsavedPlanChanges
+        ? text.plan.saveFirst
+        : undefined
 
   const takeRescheduled = (updated: Task) => {
     setTask(updated)
@@ -455,7 +461,7 @@ export function TaskModal({
           )}
           <Tabs label={text.tabsLabel} tabs={tabs} value={activeTab} stable onChange={setActiveTab} />
           {completedText && <p className="formHint">{completedText}</p>}
-          {canPlan && hasUnsavedPlanChanges && <p className="formHint">{text.plan.saveFirst}</p>}
+          {canPlan && planHint === text.plan.saveFirst && <p className="formHint">{planHint}</p>}
           <ErrorMessage message={saveError ?? progress.error} />
           <div className="modalActions">
             {isEditable && (
@@ -464,13 +470,16 @@ export function TaskModal({
               </Button>
             )}
             {canPlan && (
-              <Button
-                variant="secondary"
-                disabled={isPending || hasUnsavedPlanChanges}
-                onClick={() => setIsPlanOpen(true)}
-              >
-                {hasPlanned || hasFutureBlocks ? text.plan.again : text.plan.open}
-              </Button>
+              <span className="buttonHint" title={planHint}>
+                <Button
+                  variant="outline"
+                  title={planHint}
+                  disabled={isPending || planHint !== undefined}
+                  onClick={() => setIsPlanOpen(true)}
+                >
+                  {hasPlanned || hasFutureBlocks ? text.plan.again : text.plan.open}
+                </Button>
+              </span>
             )}
             {task && access.canDelete(task) && (
               <Button variant="danger" disabled={isPending} onClick={() => setIsDeleteOpen(true)}>

@@ -56,6 +56,7 @@ export const tasks: Messages['tasks'] = {
     open: 'Zaplanuj',
     again: 'Zaplanuj ponownie',
     saveFirst: 'Zapisz zmiany terminu i nakładu pracy, zanim zaplanujesz.',
+    needsEstimate: 'Najpierw ustaw nakład pracy, aby zaplanować zadanie.',
     title: 'Zaplanuj zadanie',
     loading: 'Szukanie wolnego czasu…',
     effort: (total) => `Nakład ${total}`,

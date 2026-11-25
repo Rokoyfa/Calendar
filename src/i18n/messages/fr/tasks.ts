@@ -56,6 +56,7 @@ export const tasks: Messages['tasks'] = {
     open: 'Planifier',
     again: 'Replanifier',
     saveFirst: 'Enregistrez les modifications de l’échéance et de l’effort avant de planifier.',
+    needsEstimate: 'Indiquez d’abord un effort pour planifier la tâche.',
     title: 'Planifier la tâche',
     loading: 'Recherche de créneaux libres…',
     effort: (total) => `Effort ${total}`,

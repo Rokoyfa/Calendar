@@ -54,6 +54,7 @@ export const tasks = {
     open: 'Plan',
     again: 'Plan again',
     saveFirst: 'Save your changes to the due date and effort before planning.',
+    needsEstimate: 'Set an effort first to plan the task.',
     title: 'Plan task',
     loading: 'Looking for free time …',
     effort: (total: string) => `Effort ${total}`,
