@@ -21,6 +21,7 @@ import { withEventCallbacks, type EventCallbacks } from './eventCallbacks.ts'
 import { ExternalCalendarsProvider } from '../features/external/index.ts'
 import { PeerCalendarsProvider } from '../features/peers/index.ts'
 import { PushSync } from '../features/push/index.ts'
+import { PageSync } from '../features/pwa/index.ts'
 
 type EventCallbacksRef = RefObject<EventCallbacks>
 
@@ -98,6 +99,7 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
     <StorageProvider repositories={storage}>
       <PushSync />
       <PreferencesProvider>
+        <PageSync />
         <CalendarsProvider
           key={user?.id ?? 'guest'}
           storageScope={user?.id ?? 'guest'}

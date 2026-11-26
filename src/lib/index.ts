@@ -1,6 +1,6 @@
 export { CalendarWidget as Calendar } from './CalendarWidget.tsx'
 export { VERSION } from './version.ts'
-export { enableInstallPrompt } from '../features/pwa/index.ts'
+export { enableInstallPrompt, enablePageSync } from '../features/pwa/index.ts'
 export { CalendarElement, DEFAULT_ELEMENT_NAME, defineCalendarElement } from './element.tsx'
 export { DEFAULT_FEATURES, FEATURE_NAMES, parseCalendarOptions } from './config.ts'
 export type {

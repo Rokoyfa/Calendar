@@ -1,11 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { env } from './config/env.ts'
-import { Calendar, enableInstallPrompt } from './lib/index.ts'
+import { Calendar, enableInstallPrompt, enablePageSync } from './lib/index.ts'
 
 const PAGE_STYLE = { height: '100dvh' }
 
 enableInstallPrompt()
+enablePageSync()
 if (import.meta.env.PROD && 'serviceWorker' in navigator)
   window.addEventListener(
     'load',
