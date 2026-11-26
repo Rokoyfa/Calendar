@@ -2,6 +2,7 @@ import type { PlanningDistribution } from '../../../utils/preferences.ts'
 import type { PlannedBlock } from '../utils/taskPlanner.ts'
 import type { CalendarEvent } from '../../../utils/event.ts'
 import type { BuiltinCategory } from '../../../utils/category.ts'
+import type { Recurrence } from '../../../utils/recurrence.ts'
 
 export type TaskPerson = {
   id: string
@@ -32,6 +33,7 @@ export type TaskInput = {
   builtinCategories: BuiltinCategory[]
   checklist: TaskChecklistInput[]
   assigneeId: string | null
+  recurrence: Recurrence | null
 }
 
 export type Task = Omit<TaskInput, 'assigneeId' | 'checklist'> & {
@@ -100,6 +102,7 @@ export type TaskSetup = {
   access: TaskAccess
   loadAssignees?: (calendarId: string) => Promise<TaskPerson[]>
   openTaskId?: string | null
+  openTaskPlan?: boolean
   onOpenTaskDone?: () => void
   planning?: TaskPlanningSetup
 }

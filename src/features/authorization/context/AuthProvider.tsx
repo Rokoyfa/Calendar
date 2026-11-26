@@ -1,3 +1,4 @@
+import { runLogoutHooks } from '../../../utils/logoutHooks.ts'
 import type { EventReply } from '../../../utils/event.ts'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type {
@@ -109,6 +110,7 @@ export function AuthProvider({ repository: configuredRepository, children }: Aut
 
   const logout = useCallback(async () => {
     try {
+      await runLogoutHooks()
       await repository.logout()
     } finally {
       setSession(ANONYMOUS)

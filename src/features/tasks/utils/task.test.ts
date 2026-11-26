@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import { createRecurrence } from '../../../utils/recurrence.ts'
 import type { Task } from '../types/task.ts'
 import {
   checklistProgress,
   groupTasksByDate,
   groupTasksByStatus,
   isTaskOverdue,
+  nextTaskOccurrence,
   normalizeTaskInput,
   parseTask,
   sortTasks,
@@ -31,6 +33,7 @@ const task = (fields: Partial<Task>): Task => ({
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
   version: 1,
+  recurrence: null,
   ...fields,
 })
 
@@ -74,6 +77,7 @@ describe('task utils', () => {
           { title: '  ', done: true },
         ],
         assigneeId: null,
+        recurrence: null,
       }),
     ).toEqual({
       title: 'A',
@@ -87,6 +91,7 @@ describe('task utils', () => {
       builtinCategories: ['work', 'learning'],
       checklist: [{ title: 'Erst', done: false }],
       assigneeId: null,
+      recurrence: null,
     })
   })
 
@@ -173,5 +178,16 @@ describe('task utils', () => {
     expect(parseTask({ id: 'c', calendarId: 'c1', title: 'C', estimateMinutes: 6000 })?.estimateMinutes).toBeNull()
     expect(parseTask({ id: 'd', calendarId: 'c1', title: 'D', estimateMinutes: 1.5 })?.estimateMinutes).toBeNull()
     expect(sumTaskEstimates([task({ estimateMinutes: 30 }), task({}), task({ estimateMinutes: 45 })])).toBe(75)
+  })
+
+  it('finds the next due date of a recurring task', () => {
+    const weekly = { ...createRecurrence('weekly', '2026-11-30'), weekdays: [0, 3] }
+    expect(nextTaskOccurrence('2026-11-30', weekly)).toEqual({ dueDate: '2026-12-03', recurrence: weekly })
+    expect(nextTaskOccurrence('2026-12-03', weekly)?.dueDate).toBe('2026-12-07')
+    const monthly = createRecurrence('monthly', '2026-01-31')
+    expect(nextTaskOccurrence('2026-01-31', monthly)?.dueDate).toBe('2026-03-31')
+    expect(nextTaskOccurrence('2026-11-30', { ...weekly, count: 3 })?.recurrence.count).toBe(2)
+    expect(nextTaskOccurrence('2026-11-30', { ...weekly, count: 1 })).toBeNull()
+    expect(nextTaskOccurrence('2026-12-03', { ...weekly, until: '2026-12-05' })).toBeNull()
   })
 })

@@ -44,6 +44,8 @@ export const caldav: Messages['caldav'] = {
     title: 'Gebruiken in andere programma’s (CalDAV)',
     description:
       'Bekijk en bewerk je agenda’s in Apple Agenda, Thunderbird, DAVx⁵ (Android), Outlook met een CalDAV-invoegtoepassing of andere programma’s. Vul daar het serveradres en je e-mailadres in, en als wachtwoord een app-wachtwoord.',
+    tasksHint:
+      'Ook je taken staan daar, bijvoorbeeld in Apple Herinneringen, Thunderbird of Tasks.org met DAVx⁵. Checklists, verantwoordelijken en ingeplande tijd beheer je hier.',
     serverUrl: 'Serveradres',
     username: 'Gebruikersnaam',
     passwordsTitle: 'App-wachtwoorden',

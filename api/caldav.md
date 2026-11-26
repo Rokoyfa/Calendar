@@ -26,7 +26,7 @@ iCalendar (RFC 5545), service discovery (RFC 6764).
 | `/dav/principals/{userId}/` | Principal with `calendar-home-set`, `calendar-user-address-set` (`mailto:` of the user) and `displayname` |
 | `/dav/calendars/{userId}/` | Calendar home. One collection per calendar the user can see |
 | `/dav/calendars/{userId}/{calendarId}/` | Calendar collection |
-| `/dav/calendars/{userId}/{calendarId}/{resource}` | One event resource (`text/calendar`) |
+| `/dav/calendars/{userId}/{calendarId}/{resource}` | One event or task resource (`text/calendar`) |
 
 In the public multi-tenant service the paths start with `/dav/{tenantPublicId}/`; `/.well-known/caldav` on the tenant's
 own domain points there. Everything else works the same, the tenant context comes from the path.
@@ -36,13 +36,13 @@ own domain points there. Everything else works the same, the tenant context come
 | Method | Where | Answer |
 | --- | --- | --- |
 | `OPTIONS` | all | `DAV: 1, 3, calendar-access`, `Allow` |
-| `PROPFIND` | all collections and resources, `Depth: 0` or `1` | `207`. Properties: `resourcetype`, `displayname`, `getetag`, `getcontenttype`, `getctag` (CalendarServer), `sync-token`, `supported-calendar-component-set` (`VEVENT`), `current-user-privilege-set`, `calendar-color` (Apple), `calendar-home-set`, `current-user-principal`, `owner`. Unknown properties go into a `404` propstat |
-| `REPORT calendar-query` | collection | `207` with the events, optionally filtered by `time-range` |
+| `PROPFIND` | all collections and resources, `Depth: 0` or `1` | `207`. Properties: `resourcetype`, `displayname`, `getetag`, `getcontenttype`, `getctag` (CalendarServer), `sync-token`, `supported-calendar-component-set` (`VEVENT`, with the feature `tasks` also `VTODO`), `current-user-privilege-set`, `calendar-color` (Apple), `calendar-home-set`, `current-user-principal`, `owner`. Unknown properties go into a `404` propstat |
+| `REPORT calendar-query` | collection | `207` with the events (`VEVENT` filter) or tasks (`VTODO` filter), optionally filtered by `time-range`; without a component filter both |
 | `REPORT calendar-multiget` | collection | `207` with the requested resources |
 | `REPORT sync-collection` | collection | `207` with changes since the token; deleted resources as `404`. An unknown or too old token answers `403` with `<D:valid-sync-token/>` |
 | `GET` | resource | `200` `text/calendar` with `ETag` |
 | `PUT` | resource | `201` new or `204` changed, with `ETag`. `If-Match` / `If-None-Match: *` are respected (`412`). `403` without write permission |
-| `DELETE` | resource | `204`, moves the event to the trash. `If-Match` like `PUT` |
+| `DELETE` | resource | `204`, moves the event to the trash or deletes the task (tasks have no trash). `If-Match` like `PUT` |
 
 `MKCALENDAR`, `MOVE`, `COPY` and `ACL` answer `403`: calendars are created in the component. `PROPPATCH` answers `207`
 with `403` for every property, so programs that try to store a color or order do not stop with an error.
@@ -61,6 +61,30 @@ with `403` for every property, so programs that try to store a color or order do
 - **Permissions:** the role decides as in the component. Without write permission `current-user-privilege-set` only
   contains `read`, and `PUT`/`DELETE` answer `403`.
 - **Attachments and chat** stay in the component.
+
+## Tasks (VTODO)
+
+With the feature `tasks` every calendar collection also holds the tasks of that calendar, one `VTODO` per resource, so
+Apple Reminders, Thunderbird, Evolution or Tasks.org (with DAVx5) show and change them. A resource contains either
+events or one task; a `PUT` that mixes them, or that turns an event resource into a task, answers `403`
+(`supported-calendar-component`). Without the feature `VTODO` is not offered and a `PUT` with one answers `403`.
+
+- **Resource and UID:** like events. Tasks created in the component get `{id}.ics` and their id as `UID`; a `UID` that is
+  already used by an event or task of the collection answers `409` (`no-uid-conflict`).
+- **ETag:** `"{version}"` of the task.
+- **Fields:** `SUMMARY` (title), `DESCRIPTION` (notes), `DUE` as date or date-time (date-times with `TZID` or `Z` are
+  converted into the user's time zone, as task due times have no zone), `STATUS` (`NEEDS-ACTION` open, `IN-PROCESS` in
+  progress, `COMPLETED` or `CANCELLED` done; waiting is written as `NEEDS-ACTION` with `X-ROKOYFA-STATUS:WAITING`),
+  `COMPLETED`, `PRIORITY` (1–2 urgent, 3–4 high, 5 or none normal, 6–9 low), `ESTIMATED-DURATION` (effort),
+  `CATEGORIES` (matched by name, unknown ones are ignored) and `RRULE` with `FREQ` daily, weekly, monthly or yearly
+  (with `INTERVAL`, `BYDAY`, `COUNT` or `UNTIL`; other rules answer `403` `valid-calendar-data`, `RECURRENCE-ID`
+  likewise). A repeating task needs `DUE`.
+- **Kept on the server:** checklist, assignee, fixed categories and planned time are not part of the `VTODO` and stay as
+  they are when a program changes the task.
+- **Done:** marking a repeating task done creates the next task as on the web (a new resource with its own `UID`) and
+  removes the `RRULE` from the finished one; its future planned blocks go to the trash.
+- **Permissions and limits:** as on the web. Editing needs `update_own_entry`/`update_any_entry`, an assignee without
+  them can change the status only on the web. More than 5000 tasks in a calendar answer `507`.
 
 ## Sync tokens
 

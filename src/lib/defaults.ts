@@ -45,6 +45,8 @@ export const DEFAULT_FEATURES = {
   bookingPages: true,
   personalSharing: true,
   tasks: true,
+  freeBusy: true,
+  push: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES

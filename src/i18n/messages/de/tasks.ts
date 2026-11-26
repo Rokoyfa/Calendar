@@ -52,6 +52,8 @@ export const tasks: Messages['tasks'] = {
   columnEmpty: 'Keine Aufgaben',
   more: (count) => `+${count} weitere Aufgaben`,
   count: (count) => (count === 1 ? '1 Aufgabe' : `${count} Aufgaben`),
+  recurrenceHint: 'Erledigst du die Aufgabe, wird die nächste mit der nächsten Fälligkeit angelegt.',
+  recurrenceNeedsDue: 'Gib eine Fälligkeit an, um die Aufgabe zu wiederholen.',
   plan: {
     open: 'Einplanen',
     again: 'Neu planen',

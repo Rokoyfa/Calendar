@@ -44,6 +44,7 @@ export const settings: Messages['settings'] = {
     emailChanges: 'Als een afspraak waarvoor ik ben uitgenodigd wijzigt of wordt geannuleerd',
     emailReminders: 'Herinneringen per e-mail',
     emailChat: 'Nieuwe chatberichten bij afspraken waarvoor ik ben uitgenodigd',
+    emailTaskDue: 'Als een taak binnenkort af moet en nog niet helemaal is ingepland',
   },
   themeTitle: 'Kleurenschema',
   themeLabel: 'Licht of donker',
@@ -51,6 +52,32 @@ export const settings: Messages['settings'] = {
   startViewDescription: 'De agenda opent in deze weergave.',
   desktop: 'Computer en tablet',
   mobile: 'Telefoon',
+  push: {
+    title: 'Pushmeldingen',
+    description: 'Meldingen van de bel, ook als de agenda gesloten is. Geldt alleen voor dit apparaat en deze browser.',
+    thisDevice: 'Op dit apparaat',
+    unsupported: 'Deze browser ondersteunt geen pushmeldingen.',
+    appleNeedsInstall:
+      'Op iPhone en iPad werken pushmeldingen pas als je de agenda aan het beginscherm hebt toegevoegd.',
+    noServiceWorker: 'Pushmeldingen zijn op deze pagina niet ingesteld.',
+    denied:
+      'Je hebt meldingen voor deze site in je browser geblokkeerd. Sta ze toe in de site-instellingen om ze hier aan te zetten.',
+    foreign: 'Er is op deze pagina al een ander pushabonnement actief.',
+  },
+  app: {
+    title: 'App',
+    description: 'Installeer de agenda als app, zodat hij start als een eigen programma.',
+    install: 'App installeren',
+    installed: 'De agenda is als app geïnstalleerd.',
+    running: 'De agenda draait nu als app.',
+    appleHint: 'Tik in Safari op “Deel” en daarna op “Zet op beginscherm”.',
+  },
+  freeBusy: {
+    title: 'Beschikbaarheid',
+    description:
+      'Wie een team met je deelt of je persoonlijke agenda mag zien, ziet bij het plannen van een afspraak wanneer je bezet bent. Titels, locaties en alle andere details blijven verborgen.',
+    share: 'Bezette tijden tonen',
+  },
   planning: {
     title: 'Automatisch inplannen',
     description: '‘Inplannen’ verdeelt de inspanning van een taak over vrije tijd in je persoonlijke agenda.',

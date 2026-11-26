@@ -1,4 +1,4 @@
-import { useState, type ReactNode, type SubmitEventHandler } from 'react'
+import { useRef, useState, type ReactNode, type SubmitEventHandler } from 'react'
 import { Switch } from '../../../components/Switch.tsx'
 import { SelectField } from '../../../components/SelectField.tsx'
 import { useFeatures } from '../../../context/HostContext.ts'
@@ -55,8 +55,11 @@ import { ReminderField } from './ReminderField.tsx'
 import { TimeZoneField } from './TimeZoneField.tsx'
 import { HistoryPanel } from './HistoryPanel.tsx'
 import { OverlapNotice, type OverlapCheck } from './OverlapNotice.tsx'
+import { PlanConflictNotice, REPLAN_SUBMITTER, type PlanConflictCheck } from './PlanConflictNotice.tsx'
 import { compact } from '../../../utils/list.ts'
 import { RequestDecision, type RequestDecisionOptions } from './RequestDecision.tsx'
+import { FindTimeModal, useFreeBusyRepository, type FoundTime } from '../../freebusy/index.ts'
+import { convertWallTime, toInstant } from '../../../utils/timeZone.ts'
 
 const DEFAULT_START = '09:00'
 const DEFAULT_END = '10:00'
@@ -84,6 +87,14 @@ const hasTabErrors = (errors: EventValidationErrors, tab: EventTab) =>
 
 const isValidPeriod = ({ startDate, start, endDate, end }: EventPeriod) =>
   isISODate(startDate) && isISODate(endDate) && isTime(start) && isTime(end)
+
+const MS_PER_MINUTE = 60_000
+
+const periodMinutes = ({ startDate, start, endDate, end }: EventPeriod, timeZone: string) =>
+  Math.round(
+    (toInstant({ date: endDate, time: end }, timeZone) - toInstant({ date: startDate, time: start }, timeZone)) /
+      MS_PER_MINUTE,
+  )
 
 export type AttendeeOptions = {
   candidates: readonly AttendeeCandidate[]
@@ -120,6 +131,7 @@ type EventModalProps = {
   readOnly?: boolean
   canEditAttachments?: boolean
   checkOverlaps?: OverlapCheck
+  planConflicts?: { check: PlanConflictCheck; onReplan: (taskId: string) => void }
   requestTo?: string
   showVisibility?: boolean
   decision?: RequestDecisionOptions
@@ -153,6 +165,7 @@ export function EventModal({
   readOnly = false,
   canEditAttachments = !readOnly,
   checkOverlaps,
+  planConflicts,
   requestTo,
   showVisibility = false,
   decision,
@@ -175,22 +188,27 @@ export function EventModal({
   const [activeTab, setActiveTab] = useState<EventTab>(chat || initialTab !== 'chat' ? initialTab : 'general')
   const unreadChat = useUnreadCount(chat?.key ?? NO_CHAT)
   const [conflict, setConflict] = useState<{ input: EventInput; scope: EditScope } | null>(null)
+  const replanRef = useRef<string | null>(null)
   const {
     run: save,
     isPending,
     error: submitError,
   } = useAsyncAction(async (input: EventInput, scope: EditScope, options: SaveOptions = {}) => {
     setConflict(null)
+    const replanTaskId = replanRef.current
     try {
       if (occurrence && !isMoving && onRemindersChange && changesOnlyReminders(initialValue, input))
         await onRemindersChange(input.reminders)
       else await onSave(input, scope, pendingFiles, options)
+      if (replanTaskId) planConflicts?.onReplan(replanTaskId)
     } catch (error) {
       if (!isEventChanged(error)) throw error
       setConflict({ input, scope })
     }
   })
   const { run: remove, isPending: isDeleting, error: deleteError } = useAsyncAction(async () => onDelete?.())
+  const freeBusy = useFreeBusyRepository()
+  const [isFindingTime, setFindingTime] = useState(false)
 
   const update = (changes: Partial<EventInput>, clearedErrors: readonly (keyof EventValidationErrors)[]) => {
     setValues((current) => ({ ...current, ...changes }))
@@ -237,9 +255,45 @@ export function EventModal({
 
   const setRecurrence = (recurrence: Recurrence | null) => update({ recurrence }, ['recurrence'])
 
+  const eventTimeZone = values.timeZone ?? viewerTimeZone
+  const canFindTime =
+    freeBusy !== undefined &&
+    attendeeOptions !== undefined &&
+    !isRequest &&
+    !readOnly &&
+    !values.allDay &&
+    values.attendees.length > 0 &&
+    isValidPeriod(values)
+
+  const applyFoundTime = (found: FoundTime) => {
+    const first = convertWallTime({ date: found.startDate, time: found.start }, viewerTimeZone, eventTimeZone)
+    const last = convertWallTime({ date: found.endDate, time: found.end }, viewerTimeZone, eventTimeZone)
+    update(
+      {
+        startDate: first.date,
+        start: first.time,
+        endDate: last.date,
+        end: last.time,
+        recurrence: adaptRecurrenceToStart(values.recurrence, values.startDate, first.date),
+      },
+      ['startDate', 'start', 'endDate', 'end'],
+    )
+    setFindingTime(false)
+    setActiveTab('general')
+  }
+
+  const findTimeButton = canFindTime && (
+    <Button variant="outline" onClick={() => setFindingTime(true)}>
+      {m.events.findTime.open}
+    </Button>
+  )
+
   const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
     if (readOnly) return
+    const submitter = event.nativeEvent.submitter
+    replanRef.current =
+      submitter instanceof HTMLButtonElement && submitter.name === REPLAN_SUBMITTER ? submitter.value : null
     const input = normalizeEventInput(values)
     const nextErrors = validateEventInput(input, m)
     setErrors(nextErrors)
@@ -334,6 +388,15 @@ export function EventModal({
           )}
           {viewerHint && <p className="formHint">{viewerHint}</p>}
           {checkOverlaps && !readOnly && <OverlapNotice values={values} check={checkOverlaps} />}
+          {planConflicts && !readOnly && !isRequest && !values.taskId && (
+            <PlanConflictNotice
+              values={values}
+              check={planConflicts.check}
+              canReplan={!isMoving}
+              isPending={isPending}
+            />
+          )}
+          {findTimeButton}
 
           {features.reminders && !readOnly && !isRequest && (
             <ReminderField value={values.reminders} onChange={(reminders) => setField('reminders', reminders)} />
@@ -387,13 +450,16 @@ export function EventModal({
         value: 'attendees',
         label: m.calendars.settings.withCount(m.events.tabs.attendees, values.attendees.length),
         content: (
-          <AttendeesField
-            attendees={values.attendees}
-            candidates={attendeeOptions.candidates}
-            ownEmail={attendeeOptions.ownEmail}
-            onChange={(attendees) => setField('attendees', attendees)}
-            onRespond={occurrence ? attendeeOptions.onRespond : undefined}
-          />
+          <>
+            <AttendeesField
+              attendees={values.attendees}
+              candidates={attendeeOptions.candidates}
+              ownEmail={attendeeOptions.ownEmail}
+              onChange={(attendees) => setField('attendees', attendees)}
+              onRespond={occurrence ? attendeeOptions.onRespond : undefined}
+            />
+            {findTimeButton}
+          </>
         ),
       },
     {
@@ -576,6 +642,18 @@ export function EventModal({
           </div>
         </Form>
       </Modal>
+
+      {isFindingTime && canFindTime && (
+        <FindTimeModal
+          people={values.attendees}
+          ownEmail={attendeeOptions.ownEmail}
+          initialDate={values.startDate}
+          durationMinutes={periodMinutes(values, eventTimeZone)}
+          excludeEventId={occurrence && !occurrence.recurrence ? occurrence.id : undefined}
+          onPick={applyFoundTime}
+          onClose={() => setFindingTime(false)}
+        />
+      )}
 
       {pendingSave && (
         <RecurrenceScopeModal

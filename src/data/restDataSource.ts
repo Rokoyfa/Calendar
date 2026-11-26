@@ -23,6 +23,8 @@ import {
   LiveSocket,
 } from '../features/storage/index.ts'
 import { RemoteTaskRepository } from '../features/tasks/index.ts'
+import { RemoteFreeBusyRepository } from '../features/freebusy/index.ts'
+import { RemotePushRepository } from '../features/push/index.ts'
 import type { HolidaySource } from '../lib/defaults.ts'
 import { createApiClient } from '../utils/api.ts'
 import { toSocketUrl } from '../utils/chat.ts'
@@ -97,6 +99,8 @@ export function restDataSource({
       appPasswords: new RemoteAppPasswordRepository(api),
       caldav: new RemoteCaldavRepository(api),
       tasks: new RemoteTaskRepository(api),
+      freeBusy: new RemoteFreeBusyRepository(api),
+      push: new RemotePushRepository(api),
     }
   }
 

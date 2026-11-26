@@ -50,6 +50,8 @@ export const tasks = {
   columnEmpty: 'No tasks',
   more: (count: number) => `+${count} more tasks`,
   count: (count: number) => (count === 1 ? '1 task' : `${count} tasks`),
+  recurrenceHint: 'When you mark the task as done, the next one is created with the next due date.',
+  recurrenceNeedsDue: 'Set a due date to repeat the task.',
   plan: {
     open: 'Plan',
     again: 'Plan again',

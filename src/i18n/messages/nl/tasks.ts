@@ -52,6 +52,8 @@ export const tasks: Messages['tasks'] = {
   columnEmpty: 'Geen taken',
   more: (count) => `+${count} andere taken`,
   count: (count) => (count === 1 ? '1 taak' : `${count} taken`),
+  recurrenceHint: 'Rond je de taak af, dan wordt de volgende met de volgende vervaldatum aangemaakt.',
+  recurrenceNeedsDue: 'Stel een vervaldatum in om de taak te herhalen.',
   plan: {
     open: 'Inplannen',
     again: 'Opnieuw inplannen',

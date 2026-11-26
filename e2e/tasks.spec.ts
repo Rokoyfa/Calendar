@@ -203,3 +203,27 @@ test('hides tasks when the backend does not offer them', async ({ browser }) => 
   await page.getByRole('button', { name: 'Neuer Termin', exact: true }).click()
   await expect(page.locator('dialog[open]').getByRole('button', { name: 'Aufgabe', exact: true })).toHaveCount(0)
 })
+
+test('repeats a task weekly and creates the next one when it is done', async ({ browser }) => {
+  const user = await createUser('Rena')
+  const calendarId = await personalCalendarId(user)
+  const page = await openAs(browser, user)
+  await showView(page, 'Aufgaben')
+  await page.getByRole('button', { name: 'Erstellen' }).click()
+  const dialog = page.locator('dialog[open]')
+  await expect(dialog.getByText('Gib eine Fälligkeit an, um die Aufgabe zu wiederholen.')).toBeVisible()
+  await dialog.locator('input[name=title]').fill('Wochenbericht')
+  await dialog.locator('input[name=dueDate]').fill('2099-01-05')
+  await dialog.getByLabel('Wiederholen').selectOption({ label: 'Wöchentlich' })
+  await expect(
+    dialog.getByText('Erledigst du die Aufgabe, wird die nächste mit der nächsten Fälligkeit angelegt.'),
+  ).toBeVisible()
+  await dialog.getByRole('button', { name: 'Speichern' }).click()
+  await expect(page.locator('.taskRow', { hasText: 'Wochenbericht' }).locator('.taskRecurrence')).toBeVisible()
+
+  await page.locator('.taskRow', { hasText: 'Wochenbericht' }).getByRole('checkbox').click()
+  await expect
+    .poll(async () => (await tasksOf(user, calendarId)).map(({ dueDate, status }) => `${dueDate} ${status}`).sort())
+    .toEqual(['2099-01-05 done', '2099-01-12 open'])
+  await expect(page.locator('.taskRow:not(.isDone)', { hasText: 'Wochenbericht' })).toContainText('12.01.2099')
+})

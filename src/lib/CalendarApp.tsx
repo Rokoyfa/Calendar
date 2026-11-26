@@ -4,7 +4,7 @@ import { useFeatures } from '../context/HostContext.ts'
 import { AuthProvider, useAuth } from '../features/authorization/index.ts'
 import { CalendarsProvider } from '../features/calendars/index.ts'
 import { PreferencesProvider } from '../features/preferences/index.ts'
-import { ReminderNotices } from '../features/reminders/index.ts'
+import { ReminderNotices } from '../features/reminders/ReminderNotices.tsx'
 import {
   CaldavEventRepository,
   PeerEventRepository,
@@ -20,6 +20,7 @@ import type { CalendarRouting } from './config.ts'
 import { withEventCallbacks, type EventCallbacks } from './eventCallbacks.ts'
 import { ExternalCalendarsProvider } from '../features/external/index.ts'
 import { PeerCalendarsProvider } from '../features/peers/index.ts'
+import { PushSync } from '../features/push/index.ts'
 
 type EventCallbacksRef = RefObject<EventCallbacks>
 
@@ -36,7 +37,7 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
   const { m } = useI18n()
   const getLanguage = useLocaleGetter()
   const { status, user, expireSession } = useAuth()
-  const { reminders, caldav, caldavAccounts, personalSharing, tasks } = useFeatures()
+  const { reminders, caldav, caldavAccounts, personalSharing, tasks, freeBusy, push, notifications } = useFeatures()
   const isAuthenticated = status === 'authenticated'
   const repositories = useMemo(
     () => dataSource.connect({ isAuthenticated }, { getLanguage, onUnauthorized: expireSession }),
@@ -74,13 +75,28 @@ function SessionProviders({ dataSource, eventCallbacks, children }: SessionProvi
       caldav: caldavEvents ? repositories.caldav : undefined,
       caldavEvents,
       tasks: tasks ? repositories.tasks : undefined,
+      freeBusy: freeBusy && isAuthenticated ? repositories.freeBusy : undefined,
+      push: push && notifications && isAuthenticated ? repositories.push : undefined,
     }),
-    [repositories, eventCallbacks, caldav, caldavEvents, sharing, peerEvents, tasks],
+    [
+      repositories,
+      eventCallbacks,
+      caldav,
+      caldavEvents,
+      sharing,
+      peerEvents,
+      tasks,
+      freeBusy,
+      push,
+      notifications,
+      isAuthenticated,
+    ],
   )
 
   if (status === 'loading') return <p className="appLoading">{m.common.loading}</p>
   return (
     <StorageProvider repositories={storage}>
+      <PushSync />
       <PreferencesProvider>
         <CalendarsProvider
           key={user?.id ?? 'guest'}

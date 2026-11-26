@@ -7,11 +7,22 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 ### Upgrading from 2.2
 
 - `planningDistribution` has the new value `late`. A backend that checks the value has to accept it.
+- Tasks gain `recurrence`. A backend has to store it and create the next task when a repeating task is done (see section 29 of the developer guide).
 - A user keeps at most 500 notifications: a backend deletes the oldest before it stores a new one (documented now, the test backend already did it).
+- Notifications gain the kinds `taskDueSoon` and `taskPlanConflict` (both with `task`, the latter also with `event`), and the preferences gain `emailTaskDue` (default `true`, optional in `StoredPreferences`). A backend that checks notification kinds or preferences has to accept them; sending them is described in section 29 of the developer guide.
+- With `caldav` and `tasks`, the CalDAV collections now also contain the tasks as `VTODO` (`supported-calendar-component-set` lists both). A backend that implements `api/caldav.md` has to add this, see the new section "Tasks (VTODO)" there; tasks gain a `UID` and a resource name for it, which never appear in the JSON API.
+- `push` is on by default and needs the endpoints `GET /push/key`, `POST /push/subscriptions` and `POST /push/subscriptions/remove` plus a service worker on the page; without a service worker the setting only explains that push is not set up. `DataRepositories` gains an optional `push` repository. Turn it off with `features: { push: false }` or `feature-push="false"`.
+- `freeBusy` is on by default and needs the new endpoint `POST /free-busy`. Without it the dialog says that the server does not offer it; to hide the button use `features: { freeBusy: false }` or `feature-free-busy="false"`. The preferences gain `shareFreeBusy` (default `true`), optional in `StoredPreferences`, and `DataRepositories` gains an optional `freeBusy` repository (see section 30 of the developer guide).
 
 ### Added
 
+- Repeating tasks: daily, weekly, monthly or yearly with an end; when a task is done, the next one is created with the next due date
 - Calendars shared with you appear under **Shared with you** in **Switch calendar** and can be opened on their own like a team calendar; new entries there are requests to the owner
+- Tasks over CalDAV: tasks appear in Apple Reminders, Thunderbird, Evolution or Tasks.org (with DAVx⁵) next to the events, with title, notes, due date, status, priority, effort, categories and repetition in both directions
+- Install as an app: the demo app is a PWA with manifest, icons and a service worker that starts offline; hosts can do the same with `public/sw.js` from the package and call the new export `enableInstallPrompt()` to get **Install app** under Settings › Appearance
+- Push notifications (feature `push`): every notification of the bell can also arrive on the user's devices while the calendar is closed, turned on per device under Settings › Notifications, bound to the session and removed on sign-out
+- Planning reminders: when a task is due within two days and its effort is not fully planned, the bell and an email (setting **When a task is due soon and not fully planned yet**) point to it and open the planning. When a new event overlaps planned time, the event dialog offers **Save and plan again**; when someone else books over planned time, the bell says so and opens the planning
+- **Find a common time** in the event dialog (feature `freeBusy`): suggests free times in which the user and all attendees are free, from their busy time without any details, with duration, weekends and earlier or later suggestions. Busy time is only shared with team members and people the personal calendar is shared with, and everyone can turn it off under Settings › Connections › Availability. New endpoint `POST /free-busy` (tag "Free/busy")
 - Planning distribution **As late as possible**: fills the last free time before the due date, keeping all working time rules
 
 ## 2.2.0 – 2026-11-25

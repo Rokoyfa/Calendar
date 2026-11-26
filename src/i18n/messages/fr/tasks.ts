@@ -52,6 +52,8 @@ export const tasks: Messages['tasks'] = {
   columnEmpty: 'Aucune tâche',
   more: (count) => `+${count}\u00a0autres tâches`,
   count: (count) => (count === 1 ? '1\u00a0tâche' : `${count}\u00a0tâches`),
+  recurrenceHint: 'Quand vous terminez la tâche, la suivante est créée avec la prochaine échéance.',
+  recurrenceNeedsDue: 'Indiquez une échéance pour répéter la tâche.',
   plan: {
     open: 'Planifier',
     again: 'Replanifier',

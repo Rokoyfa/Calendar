@@ -1,5 +1,6 @@
 import { parseBuiltinCategories } from '../../../utils/category.ts'
-import { isISODate, isTime } from '../../../utils/date.ts'
+import { addDaysToISODate, isISODate, isTime } from '../../../utils/date.ts'
+import { getOccurrenceDates, parseRecurrence, type Recurrence } from '../../../utils/recurrence.ts'
 import { filledTextOrNull, isRecord, parseList, textOrEmpty } from '../../../utils/parse.ts'
 import {
   TASK_PRIORITIES,
@@ -18,6 +19,7 @@ export const MAX_DONE_TASKS = 200
 export const TASK_ESTIMATE_MAX_MINUTES = 5999
 export const TASK_CHECKLIST_MAX_ITEMS = 50
 export const TASK_MAX_CATEGORIES = 5
+const NEXT_OCCURRENCE_DAYS_PER_INTERVAL = 400
 
 export const EMPTY_TASK_INPUT: TaskInput = {
   title: '',
@@ -31,6 +33,7 @@ export const EMPTY_TASK_INPUT: TaskInput = {
   builtinCategories: [],
   checklist: [],
   assigneeId: null,
+  recurrence: null,
 }
 
 export const isTaskStatus = (value: unknown): value is TaskStatus =>
@@ -59,6 +62,23 @@ const parsePerson = (value: unknown): TaskPerson | null => {
 }
 
 const positiveInteger = (value: unknown) => (Number.isInteger(value) && (value as number) > 0 ? (value as number) : 1)
+
+export const parseTaskRecurrence = (value: unknown): Recurrence | null => {
+  const recurrence = parseRecurrence(value)
+  return recurrence && recurrence.rule === null ? { ...recurrence, dates: [] } : null
+}
+
+export const nextTaskOccurrence = (dueDate: string, recurrence: Recurrence) => {
+  if (recurrence.count === 1) return null
+  const from = addDaysToISODate(dueDate, 1)
+  const to = addDaysToISODate(dueDate, NEXT_OCCURRENCE_DAYS_PER_INTERVAL * recurrence.interval)
+  const [next] = getOccurrenceDates(dueDate, { ...recurrence, count: null }, from, to)
+  if (next === undefined || (recurrence.until !== null && next > recurrence.until)) return null
+  return {
+    dueDate: next,
+    recurrence: { ...recurrence, count: recurrence.count === null ? null : recurrence.count - 1 },
+  }
+}
 
 export const parseTask = (value: unknown): Task | null => {
   if (!isRecord(value)) return null
@@ -89,6 +109,7 @@ export const parseTask = (value: unknown): Task | null => {
     createdAt: textOrEmpty(value.createdAt),
     updatedAt: textOrEmpty(value.updatedAt),
     version: positiveInteger(value.version),
+    recurrence: dueDate ? parseTaskRecurrence(value.recurrence) : null,
   }
 }
 
@@ -106,6 +127,7 @@ export const toTaskInput = (task: Task): TaskInput => ({
   builtinCategories: [...task.builtinCategories],
   checklist: task.checklist.map((item) => ({ ...item })),
   assigneeId: task.assignee?.id ?? null,
+  recurrence: task.recurrence,
 })
 
 export const normalizeTaskInput = (input: TaskInput): TaskInput => ({
@@ -120,6 +142,7 @@ export const normalizeTaskInput = (input: TaskInput): TaskInput => ({
   builtinCategories: parseBuiltinCategories(input.builtinCategories),
   checklist: input.checklist.map((item) => ({ ...item, title: item.title.trim() })).filter((item) => item.title !== ''),
   assigneeId: input.assigneeId,
+  recurrence: input.dueDate && input.recurrence ? { ...input.recurrence, rule: null, dates: [] } : null,
 })
 
 export const isTaskDone = (task: Pick<Task, 'status'>) => task.status === 'done'

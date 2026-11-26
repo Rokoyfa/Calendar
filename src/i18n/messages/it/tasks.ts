@@ -52,6 +52,8 @@ export const tasks: Messages['tasks'] = {
   columnEmpty: 'Nessuna attività',
   more: (count) => `+${count} altre attività`,
   count: (count) => (count === 1 ? '1 attività' : `${count} attività`),
+  recurrenceHint: 'Quando completi l’attività, viene creata la successiva con la scadenza seguente.',
+  recurrenceNeedsDue: 'Imposta una scadenza per ripetere l’attività.',
   plan: {
     open: 'Pianifica',
     again: 'Ripianifica',

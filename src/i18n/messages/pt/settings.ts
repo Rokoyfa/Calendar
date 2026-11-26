@@ -45,6 +45,7 @@ export const settings: Messages['settings'] = {
     emailChanges: 'Quando um evento para o qual fui convidado muda ou é cancelado',
     emailReminders: 'Lembretes por e-mail',
     emailChat: 'Novas mensagens no chat dos eventos para os quais fui convidado',
+    emailTaskDue: 'Quando uma tarefa vence em breve e ainda não está totalmente planejada',
   },
   themeTitle: 'Tema',
   themeLabel: 'Claro ou escuro',
@@ -52,6 +53,33 @@ export const settings: Messages['settings'] = {
   startViewDescription: 'O calendário abre nesta visualização.',
   desktop: 'Computador e tablet',
   mobile: 'Celular',
+  push: {
+    title: 'Notificações push',
+    description:
+      'As notificações do sino também quando o calendário está fechado. Vale só para este dispositivo e este navegador.',
+    thisDevice: 'Neste dispositivo',
+    unsupported: 'Este navegador não oferece suporte a notificações push.',
+    appleNeedsInstall:
+      'No iPhone e no iPad, as notificações push só funcionam depois que você adiciona o calendário à tela de início.',
+    noServiceWorker: 'As notificações push não estão configuradas nesta página.',
+    denied:
+      'Você bloqueou as notificações deste site no navegador. Permita-as nas configurações do site para ativá-las aqui.',
+    foreign: 'Já existe outra assinatura push ativa nesta página.',
+  },
+  app: {
+    title: 'App',
+    description: 'Instale o calendário como app para que ele abra como um programa próprio.',
+    install: 'Instalar app',
+    installed: 'O calendário está instalado como app.',
+    running: 'O calendário está rodando como app.',
+    appleHint: 'No Safari, toque em “Compartilhar” e depois em “Adicionar à Tela de Início”.',
+  },
+  freeBusy: {
+    title: 'Disponibilidade',
+    description:
+      'Quem compartilha uma equipe com você ou pode ver sua agenda pessoal vê quando você está ocupado ao planejar um evento. Títulos, locais e todos os outros detalhes ficam ocultos.',
+    share: 'Mostrar horários ocupados',
+  },
   planning: {
     title: 'Planejamento automático',
     description: '“Planejar” distribui o esforço de uma tarefa pelo tempo livre da sua agenda pessoal.',

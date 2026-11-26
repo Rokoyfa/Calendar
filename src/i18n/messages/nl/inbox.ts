@@ -25,5 +25,7 @@ export const inbox: Messages['inbox'] = {
     eventRequestDeclined: (actor, title) => `${actor} heeft je verzoek “${title}” geweigerd`,
     eventRequestWithdrawn: (actor, title) => `${actor} heeft het verzoek “${title}” ingetrokken`,
     taskAssigned: (actor, title) => `${actor} heeft je de taak “${title}” toegewezen`,
+    taskDueSoon: (title) => `De taak “${title}” moet binnenkort af en is nog niet helemaal ingepland`,
+    taskPlanConflict: (actor, event, task) => `“${event}” van ${actor} overlapt met ingeplande tijd voor “${task}”`,
   },
 }

@@ -1,6 +1,7 @@
 import { useI18n } from '../../../i18n/index.ts'
 import { classNames } from '../../../utils/classNames.ts'
 import { timeToMinutes } from '../../../utils/date.ts'
+import { formatRecurrence } from '../../../utils/recurrence.ts'
 import type { TasksContextValue } from '../context/TasksContext.ts'
 import type { Task } from '../types/task.ts'
 import { checklistProgress, isTaskOverdue } from '../utils/task.ts'
@@ -11,7 +12,8 @@ type TaskDetailsProps = {
 }
 
 export function TaskDetails({ task, context }: TaskDetailsProps) {
-  const { m, format } = useI18n()
+  const i18n = useI18n()
+  const { m, format } = i18n
   const text = m.tasks
   const isOverdue = isTaskOverdue(task, context.today)
   const due = task.dueDate
@@ -33,6 +35,9 @@ export function TaskDetails({ task, context }: TaskDetailsProps) {
         <span className={classNames('taskBadge', isOverdue && 'isOverdue')}>
           {isOverdue ? `${text.overdue}: ${due}` : text.due(due)}
         </span>
+      )}
+      {task.recurrence && task.dueDate && (
+        <span className="taskBadge taskRecurrence">{formatRecurrence(task.recurrence, task.dueDate, i18n)}</span>
       )}
       {task.estimateMinutes !== null && (
         <span className="taskBadge">{text.effort(format.effort(task.estimateMinutes))}</span>

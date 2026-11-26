@@ -33,6 +33,8 @@ Everything you need to put `@rokoyfa/calendar` on your page: embedding, all opti
 27. [Booking pages](#27-booking-pages)
 28. [Sharing the personal calendar](#28-sharing-the-personal-calendar)
 29. [Tasks](#29-tasks)
+30. [Finding a common time](#30-finding-a-common-time)
+31. [App and push notifications](#31-app-and-push-notifications)
 
 ## 1. Embedding
 
@@ -208,6 +210,8 @@ Your backend only needs the endpoints of the features that are on, plus a small 
 | `bookingPages` | `feature-booking-pages` | on | Public pages where others book a free time, see [Booking pages](#27-booking-pages). Not in local mode | `/calendars/:id/booking-pages`, `/booking-pages/*`, `/booking/*`, `/bookings/*` |
 | `personalSharing` | `feature-personal-sharing` | on | Showing the personal calendar to invited people, who see private events only as busy time and can request events, see [Sharing the personal calendar](#28-sharing-the-personal-calendar). Not in local mode | `/personal-sharing*`, `/peer-calendars*`, `/events/:id/request/*` |
 | `tasks` | `feature-tasks` | on | Tasks with status, priority, due date, effort and checklist, on their day and in the task view, assignable in team calendars, plannable into free time with the settings tab **Planning**, see [Tasks](#29-tasks) | `/tasks*`, `task.changed` over the WebSocket |
+| `freeBusy` | `feature-free-busy` | on | **Find a common time** in the event dialog: suggests free times from the busy time of the attendees, without any details of their events, see [Finding a common time](#30-finding-a-common-time). Needs `attendees`. Not in local mode | `POST /free-busy` |
+| `push` | `feature-push` | on | Push notifications of the bell on the user's devices, also while the calendar is closed, switched on per device under Settings › Notifications, see [App and push notifications](#31-app-and-push-notifications). Needs `notifications` and a service worker on the page. Not in local mode | `/push/*` |
 
 Good to know:
 
@@ -555,6 +559,8 @@ The fields of `CalendarOptions` are the options in [Options](#2-options); `Calen
 | `SharedCalendar` | `{ id, name, color, categories }`, what a public link shows of a calendar |
 | `ChatMessage`, `ChatKey`, `ChatPage`, `ChatUnread`, `ChatEvent` | Chat, see [Event chat](#11-event-chat) |
 | `Task`, `TaskInput`, `TaskPerson`, `TaskQuery`, `TaskRepository` | Tasks, see [Tasks](#29-tasks) |
+| `FreeBusyRepository`, `FreeBusyQuery`, `FreeBusyPerson`, `BusyInterval` | Busy time of attendees, see [Finding a common time](#30-finding-a-common-time) |
+| `PushRepository`, `PushSubscriptionInput` | Push subscriptions, see [App and push notifications](#31-app-and-push-notifications) |
 
 ### Data adapters
 
@@ -593,7 +599,7 @@ type DataRepositories = {
   shared?: SharedCalendarRepository
   attachments?: AttachmentRepository
   tasks?: TaskRepository
-  // externalCalendars, history, notifications, appPasswords, caldav, bookings and personalSharing are filled by restDataSource;
+  // externalCalendars, history, notifications, appPasswords, caldav, bookings, personalSharing, freeBusy and push are filled by restDataSource;
   // leave them out in your own adapter and the matching features stay hidden
 }
 
@@ -794,9 +800,10 @@ type Preferences = {
   holidays: string              // 'auto', 'off' or a region such as 'DE-NW'
 }
 type PublicHoliday = { date: string; name: string } // GET /holidays, only with holiday-source="backend"
-// Preferences also carry emailInvites, emailChanges, emailReminders, emailChat: booleans for the emails below
+// Preferences also carry emailInvites, emailChanges, emailReminders, emailChat, emailTaskDue: booleans for the emails below
 // and the task planning: planningDistribution ('even' | 'early' | 'late'), planningCountry ('auto' or a country such as 'DE'),
 // planningDayStart and planningDayEnd ('HH:MM', at least one hour apart)
+// and shareFreeBusy (boolean, default true): whether others may see when the user is busy, see section 30
 type Problem = { code: string; message: string }   // every error response
 ```
 
@@ -1151,7 +1158,7 @@ Events in team calendars get a **History** tab: who created, changed, moved, del
 
 ## 25. Notifications
 
-A bell next to the account button shows notifications with a badge for the unread ones: invitations to a team calendar or an event, changes and cancellations of events the user is invited to, replies to the user's events, chat messages and reminders. New ones arrive at once over the WebSocket. A click opens the event (or the invitations in the settings) and marks it as read; **Mark all as read** and removing single notifications are in the list. Read notifications are kept for 30 days, unread ones for 90, and a user keeps at most 500: a new one removes the oldest. Your backend deletes the oldest before it stores a new one, in the same transaction; the action that caused the notification never fails because of the limit. Turn it off with `features: { notifications: false }`.
+A bell next to the account button shows notifications with a badge for the unread ones: invitations to a team calendar or an event, changes and cancellations of events the user is invited to, replies to the user's events, chat messages, reminders, assigned tasks, tasks due soon that are not fully planned, and events of others that overlap planned time. New ones arrive at once over the WebSocket. A click opens the event (or the invitations in the settings) and marks it as read; **Mark all as read** and removing single notifications are in the list. Read notifications are kept for 30 days, unread ones for 90, and a user keeps at most 500: a new one removes the oldest. Your backend deletes the oldest before it stores a new one, in the same transaction; the action that caused the notification never fails because of the limit. Turn it off with `features: { notifications: false }`.
 
 ## 26. CalDAV
 
@@ -1163,6 +1170,7 @@ A bell next to the account button shows notifications with a badge for the unrea
 - CalDAV accepts only app passwords, never the account password, so two-factor sign-in stays effective. A new account password revokes all app passwords.
 - Every calendar the user can see appears as its own collection. The role decides as in the component: viewers can only read.
 - Series and their detached occurrences are one resource, reminders are those of the signed-in user, attachments and chat stay in the component.
+- With the feature `tasks` every collection also holds the calendar's tasks as `VTODO`, so they show up in Apple Reminders, Thunderbird, Evolution or Tasks.org (with DAVx⁵). Title, notes, due date and time, status, priority, effort, categories and the repetition go both ways; checklist, assignee, fixed categories and planned time stay in the component and are kept when a program changes the task. Completing a repeating task there creates the next one as in the component.
 - Your backend implements the protocol described in `api/caldav.md` (`PROPFIND`, `REPORT` with `calendar-query`, `calendar-multiget` and `sync-collection`, `GET`, `PUT`, `DELETE`, `/.well-known/caldav`).
 
 **This calendar uses other services** (feature `caldavAccounts`). Users connect up to 5 accounts of Nextcloud, iCloud, mailbox.org, Fastmail or any other CalDAV server with server address, user name and password (for iCloud an app-specific password):
@@ -1219,9 +1227,10 @@ Tasks are things to get done, with or without a deadline. They belong to a calen
 
 - **Where they appear.** A task with a due date shows up as a checkable entry on its day: above the all-day events in the day and week views (up to three per day in the week, then "+n more tasks"), in the month cell and in the agenda. The **Tasks** view shows all tasks of the shown calendars split by status (open, in progress, waiting, done), either as a **list** with one section per status below each other, or as a **board** with one column per status side by side. Every section and column shows how many tasks it holds and the sum of their estimated effort. On the board a task is moved to another status by dragging it into the column. Done tasks are folded away in the list. The chosen layout is kept in the browser (`calendar.taskLayout.v1`).
 - **Creating.** With the **Create** button at the top right of the task view, with **N** there, or by switching **Event / Task** at the top of the dialog for a new event. The title and the date carry over in both directions. All fields are filled in in that dialog.
-- **Fields.** Title (up to 200 characters), description (`notes`, up to 2000), status (`open`, `inProgress`, `waiting`, `done`), priority (`low`, `normal`, `high`, `urgent`), due date, due time (only with a due date; it has no time zone and means the same clock time everywhere), estimated effort in hours and minutes (optional, stored as `estimateMinutes`, 1 to 5999), checklist (up to 50 items with title and done), categories of the calendar (up to 5, the same as for events), fixed categories (`builtinCategories`, see [Categories](#13-categories)), calendar and, in team calendars, the person responsible. Only team members can be chosen. Open tasks are sorted by priority, then by due date.
+- **Fields.** Title (up to 200 characters), description (`notes`, up to 2000), status (`open`, `inProgress`, `waiting`, `done`), priority (`low`, `normal`, `high`, `urgent`), due date, due time (only with a due date; it has no time zone and means the same clock time everywhere), estimated effort in hours and minutes (optional, stored as `estimateMinutes`, 1 to 5999), checklist (up to 50 items with title and done), categories of the calendar (up to 5, the same as for events), fixed categories (`builtinCategories`, see [Categories](#13-categories)), a repetition (`recurrence`, needs a due date), calendar and, in team calendars, the person responsible. Only team members can be chosen. Open tasks are sorted by priority, then by due date.
 - **Done.** The status `done` sets `completedAt` and `completedBy`; any other status clears them. Ticking the box of a task on its day sets `done`, unticking sets `open`.
 - **Who may do what.** Creating needs `create_entry` in the calendar. Changing follows the event rules (`update_own_entry` / `update_any_entry`), moving to another calendar and deleting need `delete_own_entry` / `delete_any_entry`. The person responsible may also change the status and tick checklist items, even without edit rights; everything else stays read-only for them. Moving to another calendar removes the calendar's own categories, as they belong to the old calendar; fixed categories stay. Deleting is final; tasks do not go to the trash.
+- **Repeating.** A task with a due date can repeat daily, weekly (on chosen weekdays), monthly or yearly, with an end date or a number of times, like an event. When it is done, the next task is created with the next due date: a copy with status open and an unchecked checklist. The finished task keeps no repetition, so reopening and finishing it again creates nothing, and there is never more than one open task of a series.
 - **Planning.** **Plan** in the dialog of a saved task spreads the effort over free time in the user's personal calendar, as private events linked to the task (`taskId`). They take over the task's fixed categories, or `work` if it has none. Without an effort the button is disabled and says why on hover. A preview shows the blocks per day before anything is created; **Show in calendar** puts them into the week view of the real calendar, highlighted with a dashed border, with **Save** and **Cancel** at the top right and a way back to the preview. Once the task has future blocks, the button reads **Plan again**; planning again replaces only blocks that have not started yet; blocks that have started count as done effort. The rules:
   - Blocks only go into free time between the planning hours of the user's settings (08:00 to 20:00 by default), are at least 30 minutes long (shorter only if the whole effort is shorter) and end before the due date. Without a due date they are planned as early as possible, at most a year ahead.
   - Every timed event in the user's calendars, team calendars, subscribed, CalDAV and shared calendars is busy. All-day events are busy for the whole day only if they have a fixed category.
@@ -1231,7 +1240,9 @@ Tasks are things to get done, with or without a deadline. They belong to a calen
   - If the effort does not fit, nothing is created on its own. The preview says how much is missing and offers to create only the blocks that fit or to move the due date to the first day on which everything fits.
   - When the task is done or deleted, its blocks that have not started yet go to the trash; when it is deleted, the remaining blocks lose the link.
 - **Notifications.** Assigning someone sends them the notification `taskAssigned` (with `task: { id, calendarId, title, dueDate }`). Opening it shows the task.
-- **Not included.** Tasks are not part of public links, booking pages, the sharing of the personal calendar, iCalendar feeds and CalDAV.
+- **Due soon.** When a task with an effort is due within two days and less than its effort is planned, the person responsible (the assignee, otherwise the owner of the personal calendar, otherwise the creator) gets `taskDueSoon` in the bell and, unless they turned off `emailTaskDue` under Settings › Notifications, an email with a link that opens the planning. It comes once per due date; changing the due date or time can bring it again. Opening it opens the planning of the task.
+- **Overlaps with planned time.** When the user saves an event (with a time, in the personal calendar or a calendar whose events count for planning) that overlaps a planned block that has not started yet, the dialog says which tasks are affected and offers **Save and plan again**, which saves the event and opens the planning of the first task. When someone else creates or changes an event that is busy for the user (in their personal view, or they are invited and have not declined) and overlaps such a block, the user gets `taskPlanConflict` with the event and the task; opening it opens the planning.
+- **Not included.** Tasks are not part of public links, booking pages, the sharing of the personal calendar and iCalendar feeds. Over CalDAV they appear as `VTODO`, see [CalDAV](#26-caldav).
 - **Codes:** `taskNotFound`, `taskChanged`, `tooManyTasks`, `invalidAssignee`.
 - **Your backend** implements the endpoints tagged "Tasks" in `api/openapi.yaml`. In local mode tasks are kept in the browser, without assignees.
 
@@ -1244,8 +1255,46 @@ What your backend has to enforce, because the widget only shows what it receives
 - **Versions.** Every change increases `version`. With `If-Match` and an older version answer `taskChanged` (`412`).
 - **Limits.** At most 5000 tasks per calendar (`tooManyTasks`), at most 400 days per query. Without `from` and `to`, `GET /tasks` returns all tasks that are not done and the 200 most recently done; `completed=true|false` narrows that.
 - **Clean-up.** Deleting a calendar deletes its tasks; deleting an account removes it as assignee, creator and completer. Tasks are part of the data export.
+- **Repeating tasks.** Accept `recurrence` only with a due date, without `rule` and `dates`. When a task becomes `done` (on create, `PUT` or `POST …/status`), create the next one from the first date of the rule after `dueDate` (copy of the task, status `open`, checklist unchecked with new ids, `count` one lower), remove `recurrence` from the finished task and announce both. Stop when `count` is 1 or the next date is after `until`.
 - **Planned blocks.** Accept `taskId` on an event only for a task the user can see (otherwise `400` with `taskNotFound`) and never on a recurring or detached event. When a task becomes `done` (through `PUT /tasks/:id` or `POST /tasks/:id/status`) or is deleted, also when its calendar or team is deleted, move all events linked to it that have not started yet to the trash, in whichever personal calendar they are, and announce the deletion. On delete, set `taskId` of the remaining events to `null`. Public links and shared personal calendars never show `taskId`.
 - **Planning settings.** `planningDistribution` is `even`, `early` or `late`, `planningCountry` is `auto` or two capital letters, `planningDayStart` and `planningDayEnd` are `HH:MM` and at least one hour apart, also when only one of them is sent (compare with the stored value). Reject everything else with `400`.
+- **Due reminders.** Check regularly (every minute is fine) for tasks that are not done, have `estimateMinutes` and a due date within the next two days (`dueTime`, otherwise the user's `planningDayEnd`, in the user's time zone), and whose linked events (`taskId`) add up to less than the effort. Send `taskDueSoon` once per task, user and due instant, and the email only with `emailTaskDue` on. Store what you sent so a restart sends nothing twice.
+- **Overlap notices.** When an event changes, find future planned blocks it now overlaps (series expanded, all-day events, planned blocks and pending requests excluded) in personal calendars of users for whom the event is busy, and send `taskPlanConflict` to the owner of the block, never for the owner's own changes and not again while an unread one for the same event and task exists.
 - **Live updates.** Send `{ "type": "task.changed", "calendarId", "taskId", "version", "changedBy" }` to everyone who sees the calendar; the widget then reloads.
 
 Turn the feature off with `features: { tasks: false }`. If `GET /tasks` answers `404`, `405` or `501`, the widget treats tasks as not offered by the backend and hides them.
+
+## 30. Finding a common time
+
+**Find a common time** in the event dialog (on the tabs General and Attendees, as soon as a timed event has attendees) looks up when everyone is busy and suggests free times.
+
+- **Suggestions.** Up to ten times for the chosen duration (the event's length to start with) in a window of 14 days from the event's day, at most three per day, every half hour between the planning hours of the user's settings (08:00 to 20:00 by default), on weekdays unless **Include weekends** is on. **Earlier** and **Later** move the window. Days blocked for anyone by an all-day event with a fixed category are skipped. Choosing a suggestion sets start and end of the event; nothing is saved until the user saves the event.
+- **Whose time counts.** The user's own and that of every attendee the backend answers for. The dialog lists everyone with **Busy times known** or **No information, not taken into account**, so it is clear which suggestions are certain.
+- **What others see.** Only busy intervals, merged and without title, place, attendees or any other detail, and only of people who share a team with the user or share their personal calendar with them. Everybody can turn it off under Settings › Connections › **Availability** (`shareFreeBusy`).
+
+What your backend has to enforce for `POST /free-busy`:
+
+- **Who may be looked up.** The signed-in user, members of a team they belong to, and people who share their personal calendar with them (accepted). Nobody else, and nobody who set `shareFreeBusy` to `false`. Answer everyone else exactly like an address without an account (`available: false`, `name: null`, empty lists), so the endpoint never tells whether an address has an account.
+- **What counts as busy.** Timed events of the calendars in the person's personal view (their own, team calendars shown there, connected CalDAV calendars) and events they are invited to and have not declined, with series expanded. Pending requests do not count; `excludeEventId` (the event being rescheduled) does not count. All-day events only count through `blockedDates`, and only with a fixed category, like for planning.
+- **What you return.** Merged intervals clipped to the range, as UTC instants, nothing else. Never titles, ids, calendars or the number of events.
+- **Limits.** At most 20 addresses and 31 days per request, at most 30 requests per minute per user (`429` with `rateLimited`).
+- **The setting.** `shareFreeBusy` is a boolean in the preferences, `true` by default.
+
+Turn the feature off with `features: { freeBusy: false }`. If `POST /free-busy` answers `404`, `405` or `501`, the dialog says that the server does not offer it.
+
+## 31. App and push notifications
+
+**Installing as an app.** The calendar can run as an installable web app (PWA). The page needs a web app manifest and a service worker; the demo app of this repository has both (`public/manifest.webmanifest`, `public/sw.js`, icons in `public/icons`) and registers the service worker in production builds. On your own page:
+
+1. Serve a manifest with `display: "standalone"`, a name and icons of 192 and 512 pixels (one of them `"purpose": "maskable"`), and link it with `<link rel="manifest">`. Add `<link rel="apple-touch-icon">` for iPhone and iPad.
+2. Copy `public/sw.js` from the package (`node_modules/@rokoyfa/calendar/public/sw.js`) next to your page, adjust it if your page already has a service worker, and register it: `navigator.serviceWorker.register('/sw.js')`. It keeps the start page and the files under `assets/` for offline starts, never caches API answers or other origins, and shows push notifications.
+3. Call `enableInstallPrompt()` (exported by the package) as early as possible, before the calendar renders. The widget then catches the browser's install prompt and shows an **App** section under Settings › Appearance with **Install app** (or, on iPhone and iPad, how to add it to the home screen). Without the call the widget leaves the browser's own install behaviour alone and shows nothing.
+
+**Push notifications.** Under Settings › Notifications each user turns on **On this device**. The browser asks for permission, the widget subscribes with the key from `GET /push/key` and sends the subscription to `POST /push/subscriptions`. From then on every new notification of the bell also arrives as a system notification, also while the calendar is closed; a click opens the matching event, task or invitation. **Off**, signing out and a subscription the push service no longer knows all remove it. The section explains when push is not possible: browsers without push, iPhone and iPad before the calendar is on the home screen (Apple only allows push for installed web apps), pages without a service worker, and notifications blocked in the browser. A subscription of another app on the same page is never touched.
+
+What your backend has to enforce:
+
+- **Keys.** Create one VAPID key pair (P-256) and keep the private key secret, like a password: whoever has it can send push in your name. `GET /push/key` returns the public key as base64url.
+- **Subscriptions.** Accept only https endpoints of push services you know (Google, Mozilla, Apple, Microsoft), never addresses in private networks, and keys of the right size (65 and 16 bytes). Bind a subscription to the user and to the session that created it, and delete it when the session ends. Replace an existing subscription with the same endpoint, also when it belonged to someone else (the device changed hands). Keep at most 10 per user.
+- **Sending.** For every new notification send `{ "title", "body", "url", "tag" }`, encrypted with `aes128gcm` (RFC 8291) and signed with VAPID (RFC 8292), with a short TTL. Build the text in the user's language from the notification, put no more into it than the bell shows, and keep `url` inside your app. Delete subscriptions that answer `404` or `410`.
+- **Feature switch.** Turn push off with `features: { push: false }`. If `GET /push/key` answers `404`, `405` or `501`, turning it on fails with a message and nothing is stored.

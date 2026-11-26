@@ -1,7 +1,14 @@
 import { AppError } from '../../../utils/appError.ts'
 import { LocalStorageList } from '../../storage/utils/localStorageList.ts'
 import type { Task, TaskChecklistItem, TaskInput, TaskQuery, TaskRepository, TaskStatus } from '../types/task.ts'
-import { isTaskDone, MAX_DONE_TASKS, normalizeTaskInput, parseTask, sortTasks } from '../utils/task.ts'
+import {
+  isTaskDone,
+  MAX_DONE_TASKS,
+  nextTaskOccurrence,
+  normalizeTaskInput,
+  parseTask,
+  sortTasks,
+} from '../utils/task.ts'
 
 const DEFAULT_STORAGE_KEY = 'calendar.tasks.v1'
 
@@ -25,6 +32,7 @@ const taskFields = (input: TaskInput, current: Task | null) => {
     categoryIds,
     builtinCategories,
     checklist,
+    recurrence,
   } = normalizeTaskInput(input)
   const known = new Set(current?.checklist.map((item) => item.id) ?? [])
   const used = new Set<string>()
@@ -44,7 +52,28 @@ const taskFields = (input: TaskInput, current: Task | null) => {
     categoryIds,
     builtinCategories,
     checklist: items,
+    recurrence,
     completedAt: completion(current, status),
+  }
+}
+
+const nextInSeries = (task: Task): Task | null => {
+  if (!task.recurrence || !task.dueDate) return null
+  const next = nextTaskOccurrence(task.dueDate, task.recurrence)
+  if (!next) return null
+  const timestamp = new Date().toISOString()
+  return {
+    ...task,
+    id: createId(),
+    status: 'open',
+    dueDate: next.dueDate,
+    recurrence: next.recurrence,
+    checklist: task.checklist.map((item) => ({ ...item, id: createId(), done: false })),
+    completedAt: null,
+    completedBy: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    version: 1,
   }
 }
 
@@ -139,8 +168,17 @@ export class LocalTaskRepository implements TaskRepository {
     const current = this.#find(id, version)
     const next = change(current)
     if (next === current) return current
-    const saved = { ...next, updatedAt: new Date().toISOString(), version: current.version + 1 }
-    this.#tasks.update((tasks) => tasks.map((task) => (task.id === id ? saved : task)))
+    const following = !isTaskDone(current) && isTaskDone(next) ? nextInSeries(next) : null
+    const saved = {
+      ...next,
+      recurrence: isTaskDone(next) && !isTaskDone(current) ? null : next.recurrence,
+      updatedAt: new Date().toISOString(),
+      version: current.version + 1,
+    }
+    this.#tasks.update((tasks) => [
+      ...tasks.map((task) => (task.id === id ? saved : task)),
+      ...(following ? [following] : []),
+    ])
     return saved
   }
 }

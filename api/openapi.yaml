@@ -225,7 +225,16 @@ tags:
       To-dos with an optional due date (and time) that belong to a calendar like events. In team calendars a task can
       be assigned to a member, who may complete it even without the right to edit. Permissions follow events:
       `create_entry` to create, `update_own_entry`/`update_any_entry` to edit, `delete_own_entry`/`delete_any_entry` to
-      move or delete. Tasks are never part of public links, personal sharing, booking availability or CalDAV.
+      move or delete. Tasks are never part of public links, personal sharing or booking availability. Over CalDAV they
+      appear as `VTODO` in the calendar collections, see `api/caldav.md`.
+  - name: Push
+    description: |
+      Web push (RFC 8030, encrypted with RFC 8291 `aes128gcm`, VAPID RFC 8292). For every new notification of the bell
+      the backend sends `{ title, body, url, tag }` to the user's subscribed devices; `url` points into the app, `tag`
+      is the notification id. Subscriptions that answer `404` or `410` are deleted.
+  - name: Free/busy
+    description: |
+      Busy time of other people for finding a common time, without titles, places or any other detail.
   - name: Notifications
     description: |
       In-app notifications (bell). New notifications also arrive over the WebSocket as
@@ -1950,10 +1959,12 @@ paths:
                 emailChanges: { type: boolean }
                 emailReminders: { type: boolean }
                 emailChat: { type: boolean }
+                emailTaskDue: { type: boolean }
                 planningDistribution: { $ref: '#/components/schemas/PlanningDistribution' }
                 planningCountry: { $ref: '#/components/schemas/PlanningCountry' }
                 planningDayStart: { $ref: '#/components/schemas/PlanningTime' }
                 planningDayEnd: { $ref: '#/components/schemas/PlanningTime' }
+                shareFreeBusy: { type: boolean }
       responses:
         '401': { $ref: '#/components/responses/Problem' }
         '200': { $ref: '#/components/responses/Preferences' }
@@ -2899,6 +2910,127 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
         '412': { $ref: '#/components/responses/Problem' }
+  /free-busy:
+    post:
+      tags: [Free/busy]
+      x-feature: freeBusy
+      summary: Look up when people are busy
+      description: |
+        Busy time of up to 20 people between `from` and `to` (at most 31 days apart), for finding a common time.
+        Answers only for the user themselves, members of a team the user belongs to and people who share their
+        personal calendar with the user, as long as they have not turned off `shareFreeBusy`. Everyone else, including
+        addresses without an account, gets `available: false` with empty lists, so the answer never reveals whether
+        an address has an account. At most 30 requests per minute (`429` with `rateLimited`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from, to, attendees]
+              properties:
+                from: { type: string, format: date-time }
+                to: { type: string, format: date-time }
+                excludeEventId:
+                  type: [string, 'null']
+                  maxLength: 200
+                  description: An event that does not count as busy, usually the one being rescheduled
+                attendees:
+                  type: array
+                  minItems: 1
+                  maxItems: 20
+                  items:
+                    type: object
+                    required: [email]
+                    properties:
+                      email: { type: string, maxLength: 254 }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: Busy time per person, in the order of the request without duplicates
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [people]
+                properties:
+                  people: { type: array, items: { $ref: '#/components/schemas/FreeBusy' } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+  /push/key:
+    get:
+      tags: [Push]
+      x-feature: push
+      summary: Public VAPID key
+      description: The application server key the browser needs for `PushManager.subscribe`, base64url without padding.
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '200':
+          description: The key
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [publicKey]
+                properties:
+                  publicKey: { type: string, pattern: '^[A-Za-z0-9_-]{86,87}$' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /push/subscriptions:
+    post:
+      tags: [Push]
+      x-feature: push
+      summary: Turn on push notifications for this device
+      description: |
+        Stores the browser's push subscription (`PushSubscription.toJSON()`) for the signed-in user and binds it to the
+        current session: when the session ends (logout, expiry, revoked), the subscription goes with it. `endpoint` must
+        be an https address of a known push service (Google, Mozilla, Apple, Microsoft); `p256dh` a P-256 public key
+        (65 bytes) and `auth` 16 bytes, both base64url. An endpoint that already exists is replaced, also when it
+        belonged to another user. A user keeps at most 10 devices; a new one removes the oldest.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint, keys]
+              properties:
+                endpoint: { type: string, maxLength: 1000 }
+                keys:
+                  type: object
+                  required: [p256dh, auth]
+                  properties:
+                    p256dh: { type: string, maxLength: 200 }
+                    auth: { type: string, maxLength: 200 }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '201':
+          description: Stored
+          content:
+            application/json:
+              schema: { type: object, required: [id], properties: { id: { type: string } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /push/subscriptions/remove:
+    post:
+      tags: [Push]
+      x-feature: push
+      summary: Turn off push notifications for a device
+      description: Removes the user's own subscription with this endpoint. Unknown endpoints are ignored.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint]
+              properties:
+                endpoint: { type: string, maxLength: 1000 }
+      responses:
+        '401': { $ref: '#/components/responses/Problem' }
+        '204': { description: Removed }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
 components:
   securitySchemes:
     sessionCookie:
@@ -3133,7 +3265,7 @@ components:
       required: [id, kind, actor, event, team, invitationId, createdAt, readAt]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [teamInvitation, eventInvitation, eventChanged, eventCanceled, attendeeResponse, chatMessage, reminder, bookingCreated, bookingCanceled, calendarShareInvitation, eventRequested, eventRequestAccepted, eventRequestDeclined, eventRequestWithdrawn, taskAssigned] }
+        kind: { type: string, enum: [teamInvitation, eventInvitation, eventChanged, eventCanceled, attendeeResponse, chatMessage, reminder, bookingCreated, bookingCanceled, calendarShareInvitation, eventRequested, eventRequestAccepted, eventRequestDeclined, eventRequestWithdrawn, taskAssigned, taskDueSoon, taskPlanConflict] }
         actor:
           oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
         event:
@@ -3148,7 +3280,12 @@ components:
                 occurrenceDate: { oneOf: [{ $ref: '#/components/schemas/ISODate' }, { type: 'null' }] }
             - { type: 'null' }
         task:
-          description: Set for `taskAssigned`. Missing in older backends, which the client treats as `null`.
+          description: |
+            Set for `taskAssigned`, `taskDueSoon` and `taskPlanConflict`. Missing in older backends, which the client
+            treats as `null`. `taskDueSoon`: the task is due within two days and its effort is not fully planned yet
+            (sent once per due date to the assignee, else to the owner of the personal calendar or the creator).
+            `taskPlanConflict`: someone else created or changed `event` so that it now overlaps a planned block of the
+            task in the user's personal calendar; it carries both `event` and `task`.
           oneOf:
             - type: object
               required: [id, calendarId, title, dueDate]
@@ -3456,6 +3593,15 @@ components:
           oneOf: [{ type: string }, { type: 'null' }]
           default: null
           description: User id of a member of the calendar (`400 invalidAssignee` otherwise).
+        recurrence:
+          oneOf: [{ $ref: '#/components/schemas/Recurrence' }, { type: 'null' }]
+          default: null
+          description: |
+            Repeats the task. Needs `dueDate`; only `frequency`, `interval`, `weekdays`, `monthlyMode`, `until` and `count`
+            (`rule` null, `dates` empty). When the task becomes `done`, the next task of the series is created with the next
+            due date after `dueDate`, a copy of the task with status `open` and an unchecked checklist; it takes over the
+            recurrence (`count` one lower) and the finished task loses it. `count: 1` or a next date after `until` ends the
+            series.
     TaskStatus:
       type: string
       enum: [open, inProgress, waiting, done]
@@ -3465,9 +3611,32 @@ components:
       type: string
       enum: [low, normal, high, urgent]
       default: normal
+    FreeBusy:
+      type: object
+      required: [email, name, available, busy, blockedDates]
+      properties:
+        email: { type: string, description: 'The address as requested, in lower case' }
+        name: { type: [string, 'null'], description: '`null` when not available' }
+        available: { type: boolean, description: '`false` when the person cannot be looked up' }
+        busy:
+          type: array
+          description: |
+            Merged busy intervals clipped to the range, without any detail: events of calendars in the person's
+            personal view (own, team calendars shown there, connected CalDAV calendars) and events they are invited to
+            and have not declined. Pending requests and all-day events do not count.
+          items:
+            type: object
+            required: [start, end]
+            properties:
+              start: { type: string, format: date-time }
+              end: { type: string, format: date-time }
+        blockedDates:
+          type: array
+          description: Days blocked by an all-day event with a built-in category, also one day around the range
+          items: { $ref: '#/components/schemas/ISODate' }
     Task:
       type: object
-      required: [id, calendarId, title, notes, dueDate, dueTime, estimateMinutes, status, priority, categoryIds, builtinCategories, checklist, assignee, completedAt, completedBy, createdBy, createdAt, updatedAt, version]
+      required: [id, calendarId, title, notes, dueDate, dueTime, estimateMinutes, status, priority, categoryIds, builtinCategories, checklist, assignee, recurrence, completedAt, completedBy, createdBy, createdAt, updatedAt, version]
       properties:
         id: { type: string }
         calendarId: { type: string }
@@ -3491,6 +3660,7 @@ components:
               done: { type: boolean }
         assignee:
           oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
+        recurrence: { oneOf: [{ $ref: '#/components/schemas/Recurrence' }, { type: 'null' }] }
         completedAt: { oneOf: [{ type: string, format: date-time }, { type: 'null' }] }
         completedBy:
           oneOf: [{ type: object, required: [id, name], properties: { id: { type: string }, name: { type: string } } }, { type: 'null' }]
@@ -3866,7 +4036,7 @@ components:
         messages: { type: object, description: Text overrides per language }
     Preferences:
       type: object
-      required: [theme, defaultView, mobileDefaultView, locale, timeZone, holidays, emailInvites, emailChanges, emailReminders, emailChat, planningDistribution, planningCountry, planningDayStart, planningDayEnd]
+      required: [theme, defaultView, mobileDefaultView, locale, timeZone, holidays, emailInvites, emailChanges, emailReminders, emailChat, emailTaskDue, planningDistribution, planningCountry, planningDayStart, planningDayEnd, shareFreeBusy]
       properties:
         theme: { $ref: '#/components/schemas/Theme' }
         defaultView: { $ref: '#/components/schemas/CalendarView' }
@@ -3878,7 +4048,9 @@ components:
         emailChanges: { type: boolean, default: true, description: Email when an event the user is invited to changes or is cancelled }
         emailReminders: { type: boolean, default: false, description: Emails at the user's own reminder times }
         emailChat: { type: boolean, default: true, description: Email about new chat messages of events the user is invited to }
+        emailTaskDue: { type: boolean, default: true, description: 'Email when a task of the user is due within two days and its effort is not fully planned yet (with taskDueSoon)' }
         planningDistribution: { $ref: '#/components/schemas/PlanningDistribution' }
         planningCountry: { $ref: '#/components/schemas/PlanningCountry' }
         planningDayStart: { allOf: [{ $ref: '#/components/schemas/PlanningTime' }], default: '08:00', description: Earliest time of day for planned task blocks }
         planningDayEnd: { allOf: [{ $ref: '#/components/schemas/PlanningTime' }], default: '20:00', description: 'Latest time of day for planned task blocks, at least one hour after the start' }
+        shareFreeBusy: { type: boolean, default: true, description: 'Team members and people the user shares the personal calendar with can see when the user is busy, see POST /free-busy' }

@@ -85,3 +85,44 @@ test('refuses server addresses without https in the form', async ({ browser }) =
   await section.getByRole('button', { name: 'Verbinden' }).click()
   await expect(section).toContainText('Bitte gib eine https://-Adresse ein.')
 })
+
+test('shows a task added in a reminders app and sends changes back', async ({ browser }) => {
+  const user = await createUser('Rita')
+  const { data: created } = await api<{ password: string }>(user, 'POST', '/auth/app-passwords', { name: 'iPhone' })
+  const calendars = (await api<{ id: string }[]>(user, 'GET', '/calendars')).data
+  const userId = (await api<{ user?: { id: string }; id?: string }>(user, 'GET', '/auth/me')).data
+  const ownerId = userId.user?.id ?? userId.id
+  const resource = `${API_URL}/dav/calendars/${ownerId}/${calendars[0].id}/reminder-1.ics`
+  const authorization = `Basic ${Buffer.from(`${user.email}:${created.password}`).toString('base64')}`
+  const put = await fetch(resource, {
+    method: 'PUT',
+    headers: { Authorization: authorization, 'Content-Type': 'text/calendar; charset=utf-8', 'If-None-Match': '*' },
+    body: [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Test//Reminders//EN',
+      'BEGIN:VTODO',
+      'UID:reminder-1@test',
+      'DTSTAMP:20261126T100000Z',
+      'SUMMARY:Blumen gießen',
+      'PRIORITY:1',
+      'STATUS:NEEDS-ACTION',
+      'END:VTODO',
+      'END:VCALENDAR',
+      '',
+    ].join('\r\n'),
+  })
+  expect(put.status).toBe(201)
+
+  const page = await openAs(browser, user)
+  await page.locator('.segment', { hasText: 'Aufgaben' }).click()
+  const row = page.locator('.taskRow', { hasText: 'Blumen gießen' })
+  await expect(row).toBeVisible()
+  await row.getByRole('checkbox', { name: 'Erledigt: Blumen gießen' }).click()
+  await expect
+    .poll(async () => {
+      const response = await fetch(resource, { headers: { Authorization: authorization } })
+      return (await response.text()).includes('STATUS:COMPLETED')
+    })
+    .toBe(true)
+})

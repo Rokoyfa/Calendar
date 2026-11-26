@@ -45,6 +45,7 @@ export const settings: Messages['settings'] = {
     emailChanges: 'Wenn sich ein Termin ändert, zu dem ich eingeladen bin, oder abgesagt wird',
     emailReminders: 'Erinnerungen per E-Mail',
     emailChat: 'Neue Nachrichten im Chat von Terminen, zu denen ich eingeladen bin',
+    emailTaskDue: 'Wenn eine Aufgabe bald fällig und noch nicht ganz eingeplant ist',
   },
   themeTitle: 'Farbschema',
   themeLabel: 'Hell oder dunkel',
@@ -52,6 +53,33 @@ export const settings: Messages['settings'] = {
   startViewDescription: 'Mit dieser Ansicht öffnet sich der Kalender.',
   desktop: 'Computer und Tablet',
   mobile: 'Handy',
+  push: {
+    title: 'Push-Benachrichtigungen',
+    description:
+      'Benachrichtigungen der Glocke auch dann, wenn der Kalender geschlossen ist. Gilt nur für dieses Gerät und diesen Browser.',
+    thisDevice: 'Auf diesem Gerät',
+    unsupported: 'Dieser Browser unterstützt keine Push-Benachrichtigungen.',
+    appleNeedsInstall:
+      'Auf iPhone und iPad gehen Push-Benachrichtigungen erst, wenn du den Kalender zum Home-Bildschirm hinzugefügt hast.',
+    noServiceWorker: 'Auf dieser Seite sind keine Push-Benachrichtigungen eingerichtet.',
+    denied:
+      'Du hast Benachrichtigungen für diese Seite im Browser blockiert. Erlaube sie in den Website-Einstellungen, um sie hier einzuschalten.',
+    foreign: 'Auf dieser Seite ist schon ein anderes Push-Abonnement aktiv.',
+  },
+  app: {
+    title: 'App',
+    description: 'Installiere den Kalender als App, damit er wie ein eigenes Programm startet.',
+    install: 'App installieren',
+    installed: 'Der Kalender ist als App installiert.',
+    running: 'Der Kalender läuft gerade als App.',
+    appleHint: 'Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“.',
+  },
+  freeBusy: {
+    title: 'Verfügbarkeit',
+    description:
+      'Wer mit dir ein Team teilt oder deinen persönlichen Kalender sehen darf, sieht beim Planen eines Termins, wann du belegt bist. Titel, Orte und alle anderen Details bleiben verborgen.',
+    share: 'Belegte Zeiten zeigen',
+  },
   planning: {
     title: 'Automatisches Einplanen',
     description: '„Einplanen“ verteilt den Aufwand einer Aufgabe auf freie Zeiten in deinem persönlichen Kalender.',

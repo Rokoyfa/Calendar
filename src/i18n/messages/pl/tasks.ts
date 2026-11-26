@@ -52,6 +52,8 @@ export const tasks: Messages['tasks'] = {
   columnEmpty: 'Brak zadań',
   more: (count) => `Więcej zadań: ${count}`,
   count: (count) => `Zadania: ${count}`,
+  recurrenceHint: 'Gdy ukończysz zadanie, powstanie następne z kolejnym terminem.',
+  recurrenceNeedsDue: 'Ustaw termin, aby powtarzać zadanie.',
   plan: {
     open: 'Zaplanuj',
     again: 'Zaplanuj ponownie',

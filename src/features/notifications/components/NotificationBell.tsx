@@ -24,14 +24,18 @@ const NO_TARGET_KINDS: ReadonlySet<AppNotification['kind']> = new Set([
   'eventRequestWithdrawn',
 ])
 
+const TASK_KINDS: ReadonlySet<AppNotification['kind']> = new Set(['taskAssigned', 'taskDueSoon', 'taskPlanConflict'])
+
 const targetOf = (notification: AppNotification, calendarIds: ReadonlySet<string>) => {
   if (notification.kind === 'teamInvitation' || notification.kind === 'calendarShareInvitation')
     return SETTINGS_INVITATIONS_PATH
   if (NO_TARGET_KINDS.has(notification.kind)) return null
-  if (notification.kind === 'taskAssigned') {
+  if (TASK_KINDS.has(notification.kind)) {
     const { task } = notification
     if (!task || !calendarIds.has(task.calendarId)) return null
-    return `${ROUTES.calendar}?${new URLSearchParams({ calendar: task.calendarId, task: task.id })}`
+    const params = new URLSearchParams({ calendar: task.calendarId, task: task.id })
+    if (notification.kind !== 'taskAssigned') params.set('plan', '1')
+    return `${ROUTES.calendar}?${params}`
   }
   const { event } = notification
   if (!event || !calendarIds.has(event.calendarId)) return null
@@ -69,6 +73,10 @@ function ActiveBell({ repository }: { repository: NonNullable<ReturnType<typeof 
       case 'bookingCreated':
       case 'bookingCanceled':
         return text.kinds[notification.kind](title)
+      case 'taskDueSoon':
+        return text.kinds.taskDueSoon(notification.task?.title ?? '')
+      case 'taskPlanConflict':
+        return text.kinds.taskPlanConflict(actor, notification.event?.title ?? '', notification.task?.title ?? '')
       default:
         return text.kinds[notification.kind](actor, title)
     }

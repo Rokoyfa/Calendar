@@ -462,6 +462,17 @@ button.attachmentName:hover {
   color: var(--color-text);
 }
 
+.planConflictNotice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.planConflictNotice p {
+  margin: 0;
+}
+
 .bookingHours {
   display: flex;
   flex-direction: column;

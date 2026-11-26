@@ -4,6 +4,7 @@ import type { TaskInput } from '../types/task.ts'
 import { EMPTY_TASK_INPUT } from '../utils/task.ts'
 import { LocalEventRepository } from '../../storage/index.ts'
 import { createEventInput } from '../../../utils/event.ts'
+import { createRecurrence } from '../../../utils/recurrence.ts'
 import { LocalTaskRepository } from './LocalTaskRepository.ts'
 
 const createStorage = () => {
@@ -111,5 +112,24 @@ describe('LocalTaskRepository', () => {
     expect(await events.listTrash('personal')).toHaveLength(1)
     await repository.remove(task.id, done.version)
     expect((await events.listAll()).map(({ taskId }) => taskId)).toEqual([null])
+  })
+
+  it('creates the next task of a series when a recurring task is done', async () => {
+    const repository = new LocalTaskRepository('test.tasks')
+    const recurrence = { ...createRecurrence('weekly', '2026-11-30'), weekdays: [0], count: 2 }
+    const task = await repository.create(
+      'personal',
+      input({ dueDate: '2026-11-30', recurrence, checklist: [{ title: 'Punkt', done: false }] }),
+    )
+    await repository.setChecklistItem(task.id, task.checklist[0].id, true)
+    const done = await repository.setStatus(task.id, 'done')
+    expect(done.recurrence).toBeNull()
+    const [next] = await repository.list({ calendarIds: ['personal'], completed: false })
+    expect(next).toMatchObject({ dueDate: '2026-12-07', status: 'open', recurrence: { count: 1 } })
+    expect(next.checklist.map((item) => item.done)).toEqual([false])
+    await repository.setStatus(done.id, 'open')
+    await repository.setStatus(done.id, 'done')
+    await repository.setStatus(next.id, 'done')
+    expect(await repository.list({ calendarIds: ['personal'], completed: false })).toEqual([])
   })
 })

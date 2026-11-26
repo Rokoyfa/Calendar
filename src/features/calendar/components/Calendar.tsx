@@ -92,6 +92,9 @@ import { useUndo } from '../hooks/useUndo.ts'
 import { useActionError } from '../../../hooks/useActionError.ts'
 import { getEditorAccess, withCurrentCalendar } from '../utils/editorAccess.ts'
 import { findOverlaps, overlapRange, type OverlapQuery } from '../../../utils/overlap.ts'
+import { toInstant } from '../../../utils/timeZone.ts'
+import type { PlanConflict } from '../../events/components/PlanConflictNotice.tsx'
+import { usePreferences } from '../../preferences/index.ts'
 import { buildPrintDocument } from '../utils/print.ts'
 import { printDocument } from '../utils/printDocument.ts'
 
@@ -367,6 +370,42 @@ export function Calendar({
       return findOverlaps(query, [...found, ...externalEvents], viewerTimeZone, currentUserEmail)
     },
     [eventRepository, calendarIds, overlapCalendarId, externalEvents, viewerTimeZone, currentUserEmail],
+  )
+
+  const planning = taskSetup?.planning
+  const planCalendarIds = useMemo(
+    () => (planning ? new Set([planning.calendarId, ...planning.busyCalendarIds]) : null),
+    [planning],
+  )
+  const checkPlanConflicts = useCallback(
+    async (query: OverlapQuery) => {
+      if (!planning) return []
+      const { from, to } = overlapRange(query)
+      const found = await eventRepository.list({ from, to, calendarIds: [planning.calendarId] })
+      const current = Date.now()
+      const conflicts = new Map<string, PlanConflict>()
+      for (const block of findOverlaps(
+        query,
+        found.filter((event) => event.taskId),
+        viewerTimeZone,
+        currentUserEmail,
+      ))
+        if (block.taskId && toInstant({ date: block.startDate, time: block.start }, viewerTimeZone) > current)
+          conflicts.set(block.taskId, { taskId: block.taskId, title: block.title })
+      return [...conflicts.values()]
+    },
+    [planning, eventRepository, viewerTimeZone, currentUserEmail],
+  )
+  const { openEdit: openTaskEdit } = taskEditor
+  const planningDistribution = usePreferences().preferences.planningDistribution
+  const replanTask = useCallback(
+    async (taskId: string) => {
+      if (!taskSetup || !taskRepository) return
+      const open = await taskRepository.list({ calendarIds: taskSetup.calendarIds, completed: false })
+      const task = open.find((entry) => entry.id === taskId)
+      if (task) openTaskEdit(task, planningDistribution)
+    },
+    [taskSetup, taskRepository, openTaskEdit, planningDistribution],
   )
 
   const openSearchResult = (event: CalendarEvent, date: string) => {
@@ -719,6 +758,16 @@ export function Calendar({
                     checkOverlaps={
                       features.overlapWarnings && !readOnly && !editorIsExternal && !editorIsLocked
                         ? checkOverlaps
+                        : undefined
+                    }
+                    planConflicts={
+                      planCalendarIds &&
+                      editorCalendarId &&
+                      planCalendarIds.has(editorCalendarId) &&
+                      !readOnly &&
+                      !editorIsExternal &&
+                      !editorIsLocked
+                        ? { check: checkPlanConflicts, onReplan: (taskId) => void replanTask(taskId) }
                         : undefined
                     }
                     initialValue={shownEditor.initialValue}

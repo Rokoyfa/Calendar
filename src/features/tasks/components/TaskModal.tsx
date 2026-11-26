@@ -38,11 +38,20 @@ import {
   toTaskInput,
 } from '../utils/task.ts'
 import { useHasFutureBlocks } from '../hooks/useHasFutureBlocks.ts'
+import { RecurrenceFields } from '../../events/components/RecurrenceFields.tsx'
+import {
+  adaptRecurrenceToStart,
+  hasRecurrenceErrors,
+  validateRecurrence,
+  type RecurrenceValidationErrors,
+} from '../../../utils/recurrence.ts'
 import { ChecklistField } from './ChecklistField.tsx'
 
 const TaskPlanModal = lazy(async () => ({ default: (await import('./TaskPlanModal.tsx')).TaskPlanModal }))
 
-type TaskErrors = Partial<Record<'title' | 'notes' | 'dueDate' | 'dueTime' | 'estimate', string>>
+type TaskErrors = Partial<Record<'title' | 'notes' | 'dueDate' | 'dueTime' | 'estimate', string>> & {
+  recurrence?: RecurrenceValidationErrors
+}
 
 type EstimateParts = { hours: string; minutes: string }
 
@@ -228,6 +237,10 @@ export function TaskModal({
     dueDate: input.dueDate !== null && !isISODate(input.dueDate) ? m.validation.dateInvalid : undefined,
     dueTime: input.dueTime !== null && !isTime(input.dueTime) ? m.validation.timeInvalid : undefined,
     estimate: estimateMinutes === undefined ? text.estimateInvalid : undefined,
+    recurrence:
+      input.recurrence && input.dueDate && hasRecurrenceErrors(validateRecurrence(input.recurrence, input.dueDate, m))
+        ? validateRecurrence(input.recurrence, input.dueDate, m)
+        : undefined,
   })
 
   const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
@@ -239,7 +252,7 @@ export function TaskModal({
     setErrors(found)
     if (Object.values(found).some(Boolean)) {
       const invalid: Record<TaskTab, boolean> = {
-        general: Boolean(found.title || found.dueDate || found.dueTime || found.estimate),
+        general: Boolean(found.title || found.dueDate || found.dueTime || found.estimate || found.recurrence),
         checklist: false,
         details: Boolean(found.notes),
       }
@@ -280,7 +293,7 @@ export function TaskModal({
     {
       value: 'general',
       label: text.tabs.general,
-      invalid: Boolean(errors.title || errors.dueDate || errors.dueTime || errors.estimate),
+      invalid: Boolean(errors.title || errors.dueDate || errors.dueTime || errors.estimate || errors.recurrence),
       content: (
         <>
           <Locked isLocked={!isEditable}>
@@ -321,7 +334,16 @@ export function TaskModal({
                   value={values.dueDate ?? ''}
                   aria-invalid={Boolean(errors.dueDate)}
                   onChange={(event) =>
-                    update(event.target.value ? { dueDate: event.target.value } : { dueDate: null, dueTime: null })
+                    update(
+                      event.target.value
+                        ? {
+                            dueDate: event.target.value,
+                            recurrence: values.dueDate
+                              ? adaptRecurrenceToStart(values.recurrence, values.dueDate, event.target.value)
+                              : values.recurrence,
+                          }
+                        : { dueDate: null, dueTime: null, recurrence: null },
+                    )
                   }
                 />
               </FormField>
@@ -338,6 +360,19 @@ export function TaskModal({
                 </FormField>
               )}
             </div>
+            {values.dueDate ? (
+              <>
+                <RecurrenceFields
+                  value={values.recurrence}
+                  startDate={values.dueDate}
+                  errors={errors.recurrence ?? {}}
+                  onChange={(recurrence) => update({ recurrence })}
+                />
+                {values.recurrence && <p className="formHint">{text.recurrenceHint}</p>}
+              </>
+            ) : (
+              <p className="formHint">{text.recurrenceNeedsDue}</p>
+            )}
             <FormField label={text.estimate} as="fieldset" error={errors.estimate}>
               <span className="inlineField taskEstimate">
                 <input

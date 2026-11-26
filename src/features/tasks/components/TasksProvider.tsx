@@ -1,3 +1,4 @@
+import { usePreferences } from '../../preferences/index.ts'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
 import type { Category } from '../../../utils/category.ts'
@@ -67,8 +68,18 @@ function ActiveTasksProvider({
   children,
 }: ActiveTasksProviderProps) {
   const { m } = useI18n()
-  const { calendarIds, targetCalendarId, choices, calendarNames, access, loadAssignees, openTaskId, onOpenTaskDone } =
-    setup
+  const {
+    calendarIds,
+    targetCalendarId,
+    choices,
+    calendarNames,
+    access,
+    loadAssignees,
+    openTaskId,
+    openTaskPlan,
+    onOpenTaskDone,
+  } = setup
+  const planningDistribution = usePreferences().preferences.planningDistribution
   const ranged = useTaskList(repository, { calendarIds, from: range.from, to: range.to })
   const full = useTaskList(repository, { calendarIds, enabled: includeList || Boolean(openTaskId) })
   const actions = useTaskActions(repository)
@@ -159,9 +170,18 @@ function ActiveTasksProvider({
   useEffect(() => {
     if (!openTaskId || full.isLoading) return
     const linked = full.tasks.find((task) => task.id === openTaskId)
-    if (linked) openEdit(linked)
+    if (linked) openEdit(linked, openTaskPlan && setup.planning ? planningDistribution : undefined)
     onOpenTaskDone?.()
-  }, [openTaskId, full.isLoading, full.tasks, openEdit, onOpenTaskDone])
+  }, [
+    openTaskId,
+    full.isLoading,
+    full.tasks,
+    openEdit,
+    onOpenTaskDone,
+    openTaskPlan,
+    setup.planning,
+    planningDistribution,
+  ])
 
   const shown = editor.shown
   const shownTask = shown?.task ?? null

@@ -199,3 +199,84 @@
 .historyValue ins {
   text-decoration: none;
 }
+
+.modal:has(.findTime) {
+  width: min(620px, calc(100vw - 2 * var(--space-4)));
+  height: min(620px, calc(100dvh - 2 * var(--space-4)));
+}
+
+.modal:has(.findTime)[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal:has(.findTime) .modalContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.findTime {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+.findTime > p,
+.findTime section > p {
+  margin: 0;
+}
+
+.findTime .formSubtitle {
+  margin: 0 0 var(--space-2);
+}
+
+.findTime .modalActions {
+  flex-wrap: wrap;
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+.findTimePeople {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.findTimePeople li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.findTimePerson {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.findTimeSuggestions {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.findTimeSlots {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--space-2);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}

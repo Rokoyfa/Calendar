@@ -156,6 +156,14 @@ features:
   # task view as a list or board, plannable into free time. Needs the /tasks endpoints in remote mode.
   tasks: true
 
+  # Finding a common time with the attendees in the event dialog, from their busy time without details.
+  # Needs the /free-busy endpoint.
+  freeBusy: true
+
+  # Push notifications on the user's devices, also while the calendar is closed. Needs the /push
+  # endpoints and a service worker on the page (public/sw.js of the package).
+  push: true
+
 # Shows events without letting anyone create, change, move, delete or import them.
 readOnly: false
 

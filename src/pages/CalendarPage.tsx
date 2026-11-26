@@ -44,6 +44,7 @@ const LINK_PARAMS = {
   date: 'date',
   tab: 'tab',
   task: 'task',
+  plan: 'plan',
 } as const
 
 export function CalendarPage() {
@@ -124,6 +125,7 @@ export function CalendarPage() {
   const linkedDate = searchParams.get(LINK_PARAMS.date)
   const linkedTab = searchParams.get(LINK_PARAMS.tab)
   const linkedTaskId = searchParams.get(LINK_PARAMS.task)
+  const linkedPlan = searchParams.get(LINK_PARAMS.plan) === '1'
   const openEvent = useMemo<OpenEventRequest | undefined>(
     () =>
       linkedEventId && isISODate(linkedDate)
@@ -325,6 +327,7 @@ export function CalendarPage() {
       access: taskAccess,
       loadAssignees,
       openTaskId: isLinkedCalendarShown ? linkedTaskId : null,
+      openTaskPlan: linkedPlan,
       onOpenTaskDone: clearLink,
       planning,
     }),
@@ -337,6 +340,7 @@ export function CalendarPage() {
       loadAssignees,
       isLinkedCalendarShown,
       linkedTaskId,
+      linkedPlan,
       clearLink,
       planning,
     ],

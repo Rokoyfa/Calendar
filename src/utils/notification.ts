@@ -18,6 +18,8 @@ export const NOTIFICATION_KINDS = [
   'eventRequestDeclined',
   'eventRequestWithdrawn',
   'taskAssigned',
+  'taskDueSoon',
+  'taskPlanConflict',
 ] as const
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]

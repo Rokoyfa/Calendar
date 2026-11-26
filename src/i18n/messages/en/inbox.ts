@@ -23,5 +23,8 @@ export const inbox = {
     eventRequestDeclined: (actor: string, title: string) => `${actor} declined your request “${title}”`,
     eventRequestWithdrawn: (actor: string, title: string) => `${actor} withdrew the request “${title}”`,
     taskAssigned: (actor: string, title: string) => `${actor} assigned you the task “${title}”`,
+    taskDueSoon: (title: string) => `The task “${title}” is due soon and not fully planned yet`,
+    taskPlanConflict: (actor: string, event: string, task: string) =>
+      `“${event}” by ${actor} overlaps planned time for “${task}”`,
   },
 }

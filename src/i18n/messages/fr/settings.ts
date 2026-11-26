@@ -45,6 +45,7 @@ export const settings: Messages['settings'] = {
     emailChanges: 'Quand un événement auquel je suis invité change ou est annulé',
     emailReminders: 'Rappels par e-mail',
     emailChat: 'Nouveaux messages dans la discussion des événements auxquels je suis invité',
+    emailTaskDue: 'Quand une tâche arrive bientôt à échéance et n’est pas encore entièrement planifiée',
   },
   themeTitle: 'Thème',
   themeLabel: 'Clair ou sombre',
@@ -52,6 +53,33 @@ export const settings: Messages['settings'] = {
   startViewDescription: 'Le calendrier s’ouvre dans cette vue.',
   desktop: 'Ordinateur et tablette',
   mobile: 'Téléphone',
+  push: {
+    title: 'Notifications push',
+    description:
+      'Les notifications de la cloche, même lorsque le calendrier est fermé. Ne s’applique qu’à cet appareil et à ce navigateur.',
+    thisDevice: 'Sur cet appareil',
+    unsupported: 'Ce navigateur ne prend pas en charge les notifications push.',
+    appleNeedsInstall:
+      'Sur iPhone et iPad, les notifications push ne fonctionnent qu’une fois le calendrier ajouté à l’écran d’accueil.',
+    noServiceWorker: 'Les notifications push ne sont pas configurées sur cette page.',
+    denied:
+      'Vous avez bloqué les notifications de ce site dans votre navigateur. Autorisez-les dans les paramètres du site pour les activer ici.',
+    foreign: 'Un autre abonnement push est déjà actif sur cette page.',
+  },
+  app: {
+    title: 'Application',
+    description: 'Installez le calendrier comme application pour qu’il s’ouvre comme un programme à part entière.',
+    install: 'Installer l’application',
+    installed: 'Le calendrier est installé comme application.',
+    running: 'Le calendrier fonctionne actuellement comme application.',
+    appleHint: 'Dans Safari, touchez «\u00a0Partager\u00a0» puis «\u00a0Sur l’écran d’accueil\u00a0».',
+  },
+  freeBusy: {
+    title: 'Disponibilité',
+    description:
+      'Les personnes avec qui vous partagez une équipe ou qui peuvent voir votre calendrier personnel voient quand vous êtes occupé en planifiant un événement. Les titres, lieux et tous les autres détails restent masqués.',
+    share: 'Afficher les horaires occupés',
+  },
   planning: {
     title: 'Planification automatique',
     description:

@@ -41,6 +41,7 @@ export const settings = {
     emailChanges: 'When an event I am invited to changes or is cancelled',
     emailReminders: 'Reminders by email',
     emailChat: 'New chat messages about events I am invited to',
+    emailTaskDue: 'When a task is due soon and not fully planned yet',
   },
   themeTitle: 'Color scheme',
   themeLabel: 'Light or dark',
@@ -48,6 +49,32 @@ export const settings = {
   startViewDescription: 'The calendar opens in this view.',
   desktop: 'Computer and tablet',
   mobile: 'Phone',
+  push: {
+    title: 'Push notifications',
+    description: 'Notifications of the bell even when the calendar is closed. Applies only to this device and browser.',
+    thisDevice: 'On this device',
+    unsupported: 'This browser does not support push notifications.',
+    appleNeedsInstall:
+      'On iPhone and iPad, push notifications only work once you have added the calendar to your home screen.',
+    noServiceWorker: 'Push notifications are not set up on this page.',
+    denied:
+      'You have blocked notifications for this site in your browser. Allow them in the site settings to turn them on here.',
+    foreign: 'Another push subscription is already active on this page.',
+  },
+  app: {
+    title: 'App',
+    description: 'Install the calendar as an app so it starts like a program of its own.',
+    install: 'Install app',
+    installed: 'The calendar is installed as an app.',
+    running: 'The calendar is running as an app.',
+    appleHint: 'In Safari, tap “Share” and then “Add to Home Screen”.',
+  },
+  freeBusy: {
+    title: 'Availability',
+    description:
+      'People you share a team with or who may see your personal calendar see when you are busy while planning an event. Titles, places and all other details stay hidden.',
+    share: 'Show busy times',
+  },
   planning: {
     title: 'Automatic planning',
     description: '“Plan” spreads the effort of a task over free time in your personal calendar.',

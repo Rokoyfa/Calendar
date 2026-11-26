@@ -25,5 +25,8 @@ export const inbox: Messages['inbox'] = {
     eventRequestDeclined: (actor, title) => `${actor} rechazó tu solicitud «${title}»`,
     eventRequestWithdrawn: (actor, title) => `${actor} retiró la solicitud «${title}»`,
     taskAssigned: (actor, title) => `${actor} te asignó la tarea «${title}»`,
+    taskDueSoon: (title) => `La tarea «${title}» vence pronto y aún no está planificada del todo`,
+    taskPlanConflict: (actor, event, task) =>
+      `«${event}» de ${actor} se solapa con el tiempo planificado para «${task}»`,
   },
 }

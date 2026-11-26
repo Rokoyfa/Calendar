@@ -44,6 +44,8 @@ export const caldav: Messages['caldav'] = {
     title: 'In anderen Programmen nutzen (CalDAV)',
     description:
       'Zeige und bearbeite deine Kalender in Apple Kalender, Thunderbird, DAVx⁵ (Android), Outlook mit CalDAV-Add-in oder anderen Programmen. Trage dort die Serveradresse und deine E-Mail-Adresse ein und als Passwort ein App-Passwort.',
+    tasksHint:
+      'Auch deine Aufgaben stehen dort bereit, zum Beispiel in Apple Erinnerungen, Thunderbird oder Tasks.org mit DAVx⁵. Checklisten, Zuständige und eingeplante Zeiten pflegst du hier.',
     serverUrl: 'Serveradresse',
     username: 'Benutzername',
     passwordsTitle: 'App-Passwörter',

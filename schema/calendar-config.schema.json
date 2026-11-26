@@ -217,6 +217,16 @@
           "type": "boolean",
           "default": true,
           "description": "Tasks with status, priority, optional due date, effort and checklist in every calendar: checkable entries on their day and a task view as a list or board. In team calendars a task can be assigned to a member. Tasks with an effort can be planned into free time (settings tab Planning). Needs the /tasks endpoints in remote mode."
+        },
+        "freeBusy": {
+          "type": "boolean",
+          "default": true,
+          "description": "Finding a common time in the event dialog: shows when the attendees are busy, as plain busy time without any details, and suggests free slots. Only people who share a team or their personal calendar with the user can be looked up, and everyone can switch it off for themselves. Needs the /free-busy endpoint; not available in local mode."
+        },
+        "push": {
+          "type": "boolean",
+          "default": true,
+          "description": "Push notifications: each user can turn on the bell's notifications for their device under Settings > Notifications, also when the calendar is closed. Needs the notifications feature, the /push endpoints and a service worker on the page (public/sw.js of the package); not available in local mode."
         }
       }
     },

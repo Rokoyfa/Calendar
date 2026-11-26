@@ -6,6 +6,7 @@ import { PageSection } from '../../../components/PageSection.tsx'
 import { ActionFeedback, ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { TextField } from '../../../components/TextField.tsx'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
+import { useFeatures } from '../../../context/HostContext.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { useForm } from '../../../hooks/useForm.ts'
 import { useI18n } from '../../../i18n/index.ts'
@@ -58,6 +59,7 @@ function AccessData({ repository }: { repository: AppPasswordRepository }) {
 function ActiveServerSettings({ repository }: { repository: AppPasswordRepository }) {
   const { m, locale } = useI18n()
   const text = m.caldav.server
+  const { tasks } = useFeatures()
   const timeZone = useViewerTimeZone()
   const load = useCallback(() => repository.list(), [repository])
   const { data: passwords, error, update } = useAsyncResource(load, NO_PASSWORDS)
@@ -84,6 +86,7 @@ function ActiveServerSettings({ repository }: { repository: AppPasswordRepositor
 
   return (
     <PageSection title={text.title} description={text.description}>
+      {tasks && <p className="formHint">{text.tasksHint}</p>}
       <AccessData repository={repository} />
       <h3 className="formSubtitle">{text.passwordsTitle}</h3>
       <p className="formHint">{text.passwordsDescription}</p>

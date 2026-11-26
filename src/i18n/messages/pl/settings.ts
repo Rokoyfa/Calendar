@@ -46,6 +46,7 @@ export const settings: Messages['settings'] = {
     emailChanges: 'Gdy wydarzenie, na które jestem zaproszony, zmieni się lub zostanie odwołane',
     emailReminders: 'Przypomnienia e-mailem',
     emailChat: 'Nowe wiadomości na czacie wydarzeń, na które jestem zaproszony',
+    emailTaskDue: 'Gdy termin zadania wkrótce mija, a nie jest ono jeszcze w pełni zaplanowane',
   },
   themeTitle: 'Motyw',
   themeLabel: 'Jasny lub ciemny',
@@ -53,6 +54,33 @@ export const settings: Messages['settings'] = {
   startViewDescription: 'Kalendarz otwiera się w tym widoku.',
   desktop: 'Komputer i tablet',
   mobile: 'Telefon',
+  push: {
+    title: 'Powiadomienia push',
+    description:
+      'Powiadomienia z dzwonka także wtedy, gdy kalendarz jest zamknięty. Dotyczy tylko tego urządzenia i tej przeglądarki.',
+    thisDevice: 'Na tym urządzeniu',
+    unsupported: 'Ta przeglądarka nie obsługuje powiadomień push.',
+    appleNeedsInstall:
+      'Na iPhonie i iPadzie powiadomienia push działają dopiero po dodaniu kalendarza do ekranu początkowego.',
+    noServiceWorker: 'Na tej stronie nie skonfigurowano powiadomień push.',
+    denied:
+      'Zablokowałeś powiadomienia tej strony w przeglądarce. Zezwól na nie w ustawieniach strony, aby włączyć je tutaj.',
+    foreign: 'Na tej stronie jest już aktywna inna subskrypcja push.',
+  },
+  app: {
+    title: 'Aplikacja',
+    description: 'Zainstaluj kalendarz jako aplikację, aby uruchamiał się jak osobny program.',
+    install: 'Zainstaluj aplikację',
+    installed: 'Kalendarz jest zainstalowany jako aplikacja.',
+    running: 'Kalendarz działa teraz jako aplikacja.',
+    appleHint: 'W Safari stuknij „Udostępnij”, a potem „Do ekranu początkowego”.',
+  },
+  freeBusy: {
+    title: 'Dostępność',
+    description:
+      'Osoby, z którymi dzielisz zespół lub które mogą widzieć twój kalendarz osobisty, widzą podczas planowania wydarzenia, kiedy jesteś zajęty. Tytuły, miejsca i wszystkie inne szczegóły pozostają ukryte.',
+    share: 'Pokazuj zajęte godziny',
+  },
   planning: {
     title: 'Automatyczne planowanie',
     description: '„Zaplanuj” rozkłada nakład pracy zadania na wolny czas w twoim kalendarzu osobistym.',

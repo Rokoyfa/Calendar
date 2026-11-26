@@ -16,6 +16,10 @@ import {
   useIsCaldavServerAvailable,
 } from '../features/caldav/index.ts'
 import { PeerCalendarSettings, PeerInvitationList, usePeerCalendars } from '../features/peers/index.ts'
+import { FreeBusySettings, useFreeBusyRepository } from '../features/freebusy/index.ts'
+import { PushSettings } from '../features/push/index.ts'
+import { AppInstallSettings } from '../features/pwa/index.ts'
+import { useStorage } from '../features/storage/index.ts'
 import { useI18n } from '../i18n/index.ts'
 import { compact } from '../utils/list.ts'
 
@@ -40,18 +44,21 @@ export function SettingsPage() {
   const caldavAccounts = useCaldav()
   const caldavServer = useIsCaldavServerAvailable()
   const peers = usePeerCalendars()
+  const freeBusy = useFreeBusyRepository()
+  const hasPush = useStorage().push !== undefined
   const tabs = compact<TabDefinition<SettingsTab>>([
     {
       value: 'calendars',
       label: m.settings.tabs.calendars,
       content: <CalendarSettings />,
     },
-    (external.isAvailable || caldavAccounts.isAvailable || caldavServer || peers.isAvailable) && {
+    (external.isAvailable || caldavAccounts.isAvailable || caldavServer || peers.isAvailable || freeBusy) && {
       value: 'connections',
       label: m.settings.tabs.connections,
       content: (
         <>
           <PeerCalendarSettings />
+          {freeBusy && <FreeBusySettings />}
           <ExternalCalendarSettings />
           <CaldavAccountSettings />
           <CaldavServerSettings />
@@ -80,6 +87,7 @@ export function SettingsPage() {
           <PreferencesSettings />
           {holidays && <HolidaySettings />}
           {customColors && <CustomColorSettings />}
+          <AppInstallSettings />
         </>
       ),
     },
@@ -88,12 +96,17 @@ export function SettingsPage() {
       label: m.settings.tabs.planning,
       content: <TaskPlanningSettings />,
     },
-    emailNotifications &&
+    (emailNotifications || hasPush) &&
       enabled &&
       user && {
         value: 'notifications',
         label: m.settings.tabs.notifications,
-        content: <NotificationSettings emailVerified={user.emailVerified} />,
+        content: (
+          <>
+            {emailNotifications && <NotificationSettings emailVerified={user.emailVerified} />}
+            <PushSettings />
+          </>
+        ),
       },
     enabled &&
       user &&

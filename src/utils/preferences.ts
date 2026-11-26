@@ -44,16 +44,20 @@ export type Preferences = {
   emailChanges: boolean
   emailReminders: boolean
   emailChat: boolean
+  emailTaskDue: boolean
   planningDistribution: PlanningDistribution
   planningCountry: string
   planningDayStart: string
   planningDayEnd: string
+  shareFreeBusy: boolean
 }
 
 export type PlanningPreferenceKey = 'planningDistribution' | 'planningCountry' | 'planningDayStart' | 'planningDayEnd'
 
-export type StoredPreferences = Omit<Preferences, PlanningPreferenceKey> &
-  Partial<Pick<Preferences, PlanningPreferenceKey>>
+type OptionalPreferenceKey = PlanningPreferenceKey | 'shareFreeBusy' | 'emailTaskDue'
+
+export type StoredPreferences = Omit<Preferences, OptionalPreferenceKey> &
+  Partial<Pick<Preferences, OptionalPreferenceKey>>
 
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: 'system',
@@ -66,10 +70,12 @@ export const DEFAULT_PREFERENCES: Preferences = {
   emailChanges: true,
   emailReminders: false,
   emailChat: true,
+  emailTaskDue: true,
   planningDistribution: 'even',
   planningCountry: PLANNING_COUNTRY_AUTO,
   planningDayStart: '08:00',
   planningDayEnd: '20:00',
+  shareFreeBusy: true,
 }
 
 const COMPACT_MAX_WIDTH = 700
@@ -88,10 +94,12 @@ export const parsePreferences = (value: unknown): Preferences => {
     emailChanges,
     emailReminders,
     emailChat,
+    emailTaskDue,
     planningDistribution,
     planningCountry,
     planningDayStart,
     planningDayEnd,
+    shareFreeBusy,
   } = asRecord(value)
   const hasWindow =
     typeof planningDayStart === 'string' &&
@@ -108,12 +116,14 @@ export const parsePreferences = (value: unknown): Preferences => {
     emailChanges: typeof emailChanges === 'boolean' ? emailChanges : DEFAULT_PREFERENCES.emailChanges,
     emailReminders: typeof emailReminders === 'boolean' ? emailReminders : DEFAULT_PREFERENCES.emailReminders,
     emailChat: typeof emailChat === 'boolean' ? emailChat : DEFAULT_PREFERENCES.emailChat,
+    emailTaskDue: typeof emailTaskDue === 'boolean' ? emailTaskDue : DEFAULT_PREFERENCES.emailTaskDue,
     planningDistribution: isOneOf(PLANNING_DISTRIBUTIONS, planningDistribution)
       ? planningDistribution
       : DEFAULT_PREFERENCES.planningDistribution,
     planningCountry: isPlanningCountry(planningCountry) ? planningCountry : PLANNING_COUNTRY_AUTO,
     planningDayStart: hasWindow ? planningDayStart : DEFAULT_PREFERENCES.planningDayStart,
     planningDayEnd: hasWindow ? planningDayEnd : DEFAULT_PREFERENCES.planningDayEnd,
+    shareFreeBusy: typeof shareFreeBusy === 'boolean' ? shareFreeBusy : DEFAULT_PREFERENCES.shareFreeBusy,
   }
 }
 

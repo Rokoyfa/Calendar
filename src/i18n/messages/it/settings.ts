@@ -45,6 +45,7 @@ export const settings: Messages['settings'] = {
     emailChanges: 'Quando un evento a cui sono invitato cambia o viene annullato',
     emailReminders: 'Promemoria via email',
     emailChat: 'Nuovi messaggi nella chat degli eventi a cui sono invitato',
+    emailTaskDue: 'Quando un’attività scade presto e non è ancora pianificata del tutto',
   },
   themeTitle: 'Tema',
   themeLabel: 'Chiaro o scuro',
@@ -52,6 +53,33 @@ export const settings: Messages['settings'] = {
   startViewDescription: 'Il calendario si apre in questa vista.',
   desktop: 'Computer e tablet',
   mobile: 'Telefono',
+  push: {
+    title: 'Notifiche push',
+    description:
+      'Le notifiche della campanella anche quando il calendario è chiuso. Vale solo per questo dispositivo e questo browser.',
+    thisDevice: 'Su questo dispositivo',
+    unsupported: 'Questo browser non supporta le notifiche push.',
+    appleNeedsInstall:
+      'Su iPhone e iPad le notifiche push funzionano solo dopo aver aggiunto il calendario alla schermata Home.',
+    noServiceWorker: 'Le notifiche push non sono configurate su questa pagina.',
+    denied:
+      'Hai bloccato le notifiche di questo sito nel browser. Consentile nelle impostazioni del sito per attivarle qui.',
+    foreign: 'Su questa pagina è già attivo un altro abbonamento push.',
+  },
+  app: {
+    title: 'App',
+    description: 'Installa il calendario come app, così si apre come un programma a sé.',
+    install: 'Installa app',
+    installed: 'Il calendario è installato come app.',
+    running: 'Il calendario è in esecuzione come app.',
+    appleHint: 'In Safari tocca «Condividi» e poi «Aggiungi alla schermata Home».',
+  },
+  freeBusy: {
+    title: 'Disponibilità',
+    description:
+      'Chi condivide un team con te o può vedere il tuo calendario personale vede quando sei occupato mentre pianifica un evento. Titoli, luoghi e tutti gli altri dettagli restano nascosti.',
+    share: 'Mostra gli orari occupati',
+  },
   planning: {
     title: 'Pianificazione automatica',
     description: '«Pianifica» distribuisce l’impegno di un’attività nel tempo libero del tuo calendario personale.',

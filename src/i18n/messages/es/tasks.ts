@@ -52,6 +52,8 @@ export const tasks: Messages['tasks'] = {
   columnEmpty: 'Sin tareas',
   more: (count) => `+${count} tareas más`,
   count: (count) => (count === 1 ? '1 tarea' : `${count} tareas`),
+  recurrenceHint: 'Al completar la tarea se crea la siguiente con el siguiente vencimiento.',
+  recurrenceNeedsDue: 'Indica un vencimiento para repetir la tarea.',
   plan: {
     open: 'Planificar',
     again: 'Volver a planificar',

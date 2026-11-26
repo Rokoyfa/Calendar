@@ -44,6 +44,8 @@ import type {
   PublicBookingPage,
 } from '../../../utils/booking.ts'
 import type { TaskRepository } from '../../tasks/types/task.ts'
+import type { FreeBusyRepository } from '../../freebusy/types/freeBusy.ts'
+import type { PushRepository } from '../../push/types/push.ts'
 
 export type EventQuery = DateRange & { calendarIds: readonly string[] }
 
@@ -214,6 +216,8 @@ export type StorageRepositories = {
   caldav?: CaldavRepository
   caldavEvents?: CaldavEventSource
   tasks?: TaskRepository
+  freeBusy?: FreeBusyRepository
+  push?: PushRepository
 }
 
 export type StorageContextValue = StorageRepositories & {
