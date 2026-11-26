@@ -7,6 +7,7 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 ### Upgrading from 2.2
 
 - `planningDistribution` has the new value `late`. A backend that checks the value has to accept it.
+- A user keeps at most 500 notifications: a backend deletes the oldest before it stores a new one (documented now, the test backend already did it).
 
 ### Added
 

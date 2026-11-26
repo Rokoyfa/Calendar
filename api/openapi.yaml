@@ -1829,7 +1829,9 @@ paths:
       tags: [Notifications]
       x-feature: notifications
       summary: Notifications of the user
-      description: Newest first. Read notifications are kept for 30 days, unread ones for 90 days.
+      description: |
+        Newest first. Read notifications are kept for 30 days, unread ones for 90 days. A user has at most 500: a new
+        notification removes the oldest one.
       parameters:
         - { name: before, in: query, required: false, schema: { type: string }, description: '`id` of the oldest notification already loaded' }
         - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 30 } }
