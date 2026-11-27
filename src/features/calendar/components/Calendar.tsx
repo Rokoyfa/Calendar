@@ -65,6 +65,8 @@ import { isDraftEvent, toDraftEvent } from '../utils/draftEvent.ts'
 import { buildPrintDocument } from '../utils/print.ts'
 import { printDocument } from '../utils/printDocument.ts'
 import { readTourSeen, writeTourSeen } from '../utils/tour.ts'
+import { getEventActions } from '../utils/editorAccess.ts'
+import { useRootElement } from '../../../context/RootElementContext.ts'
 import { AgendaView } from './AgendaView.tsx'
 import { CalendarEventEditor } from './CalendarEventEditor.tsx'
 import { CalendarEventPeek } from './CalendarEventPeek.tsx'
@@ -287,7 +289,7 @@ export function Calendar({
   })
 
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false)
+  const [shortcutHelp, setShortcutHelp] = useState<{ canSwitchCalendar: boolean } | null>(null)
   const tourScope = tour && features.tips && !readOnly ? tour.scope : null
   const [tourStart, setTourStart] = useState<'auto' | 'manual' | null>(() =>
     tourScope !== null && !readTourSeen(tourScope) ? 'auto' : null,
@@ -398,15 +400,64 @@ export function Calendar({
   })
 
   const selectView = (wanted: CalendarView) => (views.includes(wanted) ? () => setView(wanted) : undefined)
+  const rootElement = useRootElement()
+  const clickControl = (selector: string) => () => {
+    const control = rootElement.querySelector<HTMLElement>(selector)
+    if (!control) return false
+    control.click()
+  }
+  const focusedOccurrence = () => {
+    const active = (rootElement.getRootNode() as Document | ShadowRoot).activeElement
+    const key =
+      active instanceof HTMLElement ? active.closest<HTMLElement>('[data-event-target]')?.dataset.eventTarget : null
+    const occurrence = key ? occurrences.find((candidate) => candidate.occurrenceKey === key) : undefined
+    return occurrence && !isPlanPreviewEvent(occurrence) && !isDraftEvent(occurrence) ? occurrence : null
+  }
+  const onFocusedEvent = (kind: 'open' | 'duplicate' | 'remove') => () => {
+    const occurrence = focusedOccurrence()
+    if (!occurrence) return false
+    const allowed = getEventActions({
+      occurrence,
+      readOnly,
+      canCreate,
+      supportsMove: moveEvent !== undefined,
+      canEditEvent,
+      canMoveEvent,
+      canDuplicate: features.duplicate,
+    })
+    setPeek(null)
+    if (kind === 'open') editor.openEdit(occurrence)
+    else if (kind === 'duplicate' && allowed.canDuplicate) duplicate(toOccurrenceInput(occurrence))
+    else if (kind === 'remove' && allowed.canDelete) void actions.requestDelete(occurrence)
+    else return false
+  }
+  const viewNumbers = Object.fromEntries(
+    views.slice(0, 9).map((name, index) => [String(index + 1), () => setView(name)]),
+  )
+  const openSearch = features.search ? () => setIsSearchOpen(true) : undefined
+  const openShortcutHelp = () =>
+    setShortcutHelp({ canSwitchCalendar: rootElement.querySelector('.activeCalendarButton') !== null })
 
   useKeyboardShortcuts(
     features.shortcuts
       ? {
+          ...viewNumbers,
           ArrowLeft: definition.isFixed ? undefined : previous,
           ArrowRight: definition.isFixed ? undefined : next,
           t: definition.isFixed ? undefined : goToToday,
-          '/': features.search ? () => setIsSearchOpen(true) : undefined,
+          g: definition.isFixed ? undefined : clickControl('.headerTitleButton'),
+          s: clickControl('.activeCalendarButton'),
+          '/': openSearch,
+          'mod+k': openSearch,
           n: canCreateHere ? createNow : undefined,
+          f: hasCategories && !isTaskView ? () => setIsFilterOpen(true) : undefined,
+          'mod+p': features.print && !isTaskView ? print : undefined,
+          r: invalidate,
+          e: onFocusedEvent('open'),
+          'mod+d': onFocusedEvent('duplicate'),
+          Delete: onFocusedEvent('remove'),
+          Backspace: onFocusedEvent('remove'),
+          Escape: planPreview.preview ? planPreview.end : undefined,
           [VIEW_SHORTCUTS.day]: selectView('day'),
           [VIEW_SHORTCUTS.week]: selectView('week'),
           [VIEW_SHORTCUTS.month]: selectView('month'),
@@ -415,7 +466,7 @@ export function Calendar({
           [VIEW_SHORTCUTS.agenda]: selectView('agenda'),
           [VIEW_SHORTCUTS.tasks]: selectView('tasks'),
           'mod+z': undo.offer ? () => void undo.run() : undefined,
-          '?': () => setIsShortcutHelpOpen(true),
+          '?': () => openShortcutHelp(),
         }
       : NO_SHORTCUTS,
   )
@@ -489,7 +540,7 @@ export function Calendar({
                   )
                 }
                 menuItems={menuItems}
-                onShortcuts={features.shortcuts ? () => setIsShortcutHelpOpen(true) : undefined}
+                onShortcuts={features.shortcuts ? openShortcutHelp : undefined}
                 onTour={tourScope !== null ? () => setTourStart('manual') : undefined}
               />
 
@@ -630,14 +681,18 @@ export function Calendar({
                 />
               )}
 
-              {isShortcutHelpOpen && features.shortcuts && (
+              {shortcutHelp && features.shortcuts && (
                 <ShortcutHelp
                   views={views}
                   canNavigate={!definition.isFixed}
                   canCreate={canCreateHere}
                   hasSearch={features.search}
                   hasUndo={features.undo}
-                  onClose={() => setIsShortcutHelpOpen(false)}
+                  hasFilter={hasCategories && !isTaskView}
+                  hasPrint={features.print && !isTaskView}
+                  canSwitchCalendar={shortcutHelp.canSwitchCalendar}
+                  hasDuplicate={features.duplicate && canCreate}
+                  onClose={() => setShortcutHelp(null)}
                 />
               )}
 

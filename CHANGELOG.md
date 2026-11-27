@@ -35,6 +35,7 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - Jump to a date from a month picker behind the title
 - Swipe left or right on touch screens for the next or previous period
 - `?` and **Keyboard shortcuts** in the calendar menu list all shortcuts
+- More shortcuts: `G` jump to a date, `S` switch calendar, `1`–`6` views in order, `F` filter, `R` reload, `Ctrl+K` search, `Ctrl+P` print the calendar, `Ctrl+Enter` saves any form, `Esc` cancels the planning preview, and on a focused event or in the preview `E` edit, `Ctrl+D` duplicate, `Delete` delete (`⌘` instead of `Ctrl` on Apple devices)
 - Feature `tips`: a guided tour on first use that highlights each control in turn and explains it, including tasks and automatic planning, once per user and device and again any time from **Tour** in the calendar menu
 
 ### Changed

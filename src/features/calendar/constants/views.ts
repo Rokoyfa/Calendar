@@ -1,3 +1,4 @@
+import { withShortcut } from '../../../utils/shortcutLabel.ts'
 import type { Messages } from '../../../i18n/index.ts'
 import {
   addDaysToISODate,
@@ -73,7 +74,7 @@ export const VIEW_SHORTCUTS: Record<CalendarView, string> = {
   tasks: 'k',
 }
 
-export const withShortcut = (label: string, key: string) => `${label} (${key.toUpperCase()})`
+export { withShortcut }
 
 export const getViewOptions = (m: Messages, views: readonly CalendarView[] = CALENDAR_VIEWS, shortcuts = true) =>
   views.map((view) => ({

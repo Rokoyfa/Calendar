@@ -194,15 +194,23 @@ Die Seite nutzt die volle Breite: links Titel und Erklärung jedes Abschnitts, r
 | Zurück (Tag, Woche, Monat, Jahr) | `←` oder linker Pfeil im Header    |
 | Vor (Tag, Woche, Monat, Jahr)    | `→` oder rechter Pfeil im Header   |
 | Zu heute                         | `T` oder **Heute** im Header       |
-| Ansicht wechseln                 | `D` / `W` / `M` / `Y` (auch `J`) / `A` / `K` oder Tag / Woche / Monat / Jahr / Agenda / Aufgaben |
+| Ansicht wechseln                 | `D` / `W` / `M` / `Y` (auch `J`) / `A` / `K` oder Tag / Woche / Monat / Jahr / Agenda / Aufgaben, außerdem `1` bis `6` in der Reihenfolge der Leiste |
+| Zu einem Datum springen          | `G` oder Klick auf den Titel |
+| Kalender wechseln                | `S` oder Klick auf das Kalender-Badge |
 | Neuer Termin (in der Aufgabenansicht: neue Aufgabe) | `N` oder **+** im Header |
-| Suche                            | `/` oder **Suchen** im Kalendermenü |
+| Suche                            | `/`, `Strg+K` / `⌘K` oder **Suchen** im Kalendermenü |
+| Nach Kategorie filtern           | `F` oder Eintrag im Kalendermenü |
+| Drucken                          | `Strg+P` / `⌘P` öffnet den Kalenderdruck statt des Browserdrucks |
+| Termine neu laden                | `R` |
+| Formular speichern               | `Strg+Enter` / `⌘Enter` in jedem Formular (`components/Form.tsx`), z. B. im Termin- und Aufgabendialog |
+| Planungsvorschau abbrechen       | `Esc` |
 | Letzte Aktion rückgängig         | `Strg+Z` / `⌘Z`, solange der Hinweis sichtbar ist |
 | Fenster schließen                | `Esc` oder Klick neben das Fenster |
 | Termin per Tastatur anlegen      | Mit `Tab` ins Raster der Tages- oder Wochenansicht, mit den Pfeiltasten die Uhrzeit wählen (`↑` / `↓` eine Stunde, `←` / `→` ein Tag, `Pos1` / `Ende` 0 bzw. 23 Uhr), `Enter` öffnet den Dialog |
 | Zwischen Terminen wechseln       | Auf einem Termin: `↑` / `↓` im selben Tag, `←` / `→` zum nächsten Tag mit Terminen, `Pos1` / `Ende` zum ersten / letzten Termin |
+| Termin bearbeiten, duplizieren, löschen | Auf einem Termin oder in seiner Vorschau: `E` öffnet den Dialog, `Strg+D` / `⌘D` dupliziert, `Entf` oder `Rücktaste` löscht (mit Rückgängig bzw. Rückfrage wie über den Button). Die Rechte sind dieselben wie in der Vorschau (`getEventActions` in `utils/editorAccess.ts`, Tasten in `utils/eventKeys.ts`) |
 
-Die Kürzel wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt nach dem Laden oder nach dem Schließen eines Fensters). Sind mehrere Kalender auf der Seite, reagiert der zuletzt benutzte, anfangs der erste. Solange ein Eingabefeld, ein Fenster oder ein Element der Host-Seite den Fokus hat, sind sie aus. So bleibt z. B. `Strg+Z` in Eingabefeldern das normale Rückgängig des Browsers (`hooks/useKeyboardShortcuts.ts`, die Tasten stehen in `Calendar.tsx`, die Ansichtstasten in `VIEW_SHORTCUTS`). Die Tooltips der Buttons im Header und die Einträge im Kalendermenü nennen die Taste. `?` und der Menüeintrag **Tastenkürzel** öffnen eine Übersicht (`ShortcutHelp`).
+Die Kürzel wirken, wenn der Fokus im Kalender liegt oder nirgends (z. B. direkt nach dem Laden oder nach dem Schließen eines Fensters). Sind mehrere Kalender auf der Seite, reagiert der zuletzt benutzte, anfangs der erste. Solange ein Eingabefeld, ein Fenster oder ein Element der Host-Seite den Fokus hat, sind sie aus. So bleibt z. B. `Strg+Z` in Eingabefeldern das normale Rückgängig des Browsers (`hooks/useKeyboardShortcuts.ts`, die Tasten stehen in `Calendar.tsx`, die Ansichtstasten in `VIEW_SHORTCUTS`). Gibt eine Aktion `false` zurück, etwa `Entf` ohne Termin im Fokus, bleibt die Taste beim Browser. Die Tooltips der Buttons im Header und die Einträge im Kalendermenü nennen die Taste. `?` und der Menüeintrag **Tastenkürzel** öffnen eine Übersicht (`ShortcutHelp`).
 
 **Einführung** (Schalter `tips`, `OnboardingTour`, Schritte in `utils/tour.ts`): Beim ersten Start führt eine Karte Schritt für Schritt durch die Oberfläche. Jeder Schritt hebt sein Element mit einem Rahmen hervor, der Rest wird abgedunkelt, und die Karte steht darunter, darüber oder bei großen Flächen innen unten rechts. Die Reihenfolge: Raster (Termine anlegen, Vorschau), **+** (alle Optionen, Wechsel zu Aufgabe), Pfeile und **Heute**, Titel (Datumssprung), Kalender-Badge (Wechseln, Häkchen), Ansichten, **Aufgaben** (Liste, Board, Fälligkeit, Status, Priorität, Checkliste), Planer (Aufwand, **Einplanen**, Pausen, Vorschau), Menü, Glocke, Konto oder **Anmelden**, zum Schluss ein Hinweis auf den Neustart. Die Ziele stehen als Selektoren in `TOUR_TARGETS`; ein Schritt, dessen Element fehlt oder unsichtbar ist, entfällt, so passt die Tour zu Funktionen, Rechten und Bildschirmbreite. Liegt ein Ziel außerhalb des sichtbaren Bereichs, wird es hineingescrollt. Die Texte passen sich an Touch-Geräte (Tippen, Wischen) und Tastenkürzel an. **Beenden**, **Fertig** und `Esc` merken sich das je Nutzer und Gerät im localStorage (`calendar.tourSeen.v1.<Nutzer-ID oder guest>`), über **Einführung** im Kalendermenü startet die Tour erneut, dann mit dem Fokus auf **Weiter**. In den Browser-Tests ist der Schalter aus (`VITE_FEATURE_TIPS=false`), der Test-Harness schaltet ihn nur ein, wenn `tips` ausdrücklich genannt ist.
 

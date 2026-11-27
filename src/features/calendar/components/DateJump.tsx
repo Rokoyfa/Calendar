@@ -2,9 +2,11 @@ import { useId, useRef, useState, type ToggleEvent } from 'react'
 import { Button } from '../../../components/Button.tsx'
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../components/Icons.tsx'
 import { IconButton } from '../../../components/IconButton.tsx'
+import { useHost } from '../../../context/HostContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { addMonthsToISODate, startOfMonthISO } from '../../../utils/date.ts'
 import { placeBelowTriggerCenter } from '../../../utils/popover.ts'
+import { withShortcut } from '../../../utils/shortcutLabel.ts'
 import { MiniMonth } from './MiniMonth.tsx'
 
 type DateJumpProps = {
@@ -17,6 +19,7 @@ type DateJumpProps = {
 
 export function DateJump({ title, anchor, today, range, onSelect }: DateJumpProps) {
   const { m, format } = useI18n()
+  const { features } = useHost()
   const popoverId = useId()
   const popoverRef = useRef<HTMLDivElement>(null)
   const [month, setMonth] = useState(() => startOfMonthISO(anchor))
@@ -36,7 +39,13 @@ export function DateJump({ title, anchor, today, range, onSelect }: DateJumpProp
 
   return (
     <>
-      <button type="button" className="headerTitleButton" popoverTarget={popoverId} title={text.open}>
+      <button
+        type="button"
+        className="headerTitleButton"
+        popoverTarget={popoverId}
+        title={features.shortcuts ? withShortcut(text.open, 'g') : text.open}
+        aria-keyshortcuts={features.shortcuts ? 'G' : undefined}
+      >
         {title}
         <span className="headerTitleChevron" aria-hidden="true">
           <ChevronDownIcon size={16} />

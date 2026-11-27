@@ -17,6 +17,7 @@ import {
   SearchIcon,
 } from '../../../components/Icons.tsx'
 import { compact } from '../../../utils/list.ts'
+import { modifierKey } from '../../../utils/shortcutLabel.ts'
 import { CalendarMenu, type CalendarMenuItem } from './CalendarMenu.tsx'
 import { DateJump } from './DateJump.tsx'
 import { useHeaderFit } from '../hooks/useHeaderFit.ts'
@@ -82,9 +83,16 @@ export function CalendarHeader({
       label: m.calendar.filter.title,
       icon: <FilterIcon size={18} />,
       badge: isFiltered ? m.calendar.menu.active : undefined,
+      shortcut: features.shortcuts ? 'F' : undefined,
       onSelect: onFilter,
     },
-    onPrint && { key: 'print', label: m.calendar.print.open, icon: <PrinterIcon size={18} />, onSelect: onPrint },
+    onPrint && {
+      key: 'print',
+      label: m.calendar.print.open,
+      icon: <PrinterIcon size={18} />,
+      shortcut: features.shortcuts ? `${modifierKey(m.calendar.shortcutHelp.ctrl)}+P` : undefined,
+      onSelect: onPrint,
+    },
     onShortcuts && {
       key: 'shortcuts',
       label: m.calendar.shortcutHelp.title,

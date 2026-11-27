@@ -1,6 +1,9 @@
 import { useEffect, type RefObject } from 'react'
+import { EVENT_ACTION_KEYS } from '../utils/eventKeys.ts'
 
 export const EVENT_NAVIGATION_KEYS = 'ArrowUp ArrowDown ArrowLeft ArrowRight Home End'
+
+export const EVENT_KEYS = `${EVENT_NAVIGATION_KEYS} Enter ${EVENT_ACTION_KEYS}`
 
 const NAVIGATION_KEYS = new Set(EVENT_NAVIGATION_KEYS.split(' '))
 const TARGET_SELECTOR = '[data-event-target]'

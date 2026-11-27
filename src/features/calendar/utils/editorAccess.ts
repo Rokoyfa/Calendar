@@ -36,6 +36,19 @@ export const getEditorAccess = ({
   return { isExternal, isCaldav, isPeer, isLocked, canChooseCalendar }
 }
 
+export const getEventActions = (
+  options: EditorAccessOptions & { occurrence: EventOccurrence; canDuplicate: boolean },
+) => {
+  const { isExternal, isPeer, isLocked } = getEditorAccess(options)
+  const canEdit = !options.readOnly && !isExternal && !isLocked
+  const isOwnRequest = isPeer && options.occurrence.request?.mine === true
+  return {
+    canEdit,
+    canDuplicate: options.canDuplicate && options.canCreate && !isPeer && !isExternal,
+    canDelete: canEdit && (!isPeer || isOwnRequest),
+  }
+}
+
 export const withCurrentCalendar = (
   choices: readonly CalendarChoice[],
   occurrence: EventOccurrence | null,

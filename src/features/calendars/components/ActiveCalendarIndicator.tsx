@@ -6,6 +6,8 @@ import { useAuth } from '../../authorization/index.ts'
 import { getEventColorAttributes, type EventColor } from '../../../domain/event.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { placeBelowTriggerStart } from '../../../utils/popover.ts'
+import { withShortcut } from '../../../utils/shortcutLabel.ts'
+import { useHost } from '../../../context/HostContext.ts'
 import { useCalendarOptions, type CalendarOption } from '../hooks/useCalendarOptions.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import { isPersonalCalendar } from '../utils/permissions.ts'
@@ -54,6 +56,7 @@ const matches = (option: CalendarOption, query: string) =>
 
 export function ActiveCalendarIndicator({ shared }: { shared?: SharedCalendar }) {
   const { m } = useI18n()
+  const { features } = useHost()
   const { user } = useAuth()
   const { activeCalendar } = useCalendars()
   const options = useCalendarOptions()
@@ -140,7 +143,8 @@ export function ActiveCalendarIndicator({ shared }: { shared?: SharedCalendar })
         type="button"
         {...getEventColorAttributes(current.color, 'activeCalendar', 'activeCalendarButton')}
         popoverTarget={popoverId}
-        title={switcher.open}
+        title={features.shortcuts ? withShortcut(switcher.open, 's') : switcher.open}
+        aria-keyshortcuts={features.shortcuts ? 'S' : undefined}
       >
         {content}
         <span className="visuallyHidden">{quickSwitcher.hint}</span>

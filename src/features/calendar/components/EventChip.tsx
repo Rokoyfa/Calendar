@@ -3,7 +3,7 @@ import type { EventOccurrence } from '../../../domain/event.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import { useSegmentAttributes } from '../hooks/useSegmentAttributes.ts'
 import { EventTitle } from './EventTitle.tsx'
-import { EVENT_NAVIGATION_KEYS } from '../hooks/useEventNavigation.ts'
+import { EVENT_KEYS } from '../hooks/useEventNavigation.ts'
 import { UnreadBadge, getChatKey } from '../../chat/index.ts'
 
 type EventChipProps = {
@@ -25,8 +25,8 @@ export function EventChip({ segment, row, isContinuation = false, onSelect }: Ev
     <button
       type="button"
       {...attributes}
-      aria-keyshortcuts={EVENT_NAVIGATION_KEYS}
-      data-event-target=""
+      aria-keyshortcuts={EVENT_KEYS}
+      data-event-target={event.occurrenceKey}
       style={row === undefined ? style : { ...style, gridRow: row + 1 }}
       onClick={withoutPropagation(() => onSelect(event))}
     >

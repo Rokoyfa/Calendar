@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useRootElement } from '../context/RootElementContext.ts'
 
-export type Shortcuts = Partial<Record<string, () => void>>
+export type Shortcuts = Partial<Record<string, () => boolean | void>>
 
 let lastUsedRoot: HTMLElement | null = null
 let wasUsed = false
@@ -66,8 +66,7 @@ export function useKeyboardShortcuts(shortcuts: Shortcuts) {
         if (isEditableTarget(target)) return
       } else if (!isNothingFocused(target) || lastUsedRoot !== root || !isVisible(root)) return
 
-      event.preventDefault()
-      action()
+      if (action() !== false) event.preventDefault()
     }
 
     document.addEventListener('keydown', handleKeyDown)

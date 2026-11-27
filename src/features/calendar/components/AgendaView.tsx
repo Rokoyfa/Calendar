@@ -4,7 +4,7 @@ import { withoutPropagation } from '../../../utils/dom.ts'
 import type { EventOccurrence } from '../../../domain/event.ts'
 import { useHolidayMap } from '../context/HolidaysContext.ts'
 import { useSegmentAttributes } from '../hooks/useSegmentAttributes.ts'
-import { EVENT_NAVIGATION_KEYS } from '../hooks/useEventNavigation.ts'
+import { EVENT_KEYS } from '../hooks/useEventNavigation.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import type { CalendarViewProps } from '../types/view.ts'
 import { sortSegments } from '../utils/layoutEvents.ts'
@@ -34,8 +34,8 @@ function AgendaItem({ segment, onSelect }: AgendaItemProps) {
         type="button"
         {...attributes}
         style={style}
-        aria-keyshortcuts={EVENT_NAVIGATION_KEYS}
-        data-event-target=""
+        aria-keyshortcuts={EVENT_KEYS}
+        data-event-target={event.occurrenceKey}
         onClick={withoutPropagation(() => onSelect(event))}
       >
         <span className="agendaTime">{time}</span>

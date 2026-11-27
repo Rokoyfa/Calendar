@@ -100,7 +100,7 @@ src/
 │  ├─ ManagedListSection.tsx   Abschnitt mit Liste, Hinzufügen bis zur Höchstzahl und Entfernen mit Bestätigung
 │  └─ Icons.tsx                SVG-Symbole
 ├─ hooks/                      Featureübergreifende Hooks
-│  ├─ useKeyboardShortcuts.ts  Tastenkürzel des Kalenders (Pfeile, T, N, /, D/W/M/Y, Strg+Z)
+│  ├─ useKeyboardShortcuts.ts  Tastenkürzel des Kalenders (Tasten in Calendar.tsx)
 │  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand, Erfolg und Fehlermeldung
 │  ├─ useAsyncResource.ts      Daten laden, neu laden, Abbruch bei Wechsel, apply() übernimmt das Ergebnis einer Änderung
 │  ├─ useForm.ts               Ganzes Formular: Werte, Prüfung, Vorbereiten, Absenden mit Lade-, Erfolgs- und Fehlerzustand

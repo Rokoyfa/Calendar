@@ -1,7 +1,7 @@
 import type { PopoverAnchor } from '../../../components/AnchoredPopover.tsx'
 import { useHost } from '../../../context/HostContext.ts'
 import type { CalendarEvent, EventOccurrence } from '../../../domain/event.ts'
-import { getEditorAccess } from '../utils/editorAccess.ts'
+import { getEventActions } from '../utils/editorAccess.ts'
 import { EventPeek } from './EventPeek.tsx'
 
 type CalendarEventPeekProps = {
@@ -32,24 +32,23 @@ export function CalendarEventPeek({
   onClose,
 }: CalendarEventPeekProps) {
   const { features } = useHost()
-  const { isExternal, isPeer, isLocked } = getEditorAccess({
+  const { canEdit, canDuplicate, canDelete } = getEventActions({
     occurrence,
     readOnly,
     canCreate,
     supportsMove,
     canEditEvent,
     canMoveEvent,
+    canDuplicate: features.duplicate,
   })
-  const canEdit = !readOnly && !isExternal && !isLocked
-  const isOwnRequest = isPeer && occurrence.request?.mine === true
   return (
     <EventPeek
       occurrence={occurrence}
       anchor={anchor}
       canEdit={canEdit}
       onOpen={onOpen}
-      onDuplicate={features.duplicate && canCreate && !isPeer && !isExternal ? onDuplicate : undefined}
-      onDelete={canEdit && (!isPeer || isOwnRequest) ? onDelete : undefined}
+      onDuplicate={canDuplicate ? onDuplicate : undefined}
+      onDelete={canDelete ? onDelete : undefined}
       onClose={onClose}
     />
   )

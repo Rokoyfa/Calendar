@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react'
 import { AnchoredPopover, type PopoverAnchor } from '../../../components/AnchoredPopover.tsx'
 import { Button } from '../../../components/Button.tsx'
 import { CloseIcon, CopyIcon, MapPinIcon, TrashIcon } from '../../../components/Icons.tsx'
@@ -8,6 +9,7 @@ import { useI18n } from '../../../i18n/index.ts'
 import { useOwnAttendance } from '../context/CurrentUserContext.ts'
 import { useEventSource } from '../hooks/useEventSource.ts'
 import { getRecurrenceText, getSourceText } from '../utils/eventLabels.ts'
+import { EVENT_ACTION_KEYS, getEventKeyAction } from '../utils/eventKeys.ts'
 import { EventLinks } from './EventLinks.tsx'
 
 type EventPeekProps = {
@@ -28,9 +30,23 @@ export function EventPeek({ occurrence, anchor, canEdit, onOpen, onDuplicate, on
   const locationUrl = useLocationUrl()(occurrence.location)
   const recurrence = getRecurrenceText(occurrence, i18n)
   const attendees = occurrence.attendees.length
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.altKey || event.repeat || event.defaultPrevented) return
+    const action = getEventKeyAction(event, { open: onOpen, duplicate: onDuplicate, remove: onDelete })
+    if (!action) return
+    event.preventDefault()
+    action()
+  }
 
   return (
-    <AnchoredPopover anchor={anchor} label={occurrence.title} className="eventPeek" onClose={onClose}>
+    <AnchoredPopover
+      anchor={anchor}
+      label={occurrence.title}
+      className="eventPeek"
+      keyShortcuts={EVENT_ACTION_KEYS}
+      onKeyDown={handleKeyDown}
+      onClose={onClose}
+    >
       <div className="eventPeekHeader">
         <span {...getEventColorAttributes(occurrence.color, 'eventPeekColor')} aria-hidden="true" />
         <h2 className="eventPeekTitle">{occurrence.title}</h2>

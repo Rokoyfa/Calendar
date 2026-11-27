@@ -7,7 +7,7 @@ import { getVisibleDuration } from '../utils/eventGeometry.ts'
 import { EventLinks } from './EventLinks.tsx'
 import { EventLocation } from './EventLocation.tsx'
 import { EventTitle } from './EventTitle.tsx'
-import { EVENT_NAVIGATION_KEYS } from '../hooks/useEventNavigation.ts'
+import { EVENT_KEYS } from '../hooks/useEventNavigation.ts'
 import { UnreadBadge, getChatKey } from '../../chat/index.ts'
 
 type EventBlockProps = {
@@ -53,8 +53,8 @@ export function EventBlock({ segment, column, columns, onSelect }: EventBlockPro
         type="button"
         className="eventOpen"
         aria-label={label}
-        aria-keyshortcuts={EVENT_NAVIGATION_KEYS}
-        data-event-target=""
+        aria-keyshortcuts={EVENT_KEYS}
+        data-event-target={event.occurrenceKey}
         onClick={() => onSelect(event)}
       />
       <EventTitle event={event} source={source} withLocation={!showDetails} />

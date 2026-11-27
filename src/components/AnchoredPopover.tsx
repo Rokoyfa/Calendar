@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, type ReactNode, type ToggleEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode, type ToggleEvent } from 'react'
 import { classNames } from '../utils/classNames.ts'
 
 export type PopoverAnchor = { x: number; y: number }
@@ -7,6 +7,8 @@ type AnchoredPopoverProps = {
   anchor: PopoverAnchor
   label: string
   className?: string
+  keyShortcuts?: string
+  onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void
   onClose: () => void
   children: ReactNode
 }
@@ -26,7 +28,15 @@ const placePopover = (popover: HTMLElement, anchor: PopoverAnchor) => {
   popover.style.top = `${clamp(top, EDGE_PX, window.innerHeight - height - EDGE_PX)}px`
 }
 
-export function AnchoredPopover({ anchor, label, className, onClose, children }: AnchoredPopoverProps) {
+export function AnchoredPopover({
+  anchor,
+  label,
+  className,
+  keyShortcuts,
+  onKeyDown,
+  onClose,
+  children,
+}: AnchoredPopoverProps) {
   const ref = useRef<HTMLDivElement>(null)
   const returnFocus = useRef<HTMLElement | null>(null)
   const anchorRef = useRef(anchor)
@@ -83,8 +93,10 @@ export function AnchoredPopover({ anchor, label, className, onClose, children }:
       popover="auto"
       role="dialog"
       aria-label={label}
+      aria-keyshortcuts={keyShortcuts}
       className={classNames('anchoredPopover surface', className)}
       onToggle={handleToggle}
+      onKeyDown={onKeyDown}
     >
       {children}
     </div>
