@@ -17,6 +17,7 @@ export function SegmentedControl<T extends string>({ label, value, options, onCh
           <button
             type="button"
             className={classNames('segment', option.value === value && 'active')}
+            data-value={option.value}
             aria-pressed={option.value === value}
             title={option.title}
             onClick={() => onChange(option.value)}

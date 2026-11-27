@@ -90,19 +90,72 @@ export const calendar: Messages['calendar'] = {
     moveFocus: 'Zwischen Zeiten oder Terminen wechseln',
     undo: 'Rückgängig',
   },
-  tips: {
-    label: 'Tipp',
-    count: (current, total) => `Tipp ${current} von ${total}`,
-    create: 'Klick auf eine Uhrzeit legt einen Termin an, Ziehen wählt die Dauer.',
-    createTouch: 'Tippe auf eine Uhrzeit, um einen Termin anzulegen. Gedrückt halten und ziehen wählt die Dauer.',
-    peek: 'Ein Klick auf einen Termin zeigt die Details auf einen Blick. Bearbeiten öffnet alle Optionen.',
-    switch: 'Klick oben auf den Kalendernamen, um schnell zwischen deinen Kalendern zu wechseln.',
-    jump: 'Klick auf den Monat im Titel, um zu einem beliebigen Datum zu springen.',
-    shortcuts: 'Drück ?, um alle Tastenkürzel zu sehen.',
-    swipe: 'Wische nach links oder rechts zum nächsten oder vorherigen Zeitraum.',
-    tasks: 'Aufgaben mit Aufwand kann der Planer automatisch in deine freie Zeit legen.',
+  tour: {
+    label: 'Einführung',
+    count: (current, total) => `Schritt ${current} von ${total}`,
+    back: 'Zurück',
     next: 'Weiter',
-    skip: 'Überspringen',
-    done: 'Alles klar',
+    close: 'Beenden',
+    done: 'Fertig',
+    steps: {
+      grid: {
+        title: 'Termine anlegen',
+        text: 'Klick auf eine Uhrzeit, um direkt einen Termin anzulegen, Ziehen wählt die Dauer. Ein Klick auf einen Termin zeigt seine Details.',
+        touch:
+          'Tippe auf eine Uhrzeit, um einen Termin anzulegen, gedrückt halten und ziehen wählt die Dauer. Tippe auf einen Termin, um seine Details zu sehen.',
+      },
+      create: {
+        title: 'Alle Optionen',
+        text: 'Das Plus öffnet das vollständige Formular mit Wiederholung, Erinnerungen, Ort und mehr.',
+        tasks: 'Oben im Formular kannst du statt eines Termins eine Aufgabe wählen.',
+      },
+      navigate: {
+        title: 'Durch die Zeit blättern',
+        text: 'Die Pfeile gehen einen Zeitraum zurück oder vor, „Heute“ bringt dich zurück zu heute.',
+        swipe: 'Du kannst auch nach links oder rechts wischen.',
+        keys: 'Auf der Tastatur: ← → und T.',
+      },
+      jump: {
+        title: 'Zu einem Datum springen',
+        text: 'Klick auf den Titel öffnet einen Monatskalender, mit dem du zu jedem Datum springst.',
+      },
+      switch: {
+        title: 'Kalender wechseln',
+        text: 'Hier siehst du, welcher Kalender aktiv ist. Klick darauf, um zu wechseln. Per Häkchen zeigst du Team- und geteilte Kalender zusätzlich in deinem persönlichen Kalender an.',
+      },
+      views: {
+        title: 'Ansichten',
+        text: 'Wechsle zwischen Tag, Woche, Monat, Jahr und Agenda.',
+        keys: 'Mit ? siehst du alle Tastenkürzel.',
+      },
+      tasks: {
+        title: 'Aufgaben',
+        text: 'Hier findest du deine Aufgaben, als Liste oder als Board. Eine Aufgabe hat eine Fälligkeit, einen Status, eine Priorität und eine Checkliste. Fällige Aufgaben erscheinen auch in der Tages- und Wochenansicht oben bei ihrem Tag.',
+      },
+      planner: {
+        title: 'Aufgaben automatisch einplanen',
+        text: 'Gib einer Aufgabe einen geschätzten Aufwand und wähle in der Aufgabe „Einplanen“. Der Planer sucht freie Zeit bis zur Fälligkeit, lässt kurze Pausen zwischen Terminen und zeigt dir die Blöcke als Vorschau, bevor du sie anlegst.',
+      },
+      menu: {
+        title: 'Menü',
+        text: 'Im Menü findest du Suche, Filter und Tastenkürzel und alles zum aktiven Kalender, etwa Einstellungen, Freigabe, Import & Export und den Papierkorb.',
+      },
+      notifications: {
+        title: 'Benachrichtigungen',
+        text: 'Hier landen Einladungen, Antworten, Änderungen anderer und Erinnerungen.',
+      },
+      account: {
+        title: 'Dein Konto',
+        text: 'Hier öffnest du deine Einstellungen, zum Beispiel Profil, Sicherheit, Benachrichtigungen und die Regeln für den Planer, oder meldest dich ab.',
+      },
+      signIn: {
+        title: 'Anmelden',
+        text: 'Mit einem Konto nutzt du deinen Kalender auf all deinen Geräten und kannst Kalender mit anderen teilen.',
+      },
+      done: {
+        title: 'Alles bereit',
+        text: 'Diese Einführung kannst du jederzeit im Menü unter „Einführung“ neu starten.',
+      },
+    },
   },
 }

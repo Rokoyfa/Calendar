@@ -90,19 +90,72 @@ export const calendar: Messages['calendar'] = {
     moveFocus: 'Mover entre horários ou eventos',
     undo: 'Desfazer',
   },
-  tips: {
-    label: 'Dica',
-    count: (current, total) => `Dica ${current} de ${total}`,
-    create: 'Clique em um horário para criar um evento ou arraste para escolher a duração.',
-    createTouch: 'Toque em um horário para criar um evento; segure e arraste para escolher a duração.',
-    peek: 'Clique em um evento para ver os detalhes rapidamente. Editar abre todas as opções.',
-    switch: 'Clique no nome do calendário no topo para trocar rapidamente entre seus calendários.',
-    jump: 'Clique no mês do título para ir a qualquer data.',
-    shortcuts: 'Pressione ? para ver todos os atalhos de teclado.',
-    swipe: 'Deslize para a esquerda ou para a direita para ir ao período seguinte ou anterior.',
-    tasks: 'Tarefas com esforço podem ser planejadas automaticamente no seu tempo livre.',
-    next: 'Próxima',
-    skip: 'Pular',
-    done: 'Entendi',
+  tour: {
+    label: 'Tour guiado',
+    count: (current, total) => `Passo ${current} de ${total}`,
+    back: 'Voltar',
+    next: 'Próximo',
+    close: 'Encerrar',
+    done: 'Pronto',
+    steps: {
+      grid: {
+        title: 'Criar eventos',
+        text: 'Clique em um horário para criar um evento na hora, ou arraste para escolher a duração. Clique em um evento para ver os detalhes.',
+        touch:
+          'Toque em um horário para criar um evento; segure e arraste para escolher a duração. Toque em um evento para ver os detalhes.',
+      },
+      create: {
+        title: 'Todas as opções',
+        text: 'O botão de mais abre o formulário completo com repetição, lembretes, local e muito mais.',
+        tasks: 'No topo do formulário você pode escolher uma tarefa em vez de um evento.',
+      },
+      navigate: {
+        title: 'Navegar no tempo',
+        text: 'As setas voltam ou avançam um período, “Hoje” leva você de volta para hoje.',
+        swipe: 'Você também pode deslizar para a esquerda ou para a direita.',
+        keys: 'No teclado: ← → e T.',
+      },
+      jump: {
+        title: 'Ir para uma data',
+        text: 'Clique no título para abrir um calendário mensal e ir para qualquer data.',
+      },
+      switch: {
+        title: 'Trocar de calendário',
+        text: 'Aqui você vê qual calendário está ativo. Clique para trocar. Com as caixas de seleção, os calendários de equipe e compartilhados aparecem também no seu calendário pessoal.',
+      },
+      views: {
+        title: 'Visualizações',
+        text: 'Alterne entre dia, semana, mês, ano e agenda.',
+        keys: 'Pressione ? para ver todos os atalhos de teclado.',
+      },
+      tasks: {
+        title: 'Tarefas',
+        text: 'Suas tarefas ficam aqui, em lista ou quadro. Uma tarefa tem prazo, status, prioridade e uma checklist. Tarefas com prazo também aparecem nas visualizações de dia e semana, no topo do seu dia.',
+      },
+      planner: {
+        title: 'Planejar tarefas automaticamente',
+        text: 'Informe o esforço estimado de uma tarefa e escolha “Planejar” na tarefa. O planejador encontra tempo livre antes do prazo, deixa pausas curtas entre eventos e mostra os blocos em uma prévia antes de você criá-los.',
+      },
+      menu: {
+        title: 'Menu',
+        text: 'No menu você encontra a busca, os filtros e os atalhos de teclado, além de tudo sobre o calendário ativo, como configurações, compartilhamento, importação e exportação e a lixeira.',
+      },
+      notifications: {
+        title: 'Notificações',
+        text: 'Convites, respostas, alterações feitas por outras pessoas e lembretes chegam aqui.',
+      },
+      account: {
+        title: 'Sua conta',
+        text: 'Aqui você abre suas configurações, por exemplo perfil, segurança, notificações e as regras do planejador, ou sai da conta.',
+      },
+      signIn: {
+        title: 'Entrar',
+        text: 'Com uma conta você usa seu calendário em todos os seus dispositivos e pode compartilhar calendários com outras pessoas.',
+      },
+      done: {
+        title: 'Tudo pronto',
+        text: 'Você pode reiniciar este tour a qualquer momento pelo menu, em “Tour guiado”.',
+      },
+    },
   },
 }

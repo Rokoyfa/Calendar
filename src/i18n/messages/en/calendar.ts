@@ -88,19 +88,66 @@ export const calendar = {
     moveFocus: 'Move between time slots or events',
     undo: 'Undo',
   },
-  tips: {
-    label: 'Tip',
-    count: (current: number, total: number) => `Tip ${current} of ${total}`,
-    create: 'Click a time to add an event, or drag to choose how long it takes.',
-    createTouch: 'Tap a time to add an event; hold and drag to choose how long it takes.',
-    peek: 'Click an event to see its details at a glance. Edit opens all options.',
-    switch: 'Click the calendar name above the calendar to switch quickly between your calendars.',
-    jump: 'Click the month in the title to jump to any date.',
-    shortcuts: 'Press ? to see all keyboard shortcuts.',
-    swipe: 'Swipe left or right to move to the next or previous period.',
-    tasks: 'Tasks with an effort can be planned into your free time automatically.',
+  tour: {
+    label: 'Tour',
+    count: (current: number, total: number) => `Step ${current} of ${total}`,
+    back: 'Back',
     next: 'Next',
-    skip: 'Skip',
-    done: 'Got it',
+    close: 'End tour',
+    done: 'Done',
+    steps: {
+      grid: {
+        title: 'Add events',
+        text: 'Click a time to add an event right away, or drag to choose how long it takes. Click an event to see its details.',
+        touch:
+          'Tap a time to add an event; hold and drag to choose how long it takes. Tap an event to see its details.',
+      },
+      create: {
+        title: 'All options',
+        text: 'The plus button opens the full form with repeat, reminders, place and more.',
+        tasks: 'At the top of the form you can pick a task instead of an event.',
+      },
+      navigate: {
+        title: 'Move through time',
+        text: 'The arrows go one period back or forward, “Today” takes you back to today.',
+        swipe: 'You can also swipe left or right.',
+        keys: 'On the keyboard: ← → and T.',
+      },
+      jump: { title: 'Jump to a date', text: 'Click the title to open a month calendar and jump to any date.' },
+      switch: {
+        title: 'Switch calendars',
+        text: 'This shows which calendar is active. Click it to switch. With the check boxes, team and shared calendars also show up in your personal calendar.',
+      },
+      views: {
+        title: 'Views',
+        text: 'Switch between day, week, month, year and agenda.',
+        keys: 'Press ? to see all keyboard shortcuts.',
+      },
+      tasks: {
+        title: 'Tasks',
+        text: 'Your tasks live here, as a list or a board. A task has a due date, a status, a priority and a checklist. Tasks that are due also show up in the day and week view, at the top of their day.',
+      },
+      planner: {
+        title: 'Plan tasks automatically',
+        text: 'Give a task an estimated effort and choose “Plan” in the task. The planner finds free time before the due date, leaves short breaks between events and shows you the blocks as a preview before you add them.',
+      },
+      menu: {
+        title: 'Menu',
+        text: 'The menu holds search, filters and keyboard shortcuts, plus everything about the active calendar, such as its settings, sharing, import and export and the trash.',
+      },
+      notifications: {
+        title: 'Notifications',
+        text: 'Invitations, replies, changes made by others and reminders end up here.',
+      },
+      account: {
+        title: 'Your account',
+        text: 'Open your settings here, for example your profile, security, notifications and the rules for the planner, or sign out.',
+      },
+      signIn: {
+        title: 'Sign in',
+        text: 'With an account you can use your calendar on all your devices and share calendars with others.',
+      },
+      done: { title: 'You’re all set', text: 'You can restart this tour any time from the menu under “Tour”.' },
+    },
   },
 }

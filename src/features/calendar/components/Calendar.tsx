@@ -64,6 +64,7 @@ import type { CalendarView, CalendarViewProps } from '../types/view.ts'
 import { isDraftEvent, toDraftEvent } from '../utils/draftEvent.ts'
 import { buildPrintDocument } from '../utils/print.ts'
 import { printDocument } from '../utils/printDocument.ts'
+import { readTourSeen, writeTourSeen } from '../utils/tour.ts'
 import { AgendaView } from './AgendaView.tsx'
 import { CalendarEventEditor } from './CalendarEventEditor.tsx'
 import { CalendarEventPeek } from './CalendarEventPeek.tsx'
@@ -71,7 +72,7 @@ import { CalendarHeader } from './CalendarHeader.tsx'
 import type { CalendarMenuItem } from './CalendarMenu.tsx'
 import { EventSearchModal } from './EventSearchModal.tsx'
 import { MonthView } from './MonthView.tsx'
-import { OnboardingTips } from './OnboardingTips.tsx'
+import { OnboardingTour } from './OnboardingTour.tsx'
 import { ShortcutHelp } from './ShortcutHelp.tsx'
 import { QuickCreate } from './QuickCreate.tsx'
 import { TimeGridView } from './TimeGridView.tsx'
@@ -101,7 +102,7 @@ type CalendarProps = {
   eventSources?: EventSources
   initialView?: CalendarView
   headerContext?: ReactNode
-  tips?: { scope: string; canSwitch: boolean }
+  tour?: { scope: string }
   headerAccessory?: ReactNode
   menuItems?: readonly CalendarMenuItem[]
   currentUserEmail?: string | null
@@ -137,7 +138,7 @@ export function Calendar({
   eventSources = NO_EVENT_SOURCES,
   initialView,
   headerContext,
-  tips,
+  tour,
   headerAccessory,
   menuItems,
   currentUserEmail = null,
@@ -188,6 +189,17 @@ export function Calendar({
     hasTasks &&
     (taskSetup.access.canCreateIn(taskSetup.targetCalendarId) ||
       taskSetup.choices.some((choice) => taskSetup.access.canCreateIn(choice.id)))
+  const hasPlanner = taskSetup?.planning !== undefined
+  const tourOptions = useMemo(
+    () => ({
+      isTouch: typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches,
+      hasShortcuts: features.shortcuts,
+      canCreateTasks,
+      hasTasks,
+      hasPlanner,
+    }),
+    [features.shortcuts, canCreateTasks, hasTasks, hasPlanner],
+  )
   const views = useMemo(
     () => (hasTasks ? hostViews : hostViews.filter((name) => name !== 'tasks')),
     [hasTasks, hostViews],
@@ -276,6 +288,14 @@ export function Calendar({
 
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false)
+  const tourScope = tour && features.tips && !readOnly ? tour.scope : null
+  const [tourStart, setTourStart] = useState<'auto' | 'manual' | null>(() =>
+    tourScope !== null && !readTourSeen(tourScope) ? 'auto' : null,
+  )
+  const closeTour = () => {
+    if (tourScope !== null) writeTourSeen(tourScope)
+    setTourStart(null)
+  }
   const editorCalendarId = shownEditor
     ? (shownEditor.calendarId ?? shownEditor.occurrence?.calendarId ?? targetCalendarId)
     : null
@@ -470,6 +490,7 @@ export function Calendar({
                 }
                 menuItems={menuItems}
                 onShortcuts={features.shortcuts ? () => setIsShortcutHelpOpen(true) : undefined}
+                onTour={tourScope !== null ? () => setTourStart('manual') : undefined}
               />
 
               {planPreview.preview && (
@@ -620,14 +641,8 @@ export function Calendar({
                 />
               )}
 
-              {tips && features.tips && !readOnly && (
-                <OnboardingTips
-                  scope={tips.scope}
-                  canCreate={canCreate}
-                  canSwitch={tips.canSwitch}
-                  hasShortcuts={features.shortcuts}
-                  hasTasks={hasTasks}
-                />
+              {tourStart && tourScope !== null && (
+                <OnboardingTour options={tourOptions} focusOnStart={tourStart === 'manual'} onClose={closeTour} />
               )}
 
               {isSearchOpen && features.search && (

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ComponentProps } from 'react'
+import type { ButtonHTMLAttributes, ComponentProps, Ref } from 'react'
 import { Link } from 'react-router'
 import { classNames } from '../utils/classNames.ts'
 
@@ -18,6 +18,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
     isPending?: boolean
     pendingLabel?: string
     'data-autofocus'?: boolean
+    ref?: Ref<HTMLButtonElement>
   }
 
 export function Button({

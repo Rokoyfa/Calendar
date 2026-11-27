@@ -90,19 +90,72 @@ export const calendar: Messages['calendar'] = {
     moveFocus: 'Spostarsi tra orari o eventi',
     undo: 'Annulla',
   },
-  tips: {
-    label: 'Suggerimento',
-    count: (current, total) => `Suggerimento ${current} di ${total}`,
-    create: 'Fai clic su un orario per creare un evento o trascina per sceglierne la durata.',
-    createTouch: 'Tocca un orario per creare un evento; tieni premuto e trascina per sceglierne la durata.',
-    peek: 'Fai clic su un evento per vederne i dettagli a colpo d’occhio. Modifica apre tutte le opzioni.',
-    switch: 'Fai clic sul nome del calendario in alto per passare rapidamente tra i tuoi calendari.',
-    jump: 'Fai clic sul mese nel titolo per andare a qualsiasi data.',
-    shortcuts: 'Premi ? per vedere tutte le scorciatoie da tastiera.',
-    swipe: 'Scorri a sinistra o a destra per passare al periodo successivo o precedente.',
-    tasks: 'Le attività con un impegno possono essere pianificate automaticamente nel tuo tempo libero.',
+  tour: {
+    label: 'Tour guidato',
+    count: (current, total) => `Passo ${current} di ${total}`,
+    back: 'Indietro',
     next: 'Avanti',
-    skip: 'Salta',
-    done: 'Ho capito',
+    close: 'Termina',
+    done: 'Fatto',
+    steps: {
+      grid: {
+        title: 'Creare eventi',
+        text: 'Fai clic su un orario per creare subito un evento, oppure trascina per scegliere la durata. Fai clic su un evento per vederne i dettagli.',
+        touch:
+          'Tocca un orario per creare un evento; tieni premuto e trascina per scegliere la durata. Tocca un evento per vederne i dettagli.',
+      },
+      create: {
+        title: 'Tutte le opzioni',
+        text: 'Il pulsante più apre il modulo completo con ripetizione, promemoria, luogo e altro.',
+        tasks: 'In alto nel modulo puoi scegliere un’attività invece di un evento.',
+      },
+      navigate: {
+        title: 'Muoversi nel tempo',
+        text: 'Le frecce vanno indietro o avanti di un periodo, «Oggi» ti riporta a oggi.',
+        swipe: 'Puoi anche scorrere a sinistra o a destra.',
+        keys: 'Da tastiera: ← → e T.',
+      },
+      jump: {
+        title: 'Andare a una data',
+        text: 'Fai clic sul titolo per aprire un calendario mensile e andare a qualsiasi data.',
+      },
+      switch: {
+        title: 'Cambiare calendario',
+        text: 'Qui vedi quale calendario è attivo. Fai clic per cambiarlo. Con le caselle, i calendari di team e quelli condivisi compaiono anche nel tuo calendario personale.',
+      },
+      views: {
+        title: 'Viste',
+        text: 'Passa tra giorno, settimana, mese, anno e agenda.',
+        keys: 'Premi ? per vedere tutte le scorciatoie da tastiera.',
+      },
+      tasks: {
+        title: 'Attività',
+        text: 'Qui trovi le tue attività, come elenco o come bacheca. Un’attività ha una scadenza, uno stato, una priorità e una checklist. Le attività in scadenza compaiono anche nella vista giorno e settimana, in alto nel loro giorno.',
+      },
+      planner: {
+        title: 'Pianificare le attività in automatico',
+        text: 'Indica l’impegno stimato di un’attività e scegli «Pianifica» nell’attività. Il pianificatore trova tempo libero prima della scadenza, lascia brevi pause tra gli eventi e ti mostra i blocchi in anteprima prima di crearli.',
+      },
+      menu: {
+        title: 'Menu',
+        text: 'Nel menu trovi ricerca, filtri e scorciatoie da tastiera, oltre a tutto ciò che riguarda il calendario attivo, come impostazioni, condivisione, importazione ed esportazione e il cestino.',
+      },
+      notifications: {
+        title: 'Notifiche',
+        text: 'Qui arrivano inviti, risposte, modifiche fatte da altri e promemoria.',
+      },
+      account: {
+        title: 'Il tuo account',
+        text: 'Qui apri le tue impostazioni, per esempio profilo, sicurezza, notifiche e regole del pianificatore, oppure esci.',
+      },
+      signIn: {
+        title: 'Accedi',
+        text: 'Con un account usi il tuo calendario su tutti i tuoi dispositivi e puoi condividere calendari con altre persone.',
+      },
+      done: {
+        title: 'Tutto pronto',
+        text: 'Puoi riavviare questo tour quando vuoi dal menu, alla voce «Tour guidato».',
+      },
+    },
   },
 }

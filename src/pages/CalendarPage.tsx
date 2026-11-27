@@ -183,10 +183,7 @@ export function CalendarPage() {
         canEditEvent={mayEditEvent}
         currentUserId={userId}
         initialView={initialView}
-        tips={{
-          scope: user?.id ?? 'guest',
-          canSwitch: calendars.length + peers.calendars.length > 1 || (host.features.teams && user !== null),
-        }}
+        tour={{ scope: user?.id ?? 'guest' }}
         headerContext={
           <ActiveCalendarIndicator
             shared={

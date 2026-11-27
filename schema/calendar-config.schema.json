@@ -231,7 +231,7 @@
         "tips": {
           "type": "boolean",
           "default": true,
-          "description": "A few short tips on first use (adding events, switching calendars, jumping to a date, keyboard shortcuts or swiping). Each user sees them once per device; skipping or finishing hides them for good."
+          "description": "A guided tour on first use that highlights and explains the main controls, including tasks and automatic planning. Each user sees it once per device; it can be started again from the calendar menu."
         }
       }
     },

@@ -143,17 +143,84 @@ test('shows team calendars in the personal calendar from the quick switcher', as
   await expect(page.locator('.eventOpen[aria-label^="Vereinstreffen,"]')).toHaveCount(0)
 })
 
-test('shows a few tips on first use only', async ({ browser }) => {
+test('guides through the calendar once and can be restarted from the menu', async ({ browser }) => {
   const user = await createUser('Anna')
+  await createTeamCalendar(user, 'Verein')
   const page = await openAs(browser, user)
-  await page.goto('/e2e/harness/features.html?features=auth,teams,shortcuts,tips')
-  const tip = page.locator('.onboardingTip')
-  await expect(tip).toContainText('Tipp 1 von')
-  await tip.getByRole('button', { name: 'Weiter' }).click()
-  await expect(tip).toContainText('Tipp 2 von')
-  await tip.getByRole('button', { name: 'Überspringen' }).click()
-  await expect(tip).toHaveCount(0)
+  await page.goto('/e2e/harness/features.html?features=auth,teams,shortcuts,tasks,notifications,tips')
+  const bubble = page.locator('.tourBubble')
+  await expect(bubble).toContainText('Schritt 1 von')
+  const seen: string[] = []
+  for (;;) {
+    const id = await bubble.getAttribute('data-step')
+    seen.push(id ?? '')
+    if (id !== 'done') {
+      const ring = await page.locator('.tourRing').boundingBox()
+      expect(ring, id ?? '').not.toBeNull()
+    }
+    const next = bubble.getByRole('button', { name: 'Weiter' })
+    if ((await next.count()) === 0) break
+    await next.click()
+    await expect(bubble).not.toHaveAttribute('data-step', id ?? '')
+  }
+  expect(seen).toEqual(
+    expect.arrayContaining([
+      'grid',
+      'create',
+      'navigate',
+      'jump',
+      'switch',
+      'views',
+      'tasks',
+      'menu',
+      'notifications',
+      'account',
+      'done',
+    ]),
+  )
+  expect(seen.indexOf('tasks')).toBeLessThan(seen.indexOf('menu'))
+  await bubble.getByRole('button', { name: 'Zurück' }).click()
+  await expect(bubble).toHaveAttribute('data-step', seen[seen.length - 2])
+  await bubble.getByRole('button', { name: 'Beenden' }).click()
+  await expect(bubble).toHaveCount(0)
+
   await page.reload()
   await page.locator('.headerTitleButton').waitFor()
-  await expect(tip).toHaveCount(0)
+  await expect(bubble).toHaveCount(0)
+  await page.getByRole('button', { name: 'Menü öffnen' }).click()
+  await page.getByRole('button', { name: 'Einführung' }).click()
+  await expect(bubble).toHaveAttribute('data-step', 'grid')
+  await expect(bubble.getByRole('button', { name: 'Weiter' })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(bubble).toHaveCount(0)
+})
+
+test('points at the right control in each step', async ({ browser }) => {
+  const user = await createUser('Anna')
+  const page = await openAs(browser, user)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/e2e/harness/features.html?features=auth,shortcuts,tasks,tips')
+  const bubble = page.locator('.tourBubble')
+  const targets: Record<string, string> = {
+    create: '.headerCreate > .iconButton',
+    jump: '.headerTitleButton',
+    tasks: '.segment[data-value="tasks"]',
+  }
+  for (;;) {
+    const id = (await bubble.getAttribute('data-step')) ?? ''
+    if (id in targets) {
+      const ring = (await page.locator('.tourRing').boundingBox())!
+      const target = (await page.locator(targets[id]).first().boundingBox())!
+      expect(ring.x).toBeLessThanOrEqual(target.x)
+      expect(ring.y).toBeLessThanOrEqual(target.y)
+      expect(ring.x + ring.width).toBeGreaterThanOrEqual(target.x + target.width)
+      expect(ring.y + ring.height).toBeGreaterThanOrEqual(target.y + target.height)
+      const box = (await bubble.boundingBox())!
+      expect(box.y).toBeGreaterThanOrEqual(ring.y + ring.height)
+    }
+    const next = bubble.getByRole('button', { name: 'Weiter' })
+    if ((await next.count()) === 0) break
+    await next.click()
+    await expect(bubble).not.toHaveAttribute('data-step', id)
+  }
 })

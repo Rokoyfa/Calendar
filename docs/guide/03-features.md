@@ -52,7 +52,7 @@ Your backend only needs the endpoints of the features that are on, plus a small 
 | `tasks` | `feature-tasks` | on | Tasks with status, priority, due date, effort and checklist, on their day and in the task view, assignable in team calendars, plannable into free time with the settings tab **Planning**, see [Tasks](29-tasks.md) | `/tasks*`, `task.changed` over the WebSocket |
 | `freeBusy` | `feature-free-busy` | on | **Find a common time** in the event dialog: suggests free times from the busy time of the attendees, without any details of their events, see [Finding a common time](30-finding-a-common-time.md). Needs `attendees`. Not in local mode | `POST /free-busy` |
 | `push` | `feature-push` | on | Push notifications of the bell on the user's devices, also while the calendar is closed, switched on per device under Settings › Notifications, see [App and push notifications](31-app-and-push-notifications.md). Needs `notifications` and a service worker on the page. Not in local mode | `/push/*` |
-| `tips` | `feature-tips` | on | A few short tips on first use: adding events, the event preview, switching calendars, jumping to a date, keyboard shortcuts (swiping on touch screens) and planning tasks. Shown once per user and device, until skipped or finished | – |
+| `tips` | `feature-tips` | on | A guided tour on first use: it highlights the grid, **+**, the arrows, the title, the calendar badge, the views, **Tasks**, the menu, the bell and the account one after another and explains each, including tasks and automatic planning. Steps whose control is not there are left out. Shown once per user and device, again from **Tour** in the calendar menu | – |
 
 Good to know:
 

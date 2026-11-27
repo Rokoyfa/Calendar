@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { Button } from '../../../components/Button.tsx'
 import { IconButton } from '../../../components/IconButton.tsx'
 import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
@@ -11,6 +11,7 @@ import {
   ChevronRightIcon,
   FilterIcon,
   PlusIcon,
+  CompassIcon,
   KeyboardIcon,
   PrinterIcon,
   SearchIcon,
@@ -18,6 +19,8 @@ import {
 import { compact } from '../../../utils/list.ts'
 import { CalendarMenu, type CalendarMenuItem } from './CalendarMenu.tsx'
 import { DateJump } from './DateJump.tsx'
+import { useHeaderFit } from '../hooks/useHeaderFit.ts'
+import { classNames } from '../../../utils/classNames.ts'
 
 type CalendarHeaderProps = {
   view: CalendarView
@@ -31,6 +34,7 @@ type CalendarHeaderProps = {
   onFilter?: () => void
   onPrint?: () => void
   onShortcuts?: () => void
+  onTour?: () => void
   isFiltered?: boolean
   menuItems?: readonly CalendarMenuItem[]
   context?: ReactNode
@@ -50,6 +54,7 @@ export function CalendarHeader({
   onFilter,
   onPrint,
   onShortcuts,
+  onTour,
   isFiltered = false,
   menuItems = [],
   context,
@@ -58,6 +63,8 @@ export function CalendarHeader({
 }: CalendarHeaderProps) {
   const { m } = useI18n()
   const { features } = useHost()
+  const headerRef = useRef<HTMLElement>(null)
+  const { isStacked, isSubtitleBelow } = useHeaderFit(headerRef)
   const withShortcut = (label: string, key: string) => (features.shortcuts ? addShortcut(label, key) : label)
   const labels = m.views[view]
   const steps = navigation && 'previous' in labels ? { ...navigation, ...labels } : null
@@ -85,10 +92,11 @@ export function CalendarHeader({
       shortcut: '?',
       onSelect: onShortcuts,
     },
+    onTour && { key: 'tour', label: m.calendar.tour.label, icon: <CompassIcon size={18} />, onSelect: onTour },
     ...menuItems,
   ])
   return (
-    <header className="header">
+    <header ref={headerRef} className={classNames('header', isStacked && 'header--stacked')}>
       <div className="headerNav">
         <CalendarMenu items={items} isMarked={isFiltered} />
         {steps && (
@@ -117,8 +125,8 @@ export function CalendarHeader({
       </div>
 
       <div className="headerCenter">
-        <h1 className="headerTitle" aria-live="polite">
-          {jump ? <DateJump title={title} {...jump} /> : title}
+        <h1 className="headerTitle" aria-live="polite" data-subtitle={isSubtitleBelow ? 'below' : 'side'}>
+          {jump ? <DateJump title={title} {...jump} /> : <span className="headerTitleText">{title}</span>}
           {subtitle && <span className="headerSubtitle">{subtitle}</span>}
         </h1>
         {context}

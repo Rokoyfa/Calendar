@@ -90,19 +90,72 @@ export const calendar: Messages['calendar'] = {
     moveFocus: 'Moverse entre horas o eventos',
     undo: 'Deshacer',
   },
-  tips: {
-    label: 'Consejo',
-    count: (current, total) => `Consejo ${current} de ${total}`,
-    create: 'Haz clic en una hora para crear un evento o arrastra para elegir la duración.',
-    createTouch: 'Toca una hora para crear un evento; mantén pulsado y arrastra para elegir la duración.',
-    peek: 'Haz clic en un evento para ver sus detalles de un vistazo. Editar abre todas las opciones.',
-    switch: 'Haz clic en el nombre del calendario arriba para cambiar rápidamente entre tus calendarios.',
-    jump: 'Haz clic en el mes del título para saltar a cualquier fecha.',
-    shortcuts: 'Pulsa ? para ver todos los atajos de teclado.',
-    swipe: 'Desliza a la izquierda o a la derecha para ir al periodo siguiente o anterior.',
-    tasks: 'Las tareas con esfuerzo se pueden planificar automáticamente en tu tiempo libre.',
+  tour: {
+    label: 'Recorrido',
+    count: (current, total) => `Paso ${current} de ${total}`,
+    back: 'Atrás',
     next: 'Siguiente',
-    skip: 'Omitir',
-    done: 'Entendido',
+    close: 'Terminar',
+    done: 'Listo',
+    steps: {
+      grid: {
+        title: 'Crear eventos',
+        text: 'Haz clic en una hora para crear un evento al instante, o arrastra para elegir la duración. Haz clic en un evento para ver sus detalles.',
+        touch:
+          'Toca una hora para crear un evento; mantén pulsado y arrastra para elegir la duración. Toca un evento para ver sus detalles.',
+      },
+      create: {
+        title: 'Todas las opciones',
+        text: 'El botón más abre el formulario completo con repetición, recordatorios, lugar y más.',
+        tasks: 'Arriba en el formulario puedes elegir una tarea en lugar de un evento.',
+      },
+      navigate: {
+        title: 'Moverte en el tiempo',
+        text: 'Las flechas retroceden o avanzan un periodo; «Hoy» te devuelve al día de hoy.',
+        swipe: 'También puedes deslizar a la izquierda o a la derecha.',
+        keys: 'Con el teclado: ← → y T.',
+      },
+      jump: {
+        title: 'Ir a una fecha',
+        text: 'Haz clic en el título para abrir un calendario mensual e ir a cualquier fecha.',
+      },
+      switch: {
+        title: 'Cambiar de calendario',
+        text: 'Aquí ves qué calendario está activo. Haz clic para cambiar. Con las casillas, los calendarios de equipo y compartidos se muestran también en tu calendario personal.',
+      },
+      views: {
+        title: 'Vistas',
+        text: 'Cambia entre día, semana, mes, año y agenda.',
+        keys: 'Pulsa ? para ver todos los atajos de teclado.',
+      },
+      tasks: {
+        title: 'Tareas',
+        text: 'Aquí están tus tareas, como lista o como tablero. Una tarea tiene fecha límite, estado, prioridad y una lista de comprobación. Las tareas pendientes también aparecen en la vista de día y de semana, arriba en su día.',
+      },
+      planner: {
+        title: 'Planificar tareas automáticamente',
+        text: 'Indica el esfuerzo estimado de una tarea y elige «Planificar» en la tarea. El planificador busca tiempo libre antes de la fecha límite, deja pausas cortas entre eventos y te muestra los bloques como vista previa antes de crearlos.',
+      },
+      menu: {
+        title: 'Menú',
+        text: 'En el menú tienes la búsqueda, los filtros y los atajos de teclado, y todo lo del calendario activo, como sus ajustes, compartir, importar y exportar y la papelera.',
+      },
+      notifications: {
+        title: 'Notificaciones',
+        text: 'Aquí llegan invitaciones, respuestas, cambios de otras personas y recordatorios.',
+      },
+      account: {
+        title: 'Tu cuenta',
+        text: 'Aquí abres tus ajustes, por ejemplo perfil, seguridad, notificaciones y las reglas del planificador, o cierras sesión.',
+      },
+      signIn: {
+        title: 'Iniciar sesión',
+        text: 'Con una cuenta usas tu calendario en todos tus dispositivos y puedes compartir calendarios con otras personas.',
+      },
+      done: {
+        title: 'Todo listo',
+        text: 'Puedes volver a iniciar este recorrido cuando quieras desde el menú, en «Recorrido».',
+      },
+    },
   },
 }

@@ -91,19 +91,72 @@ export const calendar: Messages['calendar'] = {
     moveFocus: 'Przechodzenie między godzinami lub wydarzeniami',
     undo: 'Cofnij',
   },
-  tips: {
-    label: 'Wskazówka',
-    count: (current, total) => `Wskazówka ${current} z ${total}`,
-    create: 'Kliknij godzinę, aby dodać wydarzenie, lub przeciągnij, aby wybrać czas trwania.',
-    createTouch: 'Dotknij godziny, aby dodać wydarzenie; przytrzymaj i przeciągnij, aby wybrać czas trwania.',
-    peek: 'Kliknij wydarzenie, aby zobaczyć szczegóły w skrócie. Edytuj otwiera wszystkie opcje.',
-    switch: 'Kliknij nazwę kalendarza u góry, aby szybko przełączać się między kalendarzami.',
-    jump: 'Kliknij miesiąc w tytule, aby przejść do dowolnej daty.',
-    shortcuts: 'Naciśnij ?, aby zobaczyć wszystkie skróty klawiszowe.',
-    swipe: 'Przesuń w lewo lub w prawo, aby przejść do następnego lub poprzedniego okresu.',
-    tasks: 'Zadania z nakładem pracy planista może automatycznie umieścić w twoim wolnym czasie.',
+  tour: {
+    label: 'Przewodnik',
+    count: (current, total) => `Krok ${current} z ${total}`,
+    back: 'Wstecz',
     next: 'Dalej',
-    skip: 'Pomiń',
-    done: 'Rozumiem',
+    close: 'Zakończ',
+    done: 'Gotowe',
+    steps: {
+      grid: {
+        title: 'Dodawanie wydarzeń',
+        text: 'Kliknij godzinę, aby od razu dodać wydarzenie, albo przeciągnij, aby wybrać czas trwania. Kliknij wydarzenie, aby zobaczyć szczegóły.',
+        touch:
+          'Dotknij godziny, aby dodać wydarzenie; przytrzymaj i przeciągnij, aby wybrać czas trwania. Dotknij wydarzenia, aby zobaczyć szczegóły.',
+      },
+      create: {
+        title: 'Wszystkie opcje',
+        text: 'Przycisk plus otwiera pełny formularz z powtarzaniem, przypomnieniami, miejscem i nie tylko.',
+        tasks: 'Na górze formularza możesz zamiast wydarzenia wybrać zadanie.',
+      },
+      navigate: {
+        title: 'Poruszanie się w czasie',
+        text: 'Strzałki przechodzą o okres wstecz lub naprzód, „Dziś” wraca do dzisiejszego dnia.',
+        swipe: 'Możesz też przesunąć palcem w lewo lub w prawo.',
+        keys: 'Na klawiaturze: ← → i T.',
+      },
+      jump: {
+        title: 'Przejście do daty',
+        text: 'Kliknij tytuł, aby otworzyć kalendarz miesięczny i przejść do dowolnej daty.',
+      },
+      switch: {
+        title: 'Zmiana kalendarza',
+        text: 'Tu widzisz, który kalendarz jest aktywny. Kliknij, aby go zmienić. Zaznaczone kalendarze zespołów i udostępnione pojawiają się też w Twoim kalendarzu osobistym.',
+      },
+      views: {
+        title: 'Widoki',
+        text: 'Przełączaj między dniem, tygodniem, miesiącem, rokiem i listą.',
+        keys: 'Naciśnij ?, aby zobaczyć wszystkie skróty klawiszowe.',
+      },
+      tasks: {
+        title: 'Zadania',
+        text: 'Tu znajdziesz swoje zadania, jako listę lub tablicę. Zadanie ma termin, status, priorytet i listę kontrolną. Zadania z terminem pojawiają się też w widoku dnia i tygodnia, na górze swojego dnia.',
+      },
+      planner: {
+        title: 'Automatyczne planowanie zadań',
+        text: 'Podaj szacowany nakład pracy zadania i wybierz w zadaniu „Zaplanuj”. Planer znajdzie wolny czas przed terminem, zostawi krótkie przerwy między wydarzeniami i pokaże bloki w podglądzie, zanim je dodasz.',
+      },
+      menu: {
+        title: 'Menu',
+        text: 'W menu znajdziesz wyszukiwanie, filtry i skróty klawiszowe oraz wszystko o aktywnym kalendarzu, np. ustawienia, udostępnianie, import i eksport oraz kosz.',
+      },
+      notifications: {
+        title: 'Powiadomienia',
+        text: 'Tu trafiają zaproszenia, odpowiedzi, zmiany wprowadzone przez innych i przypomnienia.',
+      },
+      account: {
+        title: 'Twoje konto',
+        text: 'Tu otworzysz swoje ustawienia, np. profil, bezpieczeństwo, powiadomienia i reguły planera, albo się wylogujesz.',
+      },
+      signIn: {
+        title: 'Zaloguj się',
+        text: 'Z kontem korzystasz z kalendarza na wszystkich swoich urządzeniach i możesz udostępniać kalendarze innym.',
+      },
+      done: {
+        title: 'Wszystko gotowe',
+        text: 'Ten przewodnik możesz w każdej chwili uruchomić ponownie w menu, w pozycji „Przewodnik”.',
+      },
+    },
   },
 }

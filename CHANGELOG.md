@@ -35,12 +35,14 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - Jump to a date from a month picker behind the title
 - Swipe left or right on touch screens for the next or previous period
 - `?` and **Keyboard shortcuts** in the calendar menu list all shortcuts
-- Feature `tips`: a few short tips on first use, once per user and device
+- Feature `tips`: a guided tour on first use that highlights each control in turn and explains it, including tasks and automatic planning, once per user and device and again any time from **Tour** in the calendar menu
 
 ### Changed
 
 - The developer guide is split into one file per chapter under [`docs/guide/`](docs/guide/01-embedding.md), shipped in the package; [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) is now its table of contents. Chapter numbers stay the same
 - Internal restructuring of the source (shared model in `src/domain/`, repositories next to their features, enforced module boundaries). The public API is unchanged
+- The title and the calendar badge are always centered in the header, in every language and width; the week number hangs to the right of the title. When the header is too narrow for that, the title moves to its own row
+- On phones the view switcher fits all views down to 320 px in every language
 
 ## 2.2.0 – 2026-11-25
 

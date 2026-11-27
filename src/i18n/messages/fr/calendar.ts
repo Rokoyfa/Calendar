@@ -90,19 +90,72 @@ export const calendar: Messages['calendar'] = {
     moveFocus: 'Passer d’un créneau ou d’un événement à l’autre',
     undo: 'Annuler',
   },
-  tips: {
-    label: 'Astuce',
-    count: (current, total) => `Astuce ${current} sur ${total}`,
-    create: 'Cliquez sur une heure pour créer un événement, ou faites glisser pour choisir la durée.',
-    createTouch: 'Touchez une heure pour créer un événement\u00a0; maintenez et faites glisser pour choisir la durée.',
-    peek: 'Cliquez sur un événement pour voir ses détails d’un coup d’œil. Modifier ouvre toutes les options.',
-    switch: 'Cliquez sur le nom du calendrier en haut pour passer rapidement d’un calendrier à l’autre.',
-    jump: 'Cliquez sur le mois dans le titre pour aller à n’importe quelle date.',
-    shortcuts: 'Appuyez sur ? pour voir tous les raccourcis clavier.',
-    swipe: 'Balayez vers la gauche ou la droite pour passer à la période suivante ou précédente.',
-    tasks: 'Les tâches avec une charge peuvent être planifiées automatiquement dans votre temps libre.',
+  tour: {
+    label: 'Visite guidée',
+    count: (current, total) => `Étape ${current} sur ${total}`,
+    back: 'Retour',
     next: 'Suivant',
-    skip: 'Passer',
-    done: 'Compris',
+    close: 'Terminer',
+    done: 'C’est parti',
+    steps: {
+      grid: {
+        title: 'Créer des événements',
+        text: 'Cliquez sur une heure pour créer directement un événement, ou faites glisser pour choisir la durée. Cliquez sur un événement pour voir ses détails.',
+        touch:
+          'Touchez une heure pour créer un événement\u00a0; maintenez et faites glisser pour choisir la durée. Touchez un événement pour voir ses détails.',
+      },
+      create: {
+        title: 'Toutes les options',
+        text: 'Le bouton plus ouvre le formulaire complet avec répétition, rappels, lieu et plus encore.',
+        tasks: 'En haut du formulaire, vous pouvez choisir une tâche au lieu d’un événement.',
+      },
+      navigate: {
+        title: 'Naviguer dans le temps',
+        text: 'Les flèches reculent ou avancent d’une période, «\u00a0Aujourd’hui\u00a0» vous ramène à aujourd’hui.',
+        swipe: 'Vous pouvez aussi balayer vers la gauche ou la droite.',
+        keys: 'Au clavier\u00a0: ← → et T.',
+      },
+      jump: {
+        title: 'Aller à une date',
+        text: 'Cliquez sur le titre pour ouvrir un calendrier mensuel et aller à n’importe quelle date.',
+      },
+      switch: {
+        title: 'Changer de calendrier',
+        text: 'Vous voyez ici quel calendrier est actif. Cliquez dessus pour en changer. Avec les cases à cocher, les calendriers d’équipe et partagés s’affichent aussi dans votre calendrier personnel.',
+      },
+      views: {
+        title: 'Vues',
+        text: 'Passez du jour à la semaine, au mois, à l’année ou à l’agenda.',
+        keys: 'Appuyez sur ? pour voir tous les raccourcis clavier.',
+      },
+      tasks: {
+        title: 'Tâches',
+        text: 'Vos tâches sont ici, en liste ou en tableau. Une tâche a une échéance, un statut, une priorité et une liste de contrôle. Les tâches à échéance apparaissent aussi dans les vues jour et semaine, en haut de leur jour.',
+      },
+      planner: {
+        title: 'Planifier les tâches automatiquement',
+        text: 'Indiquez la charge estimée d’une tâche et choisissez «\u00a0Planifier\u00a0» dans la tâche. Le planificateur trouve du temps libre avant l’échéance, laisse de courtes pauses entre les événements et vous montre les créneaux en aperçu avant de les créer.',
+      },
+      menu: {
+        title: 'Menu',
+        text: 'Le menu contient la recherche, les filtres et les raccourcis clavier, ainsi que tout ce qui concerne le calendrier actif, comme ses paramètres, le partage, l’import et l’export et la corbeille.',
+      },
+      notifications: {
+        title: 'Notifications',
+        text: 'Les invitations, les réponses, les modifications faites par d’autres et les rappels arrivent ici.',
+      },
+      account: {
+        title: 'Votre compte',
+        text: 'Ouvrez ici vos paramètres, par exemple profil, sécurité, notifications et règles du planificateur, ou déconnectez-vous.',
+      },
+      signIn: {
+        title: 'Se connecter',
+        text: 'Avec un compte, vous utilisez votre calendrier sur tous vos appareils et pouvez partager des calendriers avec d’autres personnes.',
+      },
+      done: {
+        title: 'Tout est prêt',
+        text: 'Vous pouvez relancer cette visite à tout moment depuis le menu, sous «\u00a0Visite guidée\u00a0».',
+      },
+    },
   },
 }

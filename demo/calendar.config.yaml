@@ -164,7 +164,7 @@ features:
   # endpoints and a service worker on the page (public/sw.js of the package).
   push: true
 
-  # A few short tips on first use, shown once per user and device.
+  # A guided tour on first use, once per user and device, again from the menu.
   tips: true
 
 # Shows events without letting anyone create, change, move, delete or import them.
