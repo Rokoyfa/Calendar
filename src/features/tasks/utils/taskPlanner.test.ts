@@ -90,7 +90,39 @@ describe('planTask', () => {
     const result = planTask(
       request({ effortMinutes: 60, distribution: 'early', busy: [span('2026-11-30', '08:00', '12:30')] }),
     )
-    expect(result.blocks[0]).toMatchObject({ date: '2026-11-30', start: '12:30', end: '13:30' })
+    expect(result.blocks[0]).toMatchObject({ date: '2026-11-30', start: '12:35', end: '13:35' })
+  })
+
+  it('keeps a short buffer before and after existing appointments', () => {
+    const busy = [span('2026-11-30', '08:00', '10:00')]
+    expect(planTask(request({ effortMinutes: 60, distribution: 'early', busy })).blocks[0]).toMatchObject({
+      date: '2026-11-30',
+      start: '10:05',
+      end: '11:05',
+    })
+    expect(
+      planTask(
+        request({
+          effortMinutes: 60,
+          distribution: 'late',
+          deadline: at('2026-11-30', '20:00'),
+          busy: [span('2026-11-30', '19:00', '20:00')],
+        }),
+      ).blocks,
+    ).toEqual([{ date: '2026-11-30', start: '17:55', end: '18:55', minutes: 60 }])
+  })
+
+  it('plans right next to appointments only when nothing else fits', () => {
+    const result = planTask(
+      request({
+        effortMinutes: 60,
+        distribution: 'early',
+        deadline: at('2026-11-30', '20:00'),
+        busy: [span('2026-11-30', '08:00', '12:00'), span('2026-11-30', '13:00', '20:00')],
+      }),
+    )
+    expect(result.blocks).toEqual([{ date: '2026-11-30', start: '12:00', end: '13:00', minutes: 60 }])
+    expect(result.missingMinutes).toBe(0)
   })
 
   it('keeps the rest period after late work', () => {
@@ -154,8 +186,8 @@ describe('planTask', () => {
       }),
     )
     expect(result.blocks).toEqual([
-      { date: '2026-11-30', start: '13:00', end: '14:00', minutes: 60 },
-      { date: '2026-11-30', start: '14:30', end: '15:30', minutes: 60 },
+      { date: '2026-11-30', start: '13:05', end: '14:00', minutes: 55 },
+      { date: '2026-11-30', start: '14:30', end: '15:35', minutes: 65 },
     ])
   })
 

@@ -24,6 +24,7 @@ export type PlanResult = { blocks: PlannedBlock[]; plannedMinutes: number; missi
 export const PLAN_STEP_MINUTES = 15
 export const MIN_BLOCK_MINUTES = 30
 export const NO_DEADLINE_DAYS = 366
+export const PLAN_BUFFER_MINUTES = 5
 const BREAK_CHUNK_MINUTES = 15
 const DAY_MS = 86_400_000
 const DAYS_PER_WEEK = 7
@@ -130,14 +131,26 @@ const respectsRest = (law: WorkingTimeLaw, work: WorkIndex, day: number, block: 
 type Planner = {
   request: PlanRequest
   busy: DayIndex
+  existing: DayIndex
   work: WorkIndex
   blocks: PlanInterval[]
   remaining: number
+  buffer: number
 }
 
-const isFeasible = ({ request, busy, work }: Planner, day: number, block: PlanInterval) => {
+const nearby = (index: DayIndex, day: number) => [...index.on(day - 1), ...index.on(day), ...index.on(day + 1)]
+
+const keepsBuffer = ({ existing, buffer }: Planner, day: number, block: PlanInterval) =>
+  buffer === 0 ||
+  !nearby(existing, day).some((interval) =>
+    overlaps(interval, { start: block.start - buffer, end: block.end + buffer }),
+  )
+
+const isFeasible = (planner: Planner, day: number, block: PlanInterval) => {
+  const { request, busy, work } = planner
   const { law } = request
   if (busy.on(day).some((interval) => overlaps(interval, block))) return false
+  if (!keepsBuffer(planner, day, block)) return false
   const minutes = length(block)
   if (work.minutesOn(day) + minutes > law.maxDailyMinutes) return false
   if (work.minutesInWeekOf(day) + minutes > law.maxWeeklyMinutes) return false
@@ -148,16 +161,16 @@ const isFeasible = ({ request, busy, work }: Planner, day: number, block: PlanIn
 const acceptsRemainder = (remaining: number, minutes: number) =>
   remaining - minutes === 0 || remaining - minutes >= MIN_BLOCK_MINUTES
 
-const candidateLengths = (longest: number) => {
-  const lengths = new Set<number>([longest])
-  for (
-    let minutes = Math.floor(longest / PLAN_STEP_MINUTES) * PLAN_STEP_MINUTES;
-    minutes > 0;
-    minutes -= PLAN_STEP_MINUTES
-  )
+const candidateLengths = (longest: number, residue: number, fitting: readonly number[]) => {
+  const lengths = new Set<number>([longest, ...fitting.filter((minutes) => minutes > 0 && minutes < longest)])
+  const first = longest - ((((longest - residue) % PLAN_STEP_MINUTES) + PLAN_STEP_MINUTES) % PLAN_STEP_MINUTES)
+  for (let minutes = first; minutes > 0; minutes -= PLAN_STEP_MINUTES) lengths.add(minutes)
+  for (let minutes = longest - (longest % PLAN_STEP_MINUTES); minutes > 0; minutes -= PLAN_STEP_MINUTES)
     lengths.add(minutes)
-  return lengths
+  return [...lengths].sort((a, b) => b - a)
 }
+
+const stepResidue = (minute: number) => ((minute % PLAN_STEP_MINUTES) + PLAN_STEP_MINUTES) % PLAN_STEP_MINUTES
 
 const findBlock = (planner: Planner, day: number, need: number): PlanInterval | null => {
   const { request, remaining } = planner
@@ -169,23 +182,37 @@ const findBlock = (planner: Planner, day: number, need: number): PlanInterval | 
     const minutes = length(block)
     return minutes >= shortest && acceptsRemainder(remaining, minutes) && isFeasible(planner, day, block)
   }
+  const existing = planner.buffer > 0 ? nearby(planner.existing, day) : []
+  const inRange = (minute: number) => minute >= earliest && minute <= latest
   if (request.distribution === 'late' && request.deadline !== null) {
+    const ends = new Set<number>()
     for (
       let end = Math.floor(latest / PLAN_STEP_MINUTES) * PLAN_STEP_MINUTES;
       end - shortest >= earliest;
       end -= PLAN_STEP_MINUTES
     )
-      for (const minutes of candidateLengths(Math.min(need, end - earliest))) {
+      ends.add(end)
+    for (const interval of existing)
+      if (inRange(interval.start - planner.buffer)) ends.add(interval.start - planner.buffer)
+    for (const end of [...ends].sort((a, b) => b - a)) {
+      const fitting = existing.map((interval) => end - interval.end - planner.buffer)
+      for (const minutes of candidateLengths(Math.min(need, end - earliest), stepResidue(end), fitting)) {
         const block = { start: end - minutes, end }
         if (fits(block)) return block
       }
+    }
     return null
   }
-  for (let start = earliest; start + shortest <= latest; start += PLAN_STEP_MINUTES)
-    for (const minutes of candidateLengths(Math.min(need, latest - start))) {
+  const starts = new Set<number>()
+  for (let start = earliest; start + shortest <= latest; start += PLAN_STEP_MINUTES) starts.add(start)
+  for (const interval of existing) if (inRange(interval.end + planner.buffer)) starts.add(interval.end + planner.buffer)
+  for (const start of [...starts].sort((a, b) => a - b)) {
+    const fitting = existing.map((interval) => interval.start - planner.buffer - start)
+    for (const minutes of candidateLengths(Math.min(need, latest - start), stepResidue(-start), fitting)) {
       const block = { start, end: start + minutes }
       if (fits(block)) return block
     }
+  }
   return null
 }
 
@@ -226,20 +253,27 @@ const toPlannedBlock = ({ start, end }: PlanInterval): PlannedBlock => ({
   minutes: end - start,
 })
 
-export const planTask = (request: PlanRequest): PlanResult => {
+const runPlanner = (request: PlanRequest, buffer: number): PlanResult => {
   const busy = new DayIndex()
+  const existing = new DayIndex()
   const work = new WorkIndex()
-  for (const interval of request.busy) busy.add(interval)
+  for (const interval of request.busy) {
+    busy.add(interval)
+    existing.add(interval)
+  }
   for (const interval of request.work) {
     busy.add(interval)
+    existing.add(interval)
     work.add(interval)
   }
   const planner: Planner = {
     request,
     busy,
+    existing,
     work,
     blocks: [],
     remaining: Math.max(0, Math.round(request.effortMinutes)),
+    buffer,
   }
   const effort = planner.remaining
   const planned = listPlanningDays(request)
@@ -252,8 +286,22 @@ export const planTask = (request: PlanRequest): PlanResult => {
     if (planner.remaining <= 0) break
     placeOn(planner, day, planner.remaining)
   }
+  if (planner.remaining > 0 && planner.buffer > 0) {
+    planner.buffer = 0
+    for (const day of days) {
+      if (planner.remaining <= 0) break
+      placeOn(planner, day, planner.remaining)
+    }
+  }
   const blocks = [...planner.blocks].sort((a, b) => a.start - b.start).map(toPlannedBlock)
   return { blocks, plannedMinutes: effort - planner.remaining, missingMinutes: planner.remaining }
+}
+
+export const planTask = (request: PlanRequest): PlanResult => {
+  const buffered = runPlanner(request, PLAN_BUFFER_MINUTES)
+  if (buffered.missingMinutes === 0) return buffered
+  const tight = runPlanner(request, 0)
+  return tight.plannedMinutes > buffered.plannedMinutes ? tight : buffered
 }
 
 export const findEarliestCompletion = (request: Omit<PlanRequest, 'distribution'>) => {

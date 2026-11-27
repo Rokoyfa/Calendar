@@ -25,6 +25,7 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - Planning reminders: when a task is due within two days and its effort is not fully planned, the bell and an email (setting **When a task is due soon and not fully planned yet**) point to it and open the planning. When a new event overlaps planned time, the event dialog offers **Save and plan again**; when someone else books over planned time, the bell says so and opens the planning
 - **Find a common time** in the event dialog (feature `freeBusy`): suggests free times in which the user and all attendees are free, from their busy time without any details, with duration, weekends and earlier or later suggestions. Busy time is only shared with team members and people the personal calendar is shared with, and everyone can turn it off under Settings › Connections › Availability. New endpoint `POST /free-busy` (tag "Free/busy")
 - Planning distribution **As late as possible**: fills the last free time before the due date, keeping all working time rules
+- Planned blocks keep 5 minutes to existing events; they go right next to an event only when the effort would not fit otherwise
 
 ### Changed
 
