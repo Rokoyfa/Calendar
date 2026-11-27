@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AsyncSwitch } from '../../../components/AsyncSwitch.tsx'
-import { Button } from '../../../components/Button.tsx'
+import { Button, ExternalButtonLink } from '../../../components/Button.tsx'
 import { EditToggle } from '../../../components/EditToggle.tsx'
 import { ConfirmModal } from '../../../components/ConfirmModal.tsx'
 import { CopyButton } from '../../../components/CopyButton.tsx'
@@ -19,6 +19,7 @@ import {
 import type { BookingRepository } from '../../storage/index.ts'
 import { useBookingPages } from '../hooks/useBookingPages.ts'
 import { BookingPageForm, type BookingFormValues } from './BookingPageForm.tsx'
+import { Input } from '../../../components/Input.tsx'
 
 type BookingPages = ReturnType<typeof useBookingPages>
 
@@ -66,14 +67,14 @@ function BookingPageRow({ page, pages, onRemove }: { page: BookingPage; pages: B
         />
         <label className="field">
           <span className="descriptor">{url ? text.link : text.pathLabel}</span>
-          <input className="input feedUrl" readOnly value={link} onFocus={(event) => event.target.select()} />
+          <Input className="feedUrl" readOnly value={link} onFocus={(event) => event.target.select()} />
         </label>
         <div className="buttonRow">
           <CopyButton value={link} label={text.copy} />
           {url && (
-            <a className="button button--outline" href={url} target="_blank" rel="noopener noreferrer">
+            <ExternalButtonLink variant="outline" href={url}>
               {text.open}
-            </a>
+            </ExternalButtonLink>
           )}
         </div>
         <EditToggle

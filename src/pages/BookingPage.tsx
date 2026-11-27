@@ -1,3 +1,4 @@
+import { ExternalLink } from '../components/ExternalLink.tsx'
 import { useCallback, useMemo, useState } from 'react'
 import { useParams } from 'react-router'
 import { Button } from '../components/Button.tsx'
@@ -30,6 +31,7 @@ import { addDaysToISODate, DAYS_PER_WEEK, fromISODate, startOfWeekISO, timeToMin
 import { getEventColorAttributes } from '../domain/event.ts'
 import { formatTimeZoneLabel, fromInstant } from '../utils/timeZone.ts'
 import { normalizeEmail, validateEmail } from '../utils/validation.ts'
+import { TextArea } from '../components/Input.tsx'
 
 const MAX_WEEKS_AHEAD = 53
 const NO_SLOTS: string[] = []
@@ -53,9 +55,7 @@ function BookingHeader({ page }: { page: PublicBookingPage }) {
       <p>{i18n.format.duration(page.durationMinutes)}</p>
       {page.location && (
         <p>
-          <a href={getLocationUrl(page.location) ?? undefined} target="_blank" rel="noopener noreferrer">
-            {page.location}
-          </a>
+          <ExternalLink href={getLocationUrl(page.location) ?? undefined}>{page.location}</ExternalLink>
         </p>
       )}
       {page.description && <p className="bookingDescription">{page.description}</p>}
@@ -183,8 +183,7 @@ function BookerForm({
       />
       <EmailTextField label={text.email} name="email" autoComplete="email" {...form.bind('email')} />
       <FormField label={text.note}>
-        <textarea
-          className="textarea"
+        <TextArea
           name="note"
           maxLength={BOOKING_NOTE_MAX_LENGTH}
           value={form.values.note}

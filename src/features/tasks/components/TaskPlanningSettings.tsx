@@ -15,6 +15,7 @@ import {
   usePlanningCountryName,
 } from '../hooks/usePlanningCountryName.ts'
 import { getWorkingTimeLaw, PLANNING_COUNTRIES } from '../utils/workingTimeLaw.ts'
+import { Input } from '../../../components/Input.tsx'
 
 export function TaskPlanningSettings() {
   const { m, format, language } = useI18n()
@@ -83,8 +84,7 @@ export function TaskPlanningSettings() {
       <PageSection title={text.window} description={text.windowDescription}>
         <div className="formRow">
           <FormField label={text.windowStart}>
-            <input
-              className="input"
+            <Input
               type="time"
               name="planningDayStart"
               step={900}
@@ -94,8 +94,7 @@ export function TaskPlanningSettings() {
             />
           </FormField>
           <FormField label={text.windowEnd}>
-            <input
-              className="input"
+            <Input
               type="time"
               name="planningDayEnd"
               step={900}

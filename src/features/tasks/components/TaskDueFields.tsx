@@ -4,6 +4,7 @@ import { useI18n } from '../../../i18n/index.ts'
 import { RecurrenceFields } from '../../events/index.ts'
 import type { TaskInput } from '../types/task.ts'
 import type { TaskErrors } from '../utils/taskForm.ts'
+import { Input } from '../../../components/Input.tsx'
 
 type TaskDueFieldsProps = {
   values: TaskInput
@@ -17,8 +18,7 @@ export function TaskDueFields({ values, errors, onChange }: TaskDueFieldsProps) 
     <>
       <div className="formRow">
         <FormField label={text.dueDate} error={errors.dueDate}>
-          <input
-            className="input"
+          <Input
             type="date"
             name="dueDate"
             value={values.dueDate ?? ''}
@@ -39,8 +39,7 @@ export function TaskDueFields({ values, errors, onChange }: TaskDueFieldsProps) 
         </FormField>
         {values.dueDate && (
           <FormField label={text.dueTime} error={errors.dueTime}>
-            <input
-              className="input"
+            <Input
               type="time"
               name="dueTime"
               value={values.dueTime ?? ''}

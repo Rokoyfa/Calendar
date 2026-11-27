@@ -11,6 +11,7 @@ import { TASK_STATUSES, type Task, type TaskStatus } from '../types/task.ts'
 import { groupTasksByStatus, isTaskDone, isTaskOverdue, sumTaskEstimates } from '../utils/task.ts'
 import { TaskCheckbox } from './TaskCheckbox.tsx'
 import { TaskDetails } from './TaskDetails.tsx'
+import { TextButton } from '../../../components/TextButton.tsx'
 
 const TASK_MIME = 'application/x-calendar-task'
 
@@ -75,9 +76,9 @@ function TaskList({ context }: { context: TasksContextValue }) {
         )
       })}
       {doneCount > 0 && (
-        <button type="button" className="linkButton taskDoneToggle" onClick={() => setShowsDone((value) => !value)}>
+        <TextButton className="taskDoneToggle" onClick={() => setShowsDone((value) => !value)}>
           {showsDone ? m.tasks.hideDone : m.tasks.showDone(doneCount)}
-        </button>
+        </TextButton>
       )}
     </div>
   )

@@ -20,6 +20,7 @@ import {
   type RecurrenceFrequency,
   type RecurrenceValidationErrors,
 } from '../../../domain/recurrence.ts'
+import { Input } from '../../../components/Input.tsx'
 
 type RecurrenceFieldsProps = {
   value: Recurrence | null
@@ -170,8 +171,7 @@ export function RecurrenceFields({ value, startDate, errors, onChange }: Recurre
 
           {endMode === 'date' && (
             <FormField label={m.events.lastOccurrence} error={errors.until}>
-              <input
-                className="input"
+              <Input
                 type="date"
                 name="recurrenceUntil"
                 min={startDate}

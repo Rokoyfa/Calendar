@@ -72,7 +72,16 @@ src/
 │  └─ imgs/
 ├─ components/                 Featureübergreifende Bausteine
 │  ├─ Button.tsx               Button und ButtonLink mit Varianten (primary, secondary, outline, danger, success),
-│  │                           volle Breite und Ladezustand (pendingLabel)
+│  │                           volle Breite und Ladezustand (pendingLabel); AnchorButton und ExternalButtonLink
+│  │                           für Links im Button-Stil
+│  ├─ TextButton.tsx           Schaltfläche als Text: link (Akzentfarbe), subtle (klein, gedämpft), danger
+│  ├─ AddChip.tsx              Gestrichelter Chip „+ Hinzufügen“
+│  ├─ MoreButton.tsx           „+N weitere“ in Monats- und Wochenansicht
+│  ├─ FileButton.tsx           Dateiauswahl im Button-Stil
+│  ├─ IconLink.tsx             Symbol-Link in neuem Tab (Karte, Link öffnen)
+│  ├─ ExternalLink.tsx         Link in neuem Tab mit rel="noopener noreferrer"
+│  ├─ Input.tsx                Grundbausteine Input, TextArea, Select, Checkbox, Radio und FileInput mit den
+│  │                           gemeinsamen Klassen; alle Felder bauen darauf auf
 │  ├─ Form.tsx                 Formular mit einheitlichem Aufbau (noValidate, formSection)
 │  ├─ Modal.tsx                Fenster (<dialog>), per Portal direkt in <body>
 │  ├─ FormField.tsx            Beschriftung + Feld + Fehlermeldung (label oder fieldset)
@@ -81,6 +90,7 @@ src/
 │  ├─ DateTimeField.tsx        Datum + Uhrzeit in einer Zeile
 │  ├─ ChoiceChip.tsx           Runder Auswahl-Chip (Radio oder Checkbox)
 │  ├─ IconButton.tsx           Symbol-Schaltfläche
+│  ├─ AnchoredPopover.tsx      Popover an der Mausposition (Schnelleingabe, Vorschau) mit Fokusrückgabe
 │  ├─ SegmentedControl.tsx     Umschalter mit mehreren Optionen
 │  ├─ SegmentedField.tsx       Umschalter mit Beschriftung als Formularfeld
 │  ├─ Tabs.tsx                 Tabs mit Inhalt (role=tablist/tabpanel, Pfeiltasten)
@@ -99,6 +109,10 @@ src/
 │  ├─ LimitedAdd.tsx           Formular zum Hinzufügen oder Hinweis „Höchstzahl erreicht“
 │  ├─ ManagedListSection.tsx   Abschnitt mit Liste, Hinzufügen bis zur Höchstzahl und Entfernen mit Bestätigung
 │  └─ Icons.tsx                SVG-Symbole
+│
+│                              Schaltflächen, Links und Eingabefelder kommen immer aus diesen Bausteinen.
+│                              Ein eigenes <button> steht nur dort, wo das Element selbst der Baustein ist,
+│                              etwa ein Termin im Raster, ein Tag im Mini-Monat oder ein Menüeintrag.
 ├─ hooks/                      Featureübergreifende Hooks
 │  ├─ useKeyboardShortcuts.ts  Tastenkürzel des Kalenders (Tasten in Calendar.tsx)
 │  ├─ useAsyncAction.ts        Asynchrone Aktion mit Ladezustand, Erfolg und Fehlermeldung

@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { MoreButton } from '../../../components/MoreButton.tsx'
 import { useI18n } from '../../../i18n/index.ts'
 import { classNames } from '../../../utils/classNames.ts'
 import { timeToMinutes } from '../../../utils/date.ts'
@@ -60,14 +61,13 @@ export function DayTasks({ date, limit = Number.POSITIVE_INFINITY, rowOffset, on
         <TaskChip key={task.id} task={task} style={rowStyle(index)} />
       ))}
       {moreCount > 0 && (
-        <button
-          type="button"
-          className="moreEvents taskMore"
+        <MoreButton
+          className="taskMore"
           style={rowStyle(visible.length)}
           onClick={withoutPropagation(() => onMore?.())}
         >
           {visible.length === 0 ? m.tasks.count(moreCount) : m.tasks.more(moreCount)}
-        </button>
+        </MoreButton>
       )}
     </>
   )

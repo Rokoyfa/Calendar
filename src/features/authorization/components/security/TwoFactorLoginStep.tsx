@@ -13,6 +13,7 @@ import {
   normalizeTwoFactorCode,
 } from '../../utils/twoFactor.ts'
 import { TwoFactorCodeField } from './TwoFactorCodeField.tsx'
+import { TextButton } from '../../../../components/TextButton.tsx'
 
 type TwoFactorLoginStepProps = {
   challenge: string
@@ -64,12 +65,8 @@ export function TwoFactorLoginStep({ challenge, onDone, onRestart }: TwoFactorLo
         {text.loginSubmit}
       </Button>
       <div className="buttonRow buttonRow--spread">
-        <button type="button" className="linkButton" onClick={switchMode}>
-          {useRecovery ? text.useCode : text.useRecovery}
-        </button>
-        <button type="button" className="linkButton" onClick={onRestart}>
-          {text.backToLogin}
-        </button>
+        <TextButton onClick={switchMode}>{useRecovery ? text.useCode : text.useRecovery}</TextButton>
+        <TextButton onClick={onRestart}>{text.backToLogin}</TextButton>
       </div>
     </Form>
   )

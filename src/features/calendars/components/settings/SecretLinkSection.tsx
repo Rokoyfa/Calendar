@@ -4,6 +4,7 @@ import { CopyButton } from '../../../../components/CopyButton.tsx'
 import { PageSection } from '../../../../components/PageSection.tsx'
 import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
 import type { SecretLink } from '../../hooks/useSecretLink.ts'
+import { Input } from '../../../../components/Input.tsx'
 
 type SecretLinkTexts = {
   title: string
@@ -31,7 +32,7 @@ export function SecretLinkSection({ texts, link, field, openAction }: SecretLink
         <>
           <label className="field">
             <span className="descriptor">{field.label}</span>
-            <input className="input feedUrl" readOnly value={field.value} onFocus={(event) => event.target.select()} />
+            <Input className="feedUrl" readOnly value={field.value} onFocus={(event) => event.target.select()} />
           </label>
           <div className="buttonRow">
             <CopyButton value={field.value} label={texts.copy} />

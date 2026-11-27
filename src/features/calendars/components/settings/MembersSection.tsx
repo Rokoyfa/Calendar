@@ -8,6 +8,7 @@ import { RoleOverview } from './RoleOverview.tsx'
 import type { CalendarSummary, TeamMember, TeamRole } from '../../types/calendar.ts'
 import { getAssignableRoles, hasPermission, outranks } from '../../utils/permissions.ts'
 import { useConfirm } from '../../../../hooks/useConfirm.ts'
+import { Select } from '../../../../components/Input.tsx'
 
 type MembersSectionProps = {
   calendar: CalendarSummary
@@ -45,8 +46,8 @@ function MemberRow({ member, isSelf, canManage, roles, onChangeRole, onRemove }:
       </span>
       {canManage ? (
         <>
-          <select
-            className="input memberRole"
+          <Select
+            className="memberRole"
             aria-label={text.roleOf(member.name)}
             value={member.role}
             disabled={isPending}
@@ -57,7 +58,7 @@ function MemberRow({ member, isSelf, canManage, roles, onChangeRole, onRemove }:
                 {roleLabels[role]}
               </option>
             ))}
-          </select>
+          </Select>
           <Button variant="outline" onClick={onRemove}>
             {text.remove}
           </Button>

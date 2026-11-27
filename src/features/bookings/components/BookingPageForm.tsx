@@ -20,6 +20,7 @@ import {
 } from '../utils/booking.ts'
 import { formatTimeZoneLabel, listTimeZones } from '../../../utils/timeZone.ts'
 import { BookingHoursField } from './BookingHoursField.tsx'
+import { TextArea } from '../../../components/Input.tsx'
 
 export type BookingFormValues = Omit<BookingPageSettings, 'active'>
 
@@ -136,8 +137,7 @@ export function BookingPageForm({
         {...form.bind('title')}
       />
       <FormField label={text.description}>
-        <textarea
-          className="textarea"
+        <TextArea
           name="bookingDescription"
           maxLength={BOOKING_DESCRIPTION_MAX_LENGTH}
           value={values.description}

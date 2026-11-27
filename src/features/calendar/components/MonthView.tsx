@@ -1,4 +1,5 @@
 import { classNames } from '../../../utils/classNames.ts'
+import { MoreButton } from '../../../components/MoreButton.tsx'
 import { withoutPropagation } from '../../../utils/dom.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { getDayOfMonth } from '../../../utils/date.ts'
@@ -64,11 +65,7 @@ export function MonthView({ anchor, today, segmentsByDate, onCreate, onEventSele
               {segments.slice(0, visibleCount).map((segment) => (
                 <EventChip key={segment.event.occurrenceKey} segment={segment} onSelect={onEventSelect} />
               ))}
-              {moreCount > 0 && (
-                <button type="button" className="moreEvents" onClick={showDay}>
-                  {m.calendar.moreEvents(moreCount)}
-                </button>
-              )}
+              {moreCount > 0 && <MoreButton onClick={showDay}>{m.calendar.moreEvents(moreCount)}</MoreButton>}
             </div>
             {segments.length + taskCount > 0 && (
               <span className="eventDots" aria-hidden="true">

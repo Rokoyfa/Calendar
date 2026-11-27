@@ -15,6 +15,8 @@ import { useCalendars } from '../../calendars/index.ts'
 import { useStorage } from '../../storage/index.ts'
 import { useNotifications } from '../hooks/useNotifications.ts'
 import { ItemList } from '../../../components/ItemList.tsx'
+import { IconButton } from '../../../components/IconButton.tsx'
+import { TextButton } from '../../../components/TextButton.tsx'
 
 const POPOVER_ID = 'notificationMenu'
 const MAX_BADGE = 99
@@ -108,11 +110,7 @@ function ActiveBell({ repository }: { repository: NonNullable<ReturnType<typeof 
       <div id={POPOVER_ID} popover="auto" className="notificationPopover surface" onBeforeToggle={placeBelowTrigger}>
         <div className="notificationHeader">
           <h2 className="notificationTitle">{text.title}</h2>
-          {unread > 0 && (
-            <button type="button" className="linkButton" onClick={() => void markRead()}>
-              {text.markAllRead}
-            </button>
-          )}
+          {unread > 0 && <TextButton onClick={() => void markRead()}>{text.markAllRead}</TextButton>}
         </div>
         <ErrorMessage message={error} />
         <ItemList items={notifications} empty={text.empty} className="notificationList">
@@ -128,23 +126,18 @@ function ActiveBell({ repository }: { repository: NonNullable<ReturnType<typeof 
                   {formatTimestamp(notification.createdAt, locale, timeZone)}
                 </time>
               </button>
-              <button
-                type="button"
-                className="iconButton iconButton--plain notificationRemove"
-                aria-label={text.remove}
-                title={text.remove}
+              <IconButton
+                label={text.remove}
+                plain
+                className="notificationRemove"
                 onClick={() => void remove(notification.id)}
               >
                 <CloseIcon size={16} />
-              </button>
+              </IconButton>
             </li>
           )}
         </ItemList>
-        {hasMore && (
-          <button type="button" className="linkButton" onClick={() => void loadMore()}>
-            {text.loadMore}
-          </button>
-        )}
+        {hasMore && <TextButton onClick={() => void loadMore()}>{text.loadMore}</TextButton>}
       </div>
     </>
   )

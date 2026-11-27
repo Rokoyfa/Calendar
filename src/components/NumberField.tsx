@@ -1,4 +1,5 @@
 import { FormField } from './FormField.tsx'
+import { Input } from './Input.tsx'
 
 type NumberFieldProps = {
   label: string
@@ -15,8 +16,8 @@ export function NumberField({ label, name, value, min, max, unit, error, onChang
   return (
     <FormField label={label} error={error}>
       <span className="inlineField">
-        <input
-          className="input numberInput"
+        <Input
+          className="numberInput"
           type="number"
           name={name}
           min={min}

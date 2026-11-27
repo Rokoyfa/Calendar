@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes, ReactNode } from 'react'
-import { classNames } from '../utils/classNames.ts'
 import { EMAIL_MAX_LENGTH } from '../utils/validation.ts'
 import { FormField } from './FormField.tsx'
+import { Input } from './Input.tsx'
 
 export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> & {
   label: string
@@ -13,9 +13,9 @@ export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChan
 
 export function TextField({ label, error, addon, onChange, className, ...inputProps }: TextFieldProps) {
   const input = (
-    <input
+    <Input
       {...inputProps}
-      className={classNames('input', className)}
+      className={className}
       aria-invalid={Boolean(error)}
       onChange={(event) => onChange(event.target.value)}
     />

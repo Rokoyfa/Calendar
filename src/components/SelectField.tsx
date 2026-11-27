@@ -1,4 +1,5 @@
 import { FormField } from './FormField.tsx'
+import { Select } from './Input.tsx'
 
 export type SelectOption<T extends string> = {
   value: T
@@ -16,8 +17,7 @@ type SelectFieldProps<T extends string> = {
 export function SelectField<T extends string>({ label, name, value, options, onChange }: SelectFieldProps<T>) {
   return (
     <FormField label={label}>
-      <select
-        className="input"
+      <Select
         name={name}
         value={value}
         onChange={(event) => {
@@ -30,7 +30,7 @@ export function SelectField<T extends string>({ label, name, value, options, onC
             {option.label}
           </option>
         ))}
-      </select>
+      </Select>
     </FormField>
   )
 }

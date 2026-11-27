@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent } from 'react'
+import { AddChip } from '../../../components/AddChip.tsx'
 import { Button } from '../../../components/Button.tsx'
 import { ChoiceChip } from '../../../components/ChoiceChip.tsx'
 import { FormField } from '../../../components/FormField.tsx'
@@ -14,6 +15,7 @@ import {
   type BuiltinCategory,
   type Category,
 } from '../../../domain/category.ts'
+import { Input } from '../../../components/Input.tsx'
 
 type CategoryFieldProps = {
   categories: readonly Category[]
@@ -88,16 +90,11 @@ export function CategoryField({ categories, value, builtin, onChange, onBuiltinC
             {category.name}
           </ChoiceChip>
         ))}
-        {canCreate && draft === null && (
-          <button type="button" className="categoryChip categoryAdd" onClick={() => setDraft('')}>
-            + {text.add}
-          </button>
-        )}
+        {canCreate && draft === null && <AddChip onClick={() => setDraft('')}>+ {text.add}</AddChip>}
       </div>
       {draft !== null && (
         <div className="inlineForm">
-          <input
-            className="input"
+          <Input
             name="newEventCategory"
             aria-label={text.newLabel}
             placeholder={text.newLabel}

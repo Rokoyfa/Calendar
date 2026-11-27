@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { AnchorButton } from '../../../../components/Button.tsx'
 import { useI18n } from '../../../../i18n/index.ts'
 import { useCalendars } from '../../hooks/useCalendars.ts'
 import { useSecretLink, type SecretLinkOperations } from '../../hooks/useSecretLink.ts'
@@ -38,9 +39,9 @@ function FeedSection({ calendar, repository }: { calendar: CalendarSummary; repo
       field={url ? { label: feed.label, value: url } : null}
       openAction={
         url && (
-          <a className="button button--outline" href={toWebcal(url)}>
+          <AnchorButton variant="outline" href={toWebcal(url)}>
             {feed.openApp}
-          </a>
+          </AnchorButton>
         )
       }
     />

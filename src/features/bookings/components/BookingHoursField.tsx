@@ -12,6 +12,7 @@ import {
   type BookingHours,
 } from '../utils/booking.ts'
 import { minutesToTime, MINUTES_PER_DAY, MINUTES_PER_HOUR, timeToMinutes } from '../../../utils/date.ts'
+import { Input } from '../../../components/Input.tsx'
 
 type BookingHoursFieldProps = {
   value: readonly BookingHours[]
@@ -53,8 +54,7 @@ export function BookingHoursField({ value, error, onChange }: BookingHoursFieldP
                 {day.length === 0 && <span className="formHint">{text.unavailable}</span>}
                 {day.map((entry, index) => (
                   <span key={index} className="bookingHoursWindow">
-                    <input
-                      className="input"
+                    <Input
                       type="time"
                       step={300}
                       aria-label={text.hoursFrom(label)}
@@ -62,8 +62,7 @@ export function BookingHoursField({ value, error, onChange }: BookingHoursFieldP
                       onChange={(event) => event.target.value && replace(entry, { start: event.target.value })}
                     />
                     <span aria-hidden="true">–</span>
-                    <input
-                      className="input"
+                    <Input
                       type="time"
                       step={300}
                       aria-label={text.hoursTo(label)}

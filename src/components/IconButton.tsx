@@ -5,6 +5,7 @@ type IconButtonProps = {
   label: string
   title?: string
   plain?: boolean
+  className?: string
   disabled?: boolean
   opensDialog?: boolean
   expanded?: boolean
@@ -16,6 +17,7 @@ export function IconButton({
   label,
   title = label,
   plain,
+  className,
   disabled,
   opensDialog,
   expanded,
@@ -25,7 +27,7 @@ export function IconButton({
   return (
     <button
       type="button"
-      className={classNames('iconButton', plain && 'iconButton--plain')}
+      className={classNames('iconButton', plain && 'iconButton--plain', className)}
       aria-label={label}
       title={title}
       disabled={disabled}

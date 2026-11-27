@@ -1,4 +1,5 @@
 import { FormField } from './FormField.tsx'
+import { Input } from './Input.tsx'
 
 type DateTimeFieldProps = {
   name: string
@@ -30,8 +31,7 @@ export function DateTimeField({
   return (
     <div className="formRow">
       <FormField label={dateLabel} error={dateError}>
-        <input
-          className="input"
+        <Input
           type="date"
           name={`${name}Date`}
           min={minDate}
@@ -42,8 +42,7 @@ export function DateTimeField({
       </FormField>
       {showTime && (
         <FormField label={timeLabel} error={timeError}>
-          <input
-            className="input"
+          <Input
             type="time"
             name={name}
             value={time}

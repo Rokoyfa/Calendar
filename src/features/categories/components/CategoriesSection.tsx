@@ -8,6 +8,7 @@ import { CATEGORY_NAME_MAX_LENGTH, MAX_CATEGORIES, normalizeCategoryName } from 
 import { useCategories } from '../hooks/useCategories.ts'
 import { ItemList } from '../../../components/ItemList.tsx'
 import { RemoveButton } from '../../../components/RemoveButton.tsx'
+import { Input } from '../../../components/Input.tsx'
 
 type CategoriesSectionProps = {
   calendarId: string
@@ -51,8 +52,7 @@ export function CategoriesSection({ calendarId, canManage }: CategoriesSectionPr
           <li key={category.id} className="itemRow">
             {editing?.id === category.id ? (
               <form className="inlineForm" onSubmit={submitRename}>
-                <input
-                  className="input"
+                <Input
                   name="categoryName"
                   aria-label={text.nameLabel}
                   maxLength={CATEGORY_NAME_MAX_LENGTH}
@@ -89,8 +89,7 @@ export function CategoriesSection({ calendarId, canManage }: CategoriesSectionPr
       </ItemList>
       {canManage && categories.length < MAX_CATEGORIES && (
         <form className="inlineForm" onSubmit={submitNew}>
-          <input
-            className="input"
+          <Input
             name="newCategory"
             aria-label={text.newLabel}
             placeholder={text.newLabel}

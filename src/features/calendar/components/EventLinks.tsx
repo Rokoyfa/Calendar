@@ -1,3 +1,4 @@
+import { ExternalLink } from '../../../components/ExternalLink.tsx'
 import { GlobeIcon } from '../../../components/Icons.tsx'
 import { useI18n } from '../../../i18n/index.ts'
 import { getLinkName, type EventLink } from '../../../domain/event.ts'
@@ -19,17 +20,15 @@ export function EventLinks({ links, lines }: EventLinksProps) {
         const name = getLinkName(link)
         return (
           <span key={link.url} className="eventLinkRow">
-            <a
+            <ExternalLink
               className="eventLink"
               href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
               title={link.label ? `${link.label}\n${link.url}` : link.url}
               aria-label={m.events.openLink(name)}
             >
               <GlobeIcon size={11} />
               {name}
-            </a>
+            </ExternalLink>
             {hidden > 0 && index === visible.length - 1 && (
               <span className="eventMoreLinks" title={m.calendar.moreLinks(hidden)}>
                 +{hidden}

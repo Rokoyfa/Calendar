@@ -1,3 +1,4 @@
+import { ExternalLink } from '../components/ExternalLink.tsx'
 import { useCallback, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import { Button } from '../components/Button.tsx'
@@ -35,9 +36,7 @@ function BookingDetails({ summary }: { summary: BookingSummary }) {
       </p>
       {summary.location && (
         <p>
-          <a href={getLocationUrl(summary.location) ?? undefined} target="_blank" rel="noopener noreferrer">
-            {summary.location}
-          </a>
+          <ExternalLink href={getLocationUrl(summary.location) ?? undefined}>{summary.location}</ExternalLink>
         </p>
       )}
     </div>

@@ -6,6 +6,7 @@ import { useI18n } from '../../../i18n/index.ts'
 import { classNames } from '../../../utils/classNames.ts'
 import type { TaskChecklistInput } from '../types/task.ts'
 import { TASK_CHECKLIST_MAX_ITEMS, TASK_TITLE_MAX_LENGTH } from '../utils/task.ts'
+import { Checkbox, Input } from '../../../components/Input.tsx'
 
 type ChecklistFieldProps = {
   items: readonly TaskChecklistInput[]
@@ -56,16 +57,14 @@ export function ChecklistField({ items, isEditable, canToggle, onChange, onToggl
           <ul className="checklist">
             {items.map((item, index) => (
               <li key={item.id ?? `new-${index}`} className={classNames('checklistItem', item.done && 'isDone')}>
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={item.done}
                   disabled={!canToggle}
                   aria-label={text.checklistToggle(item.title || text.checklistItem(index + 1))}
                   onChange={(event) => toggle(index, event.target.checked)}
                 />
                 {isEditable ? (
-                  <input
-                    className="input"
+                  <Input
                     name={`checklist-${index}`}
                     aria-label={text.checklistItem(index + 1)}
                     maxLength={TASK_TITLE_MAX_LENGTH}
@@ -91,8 +90,7 @@ export function ChecklistField({ items, isEditable, canToggle, onChange, onToggl
           <p className="formHint">{text.checklistFull(TASK_CHECKLIST_MAX_ITEMS)}</p>
         ) : (
           <div className="inlineForm">
-            <input
-              className="input"
+            <Input
               name="newChecklistItem"
               aria-label={text.checklistAdd}
               placeholder={text.checklistPlaceholder}

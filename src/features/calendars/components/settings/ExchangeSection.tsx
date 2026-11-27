@@ -5,7 +5,6 @@ import { ActionFeedback } from '../../../../components/StatusMessage.tsx'
 import { useHost } from '../../../../context/HostContext.ts'
 import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
 import { useI18n } from '../../../../i18n/index.ts'
-import { classNames } from '../../../../utils/classNames.ts'
 import { parseICalendar, toICalendar } from '../../../../domain/ical.ts'
 import { useCategories } from '../../../categories/index.ts'
 import { createCategoryResolver, importEvents, listAllEvents } from '../../../events/index.ts'
@@ -13,6 +12,7 @@ import { useStorage } from '../../../storage/index.ts'
 import type { CalendarSummary } from '../../types/calendar.ts'
 import { canManageCategories, hasPermission } from '../../utils/permissions.ts'
 import { saveBlob } from '../../../../utils/download.ts'
+import { FileButton } from '../../../../components/FileButton.tsx'
 
 const toFileName = (name: string) => `${name.replace(/[\\/:*?"<>|]+/g, '').trim() || 'calendar'}.ics`
 
@@ -91,16 +91,9 @@ export function ExchangeSection({ calendar }: { calendar: CalendarSummary }) {
           {ical.exportLabel}
         </Button>
         {!readOnly && hasPermission(calendar, 'create_entry') && (
-          <label className={classNames('button', 'button--outline', importing.isPending && 'isDisabled')}>
+          <FileButton accept=".ics,text/calendar" disabled={importing.isPending} onChange={handleFile}>
             {importing.isPending ? ical.importing : ical.importLabel}
-            <input
-              type="file"
-              accept=".ics,text/calendar"
-              hidden
-              disabled={importing.isPending}
-              onChange={handleFile}
-            />
-          </label>
+          </FileButton>
         )}
       </div>
       <ActionFeedback error={fileError ?? exporting.error ?? importing.error} success={result} />

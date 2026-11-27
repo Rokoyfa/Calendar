@@ -90,21 +90,6 @@
   gap: var(--space-2);
 }
 
-.chatAction {
-  color: var(--color-muted);
-  font-size: var(--font-size-xs);
-  text-decoration: underline;
-}
-
-.chatAction:hover,
-.chatAction:focus-visible {
-  color: var(--color-text);
-}
-
-.chatAction--danger {
-  color: var(--color-red);
-}
-
 .chatEdit {
   display: flex;
   flex-direction: column;

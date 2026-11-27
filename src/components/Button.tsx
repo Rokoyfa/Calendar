@@ -1,6 +1,7 @@
-import type { ButtonHTMLAttributes, ComponentProps, Ref } from 'react'
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ComponentProps, Ref } from 'react'
 import { Link } from 'react-router'
 import { classNames } from '../utils/classNames.ts'
+import { ExternalLink } from './ExternalLink.tsx'
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'dangerOutline'
 
@@ -48,4 +49,16 @@ type ButtonLinkProps = ComponentProps<typeof Link> & ButtonStyleProps
 
 export function ButtonLink({ variant, block, className, ...linkProps }: ButtonLinkProps) {
   return <Link {...linkProps} className={getButtonClassName({ variant, block, className })} />
+}
+
+type ExternalButtonLinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'target' | 'rel'> & ButtonStyleProps
+
+export function ExternalButtonLink({ variant, block, className, ...linkProps }: ExternalButtonLinkProps) {
+  return <ExternalLink {...linkProps} className={getButtonClassName({ variant, block, className })} />
+}
+
+type AnchorButtonProps = AnchorHTMLAttributes<HTMLAnchorElement> & ButtonStyleProps
+
+export function AnchorButton({ variant, block, className, ...linkProps }: AnchorButtonProps) {
+  return <a {...linkProps} className={getButtonClassName({ variant, block, className })} />
 }

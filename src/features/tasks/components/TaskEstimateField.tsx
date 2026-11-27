@@ -2,6 +2,7 @@ import { FormField } from '../../../components/FormField.tsx'
 import { useI18n } from '../../../i18n/index.ts'
 import { MINUTES_PER_HOUR } from '../../../utils/date.ts'
 import { MAX_ESTIMATE_HOURS, type EstimateParts } from '../utils/taskForm.ts'
+import { Input } from '../../../components/Input.tsx'
 
 type TaskEstimateFieldProps = {
   value: EstimateParts
@@ -14,8 +15,8 @@ export function TaskEstimateField({ value, error, onChange }: TaskEstimateFieldP
   return (
     <FormField label={text.estimate} as="fieldset" error={error}>
       <span className="inlineField taskEstimate">
-        <input
-          className="input numberInput"
+        <Input
+          className="numberInput"
           type="number"
           name="estimateHours"
           inputMode="numeric"
@@ -29,8 +30,8 @@ export function TaskEstimateField({ value, error, onChange }: TaskEstimateFieldP
           onChange={(event) => onChange({ hours: event.target.value })}
         />
         <span aria-hidden="true">{text.hoursUnit}</span>
-        <input
-          className="input numberInput"
+        <Input
+          className="numberInput"
           type="number"
           name="estimateMinutes"
           inputMode="numeric"

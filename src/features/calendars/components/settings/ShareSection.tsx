@@ -1,3 +1,4 @@
+import { ExternalButtonLink } from '../../../../components/Button.tsx'
 import { useMemo } from 'react'
 import { useHost } from '../../../../context/HostContext.ts'
 import { useI18n } from '../../../../i18n/index.ts'
@@ -40,9 +41,9 @@ function PublicLink({ calendar, repository }: { calendar: CalendarSummary; repos
       field={token ? { label: url ? share.label : share.pathLabel, value: url ?? getSharedPath(token) } : null}
       openAction={
         url && (
-          <a className="button button--outline" href={url} target="_blank" rel="noopener noreferrer">
+          <ExternalButtonLink variant="outline" href={url}>
             {share.open}
-          </a>
+          </ExternalButtonLink>
         )
       }
     />

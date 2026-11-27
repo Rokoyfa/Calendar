@@ -1,4 +1,5 @@
 import { ExternalLinkIcon } from '../../../components/Icons.tsx'
+import { IconLink } from '../../../components/IconLink.tsx'
 import { Button } from '../../../components/Button.tsx'
 import { useI18n } from '../../../i18n/index.ts'
 import {
@@ -11,6 +12,7 @@ import {
   type EventLink,
 } from '../../../domain/event.ts'
 import { CloseButton } from '../../../components/RemoveButton.tsx'
+import { Input } from '../../../components/Input.tsx'
 
 type LinksFieldProps = {
   links: readonly EventLink[]
@@ -37,8 +39,8 @@ export function LinksField({ links, error, onChange }: LinksFieldProps) {
           const name = valid ? getLinkName({ url, label: link.label.trim() }) : String(index + 1)
           return (
             <li key={index} className="linkRow">
-              <input
-                className="input linkUrl"
+              <Input
+                className="linkUrl"
                 type="url"
                 inputMode="url"
                 name={`linkUrl${index}`}
@@ -50,8 +52,8 @@ export function LinksField({ links, error, onChange }: LinksFieldProps) {
                 value={link.url}
                 onChange={(event) => update(index, { url: event.target.value })}
               />
-              <input
-                className="input linkLabel"
+              <Input
+                className="linkLabel"
                 name={`linkLabel${index}`}
                 autoComplete="off"
                 placeholder={m.events.linkLabel}
@@ -62,16 +64,9 @@ export function LinksField({ links, error, onChange }: LinksFieldProps) {
               />
               <span className="linkActions">
                 {valid ? (
-                  <a
-                    className="iconButton iconButton--plain"
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={m.events.openLink(name)}
-                    title={m.events.openLink(name)}
-                  >
+                  <IconLink href={url} label={m.events.openLink(name)}>
                     <ExternalLinkIcon size={18} />
-                  </a>
+                  </IconLink>
                 ) : (
                   <span className="iconButton iconButton--plain linkPlaceholder" aria-hidden="true">
                     <ExternalLinkIcon size={18} />

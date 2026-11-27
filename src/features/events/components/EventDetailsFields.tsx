@@ -1,4 +1,5 @@
 import { FormField } from '../../../components/FormField.tsx'
+import { IconLink } from '../../../components/IconLink.tsx'
 import { MapPinIcon } from '../../../components/Icons.tsx'
 import { TextField } from '../../../components/TextField.tsx'
 import { useFeatures } from '../../../context/HostContext.ts'
@@ -12,6 +13,7 @@ import { useLocationUrl } from '../../../hooks/useLocationUrl.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import type { EventFieldSetter } from '../hooks/useEventForm.ts'
 import { LinksField } from './LinksField.tsx'
+import { TextArea } from '../../../components/Input.tsx'
 
 type EventDetailsFieldsProps = {
   values: EventInput
@@ -37,16 +39,9 @@ export function EventDetailsFields({ values, errors, isRequest, setField }: Even
         onChange={(location) => setField('location', location)}
         addon={
           locationUrl && (
-            <a
-              className="iconButton iconButton--plain"
-              href={locationUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={m.events.openMap(values.location.trim())}
-              title={m.events.openMap(values.location.trim())}
-            >
+            <IconLink href={locationUrl} label={m.events.openMap(values.location.trim())}>
               <MapPinIcon size={18} />
-            </a>
+            </IconLink>
           )
         }
       />
@@ -56,8 +51,8 @@ export function EventDetailsFields({ values, errors, isRequest, setField }: Even
       )}
 
       <FormField label={isRequest ? m.peers.note : m.events.description} error={errors.description}>
-        <textarea
-          className="textarea eventDescription"
+        <TextArea
+          className="eventDescription"
           name="description"
           maxLength={EVENT_DESCRIPTION_MAX_LENGTH}
           value={values.description}

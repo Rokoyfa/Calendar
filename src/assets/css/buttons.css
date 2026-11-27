@@ -150,3 +150,34 @@
 .trashActions {
   justify-content: flex-end;
 }
+
+.textButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: var(--font-size-md);
+  text-align: left;
+  cursor: pointer;
+}
+
+.textButton:hover {
+  text-decoration: underline;
+}
+
+.textButton--subtle,
+.textButton--danger {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  text-decoration: underline;
+}
+
+.textButton--subtle:hover,
+.textButton--subtle:focus-visible {
+  color: var(--color-text);
+}
+
+.textButton--danger {
+  color: var(--color-red);
+}

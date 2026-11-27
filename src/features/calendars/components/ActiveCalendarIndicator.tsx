@@ -12,6 +12,7 @@ import { useCalendarOptions, type CalendarOption } from '../hooks/useCalendarOpt
 import { useCalendars } from '../hooks/useCalendars.ts'
 import { isPersonalCalendar } from '../utils/permissions.ts'
 import { CalendarSwitcherModal } from './CalendarSwitcher.tsx'
+import { Checkbox, Input } from '../../../components/Input.tsx'
 
 type SharedCalendar = { name: string; color: EventColor }
 
@@ -35,8 +36,7 @@ function OverlayToggle({ color, label, shown, onChange }: OverlayToggleProps) {
     }
   }
   return (
-    <input
-      type="checkbox"
+    <Checkbox
       {...getEventColorAttributes(color, 'quickSwitcherOverlay')}
       aria-label={label}
       title={label}
@@ -162,9 +162,9 @@ export function ActiveCalendarIndicator({ shared }: { shared?: SharedCalendar })
         onKeyDown={handleKeyDown}
       >
         {total >= SEARCH_FROM && (
-          <input
+          <Input
             type="search"
-            className="input quickSwitcherSearch"
+            className="quickSwitcherSearch"
             placeholder={quickSwitcher.search}
             aria-label={quickSwitcher.search}
             value={query}

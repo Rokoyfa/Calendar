@@ -11,6 +11,7 @@ import {
 } from '../../../domain/event.ts'
 import { useEventSearch } from '../hooks/useEventSearch.ts'
 import { useEventSources } from '../hooks/useEventSource.ts'
+import { Input } from '../../../components/Input.tsx'
 
 type EventSearchModalProps = {
   calendarIds: readonly string[]
@@ -35,8 +36,7 @@ export function EventSearchModal({ calendarIds, today, onSelect, onClose }: Even
   return (
     <Modal title={search.title} onClose={onClose}>
       <div className="eventSearch">
-        <input
-          className="input"
+        <Input
           type="text"
           enterKeyHint="search"
           name="search"

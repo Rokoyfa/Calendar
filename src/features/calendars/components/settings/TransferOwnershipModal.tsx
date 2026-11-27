@@ -5,6 +5,7 @@ import { TextField } from '../../../../components/TextField.tsx'
 import { useI18n } from '../../../../i18n/index.ts'
 import type { TeamMember } from '../../types/calendar.ts'
 import { ItemList } from '../../../../components/ItemList.tsx'
+import { Radio } from '../../../../components/Input.tsx'
 
 type TransferOwnershipModalProps = {
   candidates: readonly TeamMember[]
@@ -46,8 +47,7 @@ export function TransferOwnershipModal({ candidates, onSelect, onClose }: Transf
           {(member) => (
             <li key={member.userId}>
               <label className="memberOption">
-                <input
-                  type="radio"
+                <Radio
                   name="newOwner"
                   value={member.userId}
                   checked={member.userId === selectedId}

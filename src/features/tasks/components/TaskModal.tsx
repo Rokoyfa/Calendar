@@ -48,6 +48,7 @@ import {
   type EstimateParts,
   type TaskErrors,
 } from '../utils/taskForm.ts'
+import { TextArea } from '../../../components/Input.tsx'
 
 const TaskPlanModal = lazy(async () => ({ default: (await import('./TaskPlanModal.tsx')).TaskPlanModal }))
 
@@ -299,8 +300,7 @@ export function TaskModal({
       content: (
         <Locked isLocked={!isEditable}>
           <FormField label={text.notes} error={errors.notes}>
-            <textarea
-              className="textarea"
+            <TextArea
               name="notes"
               rows={5}
               maxLength={TASK_NOTES_MAX_LENGTH}

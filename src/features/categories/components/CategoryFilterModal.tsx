@@ -9,6 +9,7 @@ import {
   type Category,
   type CategoryFilter,
 } from '../../../domain/category.ts'
+import { Checkbox } from '../../../components/Input.tsx'
 
 type CategoryFilterModalProps = {
   categories: readonly Category[]
@@ -41,8 +42,7 @@ export function CategoryFilterModal({ categories, calendarNames, value, onChange
         {options.map((option) => (
           <li key={option.id}>
             <label className="checkRow">
-              <input
-                type="checkbox"
+              <Checkbox
                 name="categoryFilter"
                 checked={value === null || value.has(option.id)}
                 onChange={() => onChange(toggleCategoryFilter(value, ids, option.id))}

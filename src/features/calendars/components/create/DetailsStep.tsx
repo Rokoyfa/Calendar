@@ -4,6 +4,7 @@ import { TextField } from '../../../../components/TextField.tsx'
 import type { FieldErrors } from '../../../../utils/validation.ts'
 import { CALENDAR_DESCRIPTION_MAX_LENGTH, CALENDAR_NAME_MAX_LENGTH } from '../../constants/calendars.ts'
 import type { DetailsValues } from '../../utils/draft.ts'
+import { TextArea } from '../../../../components/Input.tsx'
 
 type DetailsStepProps = {
   values: DetailsValues
@@ -40,8 +41,7 @@ export function DetailsStep({
       />
       {!hideDescription && (
         <FormField label={details.descriptionOptional} error={errors.description}>
-          <textarea
-            className="textarea"
+          <TextArea
             name="description"
             maxLength={CALENDAR_DESCRIPTION_MAX_LENGTH}
             placeholder={details.descriptionPlaceholder}

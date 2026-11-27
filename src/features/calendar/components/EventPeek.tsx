@@ -1,3 +1,4 @@
+import { ExternalLink } from '../../../components/ExternalLink.tsx'
 import type { KeyboardEvent } from 'react'
 import { AnchoredPopover, type PopoverAnchor } from '../../../components/AnchoredPopover.tsx'
 import { Button } from '../../../components/Button.tsx'
@@ -59,13 +60,7 @@ export function EventPeek({ occurrence, anchor, canEdit, onOpen, onDuplicate, on
       {occurrence.location && (
         <p className="eventPeekLine eventPeekLocation">
           <MapPinIcon size={14} />
-          {locationUrl ? (
-            <a href={locationUrl} target="_blank" rel="noopener noreferrer">
-              {occurrence.location}
-            </a>
-          ) : (
-            occurrence.location
-          )}
+          {locationUrl ? <ExternalLink href={locationUrl}>{occurrence.location}</ExternalLink> : occurrence.location}
         </p>
       )}
       {occurrence.links.length > 0 && <EventLinks links={occurrence.links} lines={occurrence.links.length} />}

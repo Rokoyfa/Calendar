@@ -1,3 +1,4 @@
+import { ExternalLink } from '../components/ExternalLink.tsx'
 import { useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { ButtonLink } from '../components/Button.tsx'
@@ -85,9 +86,7 @@ export function RespondPage() {
         </p>
         {response.location && (
           <p>
-            <a href={getLocationUrl(response.location) ?? undefined} target="_blank" rel="noopener noreferrer">
-              {response.location}
-            </a>
+            <ExternalLink href={getLocationUrl(response.location) ?? undefined}>{response.location}</ExternalLink>
           </p>
         )}
         {response.recurring && <p className="formHint">{respondPage.recurring}</p>}

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Button } from '../../../components/Button.tsx'
+import { TextButton } from '../../../components/TextButton.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
@@ -9,6 +10,7 @@ import { CHAT_MESSAGE_MAX_LENGTH, getChatId, type ChatKey, type ChatMessage } fr
 import { useChatContext, type ChatContextValue } from '../context/ChatContext.ts'
 import { useChatMessages } from '../hooks/useChatMessages.ts'
 import { formatMessageTime, toLocalDate } from '../utils/time.ts'
+import { TextArea } from '../../../components/Input.tsx'
 
 const BOTTOM_THRESHOLD_PX = 48
 
@@ -121,8 +123,8 @@ function ChatView({ chatKey, calendarId, isActive, context }: ChatPanelProps & {
                   </div>
                   {isEditing ? (
                     <div className="chatEdit">
-                      <textarea
-                        className="textarea chatInput"
+                      <TextArea
+                        className="chatInput"
                         value={editing.text}
                         maxLength={CHAT_MESSAGE_MAX_LENGTH}
                         aria-label={texts.edit}
@@ -139,12 +141,12 @@ function ChatView({ chatKey, calendarId, isActive, context }: ChatPanelProps & {
                         autoFocus
                       />
                       <div className="chatActions">
-                        <button type="button" className="chatAction" onClick={() => void saving.run()}>
+                        <TextButton variant="subtle" onClick={() => void saving.run()}>
                           {m.common.save}
-                        </button>
-                        <button type="button" className="chatAction" onClick={() => setEditing(null)}>
+                        </TextButton>
+                        <TextButton variant="subtle" onClick={() => setEditing(null)}>
                           {m.common.cancel}
-                        </button>
+                        </TextButton>
                       </div>
                     </div>
                   ) : (
@@ -153,31 +155,23 @@ function ChatView({ chatKey, calendarId, isActive, context }: ChatPanelProps & {
                   {!isEditing && (isOwn || mayModerate) && (
                     <div className="chatActions">
                       {isOwn && (
-                        <button
-                          type="button"
-                          className="chatAction"
-                          onClick={() => setEditing({ id: message.id, text: message.text })}
-                        >
+                        <TextButton variant="subtle" onClick={() => setEditing({ id: message.id, text: message.text })}>
                           {texts.edit}
-                        </button>
+                        </TextButton>
                       )}
                       {confirmDelete === message.id ? (
                         <>
-                          <button
-                            type="button"
-                            className="chatAction chatAction--danger"
-                            onClick={() => void removing.run(message.id)}
-                          >
+                          <TextButton variant="danger" onClick={() => void removing.run(message.id)}>
                             {texts.confirmDelete}
-                          </button>
-                          <button type="button" className="chatAction" onClick={() => setConfirmDelete(null)}>
+                          </TextButton>
+                          <TextButton variant="subtle" onClick={() => setConfirmDelete(null)}>
                             {m.common.cancel}
-                          </button>
+                          </TextButton>
                         </>
                       ) : (
-                        <button type="button" className="chatAction" onClick={() => setConfirmDelete(message.id)}>
+                        <TextButton variant="subtle" onClick={() => setConfirmDelete(message.id)}>
                           {m.common.delete}
-                        </button>
+                        </TextButton>
                       )}
                     </div>
                   )}
@@ -190,8 +184,8 @@ function ChatView({ chatKey, calendarId, isActive, context }: ChatPanelProps & {
       {chat.isOffline && <p className="formHint">{texts.offline}</p>}
       <ErrorMessage message={chat.error ?? sending.error ?? saving.error ?? removing.error ?? olderLoading.error} />
       <div className="chatComposer">
-        <textarea
-          className="textarea chatInput"
+        <TextArea
+          className="chatInput"
           name="chatMessage"
           rows={2}
           value={draft}

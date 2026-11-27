@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
+import { flushSync } from 'react-dom'
 import { HOURS_PER_DAY } from '../../../utils/date.ts'
 import { DEFAULT_EVENT_HOUR } from '../constants/grid.ts'
 
@@ -32,6 +33,12 @@ export const moveSlot = (dates: readonly string[], slot: SlotPosition, key: stri
 
 const slotSelector = ({ date, hour }: SlotPosition) => `[data-date="${date}"] .slot[data-hour="${hour}"]`
 
+const slotOf = (element: HTMLElement): SlotPosition | null => {
+  const date = element.closest<HTMLElement>('[data-date]')?.dataset.date
+  const hour = Number(element.dataset.hour)
+  return date && Number.isInteger(hour) ? { date, hour } : null
+}
+
 export function useSlotNavigation(
   containerRef: RefObject<HTMLElement | null>,
   dates: readonly string[],
@@ -53,10 +60,11 @@ export function useSlotNavigation(
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
       if (!(event.target instanceof HTMLElement) || !event.target.classList.contains('slot')) return
-      const { slot: current, dates: shown, onCreate: create } = state.current
+      const { dates: shown, onCreate: create } = state.current
+      const current = slotOf(event.target) ?? state.current.slot
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault()
-        create(current.date, current.hour)
+        flushSync(() => create(current.date, current.hour))
         return
       }
       const next = moveSlot(shown, current, event.key)
@@ -71,9 +79,8 @@ export function useSlotNavigation(
     const onFocusIn = (event: FocusEvent) => {
       const target = event.target
       if (!(target instanceof HTMLElement) || !target.classList.contains('slot')) return
-      const date = target.closest<HTMLElement>('[data-date]')?.dataset.date
-      const hour = Number(target.dataset.hour)
-      if (date && Number.isInteger(hour)) setStored({ date, hour })
+      const position = slotOf(target)
+      if (position) setStored(position)
     }
     container.addEventListener('keydown', onKeyDown)
     container.addEventListener('focusin', onFocusIn)

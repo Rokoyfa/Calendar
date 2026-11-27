@@ -16,6 +16,7 @@ import { CurrentPasswordField } from '../AuthFields.tsx'
 import { RecoveryCodeList } from './RecoveryCodeList.tsx'
 import { TwoFactorCodeField } from './TwoFactorCodeField.tsx'
 import { FormActions } from '../../../../components/FormActions.tsx'
+import { TextButton } from '../../../../components/TextButton.tsx'
 
 type TwoFactorManageProps = {
   security: SecurityActions
@@ -91,9 +92,9 @@ export function TwoFactorManage({ security, state, onChanged }: TwoFactorManageP
         <Form onSubmit={disable.handleSubmit}>
           <CurrentPasswordField {...disable.bind('password')} />
           <TwoFactorCodeField key={String(useRecovery)} recovery={useRecovery} {...disable.bind('code')} />
-          <button type="button" className="linkButton" onClick={() => setUseRecovery((current) => !current)}>
+          <TextButton onClick={() => setUseRecovery((current) => !current)}>
             {useRecovery ? text.useCode : text.useRecovery}
-          </button>
+          </TextButton>
           <ActionFeedback error={disable.error} />
           <FormActions
             isPending={disable.isPending}

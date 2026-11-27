@@ -1,4 +1,5 @@
 import { useRef, useState, type DragEvent } from 'react'
+import { AddChip } from '../../../components/AddChip.tsx'
 import { PaperclipIcon } from '../../../components/Icons.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
@@ -14,6 +15,7 @@ import {
 import { classNames } from '../../../utils/classNames.ts'
 import { useAttachments } from '../hooks/useAttachments.ts'
 import { RemoveButton } from '../../../components/RemoveButton.tsx'
+import { FileInput } from '../../../components/Input.tsx'
 
 type AttachmentsFieldProps = {
   eventId: string | null
@@ -109,20 +111,13 @@ export function AttachmentsField({ eventId, canEdit, pending, onPendingChange }:
       {!isLoading && count === 0 && !canEdit && <p className="formHint">{text.empty}</p>}
       {canEdit && (
         <div className="attachmentAdd">
-          <button
-            type="button"
-            className="categoryChip categoryAdd"
-            disabled={!canAdd}
-            onClick={() => input.current?.click()}
-          >
+          <AddChip disabled={!canAdd} onClick={() => input.current?.click()}>
             {uploading.isPending ? text.uploading : `+ ${text.add}`}
-          </button>
+          </AddChip>
           <span className="formHint">{text.hint(MAX_ATTACHMENTS, maxSize)}</span>
-          <input
+          <FileInput
             ref={input}
-            type="file"
             multiple
-            hidden
             name="attachments"
             onChange={(event) => {
               add([...(event.target.files ?? [])])

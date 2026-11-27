@@ -3,6 +3,7 @@ import { AnchoredPopover, type PopoverAnchor } from '../../../components/Anchore
 import { Button } from '../../../components/Button.tsx'
 import { EVENT_TITLE_MAX_LENGTH, formatEventPeriod, type EventInput } from '../../../domain/event.ts'
 import { useI18n } from '../../../i18n/index.ts'
+import { Input } from '../../../components/Input.tsx'
 
 type QuickCreateProps = {
   draft: EventInput
@@ -33,8 +34,8 @@ export function QuickCreate({ draft, anchor, calendarName, onTitleChange, onSave
   return (
     <AnchoredPopover anchor={anchor} label={i18n.m.calendar.newEvent} className="quickCreate" onClose={onClose}>
       <form className="quickCreateForm" onSubmit={(event) => void submit(event)}>
-        <input
-          className="input quickCreateTitle"
+        <Input
+          className="quickCreateTitle"
           name="title"
           autoComplete="off"
           data-autofocus
