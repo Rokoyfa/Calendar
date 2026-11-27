@@ -44,6 +44,8 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - Internal restructuring of the source (shared model in `src/domain/`, repositories next to their features, enforced module boundaries). The public API is unchanged
 - The title and the calendar badge are always centered in the header, in every language and width; the week number hangs to the right of the title. When the header is too narrow for that, the title moves to its own row
 - On phones the view switcher fits all views down to 320 px in every language
+- Dragging to create, swiping and keyboard entry update the calendar at once, so a quick follow-up input lands where expected
+- Browser tests: windows opened by the helpers are closed after every test again, which removes the random crashes and timeouts in long runs
 - Keyboard entry in the grid: arrow keys always move from the focused time slot, and typing right after `Enter` goes into the quick entry instead of triggering shortcuts
 - Internal: text buttons, add chips, "+N more", file pickers, external and icon links and all inputs come from shared components (`TextButton`, `AddChip`, `MoreButton`, `FileButton`, `ExternalLink`, `IconLink`, `Input`, `TextArea`, `Select`, `Checkbox`, `Radio`, `FileInput`). CSS class `linkButton` is now `textButton`, `chatAction` is `textButton--subtle`, `categoryAdd` is `addChip`
 

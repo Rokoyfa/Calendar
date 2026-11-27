@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react'
+import { flushSync } from 'react-dom'
 
 const MOVE_TOLERANCE_PX = 8
 const EDGE_PX = 48
@@ -86,7 +87,10 @@ export function usePressDrag<T>({ containerRef, enabled, delay, vibrateMs = 10, 
       removeTouchListeners()
       if (press) {
         if (isActive) suppressClickUntil = Date.now() + CLICK_SUPPRESSION_MS
-        latest.current.finish(press, commit, isActive)
+        const done = press
+        const wasActive = isActive
+        if (commit) flushSync(() => latest.current.finish(done, true, wasActive))
+        else latest.current.finish(done, false, wasActive)
       }
       press = null
       isActive = false

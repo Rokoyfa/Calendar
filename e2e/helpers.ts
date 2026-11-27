@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto'
-import { test as base, expect, type Browser, type Page } from '@playwright/test'
+import { test as base, expect, type Browser, type BrowserContextOptions, type Page } from '@playwright/test'
 import { API_URL } from './env.ts'
 
 export const PASSWORD = 'Passwort123!'
@@ -40,12 +40,17 @@ export const createUser = async (name: string): Promise<TestUser> => {
 
 const openPages = new Set<Page>()
 
-export const openAs = async (browser: Browser, user: TestUser) => {
-  const context = await browser.newContext({ acceptDownloads: true })
+export const newPageAs = async (browser: Browser, user: TestUser, options: BrowserContextOptions = {}) => {
+  const context = await browser.newContext({ acceptDownloads: true, ...options })
   const [name, value] = user.cookie.split('=')
   await context.addCookies([{ name, value, domain: 'localhost', path: '/' }])
   const page = await context.newPage()
   openPages.add(page)
+  return page
+}
+
+export const openAs = async (browser: Browser, user: TestUser) => {
+  const page = await newPageAs(browser, user)
   await page.goto('/')
   await expect(page.locator('.headerTitle')).toBeVisible()
   return page
@@ -55,19 +60,26 @@ const leave = async (page: Page) => {
   if (!page.isClosed()) await page.goto('about:blank').catch(() => undefined)
 }
 
-export const test = base.extend({
-  page: async ({ page }, provide) => {
-    await provide(page)
-    await leave(page)
-  },
-})
-
-test.afterEach(async () => {
+const closeOpenPages = async () => {
   for (const page of openPages) {
     await leave(page)
     await page.context().close()
   }
   openPages.clear()
+}
+
+export const test = base.extend<{ page: Page; closesOpenPages: void }>({
+  page: async ({ page }, provide) => {
+    await provide(page)
+    await leave(page)
+  },
+  closesOpenPages: [
+    async ({}, provide) => {
+      await provide()
+      await closeOpenPages()
+    },
+    { auto: true },
+  ],
 })
 
 export { expect }

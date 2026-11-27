@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react'
+import { flushSync } from 'react-dom'
 
 const MIN_DISTANCE_PX = 60
 const MAX_DURATION_MS = 700
@@ -44,8 +45,7 @@ export function useSwipeNavigation(
       const dy = touch.clientY - began.y
       if (Math.abs(dx) < MIN_DISTANCE_PX || Math.abs(dx) < Math.abs(dy) * DIRECTION_RATIO) return
       if (canScrollTowards(container, -Math.sign(dx))) return
-      if (dx < 0) handlers.current.onNext()
-      else handlers.current.onPrevious()
+      flushSync(dx < 0 ? handlers.current.onNext : handlers.current.onPrevious)
     }
     const handleCancel = () => {
       start = null

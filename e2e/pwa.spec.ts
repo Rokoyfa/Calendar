@@ -1,4 +1,4 @@
-import { createUser, expect, openAs, test } from './helpers.ts'
+import { createUser, expect, newPageAs, openAs, test } from './helpers.ts'
 
 test('offers the app files and explains push notifications without a service worker', async ({ browser }) => {
   const user = await createUser('Pia')
@@ -21,10 +21,7 @@ test('offers the app files and explains push notifications without a service wor
 
 test('turns push on and off for this device', async ({ browser }) => {
   const user = await createUser('Ole')
-  const context = await browser.newContext()
-  const [name, value] = user.cookie.split('=')
-  await context.addCookies([{ name, value, domain: 'localhost', path: '/' }])
-  const page = await context.newPage()
+  const page = await newPageAs(browser, user)
   await page.addInitScript(() => {
     const subscription = {
       endpoint: 'https://fcm.googleapis.com/fcm/send/e2e-device',
@@ -69,5 +66,4 @@ test('turns push on and off for this device', async ({ browser }) => {
   await page.keyboard.press('Space')
   await expect(toggle).not.toBeChecked()
   expect(await page.evaluate(() => localStorage.getItem('calendar.push.v1'))).toBeNull()
-  await context.close()
 })

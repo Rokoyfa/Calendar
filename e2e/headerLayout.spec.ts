@@ -1,4 +1,4 @@
-import { api, createTeamCalendar, createUser, expect, test } from './helpers.ts'
+import { api, createTeamCalendar, createUser, expect, newPageAs, test } from './helpers.ts'
 
 const LANGUAGES = ['de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt']
 const WIDTHS = [320, 390, 1100, 1440, 1920]
@@ -25,12 +25,9 @@ test('centers the title and fits the view switcher in every language and width',
   test.setTimeout(240_000)
   const user = await createUser('Anna')
   await createTeamCalendar(user, 'Verein')
-  const [name, value] = user.cookie.split('=')
   for (const language of LANGUAGES) {
     await api(user, 'PATCH', '/preferences', { locale: language })
-    const context = await browser.newContext({ viewport: { width: 1920, height: 800 } })
-    await context.addCookies([{ name, value, domain: 'localhost', path: '/' }])
-    const page = await context.newPage()
+    const page = await newPageAs(browser, user, { viewport: { width: 1920, height: 800 } })
     await page.goto('/e2e/harness/features.html?features=auth,teams,shortcuts,tasks,notifications')
     for (const view of VIEWS) {
       await page.setViewportSize({ width: 1920, height: 800 })
@@ -42,6 +39,6 @@ test('centers the title and fits the view switcher in every language and width',
           .toEqual({ title: 0, badge: 0, viewsOverflow: 0, subtitleInside: true })
       }
     }
-    await context.close()
+    await page.context().close()
   }
 })

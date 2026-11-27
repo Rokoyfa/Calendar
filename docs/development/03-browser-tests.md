@@ -24,6 +24,8 @@ cd ../TestBE && npm install
 
 Schlägt ein Test fehl, liegt unter `test-results/` ein Trace, den `npx playwright show-trace <Datei>` Schritt für Schritt abspielt. Jeder Test legt eigene Nutzer mit zufälliger E-Mail an, die Tests laufen deshalb unabhängig voneinander und parallel.
 
+**Browserfenster in Tests:** Eigene Fenster nur über `openAs` (angemeldet, Kalender geladen) oder `newPageAs` (angemeldet, mit eigenen Optionen wie `viewport`) aus `e2e/helpers.ts` öffnen, nicht mit `browser.newContext()`. Nur dann schließt die automatische Fixture `closesOpenPages` sie nach jedem Test, auch wenn er fehlschlägt. Aufräumen gehört in eine Fixture, nicht in ein `test.afterEach` in einer Hilfsdatei: Playwright hängt so einen Hook nur an die erste Testdatei, die die Hilfsdatei lädt. Offene Fenster sammeln sich sonst an, machen die Tests langsam und lassen Chromium irgendwann abstürzen.
+
 ---
 
 [← Zurück](02-embedding.md) · [Inhalt](../../DEVELOPMENT.md) · [Weiter →](04-publishing.md)
