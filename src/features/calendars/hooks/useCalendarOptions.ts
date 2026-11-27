@@ -14,12 +14,13 @@ export type CalendarOption = {
   meta: string
   color: EventColor
   isActive: boolean
+  overlay?: { shown: boolean; set: (shown: boolean) => Promise<void> }
 }
 
 export function useCalendarOptions() {
   const { m } = useI18n()
   const { features } = useHost()
-  const { calendars, activeId, activeCalendar, selectCalendar } = useCalendars()
+  const { calendars, activeId, activeCalendar, selectCalendar, setShowInPersonal } = useCalendars()
   const peers = usePeerCalendars()
   const activePeerId = peers.calendars.some(({ id }) => peerCalendarId(id) === activeId) ? activeId : null
   const toOption = (calendar: CalendarSummary): CalendarOption => ({
@@ -28,6 +29,9 @@ export function useCalendarOptions() {
     meta: [getDistinctTeamName(calendar), m.calendars.roles[calendar.role]].filter(Boolean).join(' · '),
     color: calendar.color,
     isActive: activePeerId === null && calendar.id === activeCalendar.id,
+    overlay: isPersonalCalendar(calendar)
+      ? undefined
+      : { shown: calendar.showInPersonal, set: (shown) => setShowInPersonal(calendar.id, shown) },
   })
   const shared = peers.calendars.map((calendar) => ({
     id: peerCalendarId(calendar.id),
@@ -35,6 +39,7 @@ export function useCalendarOptions() {
     meta: m.calendars.indicator.shared,
     color: calendar.color,
     isActive: activePeerId === peerCalendarId(calendar.id),
+    overlay: { shown: calendar.shown, set: (shown: boolean) => peers.update(calendar.id, { shown }) },
   }))
   const activeGroup: CalendarGroup =
     activePeerId !== null ? 'shared' : isPersonalCalendar(activeCalendar) ? 'personal' : 'teams'

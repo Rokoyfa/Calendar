@@ -620,6 +620,63 @@ button.miniDay:hover {
   background-color: var(--color-on-accent);
 }
 
+.miniDay.selected:not(.today) {
+  background-color: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  font-weight: 600;
+}
+
+.headerTitleButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  color: inherit;
+  font: inherit;
+  transition: background-color var(--transition-fast);
+}
+
+.headerTitleButton:hover,
+.headerTitleButton:focus-visible {
+  background-color: var(--color-surface-hover);
+}
+
+.headerTitleChevron {
+  display: inline-flex;
+  color: var(--color-muted);
+}
+
+.dateJump {
+  font-size: var(--font-size-base);
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: start;
+  position: fixed;
+  inset: 64px auto auto 50%;
+  width: min(280px, calc(100vw - 2 * var(--space-4)));
+  margin: 0;
+  padding: var(--space-3);
+  border: none;
+  color: var(--color-text);
+  translate: -50% 0;
+}
+
+.dateJump:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dateJumpHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dateJumpMonth {
+  font-weight: 600;
+}
+
 @container calendar (max-width: 900px) {
   .day {
     min-width: 0;
@@ -895,4 +952,206 @@ button.miniDay:hover {
 .monthCell .holidayLabel {
   padding: 0 var(--space-1);
   font-size: var(--font-size-xs);
+}
+
+.anchoredPopover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: var(--space-3);
+  border: none;
+  color: var(--color-text);
+}
+
+.anchoredPopover:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.quickCreate {
+  width: min(320px, calc(100vw - 16px));
+}
+
+.quickCreateForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.quickCreateTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.quickCreateWhen {
+  font-size: var(--font-size-md);
+}
+
+.quickCreateCalendar {
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+}
+
+.quickCreateActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.eventPeek {
+  width: min(340px, calc(100vw - 16px));
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+}
+
+.eventPeekHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.eventPeekColor {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 0.45em;
+  border-radius: var(--radius-sm);
+  background-color: var(--event-color);
+}
+
+.eventPeekTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.eventPeekWhen {
+  font-size: var(--font-size-md);
+}
+
+.eventPeekLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-md);
+  overflow-wrap: anywhere;
+}
+
+.eventPeekMuted {
+  color: var(--color-muted);
+}
+
+.eventPeek .eventLinks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-md);
+}
+
+.eventPeekDescription {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--font-size-md);
+  color: var(--color-muted);
+  white-space: pre-line;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+.eventPeekActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+}
+
+.eventPeekOpen {
+  margin-left: var(--space-2);
+}
+
+.shortcutHelp {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.shortcutGroupTitle {
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.shortcutList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.shortcutRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.shortcutRow dt {
+  display: flex;
+  flex: none;
+  gap: var(--space-1);
+  min-width: 104px;
+}
+
+.shortcutRow dd {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.shortcutRow kbd {
+  min-width: 24px;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-grid);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-align: center;
+}
+
+.onboardingTip {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 21;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(320px, calc(100% - 2 * var(--space-4)));
+  padding: var(--space-3) var(--space-4);
+  border-left: 4px solid var(--color-accent);
+}
+
+.onboardingTipCount {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.onboardingTipText {
+  font-size: var(--font-size-md);
+}
+
+.onboardingTipActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }

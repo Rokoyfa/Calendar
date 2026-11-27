@@ -13,6 +13,38 @@ import { CalendarSwitcherModal } from './CalendarSwitcher.tsx'
 
 type SharedCalendar = { name: string; color: EventColor }
 
+type OverlayToggleProps = {
+  color: EventColor
+  label: string
+  shown: boolean
+  onChange: (shown: boolean) => Promise<void>
+}
+
+function OverlayToggle({ color, label, shown, onChange }: OverlayToggleProps) {
+  const [pending, setPending] = useState<boolean | null>(null)
+  const checked = pending ?? shown
+  const toggle = async () => {
+    const next = !checked
+    setPending(next)
+    try {
+      await onChange(next)
+    } finally {
+      setPending(null)
+    }
+  }
+  return (
+    <input
+      type="checkbox"
+      {...getEventColorAttributes(color, 'quickSwitcherOverlay')}
+      aria-label={label}
+      title={label}
+      checked={checked}
+      disabled={pending !== null}
+      onChange={() => void toggle()}
+    />
+  )
+}
+
 const SEARCH_FROM = 8
 const ITEM_SELECTOR = '.quickSwitcherItem'
 const STEP_BY_KEY: Partial<Record<string, number>> = { ArrowDown: 1, ArrowUp: -1 }
@@ -135,6 +167,9 @@ export function ActiveCalendarIndicator({ shared }: { shared?: SharedCalendar })
             onChange={(event) => setQuery(event.target.value)}
           />
         )}
+        {groups.some((group) => group.list.some((option) => option.overlay)) && (
+          <p className="quickSwitcherHint">{quickSwitcher.overlayHint}</p>
+        )}
         <div className="quickSwitcherList">
           {groups.length === 0 && <p className="emptyHint">{quickSwitcher.noMatch}</p>}
           {groups.map((group) => (
@@ -144,7 +179,7 @@ export function ActiveCalendarIndicator({ shared }: { shared?: SharedCalendar })
               </p>
               <ul>
                 {group.list.map((option) => (
-                  <li key={option.id}>
+                  <li key={option.id} className="quickSwitcherRow">
                     <button
                       type="button"
                       {...getEventColorAttributes(option.color, 'quickSwitcherItem', option.isActive && 'active')}
@@ -160,6 +195,14 @@ export function ActiveCalendarIndicator({ shared }: { shared?: SharedCalendar })
                         </span>
                       )}
                     </button>
+                    {option.overlay && (
+                      <OverlayToggle
+                        color={option.color}
+                        label={quickSwitcher.overlay(option.name)}
+                        shown={option.overlay.shown}
+                        onChange={option.overlay.set}
+                      />
+                    )}
                   </li>
                 ))}
               </ul>

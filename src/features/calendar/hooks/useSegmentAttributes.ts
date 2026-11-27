@@ -6,6 +6,7 @@ import type { EventSegment } from '../types/eventLayout.ts'
 import { getEventDetails, getEventLabel, getSegmentAttributes } from '../utils/eventLabels.ts'
 import { useEventSource } from './useEventSource.ts'
 import { isPlanPreviewEvent } from '../../tasks/index.ts'
+import { isDraftEvent } from '../utils/draftEvent.ts'
 
 export function useSegmentAttributes(segment: EventSegment, ...classNames: ClassNameValue[]) {
   const i18n = useI18n()
@@ -20,7 +21,7 @@ export function useSegmentAttributes(segment: EventSegment, ...classNames: Class
     isDragging && 'eventDragging',
     attendance === 'declined' && 'eventDeclined',
     attendance === 'needsAction' && 'eventUnanswered',
-    isPlanPreviewEvent(segment.event) && 'eventPlanned',
+    (isPlanPreviewEvent(segment.event) || isDraftEvent(segment.event)) && 'eventPlanned',
   )
   const label = getEventLabel(segment.event, source, attendance, i18n)
   const details = getEventDetails(segment.event, source, attendance, i18n)

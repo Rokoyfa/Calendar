@@ -13,7 +13,7 @@ import type { EventSource } from '../types/eventSource.ts'
 
 type LabelI18n = Pick<I18n, 'm' | 'format'>
 
-const getRecurrenceText = (event: EventOccurrence, i18n: LabelI18n) =>
+export const getRecurrenceText = (event: EventOccurrence, i18n: LabelI18n) =>
   event.recurrence ? formatRecurrence(event.recurrence, event.startDate, i18n) : null
 
 export const getSourceText = (source: EventSource, { m }: LabelI18n) => m.calendar.fromCalendar(source.name)

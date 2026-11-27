@@ -23,7 +23,10 @@ export function splitAllDay(
   const runs = new Map<string, AllDayRun>()
   for (const date of dates) {
     const segments = segmentsByDate.get(date) ?? []
-    timed.set(date, segments.filter((segment) => !segment.event.allDay))
+    timed.set(
+      date,
+      segments.filter((segment) => !segment.event.allDay),
+    )
     for (const segment of segments) {
       if (!segment.event.allDay) continue
       const key = segment.event.occurrenceKey

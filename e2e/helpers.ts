@@ -127,6 +127,7 @@ export const showView = async (page: Page, view: 'Tag' | 'Woche' | 'Monat' | 'Ja
 
 export const openEvent = async (page: Page, title: string) => {
   await page.locator(`.eventOpen[aria-label^="${title},"]`).first().click()
+  await page.locator('.eventPeekOpen').click()
   const dialog = page.locator('dialog[open]')
   await expect(dialog).toBeVisible()
   return dialog

@@ -451,6 +451,27 @@ button.stepContent:hover .stepLabel {
   letter-spacing: 0.04em;
 }
 
+.quickSwitcherRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.quickSwitcherOverlay {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0 var(--space-2);
+  accent-color: var(--event-color, var(--color-accent));
+  cursor: pointer;
+}
+
+.quickSwitcherHint {
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+}
+
 .quickSwitcherItem {
   display: flex;
   align-items: center;

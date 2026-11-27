@@ -13,6 +13,7 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - With `caldav` and `tasks`, the CalDAV collections now also contain the tasks as `VTODO` (`supported-calendar-component-set` lists both). A backend that implements `api/caldav.md` has to add this, see the new section "Tasks (VTODO)" there; tasks gain a `UID` and a resource name for it, which never appear in the JSON API.
 - `push` is on by default and needs the endpoints `GET /push/key`, `POST /push/subscriptions` and `POST /push/subscriptions/remove` plus a service worker on the page; without a service worker the setting only explains that push is not set up. `DataRepositories` gains an optional `push` repository. Turn it off with `features: { push: false }` or `feature-push="false"`.
 - `freeBusy` is on by default and needs the new endpoint `POST /free-busy`. Without it the dialog says that the server does not offer it; to hide the button use `features: { freeBusy: false }` or `feature-free-busy="false"`. The preferences gain `shareFreeBusy` (default `true`), optional in `StoredPreferences`, and `DataRepositories` gains an optional `freeBusy` repository (see section 30 of the developer guide).
+- A click on an event now opens a preview instead of the full dialog, and a click in the grid opens the quick entry. Tests or scripts that click an event and expect the dialog have to click **Edit** in the preview first. The new feature `tips` is on by default; turn it off with `features: { tips: false }` or `feature-tips="false"`.
 
 ### Added
 
@@ -28,6 +29,13 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - Planned blocks keep 5 minutes to existing events; they go right next to an event only when the effort would not fit otherwise
 - **Switch calendar** sorts calendars into the tabs **Personal**, **Teams** and **Shared**, with counts; it opens on the tab of the active calendar
 - Quick switcher: a click on the calendar badge above the calendar lists all calendars by group, with keyboard navigation, a search from 8 calendars on and links to **All calendars …** and **New calendar**
+- Quick switcher checkboxes show team and shared calendars in the personal calendar, so several calendars appear together
+- Quick entry: a click, drag or `Enter` in the grid opens a small popover for the title, `Enter` saves, **More options** opens the full dialog; a dashed placeholder shows where the event goes
+- Event preview: a click on an event shows its details at a glance with **Edit**, **Duplicate** and **Delete**
+- Jump to a date from a month picker behind the title
+- Swipe left or right on touch screens for the next or previous period
+- `?` and **Keyboard shortcuts** in the calendar menu list all shortcuts
+- Feature `tips`: a few short tips on first use, once per user and device
 
 ### Changed
 

@@ -15,6 +15,16 @@ export const placeBelowTrigger = (event: ToggleEvent<HTMLElement>) => {
   menu.style.right = `${Math.max(document.documentElement.clientWidth - right, POPOVER_GAP_PX)}px`
 }
 
+export const placeBelowTriggerCenter = (event: ToggleEvent<HTMLElement>) => {
+  if (event.newState !== 'open') return
+  const menu = event.currentTarget
+  const trigger = findTrigger(menu)
+  if (!trigger) return
+  const { bottom, left, width } = trigger.getBoundingClientRect()
+  menu.style.top = `${bottom + POPOVER_GAP_PX}px`
+  menu.style.left = `${left + width / 2}px`
+}
+
 export const placeBelowTriggerStart = (event: ToggleEvent<HTMLElement>) => {
   if (event.newState !== 'open') return
   const menu = event.currentTarget

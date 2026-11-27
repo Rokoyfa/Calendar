@@ -227,6 +227,11 @@
           "type": "boolean",
           "default": true,
           "description": "Push notifications: each user can turn on the bell's notifications for their device under Settings > Notifications, also when the calendar is closed. Needs the notifications feature, the /push endpoints and a service worker on the page (public/sw.js of the package); not available in local mode."
+        },
+        "tips": {
+          "type": "boolean",
+          "default": true,
+          "description": "A few short tips on first use (adding events, switching calendars, jumping to a date, keyboard shortcuts or swiping). Each user sees them once per device; skipping or finishing hides them for good."
         }
       }
     },

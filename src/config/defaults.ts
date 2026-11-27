@@ -47,6 +47,7 @@ export const DEFAULT_FEATURES = {
   tasks: true,
   freeBusy: true,
   push: true,
+  tips: true,
 }
 
 export type CalendarFeatures = typeof DEFAULT_FEATURES

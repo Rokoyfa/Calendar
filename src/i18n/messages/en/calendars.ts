@@ -53,6 +53,8 @@ export const calendars = {
     all: 'All calendars …',
     search: 'Search calendars',
     noMatch: 'No calendar found.',
+    overlay: (name: string) => `Show ${name} in the personal calendar`,
+    overlayHint: 'Checked calendars also appear in your personal calendar.',
   },
   invitations: {
     title: 'Invitations',

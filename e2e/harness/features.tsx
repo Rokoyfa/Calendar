@@ -6,7 +6,10 @@ const params = new URLSearchParams(window.location.search)
 const enabled = params.get('features')
 const storageMode = params.get('storage') === 'local' ? 'local' : 'remote'
 const features = Object.fromEntries(
-  FEATURE_NAMES.map((name) => [name, enabled === 'all' || (enabled ?? '').split(',').includes(name)]),
+  FEATURE_NAMES.map((name) => [
+    name,
+    (enabled === 'all' && name !== 'tips') || (enabled ?? '').split(',').includes(name),
+  ]),
 ) as CalendarFeatures
 
 createRoot(document.getElementById('root')!).render(

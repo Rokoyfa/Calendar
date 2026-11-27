@@ -10,9 +10,10 @@ type MiniMonthProps = {
   hasEvents?: (date: string) => boolean
   getHoliday?: (date: string) => string | undefined
   onSelectDay?: (date: string) => void
+  isSelected?: (date: string) => boolean
 }
 
-export function MiniMonth({ month, today, className, hasEvents, getHoliday, onSelectDay }: MiniMonthProps) {
+export function MiniMonth({ month, today, className, hasEvents, getHoliday, onSelectDay, isSelected }: MiniMonthProps) {
   const { format } = useI18n()
   return (
     <MonthGrid
@@ -26,6 +27,7 @@ export function MiniMonth({ month, today, className, hasEvents, getHoliday, onSe
           date === today && 'today',
           hasEvents?.(date) && 'hasEvents',
           holiday && 'holiday',
+          isSelected?.(date) && 'selected',
         )
         return onSelectDay ? (
           <button
@@ -33,6 +35,7 @@ export function MiniMonth({ month, today, className, hasEvents, getHoliday, onSe
             type="button"
             className={dayClassName}
             title={holiday ? `${format.longDate(date)}\n${holiday}` : format.longDate(date)}
+            aria-current={isSelected?.(date) || undefined}
             onClick={() => onSelectDay(date)}
           >
             {getDayOfMonth(date)}

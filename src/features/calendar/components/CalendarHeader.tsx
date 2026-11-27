@@ -11,11 +11,13 @@ import {
   ChevronRightIcon,
   FilterIcon,
   PlusIcon,
+  KeyboardIcon,
   PrinterIcon,
   SearchIcon,
 } from '../../../components/Icons.tsx'
 import { compact } from '../../../utils/list.ts'
 import { CalendarMenu, type CalendarMenuItem } from './CalendarMenu.tsx'
+import { DateJump } from './DateJump.tsx'
 
 type CalendarHeaderProps = {
   view: CalendarView
@@ -28,10 +30,12 @@ type CalendarHeaderProps = {
   onSearch?: () => void
   onFilter?: () => void
   onPrint?: () => void
+  onShortcuts?: () => void
   isFiltered?: boolean
   menuItems?: readonly CalendarMenuItem[]
   context?: ReactNode
   accessory?: ReactNode
+  jump?: { anchor: string; today: string; range: { from: string; to: string }; onSelect: (date: string) => void }
 }
 
 export function CalendarHeader({
@@ -45,10 +49,12 @@ export function CalendarHeader({
   onSearch,
   onFilter,
   onPrint,
+  onShortcuts,
   isFiltered = false,
   menuItems = [],
   context,
   accessory,
+  jump,
 }: CalendarHeaderProps) {
   const { m } = useI18n()
   const { features } = useHost()
@@ -72,6 +78,13 @@ export function CalendarHeader({
       onSelect: onFilter,
     },
     onPrint && { key: 'print', label: m.calendar.print.open, icon: <PrinterIcon size={18} />, onSelect: onPrint },
+    onShortcuts && {
+      key: 'shortcuts',
+      label: m.calendar.shortcutHelp.title,
+      icon: <KeyboardIcon size={18} />,
+      shortcut: '?',
+      onSelect: onShortcuts,
+    },
     ...menuItems,
   ])
   return (
@@ -105,7 +118,7 @@ export function CalendarHeader({
 
       <div className="headerCenter">
         <h1 className="headerTitle" aria-live="polite">
-          {title}
+          {jump ? <DateJump title={title} {...jump} /> : title}
           {subtitle && <span className="headerSubtitle">{subtitle}</span>}
         </h1>
         {context}

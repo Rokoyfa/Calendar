@@ -14,6 +14,7 @@ type Probe = {
 const PROBES: Probe[] = [
   { feature: 'search', place: 'menu', name: 'Suchen', role: 'menuitem' },
   { feature: 'print', place: 'menu', name: 'Drucken oder als PDF speichern', role: 'menuitem' },
+  { feature: 'shortcuts', place: 'menu', name: 'Tastenkürzel', role: 'menuitem' },
   { feature: 'notifications', place: 'header', name: 'Benachrichtigungen', role: 'button' },
   { feature: 'tasks', place: 'header', name: 'Aufgaben', role: 'button' },
   { feature: 'tasks', place: 'newEvent', name: 'Aufgabe', role: 'button' },
@@ -63,7 +64,10 @@ const open = async (page: Page, user: TestUser, features: string, place: Place, 
   }
   if (place === 'newEvent' || place === 'editEvent' || place === 'details') {
     if (place === 'newEvent') await page.getByRole('button', { name: 'Neuer Termin', exact: true }).click()
-    else await page.locator('.eventOpen[aria-label^="Yoga,"]').first().click()
+    else {
+      await page.locator('.eventOpen[aria-label^="Yoga,"]').first().click()
+      await page.locator('.eventPeekOpen').click()
+    }
     const dialog = page.locator('dialog[open]')
     await dialog.locator('input[name=title]').waitFor()
     if (place === 'details') await dialog.getByRole('tab', { name: 'Details' }).click()

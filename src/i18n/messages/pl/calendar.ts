@@ -1,4 +1,5 @@
 import type { Messages } from '../types.ts'
+import { plural } from './grammar.ts'
 
 export const views: Messages['views'] = {
   label: 'Widok',
@@ -65,5 +66,44 @@ export const calendar: Messages['calendar'] = {
   print: {
     open: 'Drukuj lub zapisz jako PDF',
     empty: 'Brak wydarzeń w tym okresie.',
+  },
+  jump: {
+    open: 'Przejdź do daty',
+    previousMonth: 'Poprzedni miesiąc',
+    nextMonth: 'Następny miesiąc',
+  },
+  quickCreate: {
+    title: 'Dodaj tytuł',
+    untitled: '(Bez tytułu)',
+    more: 'Więcej opcji',
+    inCalendar: (name) => `W kalendarzu ${name}`,
+  },
+  peek: {
+    edit: 'Edytuj',
+    details: 'Szczegóły',
+    attendees: (count) => `${count} ${plural(count, 'uczestnik', 'uczestnicy', 'uczestników')}`,
+  },
+  shortcutHelp: {
+    title: 'Skróty klawiszowe',
+    navigation: 'Nawigacja',
+    actions: 'Działania',
+    previousNext: 'Poprzedni lub następny okres',
+    moveFocus: 'Przechodzenie między godzinami lub wydarzeniami',
+    undo: 'Cofnij',
+  },
+  tips: {
+    label: 'Wskazówka',
+    count: (current, total) => `Wskazówka ${current} z ${total}`,
+    create: 'Kliknij godzinę, aby dodać wydarzenie, lub przeciągnij, aby wybrać czas trwania.',
+    createTouch: 'Dotknij godziny, aby dodać wydarzenie; przytrzymaj i przeciągnij, aby wybrać czas trwania.',
+    peek: 'Kliknij wydarzenie, aby zobaczyć szczegóły w skrócie. Edytuj otwiera wszystkie opcje.',
+    switch: 'Kliknij nazwę kalendarza u góry, aby szybko przełączać się między kalendarzami.',
+    jump: 'Kliknij miesiąc w tytule, aby przejść do dowolnej daty.',
+    shortcuts: 'Naciśnij ?, aby zobaczyć wszystkie skróty klawiszowe.',
+    swipe: 'Przesuń w lewo lub w prawo, aby przejść do następnego lub poprzedniego okresu.',
+    tasks: 'Zadania z nakładem pracy planista może automatycznie umieścić w twoim wolnym czasie.',
+    next: 'Dalej',
+    skip: 'Pomiń',
+    done: 'Rozumiem',
   },
 }

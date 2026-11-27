@@ -53,6 +53,8 @@ export const calendars: Messages['calendars'] = {
     all: 'Alle agenda’s …',
     search: 'Agenda’s zoeken',
     noMatch: 'Geen agenda gevonden.',
+    overlay: (name) => `${name} in de persoonlijke agenda tonen`,
+    overlayHint: 'Aangevinkte agenda’s verschijnen ook in je persoonlijke agenda.',
   },
   invitations: {
     title: 'Uitnodigingen',

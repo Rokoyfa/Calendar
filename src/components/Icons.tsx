@@ -114,6 +114,12 @@ export const BellIcon = (props: IconProps) => (
   />
 )
 
+export const KeyboardIcon = (props: IconProps) => (
+  <IconBase {...props} strokeWidth={2} path="M3 6h18v12H3zM7 10h.01M11 10h.01M15 10h.01M7 14h10" />
+)
+
+export const CopyIcon = (props: IconProps) => <IconBase {...props} strokeWidth={2} path="M9 9h10v10H9zM5 15V5h10" />
+
 export const CloseIcon = (props: IconProps) => <IconBase {...props} strokeWidth={2.5} path="M18 6L6 18M6 6l12 12" />
 
 export const TrashIcon = (props: IconProps) => (

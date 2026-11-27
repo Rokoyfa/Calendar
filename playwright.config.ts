@@ -44,7 +44,7 @@ export default defineConfig({
       command: `npx vite --port ${APP_PORT} --strictPort`,
       url: APP_URL,
       reuseExistingServer: false,
-      env: { API_PROXY_TARGET: `http://localhost:${API_PORT}`, VITE_FEATURE_AUTH: 'true' },
+      env: { API_PROXY_TARGET: `http://localhost:${API_PORT}`, VITE_FEATURE_AUTH: 'true', VITE_FEATURE_TIPS: 'false' },
       stderr: process.env.E2E_DEBUG ? 'pipe' : 'ignore',
     },
   ],

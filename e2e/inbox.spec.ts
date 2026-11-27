@@ -21,6 +21,7 @@ test('lists the next 30 days in the agenda view', async ({ browser }) => {
   const agenda = page.locator('.agendaView')
   await expect(agenda.locator('.agendaItem', { hasText: 'Agenda-Termin' })).toBeVisible()
   await agenda.locator('.agendaItem', { hasText: 'Agenda-Termin' }).click()
+  await page.locator('.eventPeekOpen').click()
   await expect(page.locator('dialog[open] input[name=title]')).toHaveValue('Agenda-Termin')
 })
 

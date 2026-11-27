@@ -6,6 +6,7 @@ import { isCaldavEvent } from '../../caldav/index.ts'
 import { isExternalEvent } from '../../external/index.ts'
 import { isPeerEvent } from '../../peers/index.ts'
 import { isPlanPreviewEvent, toPlanPreviewEvents, type TaskPlanPreview } from '../../tasks/index.ts'
+import { isDraftEvent } from '../utils/draftEvent.ts'
 import { groupSegmentsByDate } from '../utils/segmentEvents.ts'
 import type { DragPreview } from './useEventDrag.ts'
 
@@ -17,6 +18,7 @@ type CalendarOccurrenceOptions = {
   categories: readonly Category[]
   filter: CategoryFilter
   planPreview: TaskPlanPreview | null
+  draft: CalendarEvent | null
   dragPreview: DragPreview | null
   canEditEvent: (event: CalendarEvent) => boolean
 }
@@ -29,6 +31,7 @@ export function useCalendarOccurrences({
   categories,
   filter,
   planPreview,
+  draft,
   dragPreview,
   canEditEvent,
 }: CalendarOccurrenceOptions) {
@@ -46,11 +49,12 @@ export function useCalendarOccurrences({
     )
   }, [events, externalEvents, range, viewerTimeZone, categories, filter])
   const occurrences = useMemo(() => {
-    if (!planPreview) return filtered
+    const drafted = draft ? expandEvents([draft], range.from, range.to, viewerTimeZone) : []
+    if (!planPreview) return drafted.length > 0 ? [...filtered, ...drafted] : filtered
     const hidden = new Set(planPreview.replacedIds)
     const planned = expandEvents(toPlanPreviewEvents(planPreview), range.from, range.to, viewerTimeZone)
-    return [...filtered.filter((occurrence) => !hidden.has(occurrence.id)), ...planned]
-  }, [filtered, planPreview, range, viewerTimeZone])
+    return [...filtered.filter((occurrence) => !hidden.has(occurrence.id)), ...planned, ...drafted]
+  }, [filtered, planPreview, draft, range, viewerTimeZone])
   const draggableByKey = useMemo(
     () =>
       new Map(
@@ -59,6 +63,7 @@ export function useCalendarOccurrences({
             (occurrence) =>
               !isExternalEvent(occurrence) &&
               !isPlanPreviewEvent(occurrence) &&
+              !isDraftEvent(occurrence) &&
               ((!isCaldavEvent(occurrence) && !isPeerEvent(occurrence)) || canEditEvent(occurrence)),
           )
           .map((occurrence) => [occurrence.occurrenceKey, occurrence]),

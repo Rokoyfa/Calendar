@@ -52,6 +52,8 @@ export const calendars: Messages['calendars'] = {
     all: 'Tutti i calendari …',
     search: 'Cerca calendari',
     noMatch: 'Nessun calendario trovato.',
+    overlay: (name) => `Mostra ${name} nel calendario personale`,
+    overlayHint: 'I calendari selezionati compaiono anche nel tuo calendario personale.',
   },
   invitations: {
     title: 'Inviti',

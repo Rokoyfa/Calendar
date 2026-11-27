@@ -37,6 +37,7 @@ test('finds a common time from the busy time of team members', async ({ browser 
   const page = await openAs(browser, anna)
   await showView(page, 'Agenda')
   await page.locator('.agendaView .agendaItem', { hasText: 'Abstimmung' }).click()
+  await page.locator('.eventPeekOpen').click()
   const dialog = page.locator('dialog[open]')
   await dialog.getByRole('button', { name: 'Gemeinsame Zeit finden' }).click()
 

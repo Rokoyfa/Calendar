@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import type { PopoverAnchor } from '../../../components/AnchoredPopover.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useHost } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { nearestView } from '../../../domain/calendarView.ts'
 import type { CategoryFilter } from '../../../domain/category.ts'
 import {
+  createAllDayEventInput,
   createEventInput,
+  createEventInputForSlots,
   expandEvents,
   toDuplicateInput,
+  toOccurrenceInput,
   ZONE_SHIFT_DAYS,
   type CalendarEvent,
   type EventInput,
@@ -50,19 +54,26 @@ import { useEventActions } from '../hooks/useEventActions.ts'
 import { useEventNavigation } from '../hooks/useEventNavigation.ts'
 import { useLiveEvents } from '../hooks/useLiveEvents.ts'
 import { useNow } from '../hooks/useNow.ts'
+import { useSwipeNavigation } from '../hooks/useSwipeNavigation.ts'
+import { usePointerAnchor } from '../hooks/usePointerAnchor.ts'
 import { useOverlapChecks } from '../hooks/useOverlapChecks.ts'
 import { usePlanPreview } from '../hooks/usePlanPreview.ts'
 import { useUndo } from '../hooks/useUndo.ts'
 import type { EventSources } from '../types/eventSource.ts'
 import type { CalendarView, CalendarViewProps } from '../types/view.ts'
+import { isDraftEvent, toDraftEvent } from '../utils/draftEvent.ts'
 import { buildPrintDocument } from '../utils/print.ts'
 import { printDocument } from '../utils/printDocument.ts'
 import { AgendaView } from './AgendaView.tsx'
 import { CalendarEventEditor } from './CalendarEventEditor.tsx'
+import { CalendarEventPeek } from './CalendarEventPeek.tsx'
 import { CalendarHeader } from './CalendarHeader.tsx'
 import type { CalendarMenuItem } from './CalendarMenu.tsx'
 import { EventSearchModal } from './EventSearchModal.tsx'
 import { MonthView } from './MonthView.tsx'
+import { OnboardingTips } from './OnboardingTips.tsx'
+import { ShortcutHelp } from './ShortcutHelp.tsx'
+import { QuickCreate } from './QuickCreate.tsx'
 import { TimeGridView } from './TimeGridView.tsx'
 import { UndoNotice } from './UndoNotice.tsx'
 import { YearView } from './YearView.tsx'
@@ -90,6 +101,7 @@ type CalendarProps = {
   eventSources?: EventSources
   initialView?: CalendarView
   headerContext?: ReactNode
+  tips?: { scope: string; canSwitch: boolean }
   headerAccessory?: ReactNode
   menuItems?: readonly CalendarMenuItem[]
   currentUserEmail?: string | null
@@ -125,6 +137,7 @@ export function Calendar({
   eventSources = NO_EVENT_SOURCES,
   initialView,
   headerContext,
+  tips,
   headerAccessory,
   menuItems,
   currentUserEmail = null,
@@ -216,6 +229,19 @@ export function Calendar({
     openTask: taskEditor.openEdit,
   })
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null)
+  const [peek, setPeek] = useState<{ occurrence: EventOccurrence; anchor: PopoverAnchor } | null>(null)
+  const [quickDraft, setQuickDraft] = useState<{ input: EventInput; anchor: PopoverAnchor } | null>(null)
+  const draftEvent = useMemo(
+    () =>
+      quickDraft
+        ? toDraftEvent(
+            quickDraft.input,
+            targetCalendarId,
+            quickDraft.input.title || i18n.m.calendar.quickCreate.untitled,
+          )
+        : null,
+    [quickDraft, targetCalendarId, i18n],
+  )
   const { occurrences, draggableByKey, segmentsByDate } = useCalendarOccurrences({
     events,
     externalEvents,
@@ -224,11 +250,13 @@ export function Calendar({
     categories,
     filter: activeFilter,
     planPreview: planPreview.preview,
+    draft: draftEvent,
     dragPreview,
     canEditEvent,
   })
   const undo = useUndo(features.undo, attempt)
   const mainRef = useRef<HTMLElement>(null)
+  const pointerAnchor = usePointerAnchor(mainRef)
   const editor = useEventEditor({
     occurrences,
     canCreate,
@@ -247,6 +275,7 @@ export function Calendar({
   })
 
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false)
   const editorCalendarId = shownEditor
     ? (shownEditor.calendarId ?? shownEditor.occurrence?.calendarId ?? targetCalendarId)
     : null
@@ -366,6 +395,7 @@ export function Calendar({
           [VIEW_SHORTCUTS.agenda]: selectView('agenda'),
           [VIEW_SHORTCUTS.tasks]: selectView('tasks'),
           'mod+z': undo.offer ? () => void undo.run() : undefined,
+          '?': () => setIsShortcutHelpOpen(true),
         }
       : NO_SHORTCUTS,
   )
@@ -388,10 +418,17 @@ export function Calendar({
     refresh: invalidate,
   })
   useEventNavigation(mainRef)
+  useSwipeNavigation(mainRef, !definition.isFixed && !planPreview.preview, previous, next)
 
   const selectEvent = (occurrence: EventOccurrence) => {
-    if (!isPlanPreviewEvent(occurrence)) editor.openEdit(occurrence)
+    if (!isPlanPreviewEvent(occurrence) && !isDraftEvent(occurrence)) setPeek({ occurrence, anchor: pointerAnchor() })
   }
+  const startCreate = (input: EventInput) => {
+    if (!canCreate) return
+    if (isPeerCalendarId(targetCalendarId)) editor.openDraft(input)
+    else setQuickDraft({ input, anchor: pointerAnchor() })
+  }
+  const saveQuickDraft = (input: EventInput) => attempt(() => eventData.createEvent(input, targetCalendarId))
   const canCreateInView = canCreate && !planPreview.preview
 
   const ViewComponent = VIEW_COMPONENTS[view]
@@ -415,6 +452,11 @@ export function Calendar({
                 isFiltered={activeFilter !== null}
                 onCreate={canCreateInView && !isTaskView ? createNow : undefined}
                 context={headerContext}
+                jump={
+                  definition.isFixed
+                    ? undefined
+                    : { anchor, today, range: { from: dates[0], to: dates[dates.length - 1] }, onSelect: goToDate }
+                }
                 accessory={
                   planPreview.preview ? (
                     <TaskPlanPreviewActions
@@ -427,6 +469,7 @@ export function Calendar({
                   )
                 }
                 menuItems={menuItems}
+                onShortcuts={features.shortcuts ? () => setIsShortcutHelpOpen(true) : undefined}
               />
 
               {planPreview.preview && (
@@ -460,15 +503,63 @@ export function Calendar({
                     currentMinutes={now.getHours() * MINUTES_PER_HOUR + now.getMinutes()}
                     segmentsByDate={segmentsByDate}
                     canCreate={canCreateInView}
-                    onCreate={editor.openCreate}
-                    onCreateRange={editor.openCreateRange}
-                    onCreateAllDay={editor.openCreateAllDay}
+                    onCreate={(date, hour) => startCreate(createEventInput(date, hour, viewerTimeZone))}
+                    onCreateRange={({ first, last }) =>
+                      startCreate(createEventInputForSlots(first, last, viewerTimeZone))
+                    }
+                    onCreateAllDay={(date) => startCreate(createAllDayEventInput(date))}
                     onEventSelect={selectEvent}
                     onShowDay={(date) => showView('day', date)}
                     onShowMonth={(date) => showView('month', date)}
                   />
                 </main>
               </TasksProvider>
+
+              {peek && (
+                <CalendarEventPeek
+                  occurrence={peek.occurrence}
+                  anchor={peek.anchor}
+                  readOnly={readOnly}
+                  canCreate={canCreate}
+                  supportsMove={moveEvent !== undefined}
+                  canEditEvent={canEditEvent}
+                  canMoveEvent={canMoveEvent}
+                  onOpen={() => {
+                    setPeek(null)
+                    editor.openEdit(peek.occurrence)
+                  }}
+                  onDuplicate={() => {
+                    setPeek(null)
+                    duplicate(toOccurrenceInput(peek.occurrence))
+                  }}
+                  onDelete={() => {
+                    setPeek(null)
+                    void actions.requestDelete(peek.occurrence)
+                  }}
+                  onClose={() => setPeek(null)}
+                />
+              )}
+
+              {quickDraft && (
+                <QuickCreate
+                  draft={quickDraft.input}
+                  anchor={quickDraft.anchor}
+                  calendarName={
+                    calendarIds.length > 1
+                      ? (calendarNames.get(targetCalendarId) ?? eventSources.get(targetCalendarId)?.name)
+                      : undefined
+                  }
+                  onTitleChange={(title) =>
+                    setQuickDraft((current) => current && { ...current, input: { ...current.input, title } })
+                  }
+                  onSave={(title) => saveQuickDraft({ ...quickDraft.input, title })}
+                  onMore={(title) => {
+                    setQuickDraft(null)
+                    editor.openDraft({ ...quickDraft.input, title })
+                  }}
+                  onClose={() => setQuickDraft(null)}
+                />
+              )}
 
               {shownEditor && editorCalendarId && (
                 <CalendarEventEditor
@@ -515,6 +606,27 @@ export function Calendar({
                   value={activeFilter}
                   onChange={setCategoryFilter}
                   onClose={() => setIsFilterOpen(false)}
+                />
+              )}
+
+              {isShortcutHelpOpen && features.shortcuts && (
+                <ShortcutHelp
+                  views={views}
+                  canNavigate={!definition.isFixed}
+                  canCreate={canCreateHere}
+                  hasSearch={features.search}
+                  hasUndo={features.undo}
+                  onClose={() => setIsShortcutHelpOpen(false)}
+                />
+              )}
+
+              {tips && features.tips && !readOnly && (
+                <OnboardingTips
+                  scope={tips.scope}
+                  canCreate={canCreate}
+                  canSwitch={tips.canSwitch}
+                  hasShortcuts={features.shortcuts}
+                  hasTasks={hasTasks}
                 />
               )}
 
