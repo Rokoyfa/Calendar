@@ -24,6 +24,8 @@ export const ChevronLeftIcon = (props: IconProps) => <IconBase {...props} path="
 
 export const ChevronRightIcon = (props: IconProps) => <IconBase {...props} path="M9 18l6-6-6-6" />
 
+export const ChevronDownIcon = (props: IconProps) => <IconBase {...props} path="M6 9l6 6 6-6" />
+
 export const TeamIcon = (props: IconProps) => (
   <IconBase
     {...props}

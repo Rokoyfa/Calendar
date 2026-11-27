@@ -110,9 +110,15 @@ export const createTeamCalendar = async (owner: TestUser, name: string, members:
 
 export const showCalendar = async (page: Page, name: string) => {
   await page.locator('.accountButton').click()
-  await page.getByRole('button', { name: 'Kalender wechseln' }).click()
-  await page.locator('dialog[open]').getByText(name, { exact: true }).click()
-  await expect(page.locator('dialog[open]')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Kalender wechseln', exact: true }).click()
+  const dialog = page.locator('dialog[open]')
+  const card = dialog.locator('.calendarCardName').getByText(name, { exact: true })
+  for (const tab of await dialog.getByRole('tab').all()) {
+    if (await card.isVisible()) break
+    await tab.click()
+  }
+  await card.click()
+  await expect(dialog).toHaveCount(0)
 }
 
 export const showView = async (page: Page, view: 'Tag' | 'Woche' | 'Monat' | 'Jahr' | 'Agenda' | 'Aufgaben') => {

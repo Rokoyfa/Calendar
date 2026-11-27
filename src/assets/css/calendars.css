@@ -12,6 +12,10 @@
   letter-spacing: 0.04em;
 }
 
+.calendarSwitcher .tabPanel {
+  padding-top: var(--space-4);
+}
+
 .calendarCards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -386,6 +390,123 @@ button.stepContent:hover .stepLabel {
 .activeCalendarMeta {
   flex: none;
   color: var(--color-muted);
+}
+
+.activeCalendarButton {
+  cursor: pointer;
+  color: inherit;
+  transition: background-color var(--transition-fast);
+}
+
+.activeCalendarButton:hover,
+.activeCalendarButton:focus-visible {
+  background-color: color-mix(in srgb, var(--event-color, var(--color-accent)) 22%, var(--color-bg));
+}
+
+.activeCalendarChevron {
+  display: inline-flex;
+  flex: none;
+  color: var(--color-muted);
+}
+
+.quickSwitcher {
+  position: fixed;
+  inset: 64px auto auto var(--space-4);
+  width: 300px;
+  max-height: min(70vh, 480px);
+  margin: 0;
+  padding: var(--space-2);
+  border: none;
+  color: var(--color-text);
+}
+
+.quickSwitcher:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.quickSwitcherSearch {
+  margin: var(--space-1) var(--space-2);
+}
+
+.quickSwitcherList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.quickSwitcherGroup ul {
+  list-style: none;
+}
+
+.quickSwitcherGroupTitle {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.quickSwitcherItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  text-align: start;
+  text-decoration: none;
+}
+
+.quickSwitcherItem:hover,
+.quickSwitcherItem:focus-visible {
+  background-color: var(--color-surface-hover);
+}
+
+.quickSwitcherItem.active {
+  font-weight: 600;
+}
+
+.quickSwitcherName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quickSwitcherMeta {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quickSwitcherCheck {
+  display: inline-flex;
+  flex: none;
+  color: var(--color-accent);
+}
+
+.quickSwitcherFooter {
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-grid);
+}
+
+.quickSwitcherAction {
+  color: var(--color-accent);
+  font-weight: 600;
 }
 
 .memberRow {

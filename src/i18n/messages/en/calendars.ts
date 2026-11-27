@@ -38,13 +38,21 @@ export const calendars = {
     title: 'Switch calendar',
     personal: 'Personal',
     teams: 'Teams',
-    shared: 'Shared with you',
+    tabsLabel: 'Calendar types',
+    shared: 'Shared',
     active: 'Active',
     openInvitations: (count: number) =>
       count === 1 ? 'You have one open invitation.' : `You have ${count} open invitations.`,
     view: 'View',
     noTeams: 'You are not in a team yet. Create a calendar or join one through an invitation.',
     newCalendar: 'New calendar',
+    noShared: 'Nobody has shared their calendar with you yet.',
+  },
+  quickSwitcher: {
+    hint: ', Switch calendar',
+    all: 'All calendars …',
+    search: 'Search calendars',
+    noMatch: 'No calendar found.',
   },
   invitations: {
     title: 'Invitations',

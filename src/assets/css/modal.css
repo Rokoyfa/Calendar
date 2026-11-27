@@ -159,3 +159,7 @@
     transform: translateX(-100%);
   }
 }
+
+.modal .tabList {
+  background-color: var(--color-surface);
+}

@@ -26,6 +26,8 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - **Find a common time** in the event dialog (feature `freeBusy`): suggests free times in which the user and all attendees are free, from their busy time without any details, with duration, weekends and earlier or later suggestions. Busy time is only shared with team members and people the personal calendar is shared with, and everyone can turn it off under Settings › Connections › Availability. New endpoint `POST /free-busy` (tag "Free/busy")
 - Planning distribution **As late as possible**: fills the last free time before the due date, keeping all working time rules
 - Planned blocks keep 5 minutes to existing events; they go right next to an event only when the effort would not fit otherwise
+- **Switch calendar** sorts calendars into the tabs **Personal**, **Teams** and **Shared**, with counts; it opens on the tab of the active calendar
+- Quick switcher: a click on the calendar badge above the calendar lists all calendars by group, with keyboard navigation, a search from 8 calendars on and links to **All calendars …** and **New calendar**
 
 ### Changed
 

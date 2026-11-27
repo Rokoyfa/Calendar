@@ -62,11 +62,6 @@
   background-color: var(--color-surface-hover);
 }
 
-.eventForm .tabList,
-.taskForm .tabList {
-  background-color: var(--color-surface);
-}
-
 .modal:has(.eventForm),
 .modal:has(.taskForm) {
   width: min(620px, calc(100vw - 2 * var(--space-4)));

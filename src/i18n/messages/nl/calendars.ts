@@ -38,13 +38,21 @@ export const calendars: Messages['calendars'] = {
     title: 'Agenda wisselen',
     personal: 'Persoonlijk',
     teams: 'Teams',
-    shared: 'Gedeeld met jou',
+    tabsLabel: 'Soorten agenda’s',
+    shared: 'Gedeeld',
     active: 'Actief',
     openInvitations: (count) =>
       count === 1 ? 'Je hebt één openstaande uitnodiging.' : `Je hebt ${count} openstaande uitnodigingen.`,
     view: 'Bekijken',
     noTeams: 'Je zit nog niet in een team. Maak een agenda aan of word lid via een uitnodiging.',
     newCalendar: 'Nieuwe agenda',
+    noShared: 'Nog niemand heeft zijn agenda met je gedeeld.',
+  },
+  quickSwitcher: {
+    hint: ', Agenda wisselen',
+    all: 'Alle agenda’s …',
+    search: 'Agenda’s zoeken',
+    noMatch: 'Geen agenda gevonden.',
   },
   invitations: {
     title: 'Uitnodigingen',

@@ -38,13 +38,21 @@ export const calendars: Messages['calendars'] = {
     title: 'Changer de calendrier',
     personal: 'Personnel',
     teams: 'Équipes',
-    shared: 'Partagés avec vous',
+    tabsLabel: 'Types de calendriers',
+    shared: 'Partagés',
     active: 'Actif',
     openInvitations: (count) =>
       count === 1 ? 'Vous avez une invitation en attente.' : `Vous avez ${count} invitations en attente.`,
     view: 'Afficher',
     noTeams: 'Vous ne faites encore partie d’aucune équipe. Créez un calendrier ou rejoignez-en un via une invitation.',
     newCalendar: 'Nouveau calendrier',
+    noShared: 'Personne n’a encore partagé son calendrier avec vous.',
+  },
+  quickSwitcher: {
+    hint: ', Changer de calendrier',
+    all: 'Tous les calendriers …',
+    search: 'Rechercher des calendriers',
+    noMatch: 'Aucun calendrier trouvé.',
   },
   invitations: {
     title: 'Invitations',
