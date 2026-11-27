@@ -1,5 +1,5 @@
-import { newEventMeta, NO_SERIES_LINK, type CalendarEvent, type EventInput } from '../utils/event.ts'
-import type { Recurrence } from '../utils/recurrence.ts'
+import { newEventMeta, NO_SERIES_LINK, type CalendarEvent, type EventInput } from '../domain/event.ts'
+import type { Recurrence } from '../domain/recurrence.ts'
 
 export const recurrence = (overrides: Partial<Recurrence> = {}): Recurrence => ({
   frequency: 'daily',

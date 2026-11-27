@@ -13,7 +13,7 @@ import {
   isHolidayRegion,
   splitHolidayRegion,
   toHolidayRegion,
-} from '../../../utils/holidays.ts'
+} from '../../../domain/holidays.ts'
 import { usePreferences } from '../../preferences/index.ts'
 import { listHolidayCountries, listHolidayStates, type HolidayArea } from '../utils/holidayLibrary.ts'
 

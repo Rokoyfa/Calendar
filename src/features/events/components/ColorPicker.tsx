@@ -8,7 +8,7 @@ import {
   getEventColorLabel,
   PRESET_EVENT_COLORS,
   type EventColor,
-} from '../../../utils/event.ts'
+} from '../../../domain/event.ts'
 import { DEFAULT_CUSTOM_COLOR } from '../constants/colors.ts'
 import { useCustomColors } from '../hooks/useCustomColors.ts'
 

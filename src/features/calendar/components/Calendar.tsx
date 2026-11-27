@@ -1,102 +1,71 @@
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ComponentType,
-  type ReactNode,
-} from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useHost } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
-import type { CalendarController, CalendarState } from '../../../context/HostBridge.ts'
-import { nearestView } from '../../../utils/calendarView.ts'
-import { matchesCategoryFilter, type CategoryFilter } from '../../../utils/category.ts'
-import { isISODate, isTime } from '../../../utils/date.ts'
-import { useAttachmentRepository } from '../../attachments/index.ts'
-import { CategoryFilterModal, useCategories } from '../../categories/index.ts'
-import { useStorage } from '../../storage/index.ts'
-import { useI18n } from '../../../i18n/index.ts'
-import { useKeyboardShortcuts } from '../../../hooks/useKeyboardShortcuts.ts'
-import { addDaysToISODate, MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
+import { nearestView } from '../../../domain/calendarView.ts'
+import type { CategoryFilter } from '../../../domain/category.ts'
 import {
-  createAllDayEventInput,
   createEventInput,
   expandEvents,
   toDuplicateInput,
-  toViewerPeriod,
   ZONE_SHIFT_DAYS,
-  type EditScope,
   type CalendarEvent,
   type EventInput,
   type EventOccurrence,
-  type EventPeriod,
-} from '../../../utils/event.ts'
-import {
-  DeleteEventModal,
-  getScopeOptions,
-  RecurrenceScopeModal,
-  useEvents,
-  type CalendarChoice,
-  type SaveOptions,
-} from '../../events/index.ts'
+} from '../../../domain/event.ts'
+import { useActionError } from '../../../hooks/useActionError.ts'
+import { useKeyboardShortcuts } from '../../../hooks/useKeyboardShortcuts.ts'
+import { useI18n } from '../../../i18n/index.ts'
+import { addDaysToISODate, MINUTES_PER_HOUR, toISODate } from '../../../utils/date.ts'
+import { isCaldavCalendarId } from '../../caldav/index.ts'
+import { CategoryFilterModal, useCategories } from '../../categories/index.ts'
 import { ChatProvider, type ChatAccess } from '../../chat/index.ts'
-import { getChatKey } from '../../../utils/chat.ts'
-import { isExternalEvent } from '../../../utils/externalCalendar.ts'
-import { isCaldavCalendarId, isCaldavEvent } from '../../../utils/caldav.ts'
-import { isPeerCalendarId, isPeerEvent, shareIdOf } from '../../../utils/peerCalendar.ts'
-import { usePeerCalendars } from '../../peers/index.ts'
+import { DeleteEventModal, RecurrenceScopeModal, useEvents, type CalendarChoice } from '../../events/index.ts'
+import { useHolidays } from '../../holidays/index.ts'
+import { isPeerCalendarId } from '../../peers/index.ts'
+import { usePreferences } from '../../preferences/index.ts'
+import { useStorage } from '../../storage/index.ts'
 import {
   isPlanPreviewEvent,
   TaskPlanPreviewActions,
   TaskPlanPreviewBar,
   TasksProvider,
   TasksView,
-  toPlanPreviewEvents,
   useTaskEditor,
   type TaskAccess,
-  type TaskPlanPreview,
   type TaskSetup,
 } from '../../tasks/index.ts'
+import { VIEW_SHORTCUTS } from '../constants/views.ts'
 import { CurrentUserEmailContext } from '../context/CurrentUserContext.ts'
 import { DraggingEventContext } from '../context/DragContext.ts'
-import { useAttendeeCandidates, type AttendeeCandidateLoader } from '../hooks/useAttendeeCandidates.ts'
-import { EventSearchModal } from './EventSearchModal.tsx'
-import { HolidaysContext } from '../context/HolidaysContext.ts'
-import { useHolidays } from '../../holidays/index.ts'
-import { UndoNotice } from './UndoNotice.tsx'
-import { VIEW_SHORTCUTS } from '../constants/views.ts'
 import { EventSourcesContext, NO_EVENT_SOURCES } from '../context/EventSourcesContext.ts'
+import { HolidaysContext } from '../context/HolidaysContext.ts'
+import { useAttendeeCandidates, type AttendeeCandidateLoader } from '../hooks/useAttendeeCandidates.ts'
+import { useCalendarController } from '../hooks/useCalendarController.ts'
+import { useCalendarOccurrences } from '../hooks/useCalendarOccurrences.ts'
 import { useCalendarView } from '../hooks/useCalendarView.ts'
-import { useHostController } from '../hooks/useHostController.ts'
-import { useLiveEvents } from '../hooks/useLiveEvents.ts'
-import { useEventNavigation } from '../hooks/useEventNavigation.ts'
 import { useEventDrag, type DragPreview } from '../hooks/useEventDrag.ts'
-import { useNow } from '../hooks/useNow.ts'
-import type { EventSources } from '../types/eventSource.ts'
-import { toDropInput } from '../utils/eventDrag.ts'
-import { getSourceText } from '../utils/eventLabels.ts'
-import type { CalendarView, CalendarViewProps } from '../types/view.ts'
-import { groupSegmentsByDate } from '../utils/segmentEvents.ts'
-import { CalendarHeader } from './CalendarHeader.tsx'
-import type { CalendarMenuItem } from './CalendarMenu.tsx'
-import { MonthView } from './MonthView.tsx'
-import { TimeGridView } from './TimeGridView.tsx'
-import { YearView } from './YearView.tsx'
-import { AgendaView } from './AgendaView.tsx'
 import { useEventEditor, type OpenEventRequest } from '../hooks/useEventEditor.ts'
+import { useEventActions } from '../hooks/useEventActions.ts'
+import { useEventNavigation } from '../hooks/useEventNavigation.ts'
+import { useLiveEvents } from '../hooks/useLiveEvents.ts'
+import { useNow } from '../hooks/useNow.ts'
+import { useOverlapChecks } from '../hooks/useOverlapChecks.ts'
+import { usePlanPreview } from '../hooks/usePlanPreview.ts'
 import { useUndo } from '../hooks/useUndo.ts'
-import { useActionError } from '../../../hooks/useActionError.ts'
-import { getEditorAccess, withCurrentCalendar } from '../utils/editorAccess.ts'
-import { findOverlaps, overlapRange, type OverlapQuery } from '../../../utils/overlap.ts'
-import { toInstant } from '../../../utils/timeZone.ts'
-import type { PlanConflict } from '../../events/components/PlanConflictNotice.tsx'
-import { usePreferences } from '../../preferences/index.ts'
+import type { EventSources } from '../types/eventSource.ts'
+import type { CalendarView, CalendarViewProps } from '../types/view.ts'
 import { buildPrintDocument } from '../utils/print.ts'
 import { printDocument } from '../utils/printDocument.ts'
+import { AgendaView } from './AgendaView.tsx'
+import { CalendarEventEditor } from './CalendarEventEditor.tsx'
+import { CalendarHeader } from './CalendarHeader.tsx'
+import type { CalendarMenuItem } from './CalendarMenu.tsx'
+import { EventSearchModal } from './EventSearchModal.tsx'
+import { MonthView } from './MonthView.tsx'
+import { TimeGridView } from './TimeGridView.tsx'
+import { UndoNotice } from './UndoNotice.tsx'
+import { YearView } from './YearView.tsx'
 
 const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = {
   day: TimeGridView,
@@ -106,8 +75,6 @@ const VIEW_COMPONENTS: Record<CalendarView, ComponentType<CalendarViewProps>> = 
   agenda: AgendaView,
   tasks: TasksView,
 }
-
-const EventModal = lazy(async () => ({ default: (await import('../../events/components/EventModal.tsx')).EventModal }))
 
 type CalendarProps = {
   calendarIds: readonly string[]
@@ -134,12 +101,6 @@ type CalendarProps = {
   openEvent?: OpenEventRequest
   onOpenEventDone?: () => void
   tasks?: TaskSetup
-}
-
-type PendingDrop = {
-  occurrence: EventOccurrence
-  period: EventPeriod
-  options: EditScope[]
 }
 
 const NO_SHORTCUTS = {}
@@ -178,9 +139,7 @@ export function Calendar({
 }: CalendarProps) {
   const i18n = useI18n()
   const { features, views: hostViews, readOnly: hostReadOnly = false } = useHost()
-  const { invalidate, events: eventRepository, personalSharing, tasks: taskRepository } = useStorage()
-  const peers = usePeerCalendars()
-  const attachmentRepository = useAttachmentRepository()
+  const { invalidate, events: eventRepository, tasks: taskRepository } = useStorage()
   const readOnly = forcedReadOnly || hostReadOnly
   const canCreate = mayCreate && !readOnly
   const now = useNow()
@@ -223,13 +182,19 @@ export function Calendar({
   useEffect(() => {
     if (views.length > 0 && !views.includes(view)) setView(nearestView(view, views))
   }, [views, view, setView])
+  const showView = (wanted: CalendarView, date: string) => {
+    const target = nearestView(wanted, views)
+    if (target === wanted || target !== view) show(target, date)
+    else goToDate(date)
+  }
   const taskEditor = useTaskEditor()
   const isTaskView = view === 'tasks'
-  const { events, error, createEvent, updateEvent, deleteEvent, moveEvent, respond, setReminders } = useEvents({
+  const eventData = useEvents({
     ...range,
     calendarIds,
     targetCalendarId,
   })
+  const { events, error, moveEvent, respond, setReminders } = eventData
   const holidays = useHolidays(range)
   const viewerTimeZone = useViewerTimeZone()
   const categoryCalendarIds = useMemo(
@@ -240,59 +205,29 @@ export function Calendar({
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const activeFilter = hasCategories ? categoryFilter : null
-  const [planPreview, setPlanPreview] = useState<{
-    preview: TaskPlanPreview
-    view: CalendarView
-    date: string
-  } | null>(null)
-  const [isSavingPlan, setIsSavingPlan] = useState(false)
-  const filteredOccurrences = useMemo(() => {
-    const all = externalEvents.length > 0 ? [...events, ...externalEvents] : events
-    const expanded = expandEvents(all, range.from, range.to, viewerTimeZone)
-    if (activeFilter === null) return expanded
-    const known = new Set(categories.map((category) => category.id))
-    return expanded.filter(
-      (occurrence) =>
-        isExternalEvent(occurrence) ||
-        isCaldavEvent(occurrence) ||
-        isPeerEvent(occurrence) ||
-        matchesCategoryFilter(occurrence.categoryIds, known, activeFilter, occurrence.builtinCategories),
-    )
-  }, [events, externalEvents, range, viewerTimeZone, categories, activeFilter])
-  const occurrences = useMemo(() => {
-    if (!planPreview) return filteredOccurrences
-    const hidden = new Set(planPreview.preview.replacedIds)
-    const planned = expandEvents(toPlanPreviewEvents(planPreview.preview), range.from, range.to, viewerTimeZone)
-    return [...filteredOccurrences.filter((occurrence) => !hidden.has(occurrence.id)), ...planned]
-  }, [filteredOccurrences, planPreview, range, viewerTimeZone])
-  const draggableByKey = useMemo(
-    () =>
-      new Map(
-        occurrences
-          .filter(
-            (occurrence) =>
-              !isExternalEvent(occurrence) &&
-              !isPlanPreviewEvent(occurrence) &&
-              ((!isCaldavEvent(occurrence) && !isPeerEvent(occurrence)) || canEditEvent(occurrence)),
-          )
-          .map((occurrence) => [occurrence.occurrenceKey, occurrence]),
-      ),
-    [occurrences, canEditEvent],
-  )
-  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null)
-  const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
   const { error: actionError, setError: setActionError, attempt } = useActionError()
+  const planPreview = usePlanPreview({
+    view,
+    anchor,
+    show,
+    showView,
+    attempt,
+    clearError: () => setActionError(null),
+    openTask: taskEditor.openEdit,
+  })
+  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null)
+  const { occurrences, draggableByKey, segmentsByDate } = useCalendarOccurrences({
+    events,
+    externalEvents,
+    range,
+    viewerTimeZone,
+    categories,
+    filter: activeFilter,
+    planPreview: planPreview.preview,
+    dragPreview,
+    canEditEvent,
+  })
   const undo = useUndo(features.undo, attempt)
-  const segmentsByDate = useMemo(() => {
-    const shown = dragPreview
-      ? occurrences.map((occurrence) =>
-          occurrence.occurrenceKey === dragPreview.occurrenceKey
-            ? { ...occurrence, ...dragPreview.period }
-            : occurrence,
-        )
-      : occurrences
-    return groupSegmentsByDate(shown, range)
-  }, [occurrences, dragPreview, range])
   const mainRef = useRef<HTMLElement>(null)
   const editor = useEventEditor({
     occurrences,
@@ -311,12 +246,20 @@ export function Calendar({
     },
   })
 
-  const [eventToDelete, setEventToDelete] = useState<EventOccurrence | null>(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const editorCalendarId = shownEditor
     ? (shownEditor.calendarId ?? shownEditor.occurrence?.calendarId ?? targetCalendarId)
     : null
   const attendeeCandidates = useAttendeeCandidates(loadAttendeeCandidates, editorCalendarId)
+  const { checkOverlaps, checkPlanConflicts, planCalendarIds } = useOverlapChecks({
+    eventRepository,
+    calendarIds,
+    editorCalendarId,
+    externalEvents,
+    viewerTimeZone,
+    currentUserEmail,
+    planning: taskSetup?.planning,
+  })
 
   const createNow = () =>
     isTaskView ? taskEditor.openCreate() : editor.openCreate(view === 'day' ? anchor : today, now.getHours())
@@ -357,45 +300,6 @@ export function Calendar({
       }),
     )
 
-  const overlapCalendarId = editorCalendarId && isPeerCalendarId(editorCalendarId) ? editorCalendarId : null
-  const checkOverlaps = useCallback(
-    async (query: OverlapQuery) => {
-      const { from, to } = overlapRange(query)
-      if (overlapCalendarId) {
-        const busy = await eventRepository.list({ from, to, calendarIds: [overlapCalendarId] })
-        return findOverlaps(query, busy, viewerTimeZone, currentUserEmail)
-      }
-      const own = calendarIds.filter((id) => !isPeerCalendarId(id))
-      const found = await eventRepository.list({ from, to, calendarIds: own })
-      return findOverlaps(query, [...found, ...externalEvents], viewerTimeZone, currentUserEmail)
-    },
-    [eventRepository, calendarIds, overlapCalendarId, externalEvents, viewerTimeZone, currentUserEmail],
-  )
-
-  const planning = taskSetup?.planning
-  const planCalendarIds = useMemo(
-    () => (planning ? new Set([planning.calendarId, ...planning.busyCalendarIds]) : null),
-    [planning],
-  )
-  const checkPlanConflicts = useCallback(
-    async (query: OverlapQuery) => {
-      if (!planning) return []
-      const { from, to } = overlapRange(query)
-      const found = await eventRepository.list({ from, to, calendarIds: [planning.calendarId] })
-      const current = Date.now()
-      const conflicts = new Map<string, PlanConflict>()
-      for (const block of findOverlaps(
-        query,
-        found.filter((event) => event.taskId),
-        viewerTimeZone,
-        currentUserEmail,
-      ))
-        if (block.taskId && toInstant({ date: block.startDate, time: block.start }, viewerTimeZone) > current)
-          conflicts.set(block.taskId, { taskId: block.taskId, title: block.title })
-      return [...conflicts.values()]
-    },
-    [planning, eventRepository, viewerTimeZone, currentUserEmail],
-  )
   const { openEdit: openTaskEdit } = taskEditor
   const planningDistribution = usePreferences().preferences.planningDistribution
   const replanTask = useCallback(
@@ -423,80 +327,27 @@ export function Calendar({
   const duplicate = (input: EventInput) =>
     editor.duplicate(toDuplicateInput(input), i18n.m.events.duplicateNotice(input.title))
 
-  const removeEvent = async (occurrence: EventOccurrence, scope: EditScope) => {
-    const revert = await deleteEvent(occurrence, scope)
-    setEventToDelete(null)
-    closeEditor()
-    undo.offerUndo(i18n.m.calendar.undo.deleted(occurrence.title), revert)
-  }
-
-  const requestDelete = async (occurrence: EventOccurrence) => {
-    if (!features.undo || getScopeOptions(occurrence).length > 1) setEventToDelete(occurrence)
-    else await removeEvent(occurrence, 'all')
-  }
-
-  const uploadAttachments = async (eventId: string, files: readonly File[]) => {
-    if (!attachmentRepository || files.length === 0) return
-    const failed: string[] = []
-    for (const file of files) {
-      try {
-        await attachmentRepository.upload(eventId, file)
-      } catch {
-        failed.push(file.name)
-      }
-    }
-    invalidate()
-    if (failed.length > 0) setActionError(i18n.m.events.attachments.notUploaded(failed.join(', ')))
-  }
-
-  const handleSave = async (
-    input: EventInput,
-    scope: EditScope,
-    attachments: readonly File[],
-    options?: SaveOptions,
-  ) => {
-    const occurrence = shownEditor?.occurrence
-    const target = editorCalendarId ?? targetCalendarId
-    if (occurrence) {
-      await updateEvent(occurrence, input, scope, options)
-      if (moveEvent && target !== occurrence.calendarId) {
-        const moved = await moveEvent(occurrence, target, false)
-        undo.offerUndo(i18n.m.calendar.undo.moved(input.title), moved.undo)
-      }
-    } else await uploadAttachments((await createEvent(input, target)).id, attachments)
-    closeEditor()
-    goToDate(toViewerPeriod(input, input.timeZone, viewerTimeZone).startDate)
-  }
-
-  const saveDrop = async (occurrence: EventOccurrence, period: EventPeriod, scope: EditScope) => {
-    setPendingDrop(null)
-    await attempt(async () => {
-      const revert = await updateEvent(occurrence, toDropInput(occurrence, period, viewerTimeZone, scope), scope)
-      undo.offerUndo(i18n.m.calendar.undo.moved(occurrence.title), revert)
-    })
-    setDragPreview(null)
-  }
-
-  const handleDrop = (occurrence: EventOccurrence, period: EventPeriod) => {
-    setDragPreview({ occurrenceKey: occurrence.occurrenceKey, period })
-    const options = getScopeOptions(occurrence)
-    if (options.length > 1) setPendingDrop({ occurrence, period, options })
-    else void saveDrop(occurrence, period, options[0])
-  }
+  const actions = useEventActions({
+    events: eventData,
+    undo,
+    attempt,
+    setError: setActionError,
+    editedOccurrence: shownEditor?.occurrence,
+    targetCalendarId,
+    viewerTimeZone,
+    closeEditor,
+    goToDate,
+    setDragPreview,
+  })
 
   useEventDrag({
     containerRef: mainRef,
-    enabled: canCreate && !planPreview,
+    enabled: canCreate && !planPreview.preview,
     occurrences: draggableByKey,
     onPreview: setDragPreview,
-    onDrop: handleDrop,
+    onDrop: actions.drop,
   })
 
-  const showView = (wanted: CalendarView, date: string) => {
-    const target = nearestView(wanted, views)
-    if (target === wanted || target !== view) show(target, date)
-    else goToDate(date)
-  }
   const selectView = (wanted: CalendarView) => (views.includes(wanted) ? () => setView(wanted) : undefined)
 
   useKeyboardShortcuts(
@@ -519,149 +370,31 @@ export function Calendar({
       : NO_SHORTCUTS,
   )
 
-  const state = useMemo<CalendarState>(
-    () => ({ view, date: anchor, from: dates[0], to: dates[dates.length - 1] }),
-    [view, anchor, dates],
-  )
-  const controller: CalendarController = {
-    getState: () => state,
+  useCalendarController({
+    view,
+    views,
+    anchor,
+    dates,
+    today,
+    now,
+    viewerTimeZone,
+    canCreate,
+    editor,
+    setView,
     goToDate,
-    setView: (wanted) => {
-      if (!views.includes(wanted)) return false
-      setView(wanted)
-      return true
-    },
     next,
     previous,
-    today: goToToday,
-    openEvent: (eventId, date) => {
-      goToDate(date)
-      editor.openFromHost(eventId, date)
-    },
-    createEvent: (draft = {}) => {
-      if (!canCreate) return false
-      const startDate = isISODate(draft.startDate) ? draft.startDate : view === 'day' ? anchor : today
-      const base = draft.allDay
-        ? createAllDayEventInput(
-            startDate,
-            isISODate(draft.endDate) && draft.endDate >= startDate ? draft.endDate : startDate,
-          )
-        : createEventInput(startDate, now.getHours(), viewerTimeZone)
-      const times =
-        !draft.allDay && isTime(draft.start) && isTime(draft.end)
-          ? { start: draft.start, end: draft.end, endDate: isISODate(draft.endDate) ? draft.endDate : startDate }
-          : {}
-      editor.openDraft({
-        ...base,
-        ...times,
-        title: draft.title ?? '',
-        location: draft.location ?? '',
-        description: draft.description ?? '',
-      })
-      return true
-    },
+    goToToday,
     refresh: invalidate,
-  }
-  useHostController(controller, state)
+  })
   useEventNavigation(mainRef)
 
-  const startPlanPreview = (preview: TaskPlanPreview) => {
-    setActionError(null)
-    setPlanPreview({ preview, view, date: anchor })
-    showView('week', preview.blocks[0]?.date ?? anchor)
-  }
-  const endPlanPreview = () => {
-    if (!planPreview) return
-    setPlanPreview(null)
-    show(planPreview.view, planPreview.date)
-  }
-  const backToPlan = () => {
-    if (!planPreview) return
-    endPlanPreview()
-    taskEditor.openEdit(planPreview.preview.task, planPreview.preview.distribution)
-  }
-  const savePlanPreview = async () => {
-    if (!planPreview) return
-    setIsSavingPlan(true)
-    const saved = await attempt(planPreview.preview.save)
-    setIsSavingPlan(false)
-    if (saved) endPlanPreview()
-  }
   const selectEvent = (occurrence: EventOccurrence) => {
     if (!isPlanPreviewEvent(occurrence)) editor.openEdit(occurrence)
   }
-  const canCreateInView = canCreate && !planPreview
+  const canCreateInView = canCreate && !planPreview.preview
 
   const ViewComponent = VIEW_COMPONENTS[view]
-  const editorSource = shownEditor?.occurrence ? eventSources.get(shownEditor.occurrence.calendarId) : undefined
-  const editorOccurrence = shownEditor?.occurrence ?? null
-  const {
-    isExternal: editorIsExternal,
-    isCaldav: editorIsCaldav,
-    isPeer: editorIsPeer,
-    isLocked: editorIsLocked,
-    canChooseCalendar,
-  } = getEditorAccess({
-    occurrence: editorOccurrence,
-    readOnly,
-    canCreate,
-    supportsMove: moveEvent !== undefined,
-    canEditEvent,
-    canMoveEvent,
-  })
-  const calendarField =
-    shownEditor && canChooseCalendar && editorCalendarId
-      ? {
-          value: editorCalendarId,
-          options: withCurrentCalendar(
-            calendarChoices,
-            editorOccurrence,
-            editorOccurrence
-              ? (calendarNames.get(editorOccurrence.calendarId) ??
-                  eventSources.get(editorOccurrence.calendarId)?.name ??
-                  '')
-              : '',
-          ),
-          onChange: editor.setCalendarId,
-        }
-      : undefined
-  const peerShareId = editorCalendarId ? shareIdOf(editorCalendarId) : null
-  const peerOwner = peerShareId
-    ? (peers.calendars.find((calendar) => calendar.id === peerShareId)?.ownerName ?? '')
-    : undefined
-  const editorRequest = editorOccurrence?.request ?? null
-  const isOwnRequest = editorIsPeer && editorRequest?.mine === true
-  const isForeign = editorIsExternal || editorIsCaldav || editorIsPeer
-  const peerNotice =
-    peerOwner === undefined
-      ? undefined
-      : !editorOccurrence
-        ? i18n.m.peers.requestHint(peerOwner)
-        : isOwnRequest
-          ? editorRequest?.status === 'pending'
-            ? i18n.m.peers.requestPending(peerOwner)
-            : i18n.m.peers.requestAccepted(peerOwner)
-          : i18n.m.peers.eventNotice(peerOwner)
-  const decision =
-    personalSharing && editorOccurrence && !editorIsPeer && editorRequest?.status === 'pending' && !readOnly
-      ? {
-          requester: editorRequest.requester?.name ?? null,
-          onAccept: async () => {
-            await personalSharing.acceptRequest(editorOccurrence.id)
-            closeEditor()
-            invalidate()
-          },
-          onDecline: async () => {
-            await personalSharing.declineRequest(editorOccurrence.id)
-            closeEditor()
-            invalidate()
-          },
-        }
-      : undefined
-  const requesterNotice =
-    !editorIsPeer && editorRequest?.status === 'accepted' && editorRequest.requester
-      ? i18n.m.peers.decision.acceptedBy(editorRequest.requester.name)
-      : undefined
 
   return (
     <HolidaysContext value={holidays}>
@@ -683,11 +416,11 @@ export function Calendar({
                 onCreate={canCreateInView && !isTaskView ? createNow : undefined}
                 context={headerContext}
                 accessory={
-                  planPreview ? (
+                  planPreview.preview ? (
                     <TaskPlanPreviewActions
-                      isSaving={isSavingPlan}
-                      onSave={() => void savePlanPreview()}
-                      onCancel={endPlanPreview}
+                      isSaving={planPreview.isSaving}
+                      onSave={() => void planPreview.save()}
+                      onCancel={planPreview.end}
                     />
                   ) : (
                     headerAccessory
@@ -696,8 +429,12 @@ export function Calendar({
                 menuItems={menuItems}
               />
 
-              {planPreview && (
-                <TaskPlanPreviewBar preview={planPreview.preview} isSaving={isSavingPlan} onBack={backToPlan} />
+              {planPreview.preview && (
+                <TaskPlanPreviewBar
+                  preview={planPreview.preview}
+                  isSaving={planPreview.isSaving}
+                  onBack={planPreview.back}
+                />
               )}
               <ErrorMessage message={error} className="textCenter" />
               <ErrorMessage message={actionError} className="textCenter" />
@@ -711,7 +448,7 @@ export function Calendar({
                 includeList={isTaskView}
                 editor={taskEditor}
                 onSwitchToEvent={canCreate ? switchToEvent : undefined}
-                onPlanPreview={views.includes('week') || views.includes('day') ? startPlanPreview : undefined}
+                onPlanPreview={views.includes('week') || views.includes('day') ? planPreview.start : undefined}
                 onUnsupported={markTasksUnsupported}
                 onError={setActionError}
               >
@@ -733,119 +470,42 @@ export function Calendar({
                 </main>
               </TasksProvider>
 
-              {shownEditor && (
-                <Suspense fallback={null}>
-                  <EventModal
-                    readOnly={readOnly || editorIsExternal || editorIsLocked}
-                    showAttachments={!isForeign}
-                    history={
-                      features.history &&
-                      shownEditor.occurrence &&
-                      !isForeign &&
-                      isHistoryAvailable(shownEditor.occurrence.calendarId)
-                        ? { eventId: shownEditor.occurrence.id, calendarNames }
-                        : undefined
-                    }
-                    canEditAttachments={!readOnly && (!shownEditor.occurrence || canEditEvent(shownEditor.occurrence))}
-                    categories={categories.filter((category) => category.calendarId === editorCalendarId)}
-                    onCreateCategory={
-                      hasCategories && editorCalendarId && canManageCategories(editorCalendarId)
-                        ? (name) => createCategory(editorCalendarId, name)
-                        : undefined
-                    }
-                    key={shownEditor.occurrence?.occurrenceKey ?? 'new'}
-                    calendarField={calendarField}
-                    checkOverlaps={
-                      features.overlapWarnings && !readOnly && !editorIsExternal && !editorIsLocked
-                        ? checkOverlaps
-                        : undefined
-                    }
-                    planConflicts={
-                      planCalendarIds &&
-                      editorCalendarId &&
-                      planCalendarIds.has(editorCalendarId) &&
-                      !readOnly &&
-                      !editorIsExternal &&
-                      !editorIsLocked
-                        ? { check: checkPlanConflicts, onReplan: (taskId) => void replanTask(taskId) }
-                        : undefined
-                    }
-                    initialValue={shownEditor.initialValue}
-                    occurrence={shownEditor.occurrence}
-                    attendeeOptions={
-                      features.attendees
-                        ? {
-                            candidates: attendeeCandidates,
-                            ownEmail: currentUserEmail,
-                            onRespond:
-                              respond && shownEditor.occurrence && !editorIsExternal && !editorIsPeer
-                                ? (status) => respond(shownEditor.occurrence!, status)
-                                : undefined,
-                          }
-                        : undefined
-                    }
-                    requestTo={peerOwner}
-                    showVisibility={
-                      features.personalSharing &&
-                      Boolean(personalSharing) &&
-                      editorCalendarId !== null &&
-                      canSetVisibility(editorCalendarId)
-                    }
-                    decision={decision}
-                    onSwitchToTask={
-                      canCreateTasks &&
-                      !shownEditor.occurrence &&
-                      !editorIsPeer &&
-                      !isCaldavCalendarId(editorCalendarId ?? '')
-                        ? switchToTask
-                        : undefined
-                    }
-                    notice={
-                      shownEditor.notice ??
-                      peerNotice ??
-                      requesterNotice ??
-                      (editorIsExternal && editorSource
-                        ? i18n.m.external.eventNotice(editorSource.name)
-                        : editorIsCaldav && editorSource
-                          ? i18n.m.caldav.eventNotice(editorSource.name)
-                          : editorSource && i18n.m.calendar.sharedEventNotice(getSourceText(editorSource, i18n)))
-                    }
-                    onSave={handleSave}
-                    remoteChange={editor.remoteState}
-                    onReload={() => {
-                      closeEditor()
-                      invalidate()
-                    }}
-                    onDelete={
-                      shownEditor.occurrence && !editorIsExternal && (!editorIsPeer || isOwnRequest)
-                        ? () => requestDelete(shownEditor.occurrence!)
-                        : undefined
-                    }
-                    chat={
-                      shownEditor.occurrence &&
-                      !editorIsExternal &&
-                      chat?.isAvailable(shownEditor.occurrence.calendarId)
-                        ? {
-                            key: getChatKey(shownEditor.occurrence),
-                            calendarId: shownEditor.occurrence.calendarId,
-                          }
-                        : undefined
-                    }
-                    initialTab={shownEditor.initialTab}
-                    onDuplicate={
-                      features.duplicate && shownEditor.occurrence && canCreate && !editorIsPeer ? duplicate : undefined
-                    }
-                    onRemindersChange={
-                      setReminders && shownEditor.occurrence && !editorIsExternal && !editorIsPeer
-                        ? async (reminders) => {
-                            await setReminders(shownEditor.occurrence!, reminders)
-                            closeEditor()
-                          }
-                        : undefined
-                    }
-                    onClose={closeEditor}
-                  />
-                </Suspense>
+              {shownEditor && editorCalendarId && (
+                <CalendarEventEditor
+                  key={shownEditor.occurrence?.occurrenceKey ?? 'new'}
+                  editor={editor}
+                  shown={shownEditor}
+                  calendarId={editorCalendarId}
+                  readOnly={readOnly}
+                  canCreate={canCreate}
+                  supportsMove={moveEvent !== undefined}
+                  canEditEvent={canEditEvent}
+                  canMoveEvent={canMoveEvent}
+                  calendarChoices={calendarChoices}
+                  calendarNames={calendarNames}
+                  eventSources={eventSources}
+                  categories={categories}
+                  hasCategories={hasCategories}
+                  canManageCategories={canManageCategories}
+                  createCategory={createCategory}
+                  checkOverlaps={checkOverlaps}
+                  planConflicts={{
+                    calendarIds: planCalendarIds,
+                    check: checkPlanConflicts,
+                    onReplan: (taskId) => void replanTask(taskId),
+                  }}
+                  attendeeCandidates={attendeeCandidates}
+                  currentUserEmail={currentUserEmail}
+                  respond={respond}
+                  setReminders={setReminders}
+                  canSetVisibility={canSetVisibility}
+                  isHistoryAvailable={isHistoryAvailable}
+                  chat={chat}
+                  onSwitchToTask={canCreateTasks ? switchToTask : undefined}
+                  onSave={(...args) => actions.save(editorCalendarId, ...args)}
+                  onDelete={actions.requestDelete}
+                  onDuplicate={duplicate}
+                />
               )}
 
               {isFilterOpen && (
@@ -867,22 +527,22 @@ export function Calendar({
                 />
               )}
 
-              {pendingDrop && (
+              {actions.pendingDrop && (
                 <RecurrenceScopeModal
-                  options={pendingDrop.options}
-                  onSelect={(scope) => void saveDrop(pendingDrop.occurrence, pendingDrop.period, scope)}
-                  onClose={() => {
-                    setPendingDrop(null)
-                    setDragPreview(null)
+                  options={actions.pendingDrop.options}
+                  onSelect={(scope) => {
+                    const { occurrence, period } = actions.pendingDrop!
+                    void actions.saveDrop(occurrence, period, scope)
                   }}
+                  onClose={actions.cancelDrop}
                 />
               )}
 
-              {eventToDelete && (
+              {actions.eventToDelete && (
                 <DeleteEventModal
-                  occurrence={eventToDelete}
-                  onConfirm={(scope) => removeEvent(eventToDelete, scope)}
-                  onClose={() => setEventToDelete(null)}
+                  occurrence={actions.eventToDelete}
+                  onConfirm={(scope) => actions.removeEvent(actions.eventToDelete!, scope)}
+                  onClose={actions.cancelDelete}
                   movesToTrash={features.trash && Boolean(eventRepository.restore)}
                 />
               )}

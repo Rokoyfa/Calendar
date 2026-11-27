@@ -3,7 +3,7 @@ import { useFeatures } from '../../../context/HostContext.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { AppError } from '../../../utils/appError.ts'
-import { sortCategories, type Category } from '../../../utils/category.ts'
+import { sortCategories, type Category } from '../../../domain/category.ts'
 import { useStorage } from '../../storage/index.ts'
 import { removeById, replaceById } from '../../../utils/list.ts'
 

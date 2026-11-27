@@ -1,7 +1,7 @@
 import { useMemo, useRef, type CSSProperties } from 'react'
 import { useI18n } from '../../../i18n/index.ts'
 import { classNames } from '../../../utils/classNames.ts'
-import { createEventInputForSlots, formatEventPeriod } from '../../../utils/event.ts'
+import { createEventInputForSlots, formatEventPeriod } from '../../../domain/event.ts'
 import { useSlotSelection } from '../hooks/useSlotSelection.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import type { CalendarViewProps } from '../types/view.ts'

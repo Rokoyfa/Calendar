@@ -1,5 +1,5 @@
 import type { UserTokenProvider } from '../features/authorization/index.ts'
-import type { HolidaySource } from '../lib/defaults.ts'
+import type { HolidaySource } from '../config/defaults.ts'
 import { restDataSource } from './restDataSource.ts'
 import type { CalendarDataSource } from './types.ts'
 

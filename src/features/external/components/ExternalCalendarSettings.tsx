@@ -6,7 +6,7 @@ import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useForm } from '../../../hooks/useForm.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { isErrorCode } from '../../../utils/appError.ts'
-import { getEventColorAttributes, type EventColor } from '../../../utils/event.ts'
+import { getEventColorAttributes, type EventColor } from '../../../domain/event.ts'
 import {
   EXTERNAL_CALENDAR_NAME_MAX_LENGTH,
   EXTERNAL_CALENDAR_URL_MAX_LENGTH,
@@ -14,7 +14,7 @@ import {
   MAX_EXTERNAL_CALENDARS,
   normalizeCalendarUrl,
   type ExternalCalendar,
-} from '../../../utils/externalCalendar.ts'
+} from '../utils/externalCalendar.ts'
 import { formatTimestamp } from '../../../utils/timestamp.ts'
 import { ColorPicker, NameColorForm } from '../../events/index.ts'
 import { useExternalCalendars } from '../hooks/useExternalCalendars.ts'

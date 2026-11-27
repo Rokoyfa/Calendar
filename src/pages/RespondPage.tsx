@@ -12,7 +12,7 @@ import { useAsyncResource } from '../hooks/useAsyncResource.ts'
 import { useLocationUrl } from '../hooks/useLocationUrl.ts'
 import { useI18n } from '../i18n/index.ts'
 import { isOneOf } from '../utils/object.ts'
-import { formatEventPeriod, toViewerPeriod, type EventReply, type EventResponse } from '../utils/event.ts'
+import { formatEventPeriod, toViewerPeriod, type EventReply, type EventResponse } from '../domain/event.ts'
 
 const REPLIES = ['accepted', 'tentative', 'declined'] as const satisfies readonly EventReply[]
 const STATUS_PARAM = 'status'

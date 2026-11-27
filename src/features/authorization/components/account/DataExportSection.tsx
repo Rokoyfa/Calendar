@@ -4,7 +4,7 @@ import { ErrorMessage } from '../../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../../hooks/useAsyncAction.ts'
 import { useI18n } from '../../../../i18n/index.ts'
 import { saveBlob } from '../../../../utils/download.ts'
-import { collectLocalData, exportFileName, toJsonBlob } from '../../../../utils/dataExport.ts'
+import { collectLocalData, exportFileName, toJsonBlob } from '../../utils/dataExport.ts'
 import { toISODate } from '../../../../utils/date.ts'
 import { useAuth } from '../../hooks/useAuth.ts'
 

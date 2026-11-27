@@ -1,4 +1,4 @@
-import type { EditScope } from '../../../utils/event.ts'
+import type { EditScope } from '../../../domain/event.ts'
 import { Button } from '../../../components/Button.tsx'
 import { useI18n } from '../../../i18n/index.ts'
 

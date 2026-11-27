@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { PeerCalendar, PeerCalendarChanges } from '../../../utils/peerCalendar.ts'
+import type { PeerCalendar, PeerCalendarChanges } from '../utils/peerCalendar.ts'
 
 export type PeerCalendarsContextValue = {
   isAvailable: boolean

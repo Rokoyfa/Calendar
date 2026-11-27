@@ -1,4 +1,4 @@
-import { parseEventResponse, type EventReply } from '../../../utils/event.ts'
+import { parseEventResponse, type EventReply } from '../../../domain/event.ts'
 import { isApiError } from '../../../utils/apiError.ts'
 import { AppError } from '../../../utils/appError.ts'
 import type { ApiClient } from '../../../utils/api.ts'

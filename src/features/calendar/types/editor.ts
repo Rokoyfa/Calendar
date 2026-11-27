@@ -1,4 +1,4 @@
-import type { EventInput, EventOccurrence } from '../../../utils/event.ts'
+import type { EventInput, EventOccurrence } from '../../../domain/event.ts'
 import type { EventTab } from '../../events/index.ts'
 
 export type EditorState = {

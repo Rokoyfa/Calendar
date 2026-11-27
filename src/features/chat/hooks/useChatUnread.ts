@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getChatId, type ChatKey } from '../../../utils/chat.ts'
+import { getChatId, type ChatKey } from '../utils/chat.ts'
 import type { ChatRepository } from '../../storage/index.ts'
 
 const NO_UNREAD: ReadonlyMap<string, number> = new Map()

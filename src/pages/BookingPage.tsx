@@ -25,9 +25,9 @@ import {
   toBookingSlots,
   type BookingSlot,
   type PublicBookingPage,
-} from '../utils/booking.ts'
+} from '../features/bookings/index.ts'
 import { addDaysToISODate, DAYS_PER_WEEK, fromISODate, startOfWeekISO, timeToMinutes } from '../utils/date.ts'
-import { getEventColorAttributes } from '../utils/event.ts'
+import { getEventColorAttributes } from '../domain/event.ts'
 import { formatTimeZoneLabel, fromInstant } from '../utils/timeZone.ts'
 import { normalizeEmail, validateEmail } from '../utils/validation.ts'
 

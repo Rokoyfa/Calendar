@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
-import type { CalendarEvent } from '../../../utils/event.ts'
+import type { CalendarEvent } from '../../../domain/event.ts'
 import {
   type ExternalCalendar,
   type ExternalCalendarChanges,
   type ExternalCalendarInput,
-} from '../../../utils/externalCalendar.ts'
+} from '../utils/externalCalendar.ts'
 import { useAuth } from '../../authorization/index.ts'
 import { useStorage } from '../../storage/index.ts'
 import {
@@ -16,7 +16,7 @@ import {
 } from './ExternalCalendarsContext.ts'
 import { removeById, replaceById } from '../../../utils/list.ts'
 
-type Converter = typeof import('../../../utils/externalEvents.ts').toExternalEvents
+type Converter = typeof import('../utils/externalEvents.ts').toExternalEvents
 
 const REFRESH_MS = 15 * 60_000
 const NO_CALENDARS: ExternalCalendar[] = []
@@ -76,7 +76,7 @@ function ActiveProvider({ repository, children }: ActiveProviderProps) {
   useEffect(() => {
     if (!needsConverter || convert) return
     let cancelled = false
-    void import('../../../utils/externalEvents.ts').then(({ toExternalEvents }) => {
+    void import('../utils/externalEvents.ts').then(({ toExternalEvents }) => {
       if (!cancelled) setConvert(() => toExternalEvents)
     })
     return () => {

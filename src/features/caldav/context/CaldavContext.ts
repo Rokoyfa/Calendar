@@ -5,7 +5,7 @@ import type {
   CaldavAccountInput,
   CaldavCalendar,
   CaldavCalendarChanges,
-} from '../../../utils/caldav.ts'
+} from '../utils/caldav.ts'
 
 export type CaldavCalendarEntry = CaldavCalendar & { accountId: string; accountName: string }
 

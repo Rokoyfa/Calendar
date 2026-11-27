@@ -13,7 +13,7 @@ import {
   normalizeCategoryName,
   type BuiltinCategory,
   type Category,
-} from '../../../utils/category.ts'
+} from '../../../domain/category.ts'
 
 type CategoryFieldProps = {
   categories: readonly Category[]
@@ -24,14 +24,7 @@ type CategoryFieldProps = {
   onCreate?: (name: string) => Promise<Category>
 }
 
-export function CategoryField({
-  categories,
-  value,
-  builtin,
-  onChange,
-  onBuiltinChange,
-  onCreate,
-}: CategoryFieldProps) {
+export function CategoryField({ categories, value, builtin, onChange, onBuiltinChange, onCreate }: CategoryFieldProps) {
   const { m } = useI18n()
   const text = m.events.categories
   const [draft, setDraft] = useState<string | null>(null)

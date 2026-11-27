@@ -1,51 +1,32 @@
-import { useCallback, useEffect, useMemo } from 'react'
-import { useSearchParams } from 'react-router'
-import { BookingIcon, SettingsIcon, ShareIcon, SwapIcon, TeamIcon, TrashIcon } from '../components/Icons.tsx'
-import { calendarSettingsPath, ROUTES } from '../config/routes.ts'
+import { useCallback, useMemo } from 'react'
 import { AccountMenu, EmailVerificationBanner, useAuth } from '../features/authorization/index.ts'
-import { Calendar, type CalendarMenuItem, type OpenEventRequest } from '../features/calendar/index.ts'
-import { compact } from '../utils/list.ts'
+import { Calendar } from '../features/calendar/index.ts'
 import type { ChatAccess } from '../features/chat/index.ts'
-import { isISODate } from '../utils/date.ts'
 import {
   ActiveCalendarIndicator,
-  type CalendarSummary,
   CalendarSwitcher,
-  canDeleteEntry,
-  canEditEntry,
   canManageCategories,
   getDistinctTeamName,
   getSharedCalendars,
   hasPermission,
   isPersonalCalendar,
   useCalendars,
-  useCalendarSettingsTabs,
 } from '../features/calendars/index.ts'
-import type { CalendarEvent } from '../utils/event.ts'
 import { usePreferences } from '../features/preferences/index.ts'
 import { LocalImportPrompt } from '../features/storage/index.ts'
 import { useI18n } from '../i18n/index.ts'
 import { useHost } from '../context/HostContext.ts'
 import { useRootElement } from '../context/RootElementContext.ts'
-import { nearestView } from '../utils/calendarView.ts'
-import { getStartView, isCompactWidth } from '../utils/preferences.ts'
-import { useExternalCalendars } from '../features/external/index.ts'
-import { externalCalendarId, isExternalEvent } from '../utils/externalCalendar.ts'
+import { nearestView } from '../domain/calendarView.ts'
+import { getStartView, isCompactWidth } from '../domain/preferences.ts'
+import { useExternalCalendars, externalCalendarId } from '../features/external/index.ts'
 import { NotificationBell } from '../features/notifications/index.ts'
-import { useCaldav } from '../features/caldav/index.ts'
-import { caldavCalendarId, isCaldavEvent } from '../utils/caldav.ts'
-import { usePeerCalendars } from '../features/peers/index.ts'
-import { isOwnPendingRequest, isPeerEvent, peerCalendarId } from '../utils/peerCalendar.ts'
-import type { TaskAccess, TaskPlanningSetup, TaskSetup } from '../features/tasks/index.ts'
-
-const LINK_PARAMS = {
-  calendar: 'calendar',
-  event: 'event',
-  date: 'date',
-  tab: 'tab',
-  task: 'task',
-  plan: 'plan',
-} as const
+import { useCaldav, caldavCalendarId } from '../features/caldav/index.ts'
+import { usePeerCalendars, peerCalendarId } from '../features/peers/index.ts'
+import { useCalendarLink } from './calendar/useCalendarLink.ts'
+import { useCalendarMenu } from './calendar/useCalendarMenu.tsx'
+import { useEventPermissions } from './calendar/useEventPermissions.ts'
+import { useTaskSetup } from './calendar/useTaskSetup.ts'
 
 export function CalendarPage() {
   const root = useRootElement()
@@ -57,104 +38,9 @@ export function CalendarPage() {
   const { calendars, activeCalendar, activeId, visibleCalendarIds, repository, selectCalendar } = useCalendars()
   const peers = usePeerCalendars()
   const activePeer = peers.calendars.find(({ id }) => peerCalendarId(id) === activeId) ?? null
-  const settingsTabs = useCalendarSettingsTabs(activeCalendar)
   const canOpenSettings = !(enabled && method === 'password' && !user)
-  const menuItems = (() => {
-    if (!canOpenSettings) return []
-    if (activePeer)
-      return compact<CalendarMenuItem>([
-        !hasAccountMenu && {
-          key: 'settings',
-          label: m.common.settings,
-          icon: <SettingsIcon size={18} />,
-          to: ROUTES.settings,
-        },
-      ])
-    const path = calendarSettingsPath(activeCalendar.id)
-    const tab = (name: string) => `${path}?tab=${name}`
-    const { tabs } = m.calendars.settings
-    const group = m.calendar.menu.calendarGroup(activeCalendar.name)
-    return compact<CalendarMenuItem>([
-      !hasAccountMenu && {
-        key: 'settings',
-        label: m.common.settings,
-        icon: <SettingsIcon size={18} />,
-        to: ROUTES.settings,
-      },
-      {
-        key: 'calendarSettings',
-        group,
-        label: m.calendar.menu.calendarSettings,
-        icon: <SettingsIcon size={18} />,
-        to: path,
-      },
-      settingsTabs.members && {
-        key: 'members',
-        group,
-        label: tabs.members,
-        icon: <TeamIcon size={18} />,
-        to: tab('members'),
-      },
-      settingsTabs.sharing && {
-        key: 'sharing',
-        group,
-        label: tabs.sharing,
-        icon: <ShareIcon size={18} />,
-        to: tab('sharing'),
-      },
-      settingsTabs.booking && {
-        key: 'booking',
-        group,
-        label: tabs.booking,
-        icon: <BookingIcon size={18} />,
-        to: tab('booking'),
-      },
-      settingsTabs.exchange && {
-        key: 'exchange',
-        group,
-        label: tabs.exchange,
-        icon: <SwapIcon size={18} />,
-        to: tab('exchange'),
-      },
-      settingsTabs.trash && { key: 'trash', group, label: tabs.trash, icon: <TrashIcon size={18} />, to: tab('trash') },
-    ])
-  })()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const linkedCalendarId = searchParams.get(LINK_PARAMS.calendar)
-  const linkedEventId = searchParams.get(LINK_PARAMS.event)
-  const linkedDate = searchParams.get(LINK_PARAMS.date)
-  const linkedTab = searchParams.get(LINK_PARAMS.tab)
-  const linkedTaskId = searchParams.get(LINK_PARAMS.task)
-  const linkedPlan = searchParams.get(LINK_PARAMS.plan) === '1'
-  const openEvent = useMemo<OpenEventRequest | undefined>(
-    () =>
-      linkedEventId && isISODate(linkedDate)
-        ? {
-            eventId: linkedEventId,
-            date: linkedDate,
-            tab: linkedTab === 'chat' && host.features.chat ? 'chat' : undefined,
-          }
-        : undefined,
-    [linkedEventId, linkedDate, linkedTab, host.features.chat],
-  )
-  const linkedCalendarExists = calendars.some((calendar) => calendar.id === linkedCalendarId)
-
-  useEffect(() => {
-    if (linkedCalendarId && linkedCalendarExists) selectCalendar(linkedCalendarId)
-  }, [linkedCalendarId, linkedCalendarExists, selectCalendar])
-
-  const clearLink = useCallback(
-    () =>
-      setSearchParams(
-        (current) => {
-          const next = new URLSearchParams(current)
-          for (const param of Object.values(LINK_PARAMS)) next.delete(param)
-          return next
-        },
-        { replace: true },
-      ),
-    [setSearchParams],
-  )
+  const menuItems = useCalendarMenu({ activeCalendar, isPeer: activePeer !== null, canOpenSettings, hasAccountMenu })
+  const link = useCalendarLink(calendars, selectCalendar)
 
   const calendarById = useMemo(() => new Map(calendars.map((calendar) => [calendar.id, calendar])), [calendars])
   const isTeamCalendar = useCallback(
@@ -220,24 +106,10 @@ export function CalendarPage() {
   const initialView =
     host.initialView ?? nearestView(getStartView(preferences, isCompactWidth(root.clientWidth)), host.views)
 
-  const eventAccess = useCallback(
-    (event: CalendarEvent, check: (calendar: CalendarSummary) => boolean, unknownCalendar: boolean) => {
-      if (isExternalEvent(event)) return false
-      if (isPeerEvent(event)) return isOwnPendingRequest(event)
-      if (isCaldavEvent(event)) return caldavById.get(event.calendarId)?.readOnly === false
-      const calendar = calendarById.get(event.calendarId)
-      return calendar ? check(calendar) : unknownCalendar
-    },
-    [calendarById, caldavById],
-  )
-  const mayEditEvent = useCallback(
-    (event: CalendarEvent) => eventAccess(event, (calendar) => canEditEntry(calendar, event.createdBy, userId), true),
-    [eventAccess, userId],
-  )
-  const mayMoveEvent = useCallback(
-    (event: CalendarEvent) =>
-      eventAccess(event, (calendar) => canDeleteEntry(calendar, event.createdBy, userId), false),
-    [eventAccess, userId],
+  const { canEditEvent: mayEditEvent, canMoveEvent: mayMoveEvent } = useEventPermissions(
+    calendarById,
+    caldavById,
+    userId,
   )
   const mayManageCategories = useCallback(
     (calendarId: string) => {
@@ -277,74 +149,24 @@ export function CalendarPage() {
     [calendarById],
   )
 
-  const taskAccess = useMemo<TaskAccess>(() => {
-    const check = (calendarId: string, allowed: (calendar: CalendarSummary) => boolean) => {
-      const calendar = calendarById.get(calendarId)
-      return calendar !== undefined && allowed(calendar)
-    }
-    const canEdit: TaskAccess['canEdit'] = (task) =>
-      check(task.calendarId, (calendar) => canEditEntry(calendar, task.createdBy, userId))
-    return {
-      canCreateIn: (calendarId) => check(calendarId, (calendar) => hasPermission(calendar, 'create_entry')),
-      canEdit,
-      canProgress: (task) =>
-        canEdit(task) || (userId !== null && task.assignee?.id === userId && calendarById.has(task.calendarId)),
-      canDelete: (task) => check(task.calendarId, (calendar) => canDeleteEntry(calendar, task.createdBy, userId)),
-    }
-  }, [calendarById, userId])
-  const loadAssignees = useMemo(() => {
-    if (!user || !host.features.teams) return undefined
-    return async (calendarId: string) => {
-      const calendar = calendarById.get(calendarId)
-      if (!calendar || isPersonalCalendar(calendar)) return []
-      const members = await repository.listMembers(calendar.teamId)
-      return members.map(({ userId: id, name }) => ({ id, name }))
-    }
-  }, [user, host.features.teams, calendarById, repository])
-  const personalCalendarId = calendars.find(isPersonalCalendar)?.id ?? null
-  const planning = useMemo<TaskPlanningSetup | undefined>(
-    () =>
-      personalCalendarId === null
-        ? undefined
-        : {
-            calendarId: personalCalendarId,
-            busyCalendarIds: [
-              ...calendars.map(({ id }) => id),
-              ...caldav.calendars.map(({ id }) => caldavCalendarId(id)),
-              ...peers.calendars.map(({ id }) => peerCalendarId(id)),
-            ],
-            externalEvents: external.events,
-          },
-    [personalCalendarId, calendars, caldav.calendars, peers.calendars, external.events],
-  )
-  const isLinkedCalendarShown = !linkedCalendarId || visibleCalendarIds.includes(linkedCalendarId)
-  const tasks = useMemo<TaskSetup>(
-    () => ({
-      calendarIds: visibleCalendarIds,
-      targetCalendarId: activeCalendar.id,
-      choices: ownChoices,
-      calendarNames,
-      access: taskAccess,
-      loadAssignees,
-      openTaskId: isLinkedCalendarShown ? linkedTaskId : null,
-      openTaskPlan: linkedPlan,
-      onOpenTaskDone: clearLink,
-      planning,
-    }),
-    [
-      visibleCalendarIds,
-      activeCalendar.id,
-      ownChoices,
-      calendarNames,
-      taskAccess,
-      loadAssignees,
-      isLinkedCalendarShown,
-      linkedTaskId,
-      linkedPlan,
-      clearLink,
-      planning,
+  const busyCalendarIds = useMemo(
+    () => [
+      ...caldav.calendars.map(({ id }) => caldavCalendarId(id)),
+      ...peers.calendars.map(({ id }) => peerCalendarId(id)),
     ],
+    [caldav.calendars, peers.calendars],
   )
+  const isLinkedCalendarShown = !link.calendarId || visibleCalendarIds.includes(link.calendarId)
+  const tasks = useTaskSetup({
+    calendarById,
+    choices: ownChoices,
+    calendarNames,
+    busyCalendarIds,
+    externalEvents: external.events,
+    openTaskId: isLinkedCalendarShown ? link.taskId : null,
+    openTaskPlan: link.plan,
+    onOpenTaskDone: link.clear,
+  })
 
   return (
     <div className="app">
@@ -374,8 +196,8 @@ export function CalendarPage() {
         externalEvents={external.events}
         isHistoryAvailable={isTeamCalendar}
         canSetVisibility={canSetVisibility}
-        openEvent={openEvent}
-        onOpenEventDone={clearLink}
+        openEvent={link.openEvent}
+        onOpenEventDone={link.clear}
         menuItems={menuItems}
         tasks={activePeer ? undefined : tasks}
         headerAccessory={

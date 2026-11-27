@@ -16,7 +16,7 @@ import {
   type AppPassword,
   type CaldavAccess,
   type CreatedAppPassword,
-} from '../../../utils/caldav.ts'
+} from '../utils/caldav.ts'
 import { formatTimestamp } from '../../../utils/timestamp.ts'
 import { useStorage, type AppPasswordRepository } from '../../storage/index.ts'
 import { useIsCaldavServerAvailable } from '../hooks/useIsCaldavServerAvailable.ts'

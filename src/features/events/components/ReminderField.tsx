@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { SelectField, type SelectOption } from '../../../components/SelectField.tsx'
 import { useI18n } from '../../../i18n/index.ts'
-import { getNotificationState, requestNotifications } from '../../../utils/notifications.ts'
+import { getNotificationState, requestNotifications } from '../../reminders/index.ts'
 
 const NONE = 'none'
 const PRESETS = [0, 5, 10, 15, 30, 60, 120, 1440, 2880, 10080]
@@ -15,7 +15,8 @@ export function ReminderField({ value, onChange }: ReminderFieldProps) {
   const { m, format } = useI18n()
   const [notificationState, setNotificationState] = useState(getNotificationState)
   const current = value[0]
-  const presets = current === undefined || PRESETS.includes(current) ? PRESETS : [...PRESETS, current].sort((a, b) => a - b)
+  const presets =
+    current === undefined || PRESETS.includes(current) ? PRESETS : [...PRESETS, current].sort((a, b) => a - b)
   const options: SelectOption<string>[] = [
     { value: NONE, label: m.events.noReminder },
     ...presets.map((minutes) => ({

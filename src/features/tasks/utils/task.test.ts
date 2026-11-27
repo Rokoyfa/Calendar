@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRecurrence } from '../../../utils/recurrence.ts'
+import { createRecurrence } from '../../../domain/recurrence.ts'
 import type { Task } from '../types/task.ts'
 import {
   checklistProgress,

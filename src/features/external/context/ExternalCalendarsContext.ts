@@ -1,10 +1,6 @@
 import { createContext } from 'react'
-import type { CalendarEvent } from '../../../utils/event.ts'
-import type {
-  ExternalCalendar,
-  ExternalCalendarChanges,
-  ExternalCalendarInput,
-} from '../../../utils/externalCalendar.ts'
+import type { CalendarEvent } from '../../../domain/event.ts'
+import type { ExternalCalendar, ExternalCalendarChanges, ExternalCalendarInput } from '../utils/externalCalendar.ts'
 
 export type ExternalCalendarsContextValue = {
   isAvailable: boolean

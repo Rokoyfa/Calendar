@@ -1,6 +1,6 @@
 import { GlobeIcon } from '../../../components/Icons.tsx'
 import { useI18n } from '../../../i18n/index.ts'
-import { getLinkName, type EventLink } from '../../../utils/event.ts'
+import { getLinkName, type EventLink } from '../../../domain/event.ts'
 
 type EventLinksProps = {
   links: readonly EventLink[]

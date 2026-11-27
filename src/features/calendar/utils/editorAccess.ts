@@ -1,7 +1,7 @@
-import { isCaldavEvent } from '../../../utils/caldav.ts'
-import type { CalendarEvent, EventOccurrence } from '../../../utils/event.ts'
-import { isExternalEvent } from '../../../utils/externalCalendar.ts'
-import { isPeerCalendarId, isPeerEvent } from '../../../utils/peerCalendar.ts'
+import { isCaldavEvent } from '../../caldav/index.ts'
+import type { CalendarEvent, EventOccurrence } from '../../../domain/event.ts'
+import { isExternalEvent } from '../../external/index.ts'
+import { isPeerCalendarId, isPeerEvent } from '../../peers/index.ts'
 import type { CalendarChoice } from '../../events/index.ts'
 
 type EditorAccessOptions = {

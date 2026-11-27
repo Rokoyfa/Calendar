@@ -6,8 +6,8 @@ import {
   type EventInput,
   type EventOccurrence,
   type EventPeriod,
-} from '../../../utils/event.ts'
-import { adaptRecurrenceToStart } from '../../../utils/recurrence.ts'
+} from '../../../domain/event.ts'
+import { adaptRecurrenceToStart } from '../../../domain/recurrence.ts'
 import { MIN_VISIBLE_DURATION } from '../constants/grid.ts'
 
 export type DragMode = 'move' | 'resize'

@@ -4,22 +4,15 @@ import { useFeatures } from '../context/HostContext.ts'
 import { AuthProvider, useAuth } from '../features/authorization/index.ts'
 import { CalendarsProvider } from '../features/calendars/index.ts'
 import { PreferencesProvider } from '../features/preferences/index.ts'
-import { ReminderNotices } from '../features/reminders/ReminderNotices.tsx'
-import {
-  CaldavEventRepository,
-  PeerEventRepository,
-  StorageProvider,
-  type EventRepository,
-  withCaldavEvents,
-  withPeerEvents,
-} from '../features/storage/index.ts'
-import { CaldavProvider } from '../features/caldav/index.ts'
+import { ReminderNotices } from '../features/reminders/index.ts'
+import { StorageProvider, type EventRepository } from '../features/storage/index.ts'
+import { CaldavProvider, CaldavEventRepository, withCaldavEvents } from '../features/caldav/index.ts'
+import { PeerCalendarsProvider, PeerEventRepository, withPeerEvents } from '../features/peers/index.ts'
 import { useI18n, useLocaleGetter } from '../i18n/index.ts'
 import { CalendarRouter } from '../router.tsx'
 import type { CalendarRouting } from './config.ts'
 import { withEventCallbacks, type EventCallbacks } from './eventCallbacks.ts'
 import { ExternalCalendarsProvider } from '../features/external/index.ts'
-import { PeerCalendarsProvider } from '../features/peers/index.ts'
 import { PushSync } from '../features/push/index.ts'
 import { PageSync } from '../features/pwa/index.ts'
 

@@ -1,4 +1,4 @@
-import type { CalendarView } from '../utils/calendarView.ts'
+import type { CalendarView } from '../domain/calendarView.ts'
 
 export type CalendarState = {
   view: CalendarView

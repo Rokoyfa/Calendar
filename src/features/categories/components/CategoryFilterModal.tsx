@@ -8,7 +8,7 @@ import {
   UNCATEGORIZED,
   type Category,
   type CategoryFilter,
-} from '../../../utils/category.ts'
+} from '../../../domain/category.ts'
 
 type CategoryFilterModalProps = {
   categories: readonly Category[]

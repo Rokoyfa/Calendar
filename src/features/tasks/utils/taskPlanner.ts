@@ -1,5 +1,5 @@
 import { MINUTES_PER_DAY, minutesToTime, timeToMinutes } from '../../../utils/date.ts'
-import type { PlanningDistribution } from '../../../utils/preferences.ts'
+import type { PlanningDistribution } from '../../../domain/preferences.ts'
 import { isRestDay, type WorkingTimeLaw } from './workingTimeLaw.ts'
 
 export type PlanInterval = { start: number; end: number }

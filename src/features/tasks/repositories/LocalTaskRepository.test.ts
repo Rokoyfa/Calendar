@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { isAppError } from '../../../utils/appError.ts'
 import type { TaskInput } from '../types/task.ts'
 import { EMPTY_TASK_INPUT } from '../utils/task.ts'
-import { LocalEventRepository } from '../../storage/index.ts'
-import { createEventInput } from '../../../utils/event.ts'
-import { createRecurrence } from '../../../utils/recurrence.ts'
+import { LocalEventRepository } from '../../events/index.ts'
+import { createEventInput } from '../../../domain/event.ts'
+import { createRecurrence } from '../../../domain/recurrence.ts'
 import { LocalTaskRepository } from './LocalTaskRepository.ts'
 
 const createStorage = () => {

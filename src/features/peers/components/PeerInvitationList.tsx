@@ -2,7 +2,7 @@ import { DecisionButtons } from '../../../components/DecisionButtons.tsx'
 import { ItemList } from '../../../components/ItemList.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
 import { useI18n } from '../../../i18n/index.ts'
-import type { PeerCalendar } from '../../../utils/peerCalendar.ts'
+import type { PeerCalendar } from '../utils/peerCalendar.ts'
 import { usePeerCalendars } from '../hooks/usePeerCalendars.ts'
 
 function PeerInvitationRow({ invitation }: { invitation: PeerCalendar }) {

@@ -1,5 +1,5 @@
 import { AppError } from '../../../utils/appError.ts'
-import { LocalStorageList } from '../../storage/utils/localStorageList.ts'
+import { LocalStorageList } from '../../../utils/localStorageList.ts'
 import type { Task, TaskChecklistItem, TaskInput, TaskQuery, TaskRepository, TaskStatus } from '../types/task.ts'
 import {
   isTaskDone,

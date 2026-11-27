@@ -4,7 +4,7 @@ import { SelectField } from '../../../components/SelectField.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { Button } from '../../../components/Button.tsx'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
-import { MAX_ATTENDEES, type Attendee, type AttendeeStatus } from '../../../utils/event.ts'
+import { MAX_ATTENDEES, type Attendee, type AttendeeStatus } from '../../../domain/event.ts'
 import { CloseButton } from '../../../components/RemoveButton.tsx'
 
 export type AttendeeCandidate = { email: string; name: string }

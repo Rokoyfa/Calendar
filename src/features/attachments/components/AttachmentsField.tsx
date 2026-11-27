@@ -10,7 +10,7 @@ import {
   MAX_ATTACHMENTS,
   type Attachment,
   type RejectedFile,
-} from '../../../utils/attachment.ts'
+} from '../utils/attachment.ts'
 import { classNames } from '../../../utils/classNames.ts'
 import { useAttachments } from '../hooks/useAttachments.ts'
 import { RemoveButton } from '../../../components/RemoveButton.tsx'

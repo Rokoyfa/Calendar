@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
-import type { BookingPage, BookingPageSettings } from '../../../utils/booking.ts'
+import type { BookingPage, BookingPageSettings } from '../utils/booking.ts'
 import type { BookingRepository } from '../../storage/index.ts'
 
 const EMPTY: BookingPage[] = []

@@ -1,5 +1,5 @@
 import type { CalendarState, HostBridge, NewEventDraft } from '../context/HostBridge.ts'
-import { isCalendarView, type CalendarView } from '../utils/calendarView.ts'
+import { isCalendarView, type CalendarView } from '../domain/calendarView.ts'
 import { isISODate, toISODate } from '../utils/date.ts'
 
 export type CalendarHandle = {

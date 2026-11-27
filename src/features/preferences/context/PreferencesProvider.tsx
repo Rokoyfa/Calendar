@@ -10,7 +10,7 @@ import {
   parsePreferences,
   type Preferences,
   type Theme,
-} from '../../../utils/preferences.ts'
+} from '../../../domain/preferences.ts'
 import { usePreferencesRepository } from '../../storage/index.ts'
 import { PreferencesContext, type PreferencesContextValue } from './PreferencesContext.ts'
 

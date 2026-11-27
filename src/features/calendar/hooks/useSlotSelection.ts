@@ -1,5 +1,5 @@
 import { useState, type RefObject } from 'react'
-import type { HourSlot } from '../../../utils/event.ts'
+import type { HourSlot } from '../../../domain/event.ts'
 import {
   findSlotAt,
   getSlotFromTarget,

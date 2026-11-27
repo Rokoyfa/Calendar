@@ -3,7 +3,7 @@ import { FormActions } from '../../../components/FormActions.tsx'
 import { ActionFeedback } from '../../../components/StatusMessage.tsx'
 import { TextField } from '../../../components/TextField.tsx'
 import { useForm } from '../../../hooks/useForm.ts'
-import type { EventColor } from '../../../utils/event.ts'
+import type { EventColor } from '../../../domain/event.ts'
 import { ColorPicker } from './ColorPicker.tsx'
 
 export type NameColorValues = { name: string; color: EventColor }

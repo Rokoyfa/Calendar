@@ -6,7 +6,7 @@ import {
   toOccurrenceInput,
   type EventInput,
   type EventOccurrence,
-} from '../../../utils/event.ts'
+} from '../../../domain/event.ts'
 import type { EventTab } from '../../events/index.ts'
 import type { EditorState } from '../types/editor.ts'
 import type { SlotRange } from '../utils/slotSelection.ts'

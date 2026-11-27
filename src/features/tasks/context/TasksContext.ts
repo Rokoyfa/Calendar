@@ -1,5 +1,5 @@
 import { createContext, use } from 'react'
-import type { Category } from '../../../utils/category.ts'
+import type { Category } from '../../../domain/category.ts'
 import type { Task, TaskDraft, TaskStatus } from '../types/task.ts'
 
 export type TasksContextValue = {

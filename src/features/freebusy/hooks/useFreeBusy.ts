@@ -1,3 +1,3 @@
-import { useStorage } from '../../storage/hooks/useStorage.ts'
+import { useStorage } from '../../storage/index.ts'
 
 export const useFreeBusyRepository = () => useStorage().freeBusy

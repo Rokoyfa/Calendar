@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
-import type {
-  CaldavAccount,
-  CaldavAccountChanges,
-  CaldavAccountInput,
-  CaldavCalendarChanges,
-} from '../../../utils/caldav.ts'
+import type { CaldavAccount, CaldavAccountChanges, CaldavAccountInput, CaldavCalendarChanges } from '../utils/caldav.ts'
 import { useAuth } from '../../authorization/index.ts'
 import { useStorage, type CaldavEventSource, type CaldavRepository } from '../../storage/index.ts'
 import { CaldavContext, NO_CALDAV, type CaldavCalendarEntry, type CaldavContextValue } from './CaldavContext.ts'

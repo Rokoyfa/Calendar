@@ -1,5 +1,5 @@
-import { WORK_CATEGORY } from '../../../utils/category.ts'
-import { createEventInputForSlots, type CalendarEvent, type EventInput } from '../../../utils/event.ts'
+import { WORK_CATEGORY } from '../../../domain/category.ts'
+import { createEventInputForSlots, type CalendarEvent, type EventInput } from '../../../domain/event.ts'
 import type { Task, TaskPlanPreview } from '../types/task.ts'
 import type { PlannedBlock } from './taskPlanner.ts'
 

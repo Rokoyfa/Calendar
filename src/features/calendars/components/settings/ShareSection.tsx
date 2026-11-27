@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useHost } from '../../../../context/HostContext.ts'
 import { useI18n } from '../../../../i18n/index.ts'
-import { buildSharedLink, getSharedPath } from '../../../../utils/sharedCalendar.ts'
+import { buildSharedLink, getSharedPath } from '../../utils/sharedCalendar.ts'
 import { useCalendars } from '../../hooks/useCalendars.ts'
 import { useSecretLink, type SecretLinkOperations } from '../../hooks/useSecretLink.ts'
 import type { CalendarRepository, CalendarSummary } from '../../types/calendar.ts'

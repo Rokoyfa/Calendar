@@ -1,5 +1,5 @@
 import type { EventRepository } from '../features/storage/index.ts'
-import type { CalendarEvent } from '../utils/event.ts'
+import type { CalendarEvent } from '../domain/event.ts'
 
 export type DeletedEvent = { id: string }
 

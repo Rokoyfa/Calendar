@@ -1,100 +1,54 @@
 import { useRef, useState, type ReactNode, type SubmitEventHandler } from 'react'
-import { Switch } from '../../../components/Switch.tsx'
-import { SelectField } from '../../../components/SelectField.tsx'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { SegmentedControl } from '../../../components/SegmentedControl.tsx'
 import { Button } from '../../../components/Button.tsx'
-import { DateTimeField } from '../../../components/DateTimeField.tsx'
 import { Form } from '../../../components/Form.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
-import { FormField } from '../../../components/FormField.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { Tabs, type TabDefinition } from '../../../components/Tabs.tsx'
-import { TextField } from '../../../components/TextField.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
-import { useLocationUrl } from '../../../hooks/useLocationUrl.ts'
-import { MapPinIcon } from '../../../components/Icons.tsx'
-import { isISODate, isTime } from '../../../utils/date.ts'
+import { isISODate } from '../../../utils/date.ts'
 import {
-  ALL_DAY_TIME,
   changesOnlyReminders,
-  EVENT_DESCRIPTION_MAX_LENGTH,
-  EVENT_LOCATION_MAX_LENGTH,
-  formatEventPeriod,
-  EVENT_TITLE_MAX_LENGTH,
   hasValidationErrors,
-  moveToStartDate,
   normalizeEventInput,
-  toViewerPeriod,
   validateEventInput,
   type EditScope,
   type EventInput,
   type EventOccurrence,
   type AttendeeStatus,
-  type EventPeriod,
-  type EventValidationErrors,
-} from '../../../utils/event.ts'
-import { adaptRecurrenceToStart, type Recurrence } from '../../../utils/recurrence.ts'
-import type { EventModalMode } from '../types/eventModal.ts'
+} from '../../../domain/event.ts'
+import { adaptRecurrenceToStart } from '../../../domain/recurrence.ts'
+import type { EventModalMode, EventTab } from '../types/eventModal.ts'
+import { useEventForm } from '../hooks/useEventForm.ts'
+import { hasTabErrors, isValidPeriod, LIVE_TABS, periodMinutes } from '../utils/eventForm.ts'
+import { EventDetailsFields } from './EventDetailsFields.tsx'
+import { EventGeneralFields } from './EventGeneralFields.tsx'
+import { EventSaveConflict } from './EventSaveConflict.tsx'
 import { getScopeOptions } from '../utils/scopeOptions.ts'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RecurrenceFields } from './RecurrenceFields.tsx'
 import { RecurrenceScopeModal } from './RecurrenceScopeModal.tsx'
 import { AttendeesField, type AttendeeCandidate } from './AttendeesField.tsx'
-import { LinksField } from './LinksField.tsx'
-import type { Category } from '../../../utils/category.ts'
-import { isEventChanged } from '../../../utils/conflict.ts'
+import type { Category } from '../../../domain/category.ts'
+import { isEventChanged } from '../utils/conflict.ts'
 import type { SaveOptions } from '../hooks/useEvents.ts'
 import { AttachmentsField, useAttachmentRepository } from '../../attachments/index.ts'
 import { CategoryField } from '../../categories/index.ts'
-import { ChatPanel, useUnreadCount } from '../../chat/index.ts'
-import type { ChatKey } from '../../../utils/chat.ts'
-import { ReminderField } from './ReminderField.tsx'
-import { TimeZoneField } from './TimeZoneField.tsx'
+import { ChatPanel, useUnreadCount, type ChatKey } from '../../chat/index.ts'
 import { HistoryPanel } from './HistoryPanel.tsx'
-import { OverlapNotice, type OverlapCheck } from './OverlapNotice.tsx'
-import { PlanConflictNotice, REPLAN_SUBMITTER, type PlanConflictCheck } from './PlanConflictNotice.tsx'
+import { type OverlapCheck } from './OverlapNotice.tsx'
+import { REPLAN_SUBMITTER, type PlanConflictCheck } from './PlanConflictNotice.tsx'
 import { compact } from '../../../utils/list.ts'
 import { RequestDecision, type RequestDecisionOptions } from './RequestDecision.tsx'
 import { FindTimeModal, useFreeBusyRepository, type FoundTime } from '../../freebusy/index.ts'
-import { convertWallTime, toInstant } from '../../../utils/timeZone.ts'
-
-const DEFAULT_START = '09:00'
-const DEFAULT_END = '10:00'
-
-export type EventTab = 'general' | 'appearance' | 'recurrence' | 'attendees' | 'details' | 'chat' | 'history'
-
-const TAB_FIELDS: Record<EventTab, readonly (keyof EventValidationErrors)[]> = {
-  general: ['title', 'startDate', 'start', 'endDate', 'end', 'timeZone', 'reminders'],
-  appearance: ['color'],
-  recurrence: ['recurrence', 'excludedDates'],
-  attendees: ['attendees'],
-  details: ['location', 'links', 'description'],
-  chat: [],
-  history: [],
-}
-
-const LIVE_TABS: readonly EventTab[] = ['chat', 'history']
+import { convertWallTime } from '../../../utils/timeZone.ts'
 
 const NO_CATEGORIES: readonly Category[] = []
 
 const NO_CHAT: ChatKey = { eventId: '', occurrenceDate: null }
-
-const hasTabErrors = (errors: EventValidationErrors, tab: EventTab) =>
-  TAB_FIELDS[tab].some((field) => errors[field] !== undefined)
-
-const isValidPeriod = ({ startDate, start, endDate, end }: EventPeriod) =>
-  isISODate(startDate) && isISODate(endDate) && isTime(start) && isTime(end)
-
-const MS_PER_MINUTE = 60_000
-
-const periodMinutes = ({ startDate, start, endDate, end }: EventPeriod, timeZone: string) =>
-  Math.round(
-    (toInstant({ date: endDate, time: end }, timeZone) - toInstant({ date: startDate, time: start }, timeZone)) /
-      MS_PER_MINUTE,
-  )
 
 export type AttendeeOptions = {
   candidates: readonly AttendeeCandidate[]
@@ -176,12 +130,11 @@ export function EventModal({
   const { m } = i18n
   const features = useFeatures()
   const viewerTimeZone = useViewerTimeZone()
-  const getLocationUrl = useLocationUrl()
   const mode: EventModalMode = occurrence ? 'edit' : 'create'
   const isRequest = requestTo !== undefined
   const isMoving = occurrence !== null && calendarField !== undefined && calendarField.value !== occurrence.calendarId
-  const [values, setValues] = useState(initialValue)
-  const [errors, setErrors] = useState<EventValidationErrors>({})
+  const { values, errors, setErrors, update, setField, setAllDay, changeStartDate, setRecurrence } =
+    useEventForm(initialValue)
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null)
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const attachmentRepository = useAttachmentRepository()
@@ -209,51 +162,6 @@ export function EventModal({
   const { run: remove, isPending: isDeleting, error: deleteError } = useAsyncAction(async () => onDelete?.())
   const freeBusy = useFreeBusyRepository()
   const [isFindingTime, setFindingTime] = useState(false)
-
-  const update = (changes: Partial<EventInput>, clearedErrors: readonly (keyof EventValidationErrors)[]) => {
-    setValues((current) => ({ ...current, ...changes }))
-    setErrors((current) => ({
-      ...current,
-      ...Object.fromEntries(clearedErrors.map((key) => [key, undefined])),
-    }))
-  }
-
-  const setField = <K extends Exclude<keyof EventInput, 'recurrence'>>(field: K, value: EventInput[K]) =>
-    update({ [field]: value }, [field])
-
-  const [timedValues, setTimedValues] = useState(() =>
-    initialValue.allDay
-      ? { start: DEFAULT_START, end: DEFAULT_END, timeZone: viewerTimeZone }
-      : {
-          start: initialValue.start,
-          end: initialValue.end,
-          timeZone: initialValue.timeZone,
-        },
-  )
-
-  const setAllDay = (allDay: boolean) => {
-    if (allDay) {
-      setTimedValues({
-        start: values.start,
-        end: values.end,
-        timeZone: values.timeZone,
-      })
-      update({ allDay, start: ALL_DAY_TIME, end: ALL_DAY_TIME, timeZone: null }, ['start', 'end', 'endDate'])
-    } else update({ allDay, ...timedValues }, ['start', 'end', 'endDate'])
-  }
-
-  const changeStartDate = (startDate: string) =>
-    update(
-      {
-        ...(isISODate(values.startDate) && isISODate(values.endDate) && isISODate(startDate)
-          ? moveToStartDate(values, startDate)
-          : { startDate }),
-        recurrence: adaptRecurrenceToStart(values.recurrence, values.startDate, startDate),
-      },
-      ['startDate', 'endDate'],
-    )
-
-  const setRecurrence = (recurrence: Recurrence | null) => update({ recurrence }, ['recurrence'])
 
   const eventTimeZone = values.timeZone ?? viewerTimeZone
   const canFindTime =
@@ -316,102 +224,28 @@ export function EventModal({
     void save(pendingSave.input, scope)
   }
 
-  const viewerHint =
-    !values.allDay && values.timeZone && values.timeZone !== viewerTimeZone && isValidPeriod(values)
-      ? m.events.inYourTimeZone(formatEventPeriod(toViewerPeriod(values, values.timeZone, viewerTimeZone), i18n))
-      : null
-
-  const locationUrl = getLocationUrl(values.location)
-
   const tabDefinitions = compact<TabDefinition<EventTab> & { after?: ReactNode }>([
     {
       value: 'general',
       label: m.events.tabs.general,
       content: (
-        <>
-          <TextField
-            label={m.events.title}
-            name="title"
-            autoComplete="off"
-            maxLength={EVENT_TITLE_MAX_LENGTH}
-            value={values.title}
-            error={errors.title}
-            onChange={(title) => setField('title', title)}
-            data-autofocus
-          />
-
-          {calendarField && calendarField.options.length > 1 && !readOnly && (
-            <SelectField
-              label={m.events.calendar}
-              name="calendarId"
-              value={calendarField.value}
-              options={calendarField.options.map(({ id, name }) => ({ value: id, label: name }))}
-              onChange={(calendarId) => {
-                calendarField.onChange(calendarId)
-                setField('categoryIds', [])
-              }}
-            />
-          )}
-          {isMoving && occurrence?.recurrence && <p className="formHint">{m.events.moveSeriesHint}</p>}
-
-          <Switch label={m.events.allDay} checked={values.allDay} onChange={setAllDay} />
-
-          <DateTimeField
-            name="start"
-            dateLabel={m.events.startDate}
-            timeLabel={m.events.startTime}
-            date={values.startDate}
-            time={values.start}
-            showTime={!values.allDay}
-            dateError={errors.startDate}
-            timeError={errors.start}
-            onDateChange={changeStartDate}
-            onTimeChange={(start) => setField('start', start)}
-          />
-
-          <DateTimeField
-            name="end"
-            dateLabel={m.events.endDate}
-            timeLabel={m.events.endTime}
-            date={values.endDate}
-            time={values.end}
-            showTime={!values.allDay}
-            minDate={values.startDate}
-            dateError={errors.endDate}
-            timeError={errors.end}
-            onDateChange={(endDate) => setField('endDate', endDate)}
-            onTimeChange={(end) => setField('end', end)}
-          />
-
-          {!values.allDay && features.timeZones && (
-            <TimeZoneField value={values.timeZone} onChange={(timeZone) => setField('timeZone', timeZone)} />
-          )}
-          {viewerHint && <p className="formHint">{viewerHint}</p>}
-          {checkOverlaps && !readOnly && <OverlapNotice values={values} check={checkOverlaps} />}
-          {planConflicts && !readOnly && !isRequest && !values.taskId && (
-            <PlanConflictNotice
-              values={values}
-              check={planConflicts.check}
-              canReplan={!isMoving}
-              isPending={isPending}
-            />
-          )}
-          {findTimeButton}
-
-          {features.reminders && !readOnly && !isRequest && (
-            <ReminderField value={values.reminders} onChange={(reminders) => setField('reminders', reminders)} />
-          )}
-          {showVisibility && !isRequest && (
-            <>
-              <Switch
-                label={m.peers.visibility}
-                checked={values.visibility === 'public'}
-                onChange={(shown) => setField('visibility', shown ? 'public' : 'private')}
-              />
-              <p className="formHint">{m.peers.visibilityHint}</p>
-            </>
-          )}
-        </>
+        <EventGeneralFields
+          values={values}
+          errors={errors}
+          occurrence={occurrence}
+          calendarField={calendarField}
+          readOnly={readOnly}
+          isRequest={isRequest}
+          isMoving={isMoving}
+          isPending={isPending}
+          showVisibility={showVisibility}
+          checkOverlaps={checkOverlaps}
+          planConflicts={planConflicts}
+          findTime={findTimeButton}
+          setField={setField}
+          setAllDay={setAllDay}
+          changeStartDate={changeStartDate}
+        />
       ),
     },
     !isRequest && {
@@ -465,47 +299,7 @@ export function EventModal({
     {
       value: 'details',
       label: m.events.tabs.details,
-      content: (
-        <>
-          <TextField
-            label={m.events.location}
-            name="location"
-            autoComplete="off"
-            maxLength={EVENT_LOCATION_MAX_LENGTH}
-            value={values.location}
-            error={errors.location}
-            onChange={(location) => setField('location', location)}
-            addon={
-              locationUrl && (
-                <a
-                  className="iconButton iconButton--plain"
-                  href={locationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={m.events.openMap(values.location.trim())}
-                  title={m.events.openMap(values.location.trim())}
-                >
-                  <MapPinIcon size={18} />
-                </a>
-              )
-            }
-          />
-
-          {features.links && !isRequest && (
-            <LinksField links={values.links} error={errors.links} onChange={(links) => setField('links', links)} />
-          )}
-
-          <FormField label={isRequest ? m.peers.note : m.events.description} error={errors.description}>
-            <textarea
-              className="textarea eventDescription"
-              name="description"
-              maxLength={EVENT_DESCRIPTION_MAX_LENGTH}
-              value={values.description}
-              onChange={(event) => setField('description', event.target.value)}
-            />
-          </FormField>
-        </>
-      ),
+      content: <EventDetailsFields values={values} errors={errors} isRequest={isRequest} setField={setField} />,
       after: attachmentRepository && showAttachments && !isRequest && (
         <AttachmentsField
           eventId={occurrence?.id ?? null}
@@ -588,37 +382,13 @@ export function EventModal({
           <Tabs label={m.events.tabsLabel} tabs={tabs} value={activeTab} stable onChange={setActiveTab} />
 
           <ErrorMessage message={submitError ?? deleteError} />
-          {remoteChange && !conflict && (
-            <div className="eventConflict" role="status">
-              <p>{remoteChange === 'deleted' ? m.events.remoteChange.deleted : m.events.remoteChange.updated}</p>
-              {onReload && (
-                <div className="buttonRow">
-                  <Button variant="secondary" onClick={onReload}>
-                    {m.events.remoteChange.reload}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-          {conflict && (
-            <div className="eventConflict" role="alert">
-              <p>{m.events.conflict.message}</p>
-              <div className="buttonRow">
-                <Button
-                  variant="outline"
-                  isPending={isPending}
-                  onClick={() => void save(conflict.input, conflict.scope, { force: true })}
-                >
-                  {m.events.conflict.overwrite}
-                </Button>
-                {onReload && (
-                  <Button variant="secondary" onClick={onReload}>
-                    {m.events.conflict.reload}
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
+          <EventSaveConflict
+            remoteChange={remoteChange}
+            hasConflict={conflict !== null}
+            isPending={isPending}
+            onOverwrite={() => conflict && void save(conflict.input, conflict.scope, { force: true })}
+            onReload={onReload}
+          />
 
           <div className="modalActions">
             {!readOnly && (

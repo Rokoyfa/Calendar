@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react'
 import { useI18n } from '../../../i18n/index.ts'
 import { timeToMinutes } from '../../../utils/date.ts'
-import { formatEventPeriod } from '../../../utils/event.ts'
-import { getNotificationState } from '../../../utils/notifications.ts'
-import type { ScheduledReminder } from '../../../utils/reminders.ts'
+import { formatEventPeriod } from '../../../domain/event.ts'
+import { getNotificationState } from '../utils/browserNotifications.ts'
+import type { ScheduledReminder } from '../utils/reminders.ts'
 import { useReminders } from '../hooks/useReminders.ts'
 import { CloseButton } from '../../../components/RemoveButton.tsx'
 

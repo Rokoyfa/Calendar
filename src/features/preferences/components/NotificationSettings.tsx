@@ -4,7 +4,7 @@ import { Switch } from '../../../components/Switch.tsx'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useI18n } from '../../../i18n/index.ts'
-import type { Preferences } from '../../../utils/preferences.ts'
+import type { Preferences } from '../../../domain/preferences.ts'
 import { usePreferences } from '../hooks/usePreferences.ts'
 
 type EmailSetting = keyof Pick<

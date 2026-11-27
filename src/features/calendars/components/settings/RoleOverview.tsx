@@ -1,6 +1,6 @@
 import { useRootElement } from '../../../../context/RootElementContext.ts'
 import { useI18n } from '../../../../i18n/index.ts'
-import { isCompactWidth } from '../../../../utils/preferences.ts'
+import { isCompactWidth } from '../../../../domain/preferences.ts'
 import { TEAM_ROLES } from '../../types/calendar.ts'
 
 export function RoleOverview() {

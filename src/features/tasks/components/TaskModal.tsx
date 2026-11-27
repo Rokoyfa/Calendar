@@ -1,5 +1,5 @@
-import type { PlanningDistribution } from '../../../utils/preferences.ts'
-import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode, type SubmitEventHandler } from 'react'
+import type { PlanningDistribution } from '../../../domain/preferences.ts'
+import { lazy, Suspense, useCallback, useMemo, useState, type SubmitEventHandler } from 'react'
 import { Button } from '../../../components/Button.tsx'
 import { ConfirmModal } from '../../../components/ConfirmModal.tsx'
 import { Form } from '../../../components/Form.tsx'
@@ -13,8 +13,7 @@ import { TextField } from '../../../components/TextField.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { useI18n } from '../../../i18n/index.ts'
-import type { Category } from '../../../utils/category.ts'
-import { isISODate, isTime, MINUTES_PER_HOUR } from '../../../utils/date.ts'
+import type { Category } from '../../../domain/category.ts'
 import { CategoryField } from '../../categories/index.ts'
 import {
   TASK_PRIORITIES,
@@ -38,26 +37,22 @@ import {
   toTaskInput,
 } from '../utils/task.ts'
 import { useHasFutureBlocks } from '../hooks/useHasFutureBlocks.ts'
-import { RecurrenceFields } from '../../events/components/RecurrenceFields.tsx'
-import {
-  adaptRecurrenceToStart,
-  hasRecurrenceErrors,
-  validateRecurrence,
-  type RecurrenceValidationErrors,
-} from '../../../utils/recurrence.ts'
 import { ChecklistField } from './ChecklistField.tsx'
+import { Locked } from './Locked.tsx'
+import { TaskDueFields } from './TaskDueFields.tsx'
+import { TaskEstimateField } from './TaskEstimateField.tsx'
+import {
+  toEstimateMinutes,
+  toEstimateParts,
+  validateTaskInput,
+  type EstimateParts,
+  type TaskErrors,
+} from '../utils/taskForm.ts'
 
 const TaskPlanModal = lazy(async () => ({ default: (await import('./TaskPlanModal.tsx')).TaskPlanModal }))
 
-type TaskErrors = Partial<Record<'title' | 'notes' | 'dueDate' | 'dueTime' | 'estimate', string>> & {
-  recurrence?: RecurrenceValidationErrors
-}
-
-type EstimateParts = { hours: string; minutes: string }
-
 type TaskTab = 'general' | 'checklist' | 'details'
 
-const MAX_ESTIMATE_HOURS = 99
 const NOBODY = ''
 const NO_PEOPLE: TaskPerson[] = []
 
@@ -88,37 +83,6 @@ const initialInput = (task: Task | null, draft: TaskDraft): TaskInput =>
 
 const withCurrent = (choices: readonly TaskCalendarChoice[], current: TaskCalendarChoice | null) =>
   current && !choices.some((choice) => choice.id === current.id) ? [current, ...choices] : choices
-
-const toEstimateParts = (minutes: number | null): EstimateParts =>
-  minutes === null
-    ? { hours: '', minutes: '' }
-    : {
-        hours: minutes >= MINUTES_PER_HOUR ? String(Math.floor(minutes / MINUTES_PER_HOUR)) : '',
-        minutes: minutes % MINUTES_PER_HOUR > 0 ? String(minutes % MINUTES_PER_HOUR) : '',
-      }
-
-const readPart = (text: string, max: number) => {
-  if (text.trim() === '') return 0
-  const value = Number(text)
-  return Number.isInteger(value) && value >= 0 && value <= max ? value : null
-}
-
-const toEstimateMinutes = ({ hours, minutes }: EstimateParts) => {
-  const wholeHours = readPart(hours, MAX_ESTIMATE_HOURS)
-  const restMinutes = readPart(minutes, MINUTES_PER_HOUR - 1)
-  if (wholeHours === null || restMinutes === null) return undefined
-  const total = wholeHours * MINUTES_PER_HOUR + restMinutes
-  return total === 0 ? null : total
-}
-
-function Locked({ isLocked, children }: { isLocked: boolean; children: ReactNode }) {
-  if (!isLocked) return children
-  return (
-    <fieldset className="readOnlyFields" disabled>
-      {children}
-    </fieldset>
-  )
-}
 
 export function TaskModal({
   task: initialTask,
@@ -227,28 +191,12 @@ export function TaskModal({
     setErrors((current) => ({ ...current, estimate: undefined }))
   }
 
-  const validate = (input: TaskInput, estimateMinutes: number | null | undefined): TaskErrors => ({
-    title: !input.title
-      ? m.validation.titleRequired
-      : input.title.length > TASK_TITLE_MAX_LENGTH
-        ? m.validation.titleTooLong(TASK_TITLE_MAX_LENGTH)
-        : undefined,
-    notes: input.notes.length > TASK_NOTES_MAX_LENGTH ? m.validation.notesTooLong(TASK_NOTES_MAX_LENGTH) : undefined,
-    dueDate: input.dueDate !== null && !isISODate(input.dueDate) ? m.validation.dateInvalid : undefined,
-    dueTime: input.dueTime !== null && !isTime(input.dueTime) ? m.validation.timeInvalid : undefined,
-    estimate: estimateMinutes === undefined ? text.estimateInvalid : undefined,
-    recurrence:
-      input.recurrence && input.dueDate && hasRecurrenceErrors(validateRecurrence(input.recurrence, input.dueDate, m))
-        ? validateRecurrence(input.recurrence, input.dueDate, m)
-        : undefined,
-  })
-
   const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
     if (!isEditable) return
     const estimateMinutes = toEstimateMinutes(estimate)
     const input = normalizeTaskInput({ ...values, estimateMinutes: estimateMinutes ?? null })
-    const found = validate(input, estimateMinutes)
+    const found = validateTaskInput(input, estimateMinutes, m)
     setErrors(found)
     if (Object.values(found).some(Boolean)) {
       const invalid: Record<TaskTab, boolean> = {
@@ -325,88 +273,8 @@ export function TaskModal({
               options={TASK_PRIORITIES.map((priority) => ({ value: priority, label: text.priorities[priority] }))}
               onChange={(priority) => update({ priority })}
             />
-            <div className="formRow">
-              <FormField label={text.dueDate} error={errors.dueDate}>
-                <input
-                  className="input"
-                  type="date"
-                  name="dueDate"
-                  value={values.dueDate ?? ''}
-                  aria-invalid={Boolean(errors.dueDate)}
-                  onChange={(event) =>
-                    update(
-                      event.target.value
-                        ? {
-                            dueDate: event.target.value,
-                            recurrence: values.dueDate
-                              ? adaptRecurrenceToStart(values.recurrence, values.dueDate, event.target.value)
-                              : values.recurrence,
-                          }
-                        : { dueDate: null, dueTime: null, recurrence: null },
-                    )
-                  }
-                />
-              </FormField>
-              {values.dueDate && (
-                <FormField label={text.dueTime} error={errors.dueTime}>
-                  <input
-                    className="input"
-                    type="time"
-                    name="dueTime"
-                    value={values.dueTime ?? ''}
-                    aria-invalid={Boolean(errors.dueTime)}
-                    onChange={(event) => update({ dueTime: event.target.value || null })}
-                  />
-                </FormField>
-              )}
-            </div>
-            {values.dueDate ? (
-              <>
-                <RecurrenceFields
-                  value={values.recurrence}
-                  startDate={values.dueDate}
-                  errors={errors.recurrence ?? {}}
-                  onChange={(recurrence) => update({ recurrence })}
-                />
-                {values.recurrence && <p className="formHint">{text.recurrenceHint}</p>}
-              </>
-            ) : (
-              <p className="formHint">{text.recurrenceNeedsDue}</p>
-            )}
-            <FormField label={text.estimate} as="fieldset" error={errors.estimate}>
-              <span className="inlineField taskEstimate">
-                <input
-                  className="input numberInput"
-                  type="number"
-                  name="estimateHours"
-                  inputMode="numeric"
-                  min={0}
-                  max={MAX_ESTIMATE_HOURS}
-                  step={1}
-                  placeholder="0"
-                  aria-label={text.hours}
-                  aria-invalid={Boolean(errors.estimate)}
-                  value={estimate.hours}
-                  onChange={(event) => changeEstimate({ hours: event.target.value })}
-                />
-                <span aria-hidden="true">{text.hoursUnit}</span>
-                <input
-                  className="input numberInput"
-                  type="number"
-                  name="estimateMinutes"
-                  inputMode="numeric"
-                  min={0}
-                  max={MINUTES_PER_HOUR - 1}
-                  step={5}
-                  placeholder="0"
-                  aria-label={text.minutes}
-                  aria-invalid={Boolean(errors.estimate)}
-                  value={estimate.minutes}
-                  onChange={(event) => changeEstimate({ minutes: event.target.value })}
-                />
-                <span aria-hidden="true">{text.minutesUnit}</span>
-              </span>
-            </FormField>
+            <TaskDueFields values={values} errors={errors} onChange={update} />
+            <TaskEstimateField value={estimate} error={errors.estimate} onChange={changeEstimate} />
           </Locked>
         </>
       ),

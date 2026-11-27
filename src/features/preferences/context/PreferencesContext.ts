@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { Preferences } from '../../../utils/preferences.ts'
+import type { Preferences } from '../../../domain/preferences.ts'
 
 export type PreferencesContextValue = {
   preferences: Preferences

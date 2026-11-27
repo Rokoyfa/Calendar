@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { calendarEvent, recurrence } from '../../../test/fixtures.ts'
-import type { CalendarEvent, EventInput } from '../../../utils/event.ts'
+import type { CalendarEvent, EventInput } from '../../../domain/event.ts'
 import type { EventRepository } from '../../storage/index.ts'
 import { deleteOccurrence, updateOccurrence } from './seriesActions.ts'
 import { recordChanges } from './undo.ts'

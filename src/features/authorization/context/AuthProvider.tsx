@@ -1,5 +1,5 @@
 import { runLogoutHooks } from '../../../utils/logoutHooks.ts'
-import type { EventReply } from '../../../utils/event.ts'
+import type { EventReply } from '../../../domain/event.ts'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type {
   AccountDeletionInput,

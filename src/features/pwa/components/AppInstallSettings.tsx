@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { Button } from '../../../components/Button.tsx'
 import { PageSection } from '../../../components/PageSection.tsx'
 import { useI18n } from '../../../i18n/index.ts'
-import { isAppleMobile, isStandalone } from '../../push/utils/device.ts'
+import { isAppleMobile, isStandalone } from '../../push/index.ts'
 import { getInstallState, promptInstall, subscribeInstallState } from '../utils/installPrompt.ts'
 
 export function AppInstallSettings() {

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useFeatures } from '../../../context/HostContext.ts'
-import { formatEventPeriod, type EventOccurrence } from '../../../utils/event.ts'
+import { formatEventPeriod, type EventOccurrence } from '../../../domain/event.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import { useSegmentAttributes } from '../hooks/useSegmentAttributes.ts'
 import { getVisibleDuration } from '../utils/eventGeometry.ts'
@@ -8,8 +8,7 @@ import { EventLinks } from './EventLinks.tsx'
 import { EventLocation } from './EventLocation.tsx'
 import { EventTitle } from './EventTitle.tsx'
 import { EVENT_NAVIGATION_KEYS } from '../hooks/useEventNavigation.ts'
-import { UnreadBadge } from '../../chat/index.ts'
-import { getChatKey } from '../../../utils/chat.ts'
+import { UnreadBadge, getChatKey } from '../../chat/index.ts'
 
 type EventBlockProps = {
   segment: EventSegment

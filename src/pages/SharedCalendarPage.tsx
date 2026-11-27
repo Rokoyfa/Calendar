@@ -14,10 +14,10 @@ import {
 import { useAsyncResource } from '../hooks/useAsyncResource.ts'
 import { useI18n } from '../i18n/index.ts'
 import { AppError } from '../utils/appError.ts'
-import { nearestView } from '../utils/calendarView.ts'
-import { getEventColorAttributes } from '../utils/event.ts'
-import { getStartView, isCompactWidth } from '../utils/preferences.ts'
-import type { SharedCalendar } from '../utils/sharedCalendar.ts'
+import { nearestView } from '../domain/calendarView.ts'
+import { getEventColorAttributes } from '../domain/event.ts'
+import { getStartView, isCompactWidth } from '../domain/preferences.ts'
+import type { SharedCalendar } from '../features/calendars/index.ts'
 
 const readOnly = () => Promise.reject(new AppError('forbidden'))
 

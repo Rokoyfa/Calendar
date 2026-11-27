@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useFeatures } from '../../../context/HostContext.ts'
 import { AppError } from '../../../utils/appError.ts'
-import type { Attachment } from '../../../utils/attachment.ts'
+import type { Attachment } from '../utils/attachment.ts'
 import { saveBlob } from '../../../utils/download.ts'
 import { useStorage } from '../../storage/index.ts'
 import { removeById } from '../../../utils/list.ts'

@@ -1,6 +1,6 @@
-import { toSeriesRule, type EditScope, type EventOccurrence } from '../../../utils/event.ts'
-import { isSameRecurrence, type Recurrence } from '../../../utils/recurrence.ts'
-import { hasEarlierOccurrences } from '../../../utils/series.ts'
+import { toSeriesRule, type EditScope, type EventOccurrence } from '../../../domain/event.ts'
+import { isSameRecurrence, type Recurrence } from '../../../domain/recurrence.ts'
+import { hasEarlierOccurrences } from './series.ts'
 
 export const getScopeOptions = (
   occurrence: EventOccurrence | null,

@@ -1,10 +1,7 @@
 import { LocalCalendarRepository } from '../features/calendars/index.ts'
-import {
-  LocalCategoryRepository,
-  LocalColorRepository,
-  LocalEventRepository,
-  LocalPreferencesRepository,
-} from '../features/storage/index.ts'
+import { LocalCategoryRepository } from '../features/categories/index.ts'
+import { LocalColorRepository, LocalPreferencesRepository } from '../features/preferences/index.ts'
+import { LocalEventRepository } from '../features/events/index.ts'
 import { LocalTaskRepository } from '../features/tasks/index.ts'
 import type { CalendarDataSource, DataRepositories } from './types.ts'
 

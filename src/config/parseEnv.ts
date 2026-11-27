@@ -5,7 +5,7 @@ import {
   type CalendarConfig,
   type CalendarFeature,
   type StorageMode,
-} from '../lib/defaults.ts'
+} from './defaults.ts'
 import { isOneOf } from '../utils/object.ts'
 
 const DEFAULT_API_BASE_URL = DEFAULT_CONFIG.apiBaseUrl

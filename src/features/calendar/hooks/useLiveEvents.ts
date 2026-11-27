@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { EventChange } from '../../../utils/eventChange.ts'
+import type { EventChange } from '../../../domain/eventChange.ts'
 import { useStorage } from '../../storage/index.ts'
 
 const REFRESH_DELAY_MS = 300

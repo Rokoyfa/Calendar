@@ -1,6 +1,6 @@
 import type { HostTheme } from '../context/HostContext.ts'
 import type { MessageOverrides } from '../i18n/index.ts'
-import { CALENDAR_VIEWS, isCalendarView, type CalendarView } from '../utils/calendarView.ts'
+import { CALENDAR_VIEWS, isCalendarView, type CalendarView } from '../domain/calendarView.ts'
 import { isOneOf } from '../utils/object.ts'
 import {
   FEATURE_NAMES,
@@ -9,7 +9,7 @@ import {
   type CalendarFeatures,
   type HolidaySource,
   type StorageMode,
-} from './defaults.ts'
+} from '../config/defaults.ts'
 import { isRecord } from '../utils/parse.ts'
 
 export const ROUTING_MODES = ['memory', 'browser'] as const

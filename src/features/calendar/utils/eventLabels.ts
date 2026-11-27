@@ -5,8 +5,8 @@ import {
   getLinkName,
   type AttendeeStatus,
   type EventOccurrence,
-} from '../../../utils/event.ts'
-import { formatRecurrence } from '../../../utils/recurrence.ts'
+} from '../../../domain/event.ts'
+import { formatRecurrence } from '../../../domain/recurrence.ts'
 import type { ClassNameValue } from '../../../utils/classNames.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import type { EventSource } from '../types/eventSource.ts'

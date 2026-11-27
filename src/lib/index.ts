@@ -20,7 +20,7 @@ export type {
 } from './config.ts'
 export type { DeletedEvent, EventCallbacks } from './eventCallbacks.ts'
 export type { HostTheme } from '../context/HostContext.ts'
-export type { CalendarView } from '../utils/calendarView.ts'
+export type { CalendarView } from '../domain/calendarView.ts'
 export type { DeepPartial, MessageOverrides, Messages, PartialMessages } from '../i18n/index.ts'
 export { localDataSource, restDataSource, TENANT_HEADER, tenantDataSource } from '../data/index.ts'
 export type {
@@ -57,16 +57,16 @@ export type {
   HolidayRepository,
   PreferencesRepository,
 } from '../features/storage/index.ts'
-export type { Attendee, AttendeeStatus, CalendarEvent, EventInput, EventLink } from '../utils/event.ts'
-export type { ChatEvent, ChatKey, ChatMessage, ChatPage, ChatUnread } from '../utils/chat.ts'
-export type { Category } from '../utils/category.ts'
-export type { Attachment } from '../utils/attachment.ts'
-export type { TrashedEvent } from '../utils/trash.ts'
-export type { EventChange } from '../utils/eventChange.ts'
-export type { SharedCalendar } from '../utils/sharedCalendar.ts'
-export type { Preferences, StoredPreferences } from '../utils/preferences.ts'
-export type { PublicHoliday } from '../utils/holidays.ts'
-export type { Recurrence } from '../utils/recurrence.ts'
+export type { Attendee, AttendeeStatus, CalendarEvent, EventInput, EventLink } from '../domain/event.ts'
+export type { ChatEvent, ChatKey, ChatMessage, ChatPage, ChatUnread } from '../features/chat/index.ts'
+export type { Category } from '../domain/category.ts'
+export type { Attachment } from '../features/attachments/index.ts'
+export type { TrashedEvent } from '../features/events/index.ts'
+export type { EventChange } from '../domain/eventChange.ts'
+export type { SharedCalendar } from '../features/calendars/index.ts'
+export type { Preferences, StoredPreferences } from '../domain/preferences.ts'
+export type { PublicHoliday } from '../domain/holidays.ts'
+export type { Recurrence } from '../domain/recurrence.ts'
 export type { HexColor } from '../utils/color.ts'
 export type {
   Task,

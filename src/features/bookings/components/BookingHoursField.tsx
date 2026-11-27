@@ -10,7 +10,7 @@ import {
   toBookingEndTime,
   toTimeInput,
   type BookingHours,
-} from '../../../utils/booking.ts'
+} from '../utils/booking.ts'
 import { minutesToTime, MINUTES_PER_DAY, MINUTES_PER_HOUR, timeToMinutes } from '../../../utils/date.ts'
 
 type BookingHoursFieldProps = {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { calendarEvent } from '../../../test/fixtures.ts'
-import { createAllDayEventInput, expandEvents } from '../../../utils/event.ts'
+import { createAllDayEventInput, expandEvents } from '../../../domain/event.ts'
 import { splitAllDay } from './allDay.ts'
 import { groupSegmentsByDate } from './segmentEvents.ts'
 
@@ -19,7 +19,10 @@ describe('splitAllDay', () => {
     const rowsOn = (date: string) =>
       lanes.allDay.get(date)?.map(({ segment, row, isFirst }) => [segment.event.title, row, isFirst])
     expect(lanes.rows).toBe(2)
-    expect(rowsOn('2026-11-10')).toEqual([['Long', 0, false], ['Short', 1, true]])
+    expect(rowsOn('2026-11-10')).toEqual([
+      ['Long', 0, false],
+      ['Short', 1, true],
+    ])
     expect(rowsOn('2026-11-12')).toEqual([['Later', 0, true]])
     expect(lanes.timed.get('2026-11-10')?.map(({ event }) => event.title)).toEqual(['Timed'])
   })

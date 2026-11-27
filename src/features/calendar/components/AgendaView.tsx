@@ -1,7 +1,7 @@
 import { useI18n } from '../../../i18n/index.ts'
 import { classNames } from '../../../utils/classNames.ts'
 import { withoutPropagation } from '../../../utils/dom.ts'
-import type { EventOccurrence } from '../../../utils/event.ts'
+import type { EventOccurrence } from '../../../domain/event.ts'
 import { useHolidayMap } from '../context/HolidaysContext.ts'
 import { useSegmentAttributes } from '../hooks/useSegmentAttributes.ts'
 import { EVENT_NAVIGATION_KEYS } from '../hooks/useEventNavigation.ts'
@@ -9,8 +9,7 @@ import type { EventSegment } from '../types/eventLayout.ts'
 import type { CalendarViewProps } from '../types/view.ts'
 import { sortSegments } from '../utils/layoutEvents.ts'
 import { EventTitle } from './EventTitle.tsx'
-import { UnreadBadge } from '../../chat/index.ts'
-import { getChatKey } from '../../../utils/chat.ts'
+import { UnreadBadge, getChatKey } from '../../chat/index.ts'
 import { DayTasks, useTasksContext } from '../../tasks/index.ts'
 
 const MINUTES_PER_DAY = 24 * 60

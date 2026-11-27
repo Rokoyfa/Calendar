@@ -4,8 +4,8 @@ import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { useDebouncedValue } from '../../../hooks/useDebouncedValue.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { isISODate, isTime } from '../../../utils/date.ts'
-import type { EventInput } from '../../../utils/event.ts'
-import type { OverlapQuery } from '../../../utils/overlap.ts'
+import type { EventInput } from '../../../domain/event.ts'
+import type { OverlapQuery } from '../../../domain/overlap.ts'
 
 export type PlanConflict = { taskId: string; title: string }
 

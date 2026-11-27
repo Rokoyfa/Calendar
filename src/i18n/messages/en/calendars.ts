@@ -1,4 +1,4 @@
-import type { TeamRole } from '../../../features/calendars/types/calendar.ts'
+import type { TeamRole } from '../../../features/calendars/index.ts'
 
 export const calendars = {
   personalName: 'Personal',

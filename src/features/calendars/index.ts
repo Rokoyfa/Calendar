@@ -28,3 +28,5 @@ export type {
   TeamMember,
   TeamRole,
 } from './types/calendar.ts'
+export { RemoteSharedCalendarRepository } from './repositories/RemoteSharedCalendarRepository.ts'
+export type { SharedCalendar } from './utils/sharedCalendar.ts'

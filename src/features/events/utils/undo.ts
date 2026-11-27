@@ -1,6 +1,6 @@
 import { isUnsupportedEndpoint } from '../../../utils/apiError.ts'
 import { isAppError } from '../../../utils/appError.ts'
-import { toEventInput, type CalendarEvent } from '../../../utils/event.ts'
+import { toEventInput, type CalendarEvent } from '../../../domain/event.ts'
 import type { EventRepository } from '../../storage/index.ts'
 
 type Change =

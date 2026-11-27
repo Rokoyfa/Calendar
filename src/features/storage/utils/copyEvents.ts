@@ -1,5 +1,5 @@
 import { PERSONAL_CALENDAR_ID } from '../../../config/calendars.ts'
-import { NO_SERIES_LINK, toEventInput, type CalendarEvent } from '../../../utils/event.ts'
+import { NO_SERIES_LINK, toEventInput, type CalendarEvent } from '../../../domain/event.ts'
 import type { EventRepository } from '../types/storage.ts'
 
 const isDetached = (event: CalendarEvent) => event.seriesId !== null

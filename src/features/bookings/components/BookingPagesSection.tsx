@@ -15,7 +15,7 @@ import {
   MAX_BOOKING_PAGES,
   type BookingPage,
   type BookingPageSettings,
-} from '../../../utils/booking.ts'
+} from '../utils/booking.ts'
 import type { BookingRepository } from '../../storage/index.ts'
 import { useBookingPages } from '../hooks/useBookingPages.ts'
 import { BookingPageForm, type BookingFormValues } from './BookingPageForm.tsx'

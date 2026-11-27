@@ -7,8 +7,8 @@ import { ActionFeedback, ErrorMessage } from '../../../components/StatusMessage.
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useConfirm } from '../../../hooks/useConfirm.ts'
 import { useI18n } from '../../../i18n/index.ts'
-import { getEventColorAttributes, type EventColor } from '../../../utils/event.ts'
-import type { PeerCalendar } from '../../../utils/peerCalendar.ts'
+import { getEventColorAttributes, type EventColor } from '../../../domain/event.ts'
+import type { PeerCalendar } from '../utils/peerCalendar.ts'
 import { ColorPicker } from '../../events/index.ts'
 import { usePeerCalendars } from '../hooks/usePeerCalendars.ts'
 

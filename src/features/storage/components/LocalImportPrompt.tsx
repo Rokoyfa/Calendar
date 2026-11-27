@@ -5,11 +5,11 @@ import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { Modal } from '../../../components/Modal.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
-import type { CalendarEvent } from '../../../utils/event.ts'
+import type { CalendarEvent } from '../../../domain/event.ts'
 import { useStorage } from '../hooks/useStorage.ts'
-import { LocalEventRepository } from '../repositories/LocalEventRepository.ts'
+import { LocalEventRepository } from '../../events/index.ts'
 import { copyEvents } from '../utils/copyEvents.ts'
-import { LocalStorageList } from '../utils/localStorageList.ts'
+import { LocalStorageList } from '../../../utils/localStorageList.ts'
 
 const declinedUsers = new LocalStorageList<string>(
   'calendar.localImportDeclined.v1',

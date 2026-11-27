@@ -7,7 +7,7 @@ import {
   timeToMinutes,
   type DateRange,
 } from '../../../utils/date.ts'
-import { getEventDuration, type EventOccurrence } from '../../../utils/event.ts'
+import { getEventDuration, type EventOccurrence } from '../../../domain/event.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 
 export function splitEventIntoSegments(event: EventOccurrence, { from, to }: DateRange): EventSegment[] {

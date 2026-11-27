@@ -1,4 +1,4 @@
-import type { EventColor } from '../../../../utils/event.ts'
+import type { EventColor } from '../../../../domain/event.ts'
 import { ColorPicker } from '../../../events/index.ts'
 import { CalendarPreview } from '../CalendarPreview.tsx'
 

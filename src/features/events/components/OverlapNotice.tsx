@@ -3,8 +3,8 @@ import { useAsyncResource } from '../../../hooks/useAsyncResource.ts'
 import { useDebouncedValue } from '../../../hooks/useDebouncedValue.ts'
 import { useI18n } from '../../../i18n/index.ts'
 import { isISODate, isTime, timeToMinutes } from '../../../utils/date.ts'
-import type { EventInput, EventOccurrence } from '../../../utils/event.ts'
-import { OVERLAPS_SHOWN, type OverlapQuery } from '../../../utils/overlap.ts'
+import type { EventInput, EventOccurrence } from '../../../domain/event.ts'
+import { OVERLAPS_SHOWN, type OverlapQuery } from '../../../domain/overlap.ts'
 
 export type OverlapCheck = (query: OverlapQuery) => Promise<readonly EventOccurrence[]>
 

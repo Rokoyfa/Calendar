@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createFormatter } from '../../../i18n/format.ts'
 import { calendarEvent } from '../../../test/fixtures.ts'
-import { expandEvents } from '../../../utils/event.ts'
+import { expandEvents } from '../../../domain/event.ts'
 import { buildPrintDocument, type PrintOptions } from './print.ts'
 
 const options = (overrides: Partial<PrintOptions> = {}): PrintOptions => ({

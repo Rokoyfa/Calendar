@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
-import { isSameChat, type ChatKey, type ChatMessage } from '../../../utils/chat.ts'
+import { isSameChat, type ChatKey, type ChatMessage } from '../utils/chat.ts'
 import type { ChatRepository } from '../../storage/index.ts'
 import { removeById } from '../../../utils/list.ts'
 

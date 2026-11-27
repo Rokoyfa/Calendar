@@ -1,6 +1,6 @@
 import { createContext, use } from 'react'
-import { DEFAULT_FEATURES, type CalendarFeatures } from '../lib/defaults.ts'
-import { CALENDAR_VIEWS, type CalendarView } from '../utils/calendarView.ts'
+import { DEFAULT_FEATURES, type CalendarFeatures } from '../config/defaults.ts'
+import { CALENDAR_VIEWS, type CalendarView } from '../domain/calendarView.ts'
 import type { HostBridge } from './HostBridge.ts'
 
 export type HostTheme = 'light' | 'dark'

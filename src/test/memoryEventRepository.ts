@@ -1,5 +1,5 @@
 import type { EventRepository } from '../features/storage/index.ts'
-import { newEventMeta, type CalendarEvent } from '../utils/event.ts'
+import { newEventMeta, type CalendarEvent } from '../domain/event.ts'
 
 export function createMemoryEventRepository(initial: CalendarEvent[] = []) {
   const events = new Map(initial.map((event) => [event.id, event]))

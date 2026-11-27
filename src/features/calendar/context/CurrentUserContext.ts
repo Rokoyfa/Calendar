@@ -1,5 +1,5 @@
 import { createContext, use } from 'react'
-import type { CalendarEvent } from '../../../utils/event.ts'
+import type { CalendarEvent } from '../../../domain/event.ts'
 
 export const CurrentUserEmailContext = createContext<string | null>(null)
 

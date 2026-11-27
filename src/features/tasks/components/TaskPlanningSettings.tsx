@@ -6,7 +6,7 @@ import { SelectField } from '../../../components/SelectField.tsx'
 import { ErrorMessage } from '../../../components/StatusMessage.tsx'
 import { useAsyncAction } from '../../../hooks/useAsyncAction.ts'
 import { useI18n } from '../../../i18n/index.ts'
-import { isPlanningWindow, PLANNING_COUNTRY_AUTO, PLANNING_DISTRIBUTIONS } from '../../../utils/preferences.ts'
+import { isPlanningWindow, PLANNING_COUNTRY_AUTO, PLANNING_DISTRIBUTIONS } from '../../../domain/preferences.ts'
 import { usePreferences } from '../../preferences/index.ts'
 import {
   getCountryName,

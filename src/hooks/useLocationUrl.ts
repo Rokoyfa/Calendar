@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useHost } from '../context/HostContext.ts'
-import { getLocationUrl } from '../utils/location.ts'
+import { getLocationUrl } from '../domain/location.ts'
 
 export const useLocationUrl = () => {
   const { mapUrl, features } = useHost()

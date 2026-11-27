@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import type { PlanningDistribution } from '../../../utils/preferences.ts'
+import type { PlanningDistribution } from '../../../domain/preferences.ts'
 import type { Task, TaskDraft } from '../types/task.ts'
 
 export type TaskEditorState = { task: Task | null; draft: TaskDraft; resumePlan?: PlanningDistribution }

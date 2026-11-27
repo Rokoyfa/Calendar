@@ -19,7 +19,7 @@ import {
   type Recurrence,
   type RecurrenceFrequency,
   type RecurrenceValidationErrors,
-} from '../../../utils/recurrence.ts'
+} from '../../../domain/recurrence.ts'
 
 type RecurrenceFieldsProps = {
   value: Recurrence | null

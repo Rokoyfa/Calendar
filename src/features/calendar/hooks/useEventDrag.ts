@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { MINUTES_PER_DAY } from '../../../utils/date.ts'
-import type { EventOccurrence, EventPeriod } from '../../../utils/event.ts'
+import type { EventOccurrence, EventPeriod } from '../../../domain/event.ts'
 import {
   applyDragDelta,
   getDragDelta,

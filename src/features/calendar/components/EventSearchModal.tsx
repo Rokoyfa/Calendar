@@ -8,7 +8,7 @@ import {
   getEventColorAttributes,
   toViewerOccurrencePeriod,
   type CalendarEvent,
-} from '../../../utils/event.ts'
+} from '../../../domain/event.ts'
 import { useEventSearch } from '../hooks/useEventSearch.ts'
 import { useEventSources } from '../hooks/useEventSource.ts'
 

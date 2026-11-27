@@ -9,7 +9,7 @@ import {
   type EditScope,
   type EventInput,
   type EventOccurrence,
-} from '../../../utils/event.ts'
+} from '../../../domain/event.ts'
 import { useStorage, type EventQuery, type EventRepository } from '../../storage/index.ts'
 import { deleteOccurrence, updateOccurrence } from '../utils/seriesActions.ts'
 import { recordChanges, type Undo } from '../utils/undo.ts'

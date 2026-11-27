@@ -1,7 +1,7 @@
 import { useI18n } from '../../../i18n/index.ts'
 import { classNames } from '../../../utils/classNames.ts'
 import { timeToMinutes } from '../../../utils/date.ts'
-import { formatRecurrence } from '../../../utils/recurrence.ts'
+import { formatRecurrence } from '../../../domain/recurrence.ts'
 import type { TasksContextValue } from '../context/TasksContext.ts'
 import type { Task } from '../types/task.ts'
 import { checklistProgress, isTaskOverdue } from '../utils/task.ts'

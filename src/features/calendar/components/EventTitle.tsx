@@ -1,5 +1,5 @@
 import { useI18n } from '../../../i18n/index.ts'
-import type { EventOccurrence } from '../../../utils/event.ts'
+import type { EventOccurrence } from '../../../domain/event.ts'
 import { PaperclipIcon, RepeatIcon, TeamIcon } from '../../../components/Icons.tsx'
 import type { EventSource } from '../types/eventSource.ts'
 

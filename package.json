@@ -54,6 +54,7 @@
     "demo/calendar.config.yaml",
     "demo/calendar.config.jsonc",
     "DEVELOPER_GUIDE.md",
+    "docs/guide",
     "CHANGELOG.md"
   ],
   "publishConfig": {
@@ -62,9 +63,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/check-imports.mjs",
+    "lint:imports": "node scripts/check-imports.mjs",
     "preview": "vite preview",
     "build:lib": "node -e \"require('fs').rmSync('dist-lib',{recursive:true,force:true})\" && vite build -c vite.lib.config.ts && vite build -c vite.lib.config.ts --mode element && tsc -p tsconfig.lib.json && node scripts/collect-types.mjs && node scripts/check-bundle-size.mjs",
+    "check": "node scripts/check.mjs",
+    "check:all": "node scripts/check.mjs --e2e",
     "check:size": "node scripts/check-bundle-size.mjs",
     "typecheck": "tsc -b && tsc -p e2e/tsconfig.json --noEmit",
     "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build:lib",

@@ -1,8 +1,8 @@
-import type { PlanningDistribution } from '../../../utils/preferences.ts'
+import type { PlanningDistribution } from '../../../domain/preferences.ts'
 import type { PlannedBlock } from '../utils/taskPlanner.ts'
-import type { CalendarEvent } from '../../../utils/event.ts'
-import type { BuiltinCategory } from '../../../utils/category.ts'
-import type { Recurrence } from '../../../utils/recurrence.ts'
+import type { CalendarEvent } from '../../../domain/event.ts'
+import type { BuiltinCategory } from '../../../domain/category.ts'
+import type { Recurrence } from '../../../domain/recurrence.ts'
 
 export type TaskPerson = {
   id: string

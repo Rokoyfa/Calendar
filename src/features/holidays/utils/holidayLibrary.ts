@@ -1,5 +1,5 @@
 import type { HolidayQuery, HolidayRepository } from '../../storage/index.ts'
-import { splitHolidayRegion, type PublicHoliday } from '../../../utils/holidays.ts'
+import { splitHolidayRegion, type PublicHoliday } from '../../../domain/holidays.ts'
 
 type HolidaysClass = (typeof import('date-holidays'))['default']
 

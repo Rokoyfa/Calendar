@@ -1,6 +1,6 @@
 import { useI18n } from '../../../i18n/index.ts'
 import { Modal } from '../../../components/Modal.tsx'
-import type { EditScope } from '../../../utils/event.ts'
+import type { EditScope } from '../../../domain/event.ts'
 import { ScopeButtons } from './ScopeButtons.tsx'
 
 type RecurrenceScopeModalProps = {

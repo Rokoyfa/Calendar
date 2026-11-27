@@ -1,6 +1,6 @@
 import { ChatIcon } from '../../../components/Icons.tsx'
 import { useI18n } from '../../../i18n/index.ts'
-import type { ChatKey } from '../../../utils/chat.ts'
+import type { ChatKey } from '../utils/chat.ts'
 import { useUnreadCount } from '../context/ChatContext.ts'
 
 export function UnreadBadge({ chatKey }: { chatKey: ChatKey }) {

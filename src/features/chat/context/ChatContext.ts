@@ -1,6 +1,6 @@
 import { createContext, use } from 'react'
 import type { ChatRepository } from '../../storage/index.ts'
-import { getChatId, type ChatKey } from '../../../utils/chat.ts'
+import { getChatId, type ChatKey } from '../utils/chat.ts'
 
 export type ChatContextValue = {
   repository: ChatRepository

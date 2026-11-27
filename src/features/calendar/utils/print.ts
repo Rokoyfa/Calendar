@@ -1,6 +1,6 @@
 import type { Formatter } from '../../../i18n/format.ts'
 import { timeToMinutes } from '../../../utils/date.ts'
-import type { EventOccurrence } from '../../../utils/event.ts'
+import type { EventOccurrence } from '../../../domain/event.ts'
 import type { CalendarView } from '../types/view.ts'
 
 const PRESET_COLORS: Readonly<Record<string, string>> = {

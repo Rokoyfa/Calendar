@@ -1,4 +1,4 @@
-import type { HourSlot } from '../../../utils/event.ts'
+import type { HourSlot } from '../../../domain/event.ts'
 import { HOURS_PER_DAY } from '../../../utils/date.ts'
 
 export type SlotSelection = { anchor: HourSlot; current: HourSlot }

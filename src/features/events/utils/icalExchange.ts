@@ -5,9 +5,9 @@ import {
   validateEventInput,
   type CalendarEvent,
   type EventInput,
-} from '../../../utils/event.ts'
-import { MAX_CATEGORIES, MAX_EVENT_CATEGORIES, type Category } from '../../../utils/category.ts'
-import type { ImportedEvent } from '../../../utils/ical.ts'
+} from '../../../domain/event.ts'
+import { MAX_CATEGORIES, MAX_EVENT_CATEGORIES, type Category } from '../../../domain/category.ts'
+import type { ImportedEvent } from '../../../domain/ical.ts'
 import type { EventRepository } from '../../storage/index.ts'
 
 const ALL_TIME = { from: '1900-01-01', to: '9999-12-31' }

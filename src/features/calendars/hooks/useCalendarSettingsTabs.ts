@@ -1,6 +1,6 @@
 import { useFeatures } from '../../../context/HostContext.ts'
 import { useAuth } from '../../authorization/index.ts'
-import { usePeerCalendars } from '../../peers/hooks/usePeerCalendars.ts'
+import { usePeerCalendars } from '../../peers/index.ts'
 import { useStorage } from '../../storage/index.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
 import { canUseTrash, hasPermission, isPersonalCalendar } from '../utils/permissions.ts'

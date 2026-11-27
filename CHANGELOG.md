@@ -26,6 +26,11 @@ All notable changes to `@rokoyfa/calendar`. Versions follow [Semantic Versioning
 - **Find a common time** in the event dialog (feature `freeBusy`): suggests free times in which the user and all attendees are free, from their busy time without any details, with duration, weekends and earlier or later suggestions. Busy time is only shared with team members and people the personal calendar is shared with, and everyone can turn it off under Settings › Connections › Availability. New endpoint `POST /free-busy` (tag "Free/busy")
 - Planning distribution **As late as possible**: fills the last free time before the due date, keeping all working time rules
 
+### Changed
+
+- The developer guide is split into one file per chapter under [`docs/guide/`](docs/guide/01-embedding.md), shipped in the package; [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) is now its table of contents. Chapter numbers stay the same
+- Internal restructuring of the source (shared model in `src/domain/`, repositories next to their features, enforced module boundaries). The public API is unchanged
+
 ## 2.2.0 – 2026-11-25
 
 ### Upgrading from 2.1

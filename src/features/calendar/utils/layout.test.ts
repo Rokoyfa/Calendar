@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { calendarEvent } from '../../../test/fixtures.ts'
-import { expandEvents } from '../../../utils/event.ts'
+import { expandEvents } from '../../../domain/event.ts'
 import { layoutEvents } from './layoutEvents.ts'
 import { splitEventIntoSegments } from './segmentEvents.ts'
 import { getHoursOnDate, toSlotRange } from './slotSelection.ts'

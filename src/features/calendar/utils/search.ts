@@ -1,5 +1,5 @@
 import { addDaysToISODate } from '../../../utils/date.ts'
-import { getActiveOccurrenceDates, type CalendarEvent } from '../../../utils/event.ts'
+import { getActiveOccurrenceDates, type CalendarEvent } from '../../../domain/event.ts'
 
 export const SEARCH_MIN_LENGTH = 2
 const LOOKAHEAD_DAYS = 3660

@@ -11,9 +11,8 @@ import { useHost } from '../../../context/HostContext.ts'
 import { useAuth } from '../../authorization/index.ts'
 import { useCalendars } from '../hooks/useCalendars.ts'
 import type { CalendarSummary } from '../types/calendar.ts'
-import type { EventColor } from '../../../utils/event.ts'
-import { peerCalendarId } from '../../../utils/peerCalendar.ts'
-import { usePeerCalendars } from '../../peers/index.ts'
+import type { EventColor } from '../../../domain/event.ts'
+import { usePeerCalendars, peerCalendarId } from '../../peers/index.ts'
 import { CalendarPreview } from './CalendarPreview.tsx'
 
 type CalendarCardProps = {

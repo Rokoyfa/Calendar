@@ -1,7 +1,7 @@
 import { usePreferences } from '../../preferences/index.ts'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { getErrorMessage, useI18n } from '../../../i18n/index.ts'
-import type { Category } from '../../../utils/category.ts'
+import type { Category } from '../../../domain/category.ts'
 import type { DateRange } from '../../../utils/date.ts'
 import { useStorage } from '../../storage/index.ts'
 import { TasksContext, type TasksContextValue } from '../context/TasksContext.ts'

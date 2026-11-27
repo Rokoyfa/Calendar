@@ -1,4 +1,4 @@
-import type { EventOccurrence } from '../../../utils/event.ts'
+import type { EventOccurrence } from '../../../domain/event.ts'
 
 export type EventSegment = {
   event: EventOccurrence

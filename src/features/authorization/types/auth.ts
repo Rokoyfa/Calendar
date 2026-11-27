@@ -1,4 +1,4 @@
-import type { EventReply, EventResponse } from '../../../utils/event.ts'
+import type { EventReply, EventResponse } from '../../../domain/event.ts'
 export type User = {
   id: string
   email: string

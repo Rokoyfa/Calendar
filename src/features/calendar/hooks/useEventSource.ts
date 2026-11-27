@@ -1,5 +1,5 @@
 import { use } from 'react'
-import type { CalendarEvent } from '../../../utils/event.ts'
+import type { CalendarEvent } from '../../../domain/event.ts'
 import { EventSourcesContext } from '../context/EventSourcesContext.ts'
 
 export const useEventSources = () => use(EventSourcesContext)

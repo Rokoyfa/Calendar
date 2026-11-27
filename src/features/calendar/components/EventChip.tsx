@@ -1,11 +1,10 @@
 import { withoutPropagation } from '../../../utils/dom.ts'
-import type { EventOccurrence } from '../../../utils/event.ts'
+import type { EventOccurrence } from '../../../domain/event.ts'
 import type { EventSegment } from '../types/eventLayout.ts'
 import { useSegmentAttributes } from '../hooks/useSegmentAttributes.ts'
 import { EventTitle } from './EventTitle.tsx'
 import { EVENT_NAVIGATION_KEYS } from '../hooks/useEventNavigation.ts'
-import { UnreadBadge } from '../../chat/index.ts'
-import { getChatKey } from '../../../utils/chat.ts'
+import { UnreadBadge, getChatKey } from '../../chat/index.ts'
 
 type EventChipProps = {
   segment: EventSegment

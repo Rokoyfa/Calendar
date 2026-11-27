@@ -9,7 +9,7 @@ import {
   MAX_EVENT_LINKS,
   normalizeLinkUrl,
   type EventLink,
-} from '../../../utils/event.ts'
+} from '../../../domain/event.ts'
 import { CloseButton } from '../../../components/RemoveButton.tsx'
 
 type LinksFieldProps = {

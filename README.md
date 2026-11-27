@@ -81,12 +81,12 @@ Commented example files with every option: [`demo/calendar.config.yaml`](demo/ca
 
 | | |
 | --- | --- |
-| [Developer Guide](DEVELOPER_GUIDE.md) | Embedding, all options and features, the configuration file, languages, sign-in, data adapters, exported types, and what your backend has to provide |
+| [Developer Guide](DEVELOPER_GUIDE.md) | One chapter per topic in [`docs/guide/`](docs/guide/01-embedding.md): embedding, all options and features, the configuration file, languages, sign-in, data adapters, exported types, and what your backend has to provide |
 | [`api/openapi.yaml`](api/openapi.yaml) | The REST contract for your own backend (OpenAPI 3.1), also shipped as `@rokoyfa/calendar/openapi.yaml` |
 | [`api/caldav.md`](api/caldav.md) | What a backend's CalDAV server has to support, for the `caldav` feature |
 | [`schema/calendar-config.schema.json`](schema/calendar-config.schema.json) | JSON Schema for configuration files, also shipped as `@rokoyfa/calendar/config.schema.json` |
 | [CHANGELOG.md](CHANGELOG.md) | Changes per version |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Working on the calendar itself: building, the test backend and internals (in German) |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Working on the calendar itself, chapters in [`docs/development/`](docs/development/01-quick-start.md): building, the test backend and internals (in German) |
 
 **Demo:** [`demo/cdn.html`](demo/cdn.html) shows local mode with an event log, a dark German month view and a compact widget. Download it and open it in a browser, it loads the published package from jsDelivr.
 

@@ -3,31 +3,24 @@ import {
   RemoteAuthRepository,
   type UserTokenProvider,
 } from '../features/authorization/index.ts'
-import { RemoteCalendarRepository } from '../features/calendars/index.ts'
-import {
-  RemoteAttachmentRepository,
-  RemoteCategoryRepository,
-  RemoteColorRepository,
-  RemoteChatRepository,
-  RemoteEventRepository,
-  RemoteHolidayRepository,
-  RemotePreferencesRepository,
-  RemoteSharedCalendarRepository,
-  RemoteBookingRepository,
-  RemotePersonalSharingRepository,
-  RemoteExternalCalendarRepository,
-  RemoteAppPasswordRepository,
-  RemoteCaldavRepository,
-  RemoteHistoryRepository,
-  RemoteNotificationRepository,
-  LiveSocket,
-} from '../features/storage/index.ts'
+import { RemoteAttachmentRepository } from '../features/attachments/index.ts'
+import { RemoteCategoryRepository } from '../features/categories/index.ts'
+import { RemoteColorRepository, RemotePreferencesRepository } from '../features/preferences/index.ts'
+import { RemoteChatRepository, toSocketUrl } from '../features/chat/index.ts'
+import { RemoteEventRepository, RemoteHistoryRepository } from '../features/events/index.ts'
+import { RemoteHolidayRepository } from '../features/holidays/index.ts'
+import { RemoteCalendarRepository, RemoteSharedCalendarRepository } from '../features/calendars/index.ts'
+import { RemoteBookingRepository } from '../features/bookings/index.ts'
+import { RemotePersonalSharingRepository } from '../features/peers/index.ts'
+import { RemoteExternalCalendarRepository } from '../features/external/index.ts'
+import { RemoteAppPasswordRepository, RemoteCaldavRepository } from '../features/caldav/index.ts'
+import { RemoteNotificationRepository } from '../features/notifications/index.ts'
+import { LiveSocket } from '../utils/liveSocket.ts'
 import { RemoteTaskRepository } from '../features/tasks/index.ts'
 import { RemoteFreeBusyRepository } from '../features/freebusy/index.ts'
 import { RemotePushRepository } from '../features/push/index.ts'
-import type { HolidaySource } from '../lib/defaults.ts'
+import type { HolidaySource } from '../config/defaults.ts'
 import { createApiClient } from '../utils/api.ts'
-import { toSocketUrl } from '../utils/chat.ts'
 import { createLocalRepositories } from './localDataSource.ts'
 import type { CalendarDataSource, DataRepositories, DataSourceContext } from './types.ts'
 

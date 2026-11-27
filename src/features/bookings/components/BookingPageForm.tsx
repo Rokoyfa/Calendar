@@ -17,7 +17,7 @@ import {
   MAX_BOOKING_HOURS,
   sortBookingHours,
   type BookingPageSettings,
-} from '../../../utils/booking.ts'
+} from '../utils/booking.ts'
 import { formatTimeZoneLabel, listTimeZones } from '../../../utils/timeZone.ts'
 import { BookingHoursField } from './BookingHoursField.tsx'
 

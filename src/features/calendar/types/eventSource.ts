@@ -1,4 +1,4 @@
-import type { EventColor } from '../../../utils/event.ts'
+import type { EventColor } from '../../../domain/event.ts'
 
 export type EventSource = {
   name: string

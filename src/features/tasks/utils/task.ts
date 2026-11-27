@@ -1,6 +1,6 @@
-import { parseBuiltinCategories } from '../../../utils/category.ts'
+import { parseBuiltinCategories } from '../../../domain/category.ts'
 import { addDaysToISODate, isISODate, isTime } from '../../../utils/date.ts'
-import { getOccurrenceDates, parseRecurrence, type Recurrence } from '../../../utils/recurrence.ts'
+import { getOccurrenceDates, parseRecurrence, type Recurrence } from '../../../domain/recurrence.ts'
 import { filledTextOrNull, isRecord, parseList, textOrEmpty } from '../../../utils/parse.ts'
 import {
   TASK_PRIORITIES,

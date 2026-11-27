@@ -1,5 +1,5 @@
 import { addDaysToISODate } from '../../../utils/date.ts'
-import { toEventInput, type CalendarEvent, type EditScope, type EventInput } from '../../../utils/event.ts'
+import { toEventInput, type CalendarEvent, type EditScope, type EventInput } from '../../../domain/event.ts'
 import {
   changeWholeSeries,
   continueSeries,
@@ -9,7 +9,7 @@ import {
   hasEarlierOccurrences,
   isDetachedFrom,
   truncateSeries,
-} from '../../../utils/series.ts'
+} from './series.ts'
 import type { EventRepository } from '../../storage/index.ts'
 
 type ScopeHandlers = {

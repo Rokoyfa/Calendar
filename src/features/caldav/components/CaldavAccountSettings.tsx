@@ -18,8 +18,8 @@ import {
   MAX_CALDAV_ACCOUNTS,
   type CaldavAccount,
   type CaldavCalendar,
-} from '../../../utils/caldav.ts'
-import { getEventColorAttributes } from '../../../utils/event.ts'
+} from '../utils/caldav.ts'
+import { getEventColorAttributes } from '../../../domain/event.ts'
 import { formatTimestamp } from '../../../utils/timestamp.ts'
 import { NameColorForm } from '../../events/index.ts'
 import { useCaldav } from '../hooks/useCaldav.ts'

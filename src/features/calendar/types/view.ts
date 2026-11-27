@@ -1,10 +1,10 @@
 import type { I18n } from '../../../i18n/index.ts'
 import type { DateRange } from '../../../utils/date.ts'
-import type { EventOccurrence } from '../../../utils/event.ts'
+import type { EventOccurrence } from '../../../domain/event.ts'
 import type { SlotRange } from '../utils/slotSelection.ts'
 import type { EventSegment } from './eventLayout.ts'
 
-export { CALENDAR_VIEWS, type CalendarView } from '../../../utils/calendarView.ts'
+export { CALENDAR_VIEWS, type CalendarView } from '../../../domain/calendarView.ts'
 
 type ViewI18n = Pick<I18n, 'm' | 'format' | 'weekInfo'>
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useViewerTimeZone } from '../../../context/TimeZoneContext.ts'
 import { useCalendars } from '../../calendars/index.ts'
 import { useStorage } from '../../storage/index.ts'
-import { getReminderRange, getScheduledReminders, type ScheduledReminder } from '../../../utils/reminders.ts'
+import { getReminderRange, getScheduledReminders, type ScheduledReminder } from '../utils/reminders.ts'
 
 const CHECK_INTERVAL_MS = 5 * 60_000
 const LATE_TOLERANCE_MS = 10 * 60_000

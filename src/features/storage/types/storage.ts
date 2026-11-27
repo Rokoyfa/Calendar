@@ -1,20 +1,15 @@
-import type { Attachment } from '../../../utils/attachment.ts'
-import type { Category } from '../../../utils/category.ts'
+import type { Attachment } from '../../attachments/index.ts'
+import type { Category } from '../../../domain/category.ts'
 import type { HexColor } from '../../../utils/color.ts'
 import type { DateRange } from '../../../utils/date.ts'
-import type { AttendeeStatus, CalendarEvent, EventInput } from '../../../utils/event.ts'
-import type { ChatEvent, ChatKey, ChatMessage, ChatPage, ChatUnread } from '../../../utils/chat.ts'
-import type { EventChange } from '../../../utils/eventChange.ts'
-import type { TrashedEvent } from '../../../utils/trash.ts'
-import type { PublicHoliday } from '../../../utils/holidays.ts'
-import type { Preferences, StoredPreferences } from '../../../utils/preferences.ts'
-import type { SharedCalendar } from '../../../utils/sharedCalendar.ts'
-import type {
-  ExternalCalendar,
-  ExternalCalendarChanges,
-  ExternalCalendarInput,
-} from '../../../utils/externalCalendar.ts'
-import type { HistoryPage } from '../../../utils/history.ts'
+import type { AttendeeStatus, CalendarEvent, EventInput } from '../../../domain/event.ts'
+import type { ChatEvent, ChatKey, ChatMessage, ChatPage, ChatUnread } from '../../chat/index.ts'
+import type { EventChange } from '../../../domain/eventChange.ts'
+import type { TrashedEvent, HistoryPage } from '../../events/index.ts'
+import type { PublicHoliday } from '../../../domain/holidays.ts'
+import type { Preferences, StoredPreferences } from '../../../domain/preferences.ts'
+import type { SharedCalendar } from '../../calendars/index.ts'
+import type { ExternalCalendar, ExternalCalendarChanges, ExternalCalendarInput } from '../../external/index.ts'
 import type {
   AppPassword,
   CaldavAccess,
@@ -25,8 +20,8 @@ import type {
   CaldavCalendarChanges,
   CaldavObject,
   CreatedAppPassword,
-} from '../../../utils/caldav.ts'
-import type { AppNotification, NotificationPage } from '../../../utils/notification.ts'
+} from '../../caldav/index.ts'
+import type { AppNotification, NotificationPage } from '../../notifications/index.ts'
 import type {
   EventRequestInput,
   PeerCalendar,
@@ -34,7 +29,7 @@ import type {
   PeerEvent,
   SharingState,
   SharingViewer,
-} from '../../../utils/peerCalendar.ts'
+} from '../../peers/index.ts'
 import type {
   BookingHold,
   BookingPage,
@@ -42,10 +37,10 @@ import type {
   BookingRequest,
   BookingSummary,
   PublicBookingPage,
-} from '../../../utils/booking.ts'
-import type { TaskRepository } from '../../tasks/types/task.ts'
-import type { FreeBusyRepository } from '../../freebusy/types/freeBusy.ts'
-import type { PushRepository } from '../../push/types/push.ts'
+} from '../../bookings/index.ts'
+import type { TaskRepository } from '../../tasks/index.ts'
+import type { FreeBusyRepository } from '../../freebusy/index.ts'
+import type { PushRepository } from '../../push/index.ts'
 
 export type EventQuery = DateRange & { calendarIds: readonly string[] }
 

@@ -11,8 +11,8 @@ import { useAsyncAction } from '../hooks/useAsyncAction.ts'
 import { useAsyncResource } from '../hooks/useAsyncResource.ts'
 import { useLocationUrl } from '../hooks/useLocationUrl.ts'
 import { useI18n } from '../i18n/index.ts'
-import { isBookingCancelable, type BookingSummary } from '../utils/booking.ts'
-import { formatEventPeriod } from '../utils/event.ts'
+import { isBookingCancelable, type BookingSummary } from '../features/bookings/index.ts'
+import { formatEventPeriod } from '../domain/event.ts'
 import { fromInstant } from '../utils/timeZone.ts'
 
 function BookingDetails({ summary }: { summary: BookingSummary }) {
